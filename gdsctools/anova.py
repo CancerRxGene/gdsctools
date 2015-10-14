@@ -15,7 +15,7 @@ try:
     from cno.misc.profiler import do_profile
 except:
     pass
-import cohens, glass
+from gdsctools import cohens, glass
 # See reader module to get the format. The file IC50_input.txt was provided
 # by Howard as a test case
 #data = reader.IC50()
