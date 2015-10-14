@@ -21,9 +21,9 @@ metainfo = {
     'license' : 'BSD',
     'download_url' : ['http://pypi.python.org/pypi/gdsctools'],
     'url' : ['http://pypi.python.org/pypi/gdsctools'],
-    'description':'Access to Biological Web Services from Python' ,
+    'description':'Set of tools and pipelines to analyse GDSC data (cancerrxgene.org)' ,
     'platforms' : ['Linux', 'Unix', 'MacOsX', 'Windows'],
-    'keywords' : ['corrplot', 'heatmap'],
+    'keywords' : ['gdsc', 'drug', 'anova'],
     'classifiers' : [
           'Development Status :: 1 - Planning',
           'Intended Audience :: Developers',
@@ -68,7 +68,7 @@ setup(
     # matplotlib 1.4.3 to use new functionalities in boxplot, which are used
     # in anova.py and boxswarm
     install_requires = ['numpy', 'matplotlib>=1.4.3', 
-        'pandas', 'easydev', 'scipy', 'biokit'],
+        'pandas', 'easydev', 'scipy'],
 
     entry_points = {
         'console_scripts': [
