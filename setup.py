@@ -8,8 +8,8 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 0
-_MICRO               = 2
+_MINOR               = 1
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -64,7 +64,17 @@ setup(
 
     zip_safe=False,
     packages = find_packages(),
-    install_requires = [ 'numpy', 'pandas', 'easydev', 'scipy', 'biokit'],
+
+    # matplotlib 1.4.3 to use new functionalities in boxplot, which are used
+    # in anova.py and boxswarm
+    install_requires = ['numpy', 'matplotlib>=1.4.3', 
+        'pandas', 'easydev', 'scipy', 'biokit'],
+
+    entry_points = {
+        'console_scripts': [
+        'gdsctools_anova=gdsctools.pipelines:anova_pipeline',]
+        },
+
 
     )
 

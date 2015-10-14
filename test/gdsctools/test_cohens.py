@@ -1,4 +1,4 @@
-from gdsc.cohens import cohens
+from gdsctools.cohens import cohens
 from nose.tools import assert_almost_equal
 
 def test_cohens():

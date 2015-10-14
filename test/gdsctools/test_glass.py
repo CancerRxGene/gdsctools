@@ -1,4 +1,4 @@
-from gdsc.glass import glass
+from gdsctools.glass import glass
 
 
 def test_glass():
