@@ -1,13 +1,17 @@
 import pandas as pd
 import scipy
 import pylab
+import numpy as np
+
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+from statsmodels.formula.api import OLS
 from statsmodels.stats.multitest import fdrcorrection
 from easydev import Progress, AttrDict
-from gdsc import boxswarm
-from gdsc import reader
+from gdsctools import boxswarm
+#from gdsctools import reader
 from cno.misc.profiler import do_profile
+import cohens, glass
 # See reader module to get the format. The file IC50_input.txt was provided
 # by Howard as a test case
 #data = reader.IC50()
@@ -82,11 +86,13 @@ class GDSC_ANOVA(object):
 
     #@do_profile()
     def anova_one_drug_one_feature(self, drug_id='Drug_1_IC50',
-            feature_name='ABCB1_mut', show_boxplot=False):
+            feature_name='ABCB1_mut', show_boxplot=False, 
+            production=False):
 
         """
 
 
+        8ms per call
         """
         # select IC50 of a given drug
         data = self.ic50[drug_id]
@@ -103,16 +109,21 @@ class GDSC_ANOVA(object):
         # Let us create an alias to indicate the main Y variable to be regressed
         self.Y = self.masked_ic50
 
+        # about 15% of the time in those 4 lines.
+        positive_feature = self.masked_features.sum()
+        negative_feature = len(self.masked_features) - positive_feature
+        positive_msi = self.masked_msi.sum()
+        negative_msi = len(self.masked_msi) - positive_msi
 
-        positive_feature = (self.masked_features == 1).sum()
-        negative_feature = (self.masked_features == 0).sum()
-        positive_msi = (self.masked_msi == 1).sum()
-        negative_msi = (self.masked_msi == 0).sum()
+        positives = self.masked_ic50[self.masked_features==1]
+        negatives = self.masked_ic50[self.masked_features==0]
+        Npos = len(positives)
+        Nneg = len(negatives)
 
         A = self.settings.includeMSI_factor and\
             positive_feature >= self.settings.featFactorPopulationTh and\
             negative_feature >= self.settings.featFactorPopulationTh and\
-            positive_msi >= self.settings.MSIfactorPopulationTh and\
+            negative_msi >= self.settings.MSIfactorPopulationTh and\
             positive_msi >= self.settings.MSIfactorPopulationTh
         B = (not self.settings.includeMSI_factor) and\
             positive_feature >= self.settings.featFactorPopulationTh and\
@@ -153,24 +164,34 @@ class GDSC_ANOVA(object):
         # components. Not sure how important this is and will need
         # to consider other cases for robustness testing maybe.
         if self.settings.analysisType == 'PANCAN':
-            self.data_lm = ols('Y ~ C(tissue) + C(msi) + feature',
-                data=self.data, missing='raise').fit() #Specify C for Categorical
+            # Note that tissue with less than N? values are dropped
+            # This is also the case in R. 
+            # Possibly ntissue<3 ?
+            # See e.g., Drug_1 / ABL2_mut
+            #self.data_lm = ols('Y ~ C(tissue) + C(msi) + feature',
+            #        data=self.data, missing='none').fit() #Specify C for Categorical
 
-            #from statsmodels.formula import handle_formula_data
+            # 
+            # This is faster that above but messier
+            # The creation of this df represents 20% of the function time
+            df = pd.get_dummies(self.data['tissue']) # could use prefix_sep
+            # but there is no suffix_sep...
+            df.columns = ['C(tissue)[T.'+x +']' for x in df.columns]
+            df['C(msi)[T.1]'] = self.data['msi'].values
+            df['feature'] = self.data['feature'].values
+            df.insert(0, 'Intercept', [1]*len(df))
 
-            #formula = self.ols_tissue_msi_feature.formula
-            #tmp = handle_formula_data(data, None, formula, depth=2,
-            #                                    missing='drop')
-            #((endog, exog), missing_idx, design_info) = tmp
+            # Here, we need to get rid of some of th 
+            df = df.drop('C(tissue)[T.Bladder]', axis=1)
 
-            #kwargs.update({'missing_idx': missing_idx,
-            #               'missing': missing,
-            #              'design_info': design_info})
+            self.data_lm = OLS(self.data['Y'], df).fit()
 
+            # this sklean gives same as statsmolde.ols.params
+            # and as fast as OLS but faster than 'ols'
+            #lmres = LinearRegression(fit_intercept=True).fit(an.data[['msi',
+            #    'feature']], an.data['Y'])
+            # lmres.coef_
 
-            #self.ols_tissue_msi_feature.data = self.data
-            #self.data_lm2 = self.ols_tissue_msi_feature.fit()
-            #self.data_lm2.model.data.ynames = 'Y'
 
         elif self.settings.includeMSI_factor is True:
             self.data_lm = ols('Y ~ C(msi) + feature',
@@ -179,8 +200,49 @@ class GDSC_ANOVA(object):
             self.data_lm = ols('Y ~ feature',
                 data=self.data).fit() #Specify C for Categorical
 
-        self.stats = sm.stats.anova_lm(self.data_lm, typ=1)
+        # Get those stats from a local version of ANOVA
+        # The only values we want is PR(>F)
+        #self.stats = sm.stats.anova_lm(self.data_lm, typ=1)
 
+        # Fvalues should be a vector with individual F values
+        # df should be a vector with indivudal df
+        df_tissue = len([x for x in self.data_lm.model.exog_names if 'C(tissue'
+            in x])
+        df = [df_tissue, 1, 1] # msi and feature have 1 df each
+        endog = self.data_lm.model.data.endog
+        exog = self.data_lm.model.data.exog
+        q,r = np.linalg.qr(exog)
+        effects = np.dot(q.T, endog)
+
+        Nterms = 3 + 1 # msi, tissue, feature + 1 (intercept)
+        Ncolumns = sum(df) + 1 # +1 for the intercept
+        arr = np.zeros((Nterms, Ncolumns))
+        term_names = ['Intercept', 'C(tissue)', 'C(msi)', 'feature']
+
+        design_info = {}
+        design_info['Intercept'] = (0, 1, None)
+        design_info['C(tissue)'] = (1, 1+df_tissue, None)
+        design_info['C(msi)'] = (df_tissue+1, df_tissue+2, None)
+        design_info['feature'] = (df_tissue+2, df_tissue+3, None)
+
+        slices = [slice(*design_info[name]) for name in term_names]
+        for i,slice_ in enumerate(slices):
+             arr[i, slice_] = 1
+        sum_sq = np.dot(arr, effects**2)
+        sum_sq = sum_sq[1:]
+        mean_sq = sum_sq / np.array(df)
+        Fvalues = mean_sq / (self.data_lm.ssr / self.data_lm.df_resid)
+        F_pvalues = scipy.stats.f.sf(Fvalues, df, self.data_lm.df_resid)
+        self.tt = F_pvalues
+
+        #pvalues = pd.DataFrame({'C(tissue)': F_pvalues[0], 
+        #    'feature':F_pvalues[2], 'C(msi)': F_pvalues[1]})
+        self.stats = pd.DataFrame(
+                F_pvalues, columns=['PR(>F)'], 
+                index=['C(tissue)', 'C(msi)', 'feature'])
+
+        # to be used with statsmodels.ols
+        pvalues = self.stats['PR(>F)']
         # Then, compute t.test for p-value about feature independence
         dfeat = self.data['feature']
         # Identical to R version. Note that equal_var is True
@@ -210,14 +272,19 @@ class GDSC_ANOVA(object):
             else:
                 data, names, significance = results
                 bb = boxswarm.BoxSwarm(data, names)
-                bb.xlabel = '%s log(IC50)' % drug_id
+                bb.xlabel = r'%s log(IC50)' % drug_id.replace("_", "\_")
                 bb.title = 'FEATURE/Cancer-type interactions'
-                bb.plot(vert=False)
-                ax = pylab.twinx()
-                ax.set_yticks([i+0.5 for i in range(0, len(names))])
-                ax.set_yticklabels([len(this) for this in data])
+                ax = bb.plot(vert=False)
+                # get info from left axis
+                common_ylim = ax.get_ylim()
+                common_ticks = ax.get_yticks()
+
+                self.ax = ax.twinx()
+                self.ax.set_ylim(common_ylim)
+                self.ax.set_yticks(common_ticks)
+                self.ax.set_yticklabels([len(this) for this in data])
+
                 pylab.tight_layout()
-                self.plot2_tuning = bb
 
             if self.settings.includeMSI_factor:
                 pylab.figure(3)
@@ -228,17 +295,20 @@ class GDSC_ANOVA(object):
                 else:
                     data, names, significance = results
                     bb = boxswarm.BoxSwarm(data, names)
-                    bb.xlabel = '%s log(IC50)' % drug_id
+                    bb.xlabel = r'%s log(IC50)' % drug_id.replace("_", "\_")
                     bb.title = 'FEATURE/MS-instability interactions'
-                    bb.plot(vert=False)
-                    ax = pylab.twinx()
-                    ax.set_yticks([i+0.5 for i in range(0, len(names))])
-                    ax.set_yticklabels([len(this) for this in data])
+                    ax = bb.plot(vert=False)
+
+                    # get info from left axis
+                    common_ylim = ax.get_ylim()
+                    common_ticks = ax.get_yticks()
+
+                    self.ax = ax.twinx()
+                    self.ax.set_ylim(common_ylim)
+                    self.ax.set_yticks(common_ticks)
+                    self.ax.set_yticklabels([len(this) for this in data])
+
                     pylab.tight_layout()
-                    self.plot3_tuning = bb
-
-
-        pvalues = self.stats['PR(>F)']
 
         #iwith this index: [u'C(tissue)', u'C(msi)', u'feature', u'Residual']
         if 'C(tissue)' in pvalues.index:
@@ -260,8 +330,6 @@ class GDSC_ANOVA(object):
 
         FEATURE_IC50_WTT_pvalue = self.tfit[1]
 
-        positives = self.masked_ic50[self.masked_features==1]
-        negatives = self.masked_ic50[self.masked_features==0]
 
         pos_IC50_mean = positives.mean()
         neg_IC50_mean = negatives.mean()
@@ -270,10 +338,7 @@ class GDSC_ANOVA(object):
         pos_IC50_std = positives.std(ddof=1)
         neg_IC50_std = negatives.std(ddof=1)
 
-        Npos = len(positives)
-        Nneg = len(negatives)
 
-        import cohens, glass
         EFFECTSIZE_IC50 = cohens.cohens(positives, negatives)
         GLASS_d = glass.glass(positives, negatives)
         # compute cohens between IC50 where feature is pos and IC50
@@ -305,8 +370,12 @@ class GDSC_ANOVA(object):
                 'FEATURE_IC50_T_pval': FEATURE_IC50_WTT_pvalue
                 }
 
-        df = pd.DataFrame(results, index=[1])
-        return df
+        # 12% of the time here
+        if production is True:
+            return results
+        else:
+            df = pd.DataFrame(results, index=[1])
+            return df
 
     #98% of time in  method anova_one_drug_one_feature
     def anova_one_drug(self, drug_id, animate=True):
@@ -326,10 +395,17 @@ class GDSC_ANOVA(object):
         res = {}
         # note that we start at idnex 4 to drop sample name, tissue and MSI
         for i,feature in enumerate(selected_features.columns[3:]):
-            res[feature] = self.anova_one_drug_one_feature(drug_id, feature)
+            # production True, means we do not want to create a DataFrame
+            # for each call to the anova_one_drug_one_feature function
+            # Instead, we require dictionaries
+            res[feature] = self.anova_one_drug_one_feature(drug_id, feature,
+                    production=True)
             if animate is True:
                 pb.animate(i+1)
-        df = pd.concat(res, ignore_index=True)
+
+        # if production is False:
+        # df = pid.concat(res, ignore_index=True)
+        df = pd.DataFrame.from_records(res)
 
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
         return df
@@ -356,12 +432,12 @@ class GDSC_ANOVA(object):
 
         N = len(drug_names)
         pb = Progress(N, 1)
-        for i, drug_name in enumerate(drug_names):
+        for i, drug_name in enumerate(drug_names[0:5]):
             # TODO: try/except
             if drug_name in self.individual_anova.keys():
                 pass
             else:
-                res = self.anova_one_drug(drug_name, animate=False)
+                res = self.anova_one_drug(drug_name, animate=True)
                 self.individual_anova[drug_name] = res
             if animate is True:
                 pb.animate(i+1)
