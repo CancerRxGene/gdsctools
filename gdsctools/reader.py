@@ -4,7 +4,6 @@
 
 """
 import pandas as pd
-from biokit.rtools import RSession
 import pylab
 
 
@@ -13,7 +12,6 @@ class Reader(object):
         self.filename = filename
 
     def read_matrix_from_r(self, name):
-        #self.session = RSession()
         print("Reading matrix %s " % (name))
         self.session.run("rnames = rownames(%s)" % name)
         self.session.run("cnames = colnames(%s)" % name)
@@ -69,6 +67,8 @@ class Feature(Reader):
 class PANCAN(Reader):
     def __init__(self, filename="PANCAN_simple_MOBEM.rdata"):
         super(PANCAN, self).__init__(filename)
+        # Remove R dependencies
+        from biokit.rtools import RSession
         self.session = RSession()
         self.session.run('load("%s")' %self.filename)
         self.df = self.read_matrix_from_r('MoBEM')
@@ -77,6 +77,8 @@ class PANCAN(Reader):
 class Extra(Reader):
     def __init__(self, filename="djvIC50v17v002-nowWithRMSE.rdata"):
         super(Extra, self).__init__(filename)
+        # Remove R dependencies
+        from biokit.rtools import RSession
         self.session = RSession()
         self.session.run('load("%s")' %self.filename)
 

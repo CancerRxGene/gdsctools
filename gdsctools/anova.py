@@ -73,22 +73,33 @@ class GDSC_ANOVA(object):
             'MSIfactorPopulationTh': 2,
             'analysisType': 'PANCAN',
             'pval_correction_method': 'fdr',   # or qvalue
-            'equal_var_ttest': True
+            'equal_var_ttest': True,
+            'fontsize': 20
             }
         # makes this dict keys accessible as attributes
         self.settings = AttrDict(**self.settings)
 
         self.ols_tissue_msi_feature = ols('Y ~ C(tissue) + C(msi) + feature',
                 data=pd.DataFrame({'tissue':[1,2], 'Y':[1,2], 'msi':[0,1],
-                    'feature':[1,2]}, 
+                    'feature':[1,2]},
                     columns=['Y', 'feature', 'msi', 'tissue']))
         self.init()
 
-    #@do_profile()
-    def anova_one_drug_one_feature(self, drug_id='Drug_1_IC50',
-            feature_name='ABCB1_mut', show_boxplot=False, 
-            production=False):
+        self.column_names = [
+            'assoc_id', 'FEATURE', 'Drug id', 'Drug name',
+            'Drug Target', 'N_FEATURE_pos', 'N_FEATURE_neg',
+            'log max.Conc.tested', 'log max.Conc.tested2',
+            'FEATUREpos_logIC50_MEAN', 'FEATUREneg_logIC50_MEAN',
+            'FEATURE_deltaMEAN_IC50', 'FEATUREpos_IC50_sd',
+            'FEATUREneg_IC50_sd', 'FEATURE_IC50_effect_size',
+            'FEATUREpos_Glass_delta', 'FEATUREneg_Glass_delta',
+            'FEATURE_ANOVA_pval', 'Tissue_ANOVA_pval',
+            'MSI_ANOVA_pval', 'FEATURE_IC50_T_pval',
+            'ANOVA FEATURE FDR %']
 
+    def anova_one_drug_one_feature(self, drug_id='Drug_1_IC50',
+            feature_name='ABCB1_mut', show_boxplot=False,
+            production=False):
         """
 
 
@@ -119,7 +130,6 @@ class GDSC_ANOVA(object):
         negatives = self.masked_ic50[self.masked_features==0]
         Npos = len(positives)
         Nneg = len(negatives)
-
         A = self.settings.includeMSI_factor and\
             positive_feature >= self.settings.featFactorPopulationTh and\
             negative_feature >= self.settings.featFactorPopulationTh and\
@@ -130,14 +140,15 @@ class GDSC_ANOVA(object):
             negative_feature >= self.settings.featFactorPopulationTh
 
         if (A is False) and (B is False):
+            drug_name = 'Drug_' + str(drug_id) + '_IC50'
             results = {'FEATURE': feature_name,
-                'Drug id': drug_id,
-                'Drug name': 'NA',
-                'Drug target': 'NA',
+                'Drug id': drug_name,
+                'Drug name': drug_name,
+                'Drug Target': drug_name,
                 'N_FEATURE_pos': Npos,
                 'N_FEATURE_neg': Nneg,
-                'log_max.Conc.tested': None,
-                'log_max.Conc.tested2': None,
+                'log max.Conc.tested': None,
+                'log max.Conc.tested2': None,
                 'FEATUREpos_logIC50_MEAN': None,
                 'FEATUREneg_logIC50_MEAN': None,
                 'FEATURE_deltaMEAN_IC50': None,
@@ -151,6 +162,11 @@ class GDSC_ANOVA(object):
                 'MSI_ANOVA_pval': None,
                 'FEATURE_IC50_T_pval': None
                 }
+            if production is True:
+                return results
+            else:
+                df = pd.DataFrame(results, index=[1])
+                return df
 
         # else, we do the real anova analysis.
 
@@ -165,13 +181,13 @@ class GDSC_ANOVA(object):
         # to consider other cases for robustness testing maybe.
         if self.settings.analysisType == 'PANCAN':
             # Note that tissue with less than N? values are dropped
-            # This is also the case in R. 
+            # This is also the case in R.
             # Possibly ntissue<3 ?
             # See e.g., Drug_1 / ABL2_mut
             #self.data_lm = ols('Y ~ C(tissue) + C(msi) + feature',
             #        data=self.data, missing='none').fit() #Specify C for Categorical
 
-            # 
+            #
             # This is faster that above but messier
             # The creation of this df represents 20% of the function time
             df = pd.get_dummies(self.data['tissue']) # could use prefix_sep
@@ -181,7 +197,7 @@ class GDSC_ANOVA(object):
             df['feature'] = self.data['feature'].values
             df.insert(0, 'Intercept', [1]*len(df))
 
-            # Here, we need to get rid of some of th 
+            # Here, we need to get rid of some of th
             df = df.drop('C(tissue)[T.Bladder]', axis=1)
 
             self.data_lm = OLS(self.data['Y'], df).fit()
@@ -235,10 +251,10 @@ class GDSC_ANOVA(object):
         F_pvalues = scipy.stats.f.sf(Fvalues, df, self.data_lm.df_resid)
         self.tt = F_pvalues
 
-        #pvalues = pd.DataFrame({'C(tissue)': F_pvalues[0], 
+        #pvalues = pd.DataFrame({'C(tissue)': F_pvalues[0],
         #    'feature':F_pvalues[2], 'C(msi)': F_pvalues[1]})
         self.stats = pd.DataFrame(
-                F_pvalues, columns=['PR(>F)'], 
+                F_pvalues, columns=['PR(>F)'],
                 index=['C(tissue)', 'C(msi)', 'feature'])
 
         # to be used with statsmodels.ols
@@ -253,7 +269,7 @@ class GDSC_ANOVA(object):
                 self.data['Y'][dfeat==1],
                 equal_var=self.settings.equal_var_ttest)
 
-        # some boxplot including all data 
+        # some boxplot including all data
         if show_boxplot:
             pylab.figure(1)
             neg = self.Y[self.masked_features == 0].values
@@ -327,10 +343,6 @@ class GDSC_ANOVA(object):
             FEATURE_PVAL = None
 
         # STORE value to return
-
-        FEATURE_IC50_WTT_pvalue = self.tfit[1]
-
-
         pos_IC50_mean = positives.mean()
         neg_IC50_mean = negatives.mean()
         delta_mean_IC50 = pos_IC50_mean - neg_IC50_mean
@@ -348,14 +360,15 @@ class GDSC_ANOVA(object):
         if drug_id.startswith("Drug"):
             drug_id = int(drug_id.split("_")[1])
 
+        drug_name = 'Drug_' + str(drug_id) + '_IC50'
         results = {'FEATURE': feature_name,
-                'Drug id': drug_id,
-                'Drug name': None,
-                'Drug target': None,
+                'Drug id': drug_name,
+                'Drug name': drug_name,
+                'Drug Target': drug_name,
                 'N_FEATURE_pos': Npos,
                 'N_FEATURE_neg': Nneg,
-                'log_max.Conc.tested': None,
-                'log_max.Conc.tested2': None,
+                'log max.Conc.tested': None,
+                'log max.Conc.tested2': None,
                 'FEATUREpos_logIC50_MEAN': pos_IC50_mean,
                 'FEATUREneg_logIC50_MEAN': neg_IC50_mean,
                 'FEATURE_deltaMEAN_IC50': delta_mean_IC50,
@@ -367,7 +380,7 @@ class GDSC_ANOVA(object):
                 'FEATURE_ANOVA_pval': FEATURE_PVAL,
                 'Tissue_ANOVA_pval': tissue_PVAL,
                 'MSI_ANOVA_pval': MSI_PVAL,
-                'FEATURE_IC50_T_pval': FEATURE_IC50_WTT_pvalue
+                'FEATURE_IC50_T_pval': self.tfit[1] # pvalues is in index 1
                 }
 
         # 12% of the time here
@@ -379,6 +392,8 @@ class GDSC_ANOVA(object):
 
     #98% of time in  method anova_one_drug_one_feature
     def anova_one_drug(self, drug_id, animate=True):
+        # Takes about 10s to run. could be nice to have
+        # a caching system.
 
         # some features can be dropped
         # TODO: parameters for settings here
@@ -398,14 +413,20 @@ class GDSC_ANOVA(object):
             # production True, means we do not want to create a DataFrame
             # for each call to the anova_one_drug_one_feature function
             # Instead, we require dictionaries
-            res[feature] = self.anova_one_drug_one_feature(drug_id, feature,
+            this  = self.anova_one_drug_one_feature(drug_id, feature,
                     production=True)
+            if this['FEATURE_ANOVA_pval'] is not None:
+                res[feature] = this
             if animate is True:
                 pb.animate(i+1)
 
         # if production is False:
         # df = pid.concat(res, ignore_index=True)
         df = pd.DataFrame.from_records(res)
+        df = df.T
+
+
+        #df = df[df['FEATURE_ANOVA_pval'].apply(lambda x: x is not None)]
 
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
         return df
@@ -413,6 +434,10 @@ class GDSC_ANOVA(object):
     def anova_all(self, animate=True, drugs=None, features=None):
         """
 
+        # comparison with version contained in this package
+        # gives same results. FDR (~1e-6) and FEATURE_IC50_T_pval differs
+        # slighlty (1e-14) especially for FDR variable with large FDR close to 1
+        # but nothing to worry about.
 
         :param drugs: not used yet but maybe used to select a subset of
             features
@@ -432,7 +457,7 @@ class GDSC_ANOVA(object):
 
         N = len(drug_names)
         pb = Progress(N, 1)
-        for i, drug_name in enumerate(drug_names[0:5]):
+        for i, drug_name in enumerate(drug_names):
             # TODO: try/except
             if drug_name in self.individual_anova.keys():
                 pass
@@ -458,33 +483,139 @@ class GDSC_ANOVA(object):
             FDR = [None] * len(df)
 
         # insert FDR as last column.
-        df.insert(len(df.columns), 'FDR', FDR)
+        df.insert(len(df.columns), 'ANOVA FEATURE FDR %', FDR)
 
         # insert a unique identifier as first column
         N = len(df)
         df.insert(0, 'assoc_id', range(1,N+1))
+        df = df[self.column_names]
 
         # save as attribute
         self.anova_df = df
         return df
 
-    def volcano_plot_one_drug(self, drug_id, FDR_TH=20):
-        # needs to run :meth:`anova_all` first
-        df = self.anova_all()
-        df = df[df['Drug id'] == drug_id]
+    def volcano_plot_all_drugs(self, df, FDR_threshold=20, 
+            effect_threshold=0):
+        drugs = list(df['Drug id'].unique())
+        pb = Progress(len(drugs), 1)
+        for i, drug in enumerate(drugs):
+            self.volcano_plot_one_drug(df, drug, FDR_threshold=FDR_threshold, 
+                    effect_threshold=effect_threshold)
+            pylab.savefig("volcano_%s.png" % drug)
+            pb.animate(i+1)
 
+    def volcano_plot_all_features(self, df, FDR_threshold=20, 
+            effect_threshold=0):
+        features = list(df['FEATURE'].unique())
+        pb = Progress(len(features), 1)
+        for i, feature in enumerate(features):
+            self.volcano_plot_one_feature(df, feature, 
+                    FDR_threshold=FDR_threshold, 
+                    effect_threshold=effect_threshold)
+            pylab.savefig("volcano_%s.png" % feature)
+            pb.animate(i+1)
+
+    def volcano_plot_one_features(df, drug_id, FDR_threshold=20, 
+            effect_threshold=0):
+        raise NotImplementedError
+        #same as one_drug 
+
+    def volcano_plot_one_drug(self, df, drug_id, FDR_threshold=20,
+            effect_threshold=0):
+        # add text with feature for the samples that are significant
+
+        # needs to run :meth:`anova_all` first
+        subdf = df[df['Drug id'] == drug_id].copy()
+
+        varname_pval = 'FEATURE_ANOVA_pval'
+        varname_qval = 'ANOVA FEATURE FDR %'
+        
+        # using all data
         minN = df['N_FEATURE_pos'].min()
         maxN = df['N_FEATURE_pos'].max()
-        qvals = df['FDR']
-        pvals = df['FEATURE_ANOVA_pval']
-        delta = df['FEATURE_deltaMEAN_IC50']
-        effects = df['FEATURE_IC50_effect_size']
-        signed_effects = np.sign(delta) * effects
-        signed_effects = signed_effects.fillna(0)
+        qvals = df[varname_qval]
+        pvals = df[varname_pval]
+        fdrlim = pvals[qvals<FDR_threshold].max()
+        fdrlim1 = pvals[qvals<10].max()
+        fdrlim2 = pvals[qvals<1].max()
+        fdrlim3 = pvals[qvals<0.01].max()
 
-        markersize = df['N_FEATURE_pos']
-        Y = -log10(pvals)
-        plot(signed_effects, Y, markersize=markersize)
+        # using data related to the given drug
+        delta = subdf['FEATURE_deltaMEAN_IC50']
+        effects = subdf['FEATURE_IC50_effect_size']
+        signed_effects = np.sign(delta) * effects
+
+        qvals = list(subdf[varname_qval])
+        pvals = list(subdf[varname_pval])
+        features = subdf['FEATURE']
+        colors = []
+        self._qvals = qvals
+        self.fdrlim = fdrlim
+
+        annotations = []
+        if self.settings.analysisType == 'PANCAN':
+            for sign, qval, pval, feature in zip(signed_effects, qvals, pvals, features):
+                if sign <= -effect_threshold and qval <= FDR_threshold:
+                    colors.append('green')
+                    annotations.append((sign,pval,feature))
+                elif sign >= effect_threshold and qval <= FDR_threshold:
+                    colors.append('red')
+                    annotations.append((sign,pval,feature))
+                else:
+                    colors.append('black')
+        else:
+            raise NotImplementedError
+            #COL[which(qvals<=fdrth &
+            #             pval<=gdscANOVA.settings.pval_TH & delta>0)]<-redcol
+            #     COL[which(qvals<=fdrth &
+            #             pval<=gdscANOVA.settings.pval_TH & delta<0)]<-greencol
+
+        # here we normalise wrt the drug. In R code, normalised
+        # my max across all data (minN, maxN)
+        # TODO : a minimum value 
+        markersize = subdf['N_FEATURE_pos'] / subdf['N_FEATURE_pos'].max()
+        markersize = list(markersize*800)
+        markersize = [x if x>50 else 50 for x in markersize]
+
+        Y = -np.log10(list(pvals)) # somehow should be cast to list ?
+
+        pylab.clf()
+        self._Y= Y
+        self._signed_effects = signed_effects
+        self._colors = colors
+        self._markersize = markersize
+        
+        pylab.scatter(list(signed_effects), Y, s=markersize, alpha=0.4, c=colors,
+                linewidth=0)
+
+        m = abs(signed_effects.min())
+        M = abs(signed_effects.max())
+        l = max([m, M]) * 1.1
+        pylab.xlim([-l, l])
+        pylab.xlabel("Signed effect size", fontsize=self.settings.fontsize)
+        pylab.ylabel('-log10(pvalues)', fontsize=self.settings.fontsize)
+        pylab.ylim([0, pylab.ylim()[1]])
+
+        
+
+        #print(fdrlim, fdrlim1, fdrlim2, fdrlim3)
+
+        pylab.axhline(-np.log10(fdrlim), linestyle='--', 
+            color='gray', alpha=1, label="FDR %s pct" % FDR_threshold)
+        pylab.axhline(-np.log10(fdrlim1), linestyle='-.', 
+            color='gray', alpha=1, label="FDR 10 pct")
+        pylab.axhline(-np.log10(fdrlim2), linestyle=':', 
+            color='gray', alpha=1, label="FDR 1 pct")
+        pylab.axhline(-np.log10(fdrlim3), linestyle='--', 
+            color='black', alpha=1, label="FDR 0.01 pct")
+
+        pylab.axvline(0, color='gray', alpha=0.5)
+        ax = pylab.legend(loc='best')
+        ax.set_zorder(-1) # in case there is a circle behind the legend.
+        pylab.title("%s" % drug_id.replace("_","\_"))
+        for this in annotations:
+            x,y,text = this
+            pylab.text(x,-pylab.log10(y),text.replace("_", "\_"))
 
 
     def init(self):
@@ -552,4 +683,4 @@ class GDSC_ANOVA(object):
 
 
 
-    
+
