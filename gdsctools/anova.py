@@ -420,19 +420,27 @@ class GDSC_ANOVA(object):
 
         # some features can be dropped
         # TODO: parameters for settings here
-        # FIXME : not sure if sum should be across row or columns
-        mask = self.features.sum(axis=0) >= 3
+        
+        # drop first and second columns that are made of strings
+        # works under python2 but not python 3. Assume that the 2 first
+        #columns are the sample name and tissue feature
+        # Then, we keep only cases with at least 3 features.
+        # MSI could be used but is not like in original R code.
+
+        features = self.features.copy()
+        features = features[features.columns[3:]]
+        mask = features.sum(axis=0) >= 3
+
         #TODO: MSI, tissues, name must always be kept
-        selected_features = self.features[self.features.columns[mask]]
-        print(len(selected_features.columns))
+        selected_features = features[features.columns[mask]]
 
         # scan all features for a given drug
         assert drug_id in self.ic50.columns
-        N = len(selected_features.columns)-3
+        N = len(selected_features.columns)
         pb = Progress(N, 10)
         res = {}
         # note that we start at idnex 4 to drop sample name, tissue and MSI
-        for i,feature in enumerate(selected_features.columns[3:]):
+        for i,feature in enumerate(selected_features.columns):
             # production True, means we do not want to create a DataFrame
             # for each call to the anova_one_drug_one_feature function
             # Instead, we require dictionaries

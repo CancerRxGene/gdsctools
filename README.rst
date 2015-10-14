@@ -4,13 +4,13 @@
 .. image:: https://badge.fury.io/py/gdsctools.svg
     :target: https://pypi.python.org/pypi/gdsctools
 
-.. image:: https://secure.travis-ci.org/gdsctools/gdsctools.png
-    :target: http://travis-ci.org/gdsctools/gdsctools
+.. image:: https://secure.travis-ci.org/CancerRxGene/gdsctools.png
+    :target: http://travis-ci.org/CancerRxGene/gdsctools
 
-.. image:: https://coveralls.io/repos/gdsctools/gdsctools/badge.png?branch=master
-   :target: https://coveralls.io/r/dgdsctools/gdsctools?branch=master
+.. image:: https://coveralls.io/repos/CancerRxGene/gdsctools/badge.png?branch=master
+   :target: https://coveralls.io/r/CancerRxGene/gdsctools?branch=master
 
-.. image:: https://badge.waffle.io/gdsctools/gdsctools.png?label=issues&title=issue
+.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=issues&title=issue
 s
    :target: https://waffle.io/gdsctools/gdsctools
 
