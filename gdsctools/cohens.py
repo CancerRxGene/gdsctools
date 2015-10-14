@@ -1,6 +1,15 @@
 import numpy as np
 
 def cohens(x, y):
+    """Effect size through Cohen's D
+    
+    :param x:
+    :param y:
+    :return: the effect size of the interaction between the values 
+        in the set given by the union of x and y and the factor
+        inducing the dychotomy.
+
+    """
     x = np.array(x)
     y = np.array(y)
 

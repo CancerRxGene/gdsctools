@@ -1,6 +1,8 @@
 import numpy as np
 
 def glass(x, y):
+    """Return Effect size through Glass D
+    """
     x = np.array(x)
     y = np.array(y)
 
