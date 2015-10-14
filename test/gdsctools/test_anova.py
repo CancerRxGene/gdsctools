@@ -4,9 +4,19 @@ import pandas as pd
 from easydev import assert_list_almost_equal
 
 
+
+def get_data(filename='test2.tsv'):
+    import os
+    try:
+        r = IC50(filename)
+    except:
+        r = IC50('test/gdsctools' + os.sep +  filename)
+    return r
+
+
 def test_anova_one_drug_one_feature():
 
-    r = IC50('test2.tsv')
+    r = get_data()
     an = GDSC_ANOVA(r.ic50, r.features)
 
     # test 1 drug
@@ -42,13 +52,13 @@ def test_anova_one_drug_one_feature():
 
 def test_anova_one_drug():
     # test entire drug across all fearures
-    r = IC50('test2.tsv')
+    r = get_data()
     an = GDSC_ANOVA(r.ic50, r.features)
     df = an.anova_one_drug('Drug_999_IC50')
 
 
 def test_anova_all():
-    r = IC50('test2.tsv')
+    r = get_data()
     an = GDSC_ANOVA(r.ic50, r.features)
     df = an.anova_all()
 
