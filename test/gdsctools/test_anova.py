@@ -17,13 +17,13 @@ def get_data(filename='test2.tsv'):
 def test_anova_one_drug_one_feature():
 
     r = get_data()
-    an = GDSC_ANOVA(r.ic50, r.features)
+    an = GDSC_ANOVA(r)
 
     # test 1 drug
     drug_id = 'Drug_999_IC50'
     df = an.anova_one_drug_one_feature(
         drug_id=drug_id,
-        feature_name='ABCB1_mut')
+        feature_name='ABCB1_mut', show_boxplot=True)
 
     control = {'Drug id': {1: drug_id},
         'Drug name': {1: drug_id},
@@ -53,13 +53,13 @@ def test_anova_one_drug_one_feature():
 def test_anova_one_drug():
     # test entire drug across all fearures
     r = get_data()
-    an = GDSC_ANOVA(r.ic50, r.features)
+    an = GDSC_ANOVA(get_data())
     df = an.anova_one_drug('Drug_999_IC50')
 
 
 def test_anova_all():
     r = get_data()
-    an = GDSC_ANOVA(r.ic50, r.features)
+    an = GDSC_ANOVA(r)
     df = an.anova_all()
 
 
