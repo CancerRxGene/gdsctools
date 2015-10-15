@@ -6,6 +6,17 @@ import numpy as np
 class Logistic(object):
     """Simple logistic class to see the curve implied by xmid/scale parameters
 
+    .. plot::
+        :include-source:
+
+        from gdsctools.tools import Logistic
+        tl = Logistic(2, 1)
+        tl.plot()
+        tl.scale = 4
+        tl.plot(hold=True)
+        legend(['scale=1', 'scale=4'])
+
+
 
     """
     def __init__(self, xmid, scale, Asym=1):
@@ -39,3 +50,6 @@ class Logistic(object):
             pylab.clf();
         pylab.plot(X, Y, 'o-')
         pylab.grid(True)
+        pylab.xlabel('X')
+        pylab.ylabel('Y')
+        pylab.axvline(self.xmid, color='r', linestyle='--')

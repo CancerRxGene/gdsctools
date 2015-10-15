@@ -36,8 +36,20 @@ class Features(object):
         # exclude hyper methylation
         # one gene only
 
-class GDSCReader(object):
-    pass
+class GDSC_ANOVA_Results(object):
+    def __init__(self, filename=None):
+        if filename is not None:
+            self.read_csv(filename)
+
+    def summary():
+        pass
+
+    def volcano_plot(self):
+        pass
+
+    def read_csv(self, filename, sep="\t"):
+        self.df = pd.read_csv(filename, sep=sep, 
+                comment="#")
 
 
 class GDSC_ANOVA(object):
@@ -547,6 +559,8 @@ class GDSC_ANOVA(object):
         """Volcano plot for each feature
 
         :param df: output of :meth:`anova_all`
+
+        Takes about 10 minutes for 265 drugs and 677 features
         """
         features = list(df['FEATURE'].unique())
         pb = Progress(len(features), 1)
@@ -557,23 +571,7 @@ class GDSC_ANOVA(object):
             pylab.savefig("volcano_%s.png" % feature)
             pb.animate(i+1)
 
-    def volcano_plot_one_features(df, drug_id, FDR_threshold=20,
-            effect_threshold=0):
-        raise NotImplementedError
-        #same as one_drug
-
-    def volcano_plot_one_drug(self, df, drug_id, FDR_threshold=20,
-            effect_threshold=0):
-        """Volcano plot for one drug
-
-        :param df: output of :meth:`anova_all`
-
-        """
-        # add text with feature for the samples that are significant
-
-        # needs to run :meth:`anova_all` first
-        subdf = df[df['Drug id'] == drug_id].copy()
-
+    def _get_volcano_global_data(self, df, FDR_threshold=20):
         varname_pval = 'FEATURE_ANOVA_pval'
         varname_qval = 'ANOVA FEATURE FDR %'
 
@@ -587,29 +585,58 @@ class GDSC_ANOVA(object):
         fdrlim2 = pvals[qvals<1].max()
         fdrlim3 = pvals[qvals<0.01].max()
 
+        return {'minN': minN, 'maxN':maxN, 
+                'fdrs': {FDR_threshold:fdrlim, 
+                    0.01:fdrlim3, 1:fdrlim2,
+                    10:fdrlim1}}
+
+    def volcano_plot_one_feature(self,df, feature, FDR_threshold=20,
+            effect_threshold=0):
+        stats = self._get_volcano_global_data(df, FDR_threshold)
+        data = self._get_volcano_sub_data(df, 'FEATURE', feature,
+                effect_threshold=effect_threshold, FDR_threshold=FDR_threshold)
+
+        self.volcano_plot(data.signed_effects, data.pvals, data.markersize, 
+                data.colors, data.annotations, stats, FDR_threshold, 
+                title=feature)
+
+    def _get_volcano_sub_data(self, df, mode, target, effect_threshold=0,
+            FDR_threshold=20):
         # using data related to the given drug
+        
+        if mode == 'Drug id':
+            other = 'FEATURE'
+        elif mode == 'FEATURE':
+            other = 'Drug id'
+        else:
+            raise ValueError("mode parameter must be 'FEATURE' or 'Drug id'")
+
+        subdf = df[df[mode] == target].copy()
+
+        varname_pval = 'FEATURE_ANOVA_pval'
+        varname_qval = 'ANOVA FEATURE FDR %'
         delta = subdf['FEATURE_deltaMEAN_IC50']
         effects = subdf['FEATURE_IC50_effect_size']
         signed_effects = np.sign(delta) * effects
 
         qvals = list(subdf[varname_qval])
         pvals = list(subdf[varname_pval])
-        features = subdf['FEATURE']
-        colors = []
-        self._qvals = qvals
-        self.fdrlim = fdrlim
+        features = subdf[other]
 
+        colors = []
         annotations = []
+        labels = features
         if self.settings.analysisType == 'PANCAN':
-            for sign, qval, pval, feature in zip(signed_effects, qvals, pvals, features):
+            for sign, qval, pval, label in zip(signed_effects, qvals, 
+                    pvals, labels):
                 if sign <= -effect_threshold and qval <= FDR_threshold:
                     colors.append('green')
-                    annotations.append((sign,pval,feature))
+                    annotations.append((sign,pval,label))
                 elif sign >= effect_threshold and qval <= FDR_threshold:
                     colors.append('red')
-                    annotations.append((sign,pval,feature))
+                    annotations.append((sign,pval,label))
                 else:
-                    colors.append('black')
+                    colors.append('grey')
         else:
             raise NotImplementedError
             #COL[which(qvals<=fdrth &
@@ -619,18 +646,41 @@ class GDSC_ANOVA(object):
 
         # here we normalise wrt the drug. In R code, normalised
         # my max across all data (minN, maxN)
-        # TODO : a minimum value
         markersize = subdf['N_FEATURE_pos'] / subdf['N_FEATURE_pos'].max()
         markersize = list(markersize*800)
         markersize = [x if x>50 else 50 for x in markersize]
 
+        dd = {'colors':colors, 'annotations':annotations,
+                'signed_effects':signed_effects,
+                'markersize':markersize, 'qvals':qvals, 'pvals':pvals}
+        dd = AttrDict(**dd)
+        return dd
+
+
+    def volcano_plot_one_drug(self, df, drug_id, FDR_threshold=20,
+            effect_threshold=0):
+        """Volcano plot for one drug
+
+        :param df: output of :meth:`anova_all`
+
+        """
+        # needs to run :meth:`anova_all` first
+
+        # using all data, get the FDR limits
+        stats = self._get_volcano_global_data(df, FDR_threshold)
+        data = self._get_volcano_sub_data(df, 'Drug id', drug_id,
+                effect_threshold=effect_threshold, FDR_threshold=FDR_threshold)
+
+        self.volcano_plot(data.signed_effects, data.pvals, data.markersize, 
+                data.colors, data.annotations, stats, FDR_threshold, 
+                title=drug_id)
+
+    def volcano_plot(self, signed_effects, pvals, markersize, 
+            colors, annotations, stats, FDR_threshold, title=''):
+
         Y = -np.log10(list(pvals)) # somehow should be cast to list ?
 
         pylab.clf()
-        self._Y= Y
-        self._signed_effects = signed_effects
-        self._colors = colors
-        self._markersize = markersize
 
         pylab.scatter(list(signed_effects), Y, s=markersize, alpha=0.4, c=colors,
                 linewidth=0)
@@ -643,10 +693,11 @@ class GDSC_ANOVA(object):
         pylab.ylabel('-log10(pvalues)', fontsize=self.settings.fontsize)
         pylab.ylim([0, pylab.ylim()[1]])
 
-
-
         #print(fdrlim, fdrlim1, fdrlim2, fdrlim3)
-
+        fdrlim = stats['fdrs'][FDR_threshold]
+        fdrlim1 = stats['fdrs'][10]
+        fdrlim2 = stats['fdrs'][1]
+        fdrlim3 = stats['fdrs'][0.01]
         pylab.axhline(-np.log10(fdrlim), linestyle='--',
             color='gray', alpha=1, label="FDR %s pct" % FDR_threshold)
         pylab.axhline(-np.log10(fdrlim1), linestyle='-.',
@@ -659,7 +710,7 @@ class GDSC_ANOVA(object):
         pylab.axvline(0, color='gray', alpha=0.5)
         ax = pylab.legend(loc='best')
         ax.set_zorder(-1) # in case there is a circle behind the legend.
-        pylab.title("%s" % drug_id.replace("_","\_"))
+        pylab.title("%s" % title.replace("_","\_"))
         for this in annotations:
             x,y,text = this
             pylab.text(x,-pylab.log10(y),text.replace("_", "\_"))
