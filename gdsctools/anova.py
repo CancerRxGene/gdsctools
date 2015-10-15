@@ -10,7 +10,7 @@ from statsmodels.stats.multitest import fdrcorrection
 
 from easydev import Progress, AttrDict
 
-from gdsctools import boxswarm
+from gdsctools import boxswarm, reader
 try:
     from cno.misc.profiler import do_profile
 except:
@@ -25,24 +25,25 @@ from gdsctools import cohens, glass
 #features = data.features
 
 
-class Features(object):
-    def __init__(self):
-        pass
 
-        # read features
-        # selection / adding
-        # additional_features ?
-        # flag for additional features only
-        # exclude hyper methylation
-        # one gene only
-
+# TODO: Could inherit from a dataframe ?
 class GDSC_ANOVA_Results(object):
-    def __init__(self, filename=None):
-        if filename is not None:
-            self.read_csv(filename)
+    def __init__(self, data=None, input_feature=None):
+        if data is not None and isinstance(data, str):
+            self.read_csv(data)
+        elif data is not None:
+            self.df = data.copy() # assume it is a dataframe.
 
-    def summary():
-        pass
+        r = reader.IC50(input_feature)
+        self.input_features = r.features
+        self.varname_pval = 'FEATURE_ANOVA_pval'
+        self.varname_qval = 'ANOVA FEATURE FDR %'
+
+    def _get_pvalue_from_fdr(self, FDR_threshold=20):
+        qvals = df[self.varname_qval]
+        pvals = df[self.varname_pval]
+        pvalue = pvals[qvals<FDR_threshold].max()
+        return pvalue
 
     def volcano_plot(self):
         pass
@@ -50,6 +51,141 @@ class GDSC_ANOVA_Results(object):
     def read_csv(self, filename, sep="\t"):
         self.df = pd.read_csv(filename, sep=sep, 
                 comment="#")
+
+    def _set_sensible_df(self, FDR_threshold=30, pval_threshold=None):
+        if pval_threshold is None:
+            pval_threshold = np.Inf
+
+        # just an alias
+        logand = np.logical_and
+
+        # select sensible data set
+        mask1 = self.df['ANOVA FEATURE FDR %'] < FDR_threshold
+        mask2 = self.df['FEATURE_ANOVA_pval'] < pval_threshold
+        mask3 = self.df['FEATURE_deltaMEAN_IC50'] < 0
+        self.sensible_df = self.df[logand(logand(mask1, mask2), mask3)]
+
+        # select resistant data set
+        mask3 = self.df['FEATURE_deltaMEAN_IC50'] >= 0
+        self.resistant_df = self.df[logand(logand(mask1, mask2), mask3)]
+        
+        # count instance per category
+
+    def _get_data(self, df_count_sensible, df_count_resistant):
+
+        # we can drop all columns except one, which is renamed as count
+        df1 = df_count_sensible['assoc_id']
+        df1.name = 'sens assoc'
+        df2 = df_count_resistant['assoc_id']
+        df2.name = 'res assoc'
+
+        # Now, we join the two TimeSeries (note that above, we selected only
+        # one column so the dataframe was downcast to time series)
+        df_count = pd.DataFrame(df1).join(pd.DataFrame(df2), how='outer')
+        # and set NA to zero
+        df_count.fillna(0, inplace=True)
+        # let us add a new column with the total
+        df_count['total'] = df_count['sens assoc'] + df_count['res assoc']
+        
+        # we want to sort by 'total' column and is equality by the name, 
+        # which is the index. So let us add the index temporarily as 
+        # a column, sort, and remove 'name' column afterwards
+        df_count['name'] = df_count.index
+        df_count.sort(['total', 'name'], ascending=False, inplace=True)
+        df_count.drop('name', axis=1, inplace=True)
+        return df_count
+
+
+    def drug_summary(self, FDR_threshold=30, pval_threshold=None, 
+            show=True, top=50, fontsize=10):
+        # get sensible and resistant sub dataframes
+        self._set_sensible_df(FDR_threshold, pval_threshold)
+
+        # group by drug
+        df_count_sensible = self.sensible_df.groupby('Drug id').count()
+        df_count_resistant = self.resistant_df.groupby('Drug id').count()
+
+        df_count = self._get_data(df_count_sensible, df_count_resistant)
+
+        if show is True:
+            self._plot(df_count, 'drug', 50)
+        return df_count
+
+    def feature_summary(self, FDR_threshold=30, pval_threshold=None, 
+            show=True, top=50, fontsize=10):
+        # get sensible and resistant sub dataframes
+        self._set_sensible_df(FDR_threshold, pval_threshold)
+
+        df_count_sensible = self.sensible_df.groupby('FEATURE').count()
+        df_count_resistant = self.resistant_df.groupby('FEATURE').count()
+
+        df_count = self._get_data(df_count_sensible, df_count_resistant)
+
+        # let us add another column with the n_altered_samples
+        # Seems to be wrong in R code should be sum across row, i.e
+        # get a vector of same length as df_count. Here it should be correct
+        # but is therefore different from the R code (15oct2015)
+        # Not used anyway so commented for now
+        ##n_altered_samples = self.input_features[df_count.index].sum(axis=0)
+        ##n_altered_samples = pd.DataFrame(n_altered_samples,
+        ##    columns=['n_altered_samples'])
+        ##df_count = df_count.join(pd.DataFrame(n_altered_samples), how='outer')
+        ##df_count = df_count[['n_altered_samples', 'total', 'sens assoc', 
+        ##'res assoc']]
+
+        # 
+        #s1 = set(self.sensible_df['FEATURE'])
+        #s2 = set(self.resistant_df['FEATURE'])
+        #size_domain = len(s1.union(s2))
+        # 
+        #size_total_domain = len(set(self.df['FEATURE']))
+        #Gperc = size_domain /  float(size_total_domain)
+        if show is True:
+            self._plot(df_count, 'feature', 50, fontsize=fontsize)
+        return df_count
+
+    def _plot(self, df_count, title_tag, top, fontsize=10, FDR_threshold=30):
+
+        if top > len(df_count):
+            top = len(df_count)
+
+        df = df_count.ix[0:top][[u'sens assoc', u'res assoc']]
+        labels = list(df.index)
+        labels = [x.replace('_', '\_') for x in labels]
+        ind = range(0, len(labels))
+        ind.reverse()
+        data1 = df['sens assoc'].values
+        data2 = df['res assoc'].values
+        pylab.clf()
+        p1 = pylab.barh(ind, data1, height=0.8, color='purple', 
+            label='sensitivity')
+        p2 = pylab.barh(ind, data2, height=0.8, color='orange',
+            left=data1, label='resistance')
+        ax = pylab.gca()
+        self.labels = labels
+        ax.set_yticks([x+0.5 for x in ind])
+        ax.set_yticklabels(labels, fontsize=fontsize)
+        pylab.grid()
+        pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
+                    "\nassociated with drug  response", fontsize=15)
+        pylab.xlabel(r'Number of significant associations (FDR %s %s %s) ' 
+                    % ("$>$", FDR_threshold, "$\%$"),  fontsize=15)
+        pylab.legend(loc='lower right')
+        pylab.tight_layout()
+
+        # TODO 
+        print("saving figure into file to be done")
+        print("Saving data into CSV to be done")
+
+
+    def get_sign_hits(self):
+        fdrs = range(5, 50, 5)
+        raise NotImplementedError("requires the log.max.Conc.tested variable")
+
+
+    def __str__(self):
+        self.df.info()
+        return ""
 
 
 class GDSC_ANOVA(object):
@@ -64,7 +200,7 @@ class GDSC_ANOVA(object):
             show_boxplot=True)
 
     """
-    def __init__(self, IC50, features):
+    def __init__(self, ic50, features=None):
         """.. rubric:: Constructor
 
         :param DataFrame IC50: a dataframe with the IC50. Rows should be
@@ -77,14 +213,21 @@ class GDSC_ANOVA(object):
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
-        self.ic50 = IC50.copy()
-        self.features = features.copy()
+        # Reads IC50
+        self.ic50 = reader.IC50(ic50)
+
+        # Reads features
+        if features is None:
+            # Reads default version provided with the package
+            self.features = reader.GenomicFeatures()
+        else:
+            self.features = reader.GenomicFeatures(features)
 
         # save the tissues
-        self.tissue_factor = self.features['Tissue Factor Value']
+        self.tissue_factor = self.features.df['Tissue Factor Value']
 
         # and MSI (Microsatellite instability) status of the samples.
-        self.msi_factor = self.features['MS-instability Factor Value']
+        self.msi_factor = self.features.df['MS-instability Factor Value']
 
         # settings
         self.settings = {
@@ -118,9 +261,6 @@ class GDSC_ANOVA(object):
         # a cache to compute ANOVA
         self.individual_anova = {}
 
-    def _get_drugs(self):
-        return list(self.ic50.columns)
-    drugs = property(_get_drugs)
 
     #@do_profile()
     def anova_one_drug_one_feature(self, drug_id='Drug_1_IC50',
@@ -133,12 +273,12 @@ class GDSC_ANOVA(object):
             the drug across all features.
         """
         # select IC50 of a given drug
-        data = self.ic50[drug_id]
+        data = self.ic50.df[drug_id]
         mask = data.isnull() == False
 
         # and the respective features
         self.masked_ic50 = data[mask]
-        self.masked_features = self.features[feature_name][mask]
+        self.masked_features = self.features.df[feature_name][mask]
 
         # select only relevant tissues
         self.masked_tissue = self.tissue_factor[self.masked_ic50.index]
@@ -225,7 +365,8 @@ class GDSC_ANOVA(object):
             df['feature'] = self.data['feature'].values
             df.insert(0, 'Intercept', [1]*len(df))
 
-            # Here, we need to get rid of some of th
+            # Here, we need to get rid of some of the
+            # 
             df = df.drop('C(tissue)[T.Bladder]', axis=1)
 
             self.data_lm = OLS(self.data['Y'], df).fit()
@@ -439,7 +580,8 @@ class GDSC_ANOVA(object):
         # Then, we keep only cases with at least 3 features.
         # MSI could be used but is not like in original R code.
 
-        features = self.features.copy()
+        features = self.features.df.copy()
+
         features = features[features.columns[3:]]
         mask = features.sum(axis=0) >= 3
 
@@ -447,7 +589,7 @@ class GDSC_ANOVA(object):
         selected_features = features[features.columns[mask]]
 
         # scan all features for a given drug
-        assert drug_id in self.ic50.columns
+        assert drug_id in self.ic50.df.columns
         N = len(selected_features.columns)
         pb = Progress(N, 10)
         res = {}
@@ -491,7 +633,7 @@ class GDSC_ANOVA(object):
         """
         # drop DRUG where number of IC50 (non-null) is below 5
         # axis=0 is default but we emphasize that sum is over column (i.e. drug
-        vv = (self.ic50.isnull() == False).sum(axis=0)
+        vv = (self.ic50.df.isnull() == False).sum(axis=0)
         drug_names = vv.index[vv >= 6]
         self.drug_names = drug_names
 
@@ -508,7 +650,7 @@ class GDSC_ANOVA(object):
             if drug_name in self.individual_anova.keys():
                 pass
             else:
-                res = self.anova_one_drug(drug_name, animate=True)
+                res = self.anova_one_drug(drug_name, animate=False)
                 self.individual_anova[drug_name] = res
             if animate is True:
                 pb.animate(i+1)
