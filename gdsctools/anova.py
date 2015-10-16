@@ -28,16 +28,26 @@ from gdsctools import cohens, glass
 
 # TODO: Could inherit from a dataframe ?
 class GDSC_ANOVA_Results(object):
-    def __init__(self, data=None, input_feature=None):
+    def __init__(self, data=None, input_feature=None, concentrations=None):
         if data is not None and isinstance(data, str):
             self.read_csv(data)
         elif data is not None:
             self.df = data.copy() # assume it is a dataframe.
 
-        r = reader.IC50(input_feature)
-        self.input_features = r.features
+        r = reader.GenomicFeatures(input_feature)
+        self.input_features = r.df
         self.varname_pval = 'FEATURE_ANOVA_pval'
         self.varname_qval = 'ANOVA FEATURE FDR %'
+
+        if concentrations:
+            self.conc = pd.read_csv(concentrations, sep='\t')
+            newdata = self.conc['Drug id'].apply(lambda x: "Drug_"+str(x)+"_IC50")
+            self.conc['Drug id'] = newdata
+            self.conc.set_index('Drug id', inplace=True)
+            df = self.df.join(self.conc, on='Drug id', how='left')
+            self.df = df
+            del self.conc
+
 
     def _get_pvalue_from_fdr(self, FDR_threshold=20):
         qvals = df[self.varname_qval]
@@ -49,7 +59,7 @@ class GDSC_ANOVA_Results(object):
         pass
 
     def read_csv(self, filename, sep="\t"):
-        self.df = pd.read_csv(filename, sep=sep, 
+        self.df = pd.read_csv(filename, sep=sep,
                 comment="#")
 
     def _set_sensible_df(self, FDR_threshold=30, pval_threshold=None):
@@ -68,7 +78,7 @@ class GDSC_ANOVA_Results(object):
         # select resistant data set
         mask3 = self.df['FEATURE_deltaMEAN_IC50'] >= 0
         self.resistant_df = self.df[logand(logand(mask1, mask2), mask3)]
-        
+
         # count instance per category
 
     def _get_data(self, df_count_sensible, df_count_resistant):
@@ -86,9 +96,9 @@ class GDSC_ANOVA_Results(object):
         df_count.fillna(0, inplace=True)
         # let us add a new column with the total
         df_count['total'] = df_count['sens assoc'] + df_count['res assoc']
-        
-        # we want to sort by 'total' column and is equality by the name, 
-        # which is the index. So let us add the index temporarily as 
+
+        # we want to sort by 'total' column and is equality by the name,
+        # which is the index. So let us add the index temporarily as
         # a column, sort, and remove 'name' column afterwards
         df_count['name'] = df_count.index
         df_count.sort(['total', 'name'], ascending=False, inplace=True)
@@ -96,7 +106,7 @@ class GDSC_ANOVA_Results(object):
         return df_count
 
 
-    def drug_summary(self, FDR_threshold=30, pval_threshold=None, 
+    def drug_summary(self, FDR_threshold=30, pval_threshold=None,
             show=True, top=50, fontsize=10):
         # get sensible and resistant sub dataframes
         self._set_sensible_df(FDR_threshold, pval_threshold)
@@ -111,7 +121,7 @@ class GDSC_ANOVA_Results(object):
             self._plot(df_count, 'drug', 50)
         return df_count
 
-    def feature_summary(self, FDR_threshold=30, pval_threshold=None, 
+    def feature_summary(self, FDR_threshold=30, pval_threshold=None,
             show=True, top=50, fontsize=10):
         # get sensible and resistant sub dataframes
         self._set_sensible_df(FDR_threshold, pval_threshold)
@@ -130,14 +140,14 @@ class GDSC_ANOVA_Results(object):
         ##n_altered_samples = pd.DataFrame(n_altered_samples,
         ##    columns=['n_altered_samples'])
         ##df_count = df_count.join(pd.DataFrame(n_altered_samples), how='outer')
-        ##df_count = df_count[['n_altered_samples', 'total', 'sens assoc', 
+        ##df_count = df_count[['n_altered_samples', 'total', 'sens assoc',
         ##'res assoc']]
 
-        # 
+        #
         #s1 = set(self.sensible_df['FEATURE'])
         #s2 = set(self.resistant_df['FEATURE'])
         #size_domain = len(s1.union(s2))
-        # 
+        #
         #size_total_domain = len(set(self.df['FEATURE']))
         #Gperc = size_domain /  float(size_total_domain)
         if show is True:
@@ -157,7 +167,7 @@ class GDSC_ANOVA_Results(object):
         data1 = df['sens assoc'].values
         data2 = df['res assoc'].values
         pylab.clf()
-        p1 = pylab.barh(ind, data1, height=0.8, color='purple', 
+        p1 = pylab.barh(ind, data1, height=0.8, color='purple',
             label='sensitivity')
         p2 = pylab.barh(ind, data2, height=0.8, color='orange',
             left=data1, label='resistance')
@@ -168,20 +178,75 @@ class GDSC_ANOVA_Results(object):
         pylab.grid()
         pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
                     "\nassociated with drug  response", fontsize=15)
-        pylab.xlabel(r'Number of significant associations (FDR %s %s %s) ' 
+        pylab.xlabel(r'Number of significant associations (FDR %s %s %s) '
                     % ("$>$", FDR_threshold, "$\%$"),  fontsize=15)
         pylab.legend(loc='lower right')
         pylab.tight_layout()
 
-        # TODO 
+        # TODO
         print("saving figure into file to be done")
         print("Saving data into CSV to be done")
 
 
-    def get_sign_hits(self):
-        fdrs = range(5, 50, 5)
-        raise NotImplementedError("requires the log.max.Conc.tested variable")
 
+
+    def get_significant_hits(self, concentrations='concentrations.tsv'):
+        fdrs = range(5, 50+1, 5)
+
+        significants = []
+        significant_meaningful = []
+        strong_hits = []
+        full_strong_hits = []
+
+        MC1 = self.df['log max.Conc.tested']
+        MC2 = self.df['log max.Conc.tested2']
+        mask2 = self.df['FEATUREpos_logIC50_MEAN'] < MC1
+        mask3 = self.df['FEATUREpos_logIC50_MEAN'] < MC2
+        mask4 = self.df['FEATUREneg_logIC50_MEAN'] < MC1
+        mask5 = self.df['FEATUREneg_logIC50_MEAN'] < MC2
+        maskMC = mask2 + mask3 +mask4 +mask5
+
+        for fdr in fdrs:
+            # significant hits
+            res = self.df['ANOVA FEATURE FDR %']<fdr
+            significants.append(res.sum())
+
+            # meaningful hits
+            indices = np.logical_and(self.df['ANOVA FEATURE FDR %']<fdr,
+                    maskMC)
+            significant_meaningful.append(indices.sum())
+
+            # meaningful strong hits
+            mask1 = self.df.ix[indices]['FEATUREpos_Glass_delta'] >= 1
+            mask2 = self.df.ix[indices]['FEATUREneg_Glass_delta'] >= 1
+            strong_hits.append(np.logical_or(mask1, mask2).sum())
+
+            # meaningful full strong hits
+            mask1 = self.df.ix[indices]['FEATUREpos_Glass_delta'] >= 1
+            mask2 = self.df.ix[indices]['FEATUREneg_Glass_delta'] >= 1
+            full_strong_hits.append(np.logical_and(mask1, mask2).sum())
+        
+        data = {'significants': significants, 
+                'full_strong_hits': full_strong_hits,
+               'strong_hits': strong_hits,
+               'significant_meaningful': significant_meaningful}
+
+        df = pd.DataFrame(data, columns = ['significants', 
+            'significant_meaningful', 'strong_hits', 'full_strong_hits'],
+            index=fdrs)
+        df.columns = ['1) significant', '2) 1 + meaningful', 
+        '3) 2 + strong', '4) 2+ very strong']
+
+        pylab.clf()
+        ax = pylab.gca()
+        df.plot(kind='bar', width=.8, colors=['r', 'gray', 'orange', 'black'], 
+                rot=0, ax=ax)
+        pylab.grid()
+        # original is 'aquamarine4','cyan2','cornflowerblue    ','aquamarine'),
+        return df
+
+    def family_based_drug_summary(self):
+        raise NotImplementedError
 
     def __str__(self):
         self.df.info()
@@ -366,7 +431,7 @@ class GDSC_ANOVA(object):
             df.insert(0, 'Intercept', [1]*len(df))
 
             # Here, we need to get rid of some of the
-            # 
+            #
             df = df.drop('C(tissue)[T.Bladder]', axis=1)
 
             self.data_lm = OLS(self.data['Y'], df).fit()
@@ -573,7 +638,7 @@ class GDSC_ANOVA(object):
 
         # some features can be dropped
         # TODO: parameters for settings here
-        
+
         # drop first and second columns that are made of strings
         # works under python2 but not python 3. Assume that the 2 first
         #columns are the sample name and tissue feature
@@ -620,10 +685,10 @@ class GDSC_ANOVA(object):
         """Run all ANOVA tests for all drugs and all features.
 
 
-        :param drugs: select a subset of drugs 
+        :param drugs: select a subset of drugs
         :param features: select a subset of  features (not implemented yet)
 
-        .. todo:: features 
+        .. todo:: features
 
 
         .. note:: comparison with version contained in this package
@@ -727,8 +792,8 @@ class GDSC_ANOVA(object):
         fdrlim2 = pvals[qvals<1].max()
         fdrlim3 = pvals[qvals<0.01].max()
 
-        return {'minN': minN, 'maxN':maxN, 
-                'fdrs': {FDR_threshold:fdrlim, 
+        return {'minN': minN, 'maxN':maxN,
+                'fdrs': {FDR_threshold:fdrlim,
                     0.01:fdrlim3, 1:fdrlim2,
                     10:fdrlim1}}
 
@@ -738,14 +803,14 @@ class GDSC_ANOVA(object):
         data = self._get_volcano_sub_data(df, 'FEATURE', feature,
                 effect_threshold=effect_threshold, FDR_threshold=FDR_threshold)
 
-        self.volcano_plot(data.signed_effects, data.pvals, data.markersize, 
-                data.colors, data.annotations, stats, FDR_threshold, 
+        self.volcano_plot(data.signed_effects, data.pvals, data.markersize,
+                data.colors, data.annotations, stats, FDR_threshold,
                 title=feature)
 
     def _get_volcano_sub_data(self, df, mode, target, effect_threshold=0,
             FDR_threshold=20):
         # using data related to the given drug
-        
+
         if mode == 'Drug id':
             other = 'FEATURE'
         elif mode == 'FEATURE':
@@ -769,7 +834,7 @@ class GDSC_ANOVA(object):
         annotations = []
         labels = features
         if self.settings.analysisType == 'PANCAN':
-            for sign, qval, pval, label in zip(signed_effects, qvals, 
+            for sign, qval, pval, label in zip(signed_effects, qvals,
                     pvals, labels):
                 if sign <= -effect_threshold and qval <= FDR_threshold:
                     colors.append('green')
@@ -813,11 +878,11 @@ class GDSC_ANOVA(object):
         data = self._get_volcano_sub_data(df, 'Drug id', drug_id,
                 effect_threshold=effect_threshold, FDR_threshold=FDR_threshold)
 
-        self.volcano_plot(data.signed_effects, data.pvals, data.markersize, 
-                data.colors, data.annotations, stats, FDR_threshold, 
+        self.volcano_plot(data.signed_effects, data.pvals, data.markersize,
+                data.colors, data.annotations, stats, FDR_threshold,
                 title=drug_id)
 
-    def volcano_plot(self, signed_effects, pvals, markersize, 
+    def volcano_plot(self, signed_effects, pvals, markersize,
             colors, annotations, stats, FDR_threshold, title=''):
 
         Y = -np.log10(list(pvals)) # somehow should be cast to list ?
@@ -917,6 +982,44 @@ class GDSC_ANOVA(object):
             return (data, names, significance)
         else:
             return None
+
+
+
+
+def multicore(ic50, maxcpu=4):
+    """Using 4 cores, the entire analysis took 15 minutes using
+    4 CPUs (16 Oct 2015).
+
+    :param ic50: a filename or :class:`IC50` instance.
+
+    """
+
+    import time
+    t1 = time.time()
+    master = GDSC_ANOVA(ic50)
+
+    drugs = master.ic50.drugIds
+
+    from easydev import MultiProcessing
+    t = MultiProcessing(maxcpu=maxcpu)
+    # add all jobs (one per drug)
+    for i, drug in enumerate(drugs):
+        t.add_job(analyse_one_drug, master, drug)
+    t.run()
+
+    # populate the GDSC_ANOVA instance with the results
+    for this in t.results:
+        drug = this[0]
+        result = this[1]
+        master.individual_anova[drug] = result
+
+    print("\nTook " + str(time.time() - t1) +  "seconds.")
+
+    return master
+
+def analyse_one_drug(master, drug):
+    res = master.anova_one_drug(drug_id=drug, animate=False)
+    return (drug, res)
 
 
 
