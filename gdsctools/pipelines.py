@@ -54,12 +54,17 @@ def anova_pipeline(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
-    r = reader.IC50(options.data)
-    an = anova.GDSC_ANOVA(r.ic50, r.features)
+    r = reader.IC50(options.ic50)
+
+    print options.drug
+    print options.feature
+    an = anova.GDSC_ANOVA(r)
     df = an.anova_one_drug_one_feature(options.drug, 
             feature_name=options.feature, 
             show_boxplot=options.show_boxplots)
     print(df.T)
+    import pylab
+    pylab.show()
 
 
 class ANOVAOptions(argparse.ArgumentParser):
@@ -93,16 +98,16 @@ http://github.com/CancerRxGene/gdsctools/issues """
         """
         group = self.add_argument_group("General", 'General options (compulsary or not)')
 
-        #group.add_argument("--ic50", dest='ic50',
-        #                 default=None, type=str,
-        #                 help="todo")
+        group.add_argument("--ic50", dest='ic50',
+                         default=None, type=str,
+                         help="todo")
         #group.add_argument("--features", dest='features',
         #                 default=None, type=str,
         #                 help="todo")
-        group.add_argument("--data", dest='data',
-                         default=None, type=str,
-                         help="A TSV file with cosmic Ids as rows and Drug and"
-                         + " features as columns. ")
+        #group.add_argument("--data", dest='data',
+        #                 default=None, type=str,
+        #                 help="A TSV file with cosmic Ids as rows and Drug and"
+        #                 + " features as columns. ")
         group.add_argument("--verbose", dest='verbose',
                          action="store_true",
                          help="verbose option.")
