@@ -1,4 +1,5 @@
-# GDSCtools !!!DRFAT in progress !!!
+GDSCtools 
+============
 
 
 .. image:: https://badge.fury.io/py/gdsctools.svg
@@ -10,8 +11,7 @@
 .. image::  https://coveralls.io/repos/CancerRxGene/gdsctools/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/CancerRxGene/gdsctools?branch=master 
 
-.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=issues&title=issue
-s
+.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=issues&title=issues
    :target: https://waffle.io/gdsctools/gdsctools
 
 :Note: tested for PYthon 2.7 only
