@@ -7,10 +7,11 @@ import pandas as pd
 import pylab
 import easydev
 
+
 class Reader(object):
     """
 
-    
+
     """
     def __init__(self, filename, sep="\t"):
         """
@@ -79,7 +80,7 @@ class GenomicFeatures(Reader, CosmicRows):
     def __init__(self, filename=None, sep="\t"):
         # first reset the filename to the shared data (if not provided)
         if filename is None:
-            filename = easydev.get_share_file('gdsctools', 'data', 
+            filename = easydev.get_share_file('gdsctools', 'data',
                             'genomic_features.tsv')
         super(GenomicFeatures, self).__init__(filename)
 
@@ -93,19 +94,30 @@ class GenomicFeatures(Reader, CosmicRows):
 
         # There are several types of features e.g., mutation, CNA,
         # methylation but all are stored within the same file
-        # Besides, the 3 first columns are
-        #
-        # Sample Name
-        # Tissue Factor Value
-        # MS-instability Factor Value
-        #
-        # Note the spaces
-        # columsn are tab-delimited
+        # Besides, these 3 first columns are compulsary
+        self._col_tissue = 'Tissue Factor Value'
+        self._col_sample = 'Sample Name'
+        self._col_msi = 'MS-instability Factor Value'
+
+        names = [self._col_tissue, self._col_sample, self._col_msi]
+        for name in names:
+            assert name in self.df.columns , 'Could not find column %s' % name
 
     def _get_features(self):
         return list(self.df.columns)
     features = property(_get_features)
 
+    def _get_tissues(self):
+        return list(self.df[self._col_tissue])
+    tissues = property(_get_tissues)
+
+    def plot(self):
+        data = pd.get_dummies(self.df['Tissue Factor Value']).sum()
+        data.sort(ascending=False)
+        labels = list(data.index)
+        labels = [x.replace('_','\_') for x in labels]
+        pylab.pie(data, labels=labels)
+        return data
 
 
 
