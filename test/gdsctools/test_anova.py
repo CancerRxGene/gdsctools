@@ -22,7 +22,7 @@ def test_anova_one_drug_one_feature():
     # test 1 drug
     drug_id = 'Drug_999_IC50'
     df = an.anova_one_drug_one_feature(
-        drug_id=drug_id,
+        drug_name=drug_id,
         feature_name='ABCB1_mut', show_boxplot=True)
 
     control = {'Drug id': {1: drug_id},
@@ -68,3 +68,47 @@ def test_anova_all():
 
 # need test includeMSI_factor set to False
 # need test analyseType != PANCAN
+
+def test_anova_summary():
+    r = get_data()
+    an = GDSC_ANOVA("ANOVA_input.txt")
+    # by default  regression includes + msi + feature
+    drug_id = 'Drug_1_IC50'
+
+    df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
+
+    x = an.anova_pvalues
+    y = [3.210453608523738e-06, 0.14579091345305398, 0.5430736275249095, None]
+    assert_list_almost_equal(x, y)
+
+    
+    an.settings.analysis_type = 'COREAD' # something different from PANCAN
+    df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
+    x = an.anova_pvalues
+    y = [0.262294448831941, 0.30599483315087317, None]
+    assert_list_almost_equal(x, y)
+
+    # now remove also the MSI factor
+    an.settings.includeMSI_factor = False
+    df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
+    x = an.anova_pvalues
+    y = [0.21266050833611852, None]
+    assert_list_almost_equal(x, y)
+
+    assert (df.N_FEATURE_neg == 365).all()
+
+
+
+def test_get_boxplot_data():
+    r = get_data()
+    an = GDSC_ANOVA("ANOVA_input.txt")
+    odof = an._get_one_drug_one_feature_data('Drug_1047_IC50','TP53_mut')
+    data = an._get_boxplot_data(odof, mode='msi')
+    assert data[1] == ['***MSI-stable neg', '***MSI-stable pos',
+                  '**MSI-unstable neg',  '**MSI-unstable pos']
+    expected = [2.0108071495663922e-47, 0.0012564798887037905]
+    assert_list_almost_equal([data[2][0], data[2][1]], expected)  
+
+
+
+

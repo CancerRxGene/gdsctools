@@ -16,3 +16,6 @@ def test_read_ic50():
 def test_read_gf():
     r = GenomicFeatures()
     print(r)
+    r.features
+    r.tissues
+    r.plot()
