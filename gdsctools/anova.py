@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import scipy
 import pylab
@@ -24,7 +25,7 @@ from gdsctools import cohens, glass
 # Structure containing the input features to be correlated with drug response
 #features = data.features
 
-
+from gdsctools.report import Report
 
 # TODO: Could inherit from a dataframe ?
 class GDSC_ANOVA_Results(object):
@@ -47,7 +48,6 @@ class GDSC_ANOVA_Results(object):
             df = self.df.join(self.conc, on='Drug id', how='left')
             self.df = df
             del self.conc
-
 
     def _get_pvalue_from_fdr(self, FDR_threshold=20):
         qvals = df[self.varname_qval]
@@ -104,7 +104,6 @@ class GDSC_ANOVA_Results(object):
         df_count.sort(['total', 'name'], ascending=False, inplace=True)
         df_count.drop('name', axis=1, inplace=True)
         return df_count
-
 
     def drug_summary(self, FDR_threshold=30, pval_threshold=None,
             show=True, top=50, fontsize=10):
@@ -187,9 +186,6 @@ class GDSC_ANOVA_Results(object):
         print("saving figure into file to be done")
         print("Saving data into CSV to be done")
 
-
-
-
     def get_significant_hits(self, concentrations='concentrations.tsv'):
         fdrs = range(5, 50+1, 5)
 
@@ -225,21 +221,21 @@ class GDSC_ANOVA_Results(object):
             mask1 = self.df.ix[indices]['FEATUREpos_Glass_delta'] >= 1
             mask2 = self.df.ix[indices]['FEATUREneg_Glass_delta'] >= 1
             full_strong_hits.append(np.logical_and(mask1, mask2).sum())
-        
-        data = {'significants': significants, 
+
+        data = {'significants': significants,
                 'full_strong_hits': full_strong_hits,
                'strong_hits': strong_hits,
                'significant_meaningful': significant_meaningful}
 
-        df = pd.DataFrame(data, columns = ['significants', 
+        df = pd.DataFrame(data, columns = ['significants',
             'significant_meaningful', 'strong_hits', 'full_strong_hits'],
             index=fdrs)
-        df.columns = ['1) significant', '2) 1 + meaningful', 
+        df.columns = ['1) significant', '2) 1 + meaningful',
         '3) 2 + strong', '4) 2+ very strong']
 
         pylab.clf()
         ax = pylab.gca()
-        df.plot(kind='bar', width=.8, colors=['r', 'gray', 'orange', 'black'], 
+        df.plot(kind='bar', width=.8, colors=['r', 'gray', 'orange', 'black'],
                 rot=0, ax=ax)
         pylab.grid()
         # original is 'aquamarine4','cyan2','cornflowerblue    ','aquamarine'),
@@ -302,10 +298,11 @@ class GDSC_ANOVA(object):
             'featFactorPopulationTh': 3,
             # How many MSI samples must be present to perform the test
             'MSIfactorPopulationTh': 2,
-            'analysisType': 'PANCAN',
+            'analysis_type': 'PANCAN',
             'pval_correction_method': 'fdr',   # or qvalue
             'equal_var_ttest': True,
-            'fontsize': 20
+            'fontsize': 20,
+            
             }
         # makes this dict keys accessible as attributes
         self.settings = AttrDict(**self.settings)
@@ -323,229 +320,242 @@ class GDSC_ANOVA(object):
             'MSI_ANOVA_pval', 'FEATURE_IC50_T_pval',
             'ANOVA FEATURE FDR %']
 
+        # skip assoc_id for now
+        self._odof_dict = dict([(name, None) for name in self.column_names[1:]])
+
         # a cache to compute ANOVA
         self.individual_anova = {}
 
 
+    def _get_one_drug_one_feature_data(self, drug_name, feature_name):
+        """
+
+        return: empty dictionary if criteria not fulfilled, otherwise dictionary 
+            of relevatn data
+        """
+        # dictionary  struture to hold results (can set values as attributes)
+        dd = AttrDict()
+
+        # select IC50 of a given drug
+        # a fast way to select non-NA values from 1 column:
+        dd.Y = self.ic50.df[drug_name].dropna()
+
+        # an alias to the indices
+        indices = dd.Y.index
+
+        # select only relevant tissues/msi/features
+        dd.masked_features = self.features.df[feature_name][indices]
+        dd.masked_tissue = self.tissue_factor[indices]
+        dd.masked_msi = self.msi_factor[indices]
+
+        # compute length of pos/neg features and MSI 
+        dd.positive_feature = dd.masked_features.values.sum()
+        dd.negative_feature = len(dd.masked_features) - dd.positive_feature
+        dd.positive_msi = dd.masked_msi.values.sum()
+        dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
+
+        # Some validity tests to run the analysis or not
+        A = self.settings.includeMSI_factor and\
+            dd.positive_feature >= self.settings.featFactorPopulationTh and\
+            dd.negative_feature >= self.settings.featFactorPopulationTh and\
+            dd.negative_msi >= self.settings.MSIfactorPopulationTh and\
+            dd.positive_msi >= self.settings.MSIfactorPopulationTh
+        B = (not self.settings.includeMSI_factor) and\
+            dd.positive_feature >= self.settings.featFactorPopulationTh and\
+            dd.negative_feature >= self.settings.featFactorPopulationTh
+
+
+        # get length final pos/neg
+        # use .values to access the data: 4x fastr
+        dd.positives = dd.Y.values[dd.masked_features.values==1]
+        dd.negatives = dd.Y.values[dd.masked_features.values==0]
+        dd.Npos = len(dd.positives)
+        dd.Nneg = len(dd.negatives)
+
+        dd.A = A
+        dd.B = B
+        if (A == False) and (B == False):
+            dd.status = False
+            return dd
+        else:
+            dd.status = True
+        
+        # compute mean and std of pos and neg sets
+        dd.pos_IC50_mean = dd.positives.mean()
+        dd.neg_IC50_mean = dd.negatives.mean()
+        dd.delta_mean_IC50 = dd.pos_IC50_mean - dd.neg_IC50_mean
+        dd.pos_IC50_std = dd.positives.std(ddof=1)
+        dd.neg_IC50_std = dd.negatives.std(ddof=1)
+
+        # Compute cohens and glass effects
+        dd.effectsize_ic50 = cohens.cohens(dd.positives, dd.negatives)
+        GLASS_d = glass.glass(dd.positives, dd.negatives)
+        dd.pos_glass = GLASS_d[0]
+        dd.neg_glass = GLASS_d[0]
+        dd.feature_name = feature_name
+        dd.drug_name = drug_name
+
+
+        return dd
+
     #@do_profile()
-    def anova_one_drug_one_feature(self, drug_id='Drug_1_IC50',
-            feature_name='ABCB1_mut', show_boxplot=False,
-            production=False):
+    def anova_one_drug_one_feature(self, drug_name,
+            feature_name, show_boxplot=False,
+            production=False, savefig=False, directory='.'):
         """Compute ANOVA and various tests on one drug and one feature
 
         :param bool production: if False, returns a dataframe otherwise
             a dictionary. This is to speed up analysis when scanning
             the drug across all features.
         """
-        # select IC50 of a given drug
-        data = self.ic50.df[drug_id]
-        mask = data.isnull() == False
 
-        # and the respective features
-        self.masked_ic50 = data[mask]
-        self.masked_features = self.features.df[feature_name][mask]
+        # This extract the relevant data and some simple metrics
+        odof = self._get_one_drug_one_feature_data(drug_name, feature_name)
 
-        # select only relevant tissues
-        self.masked_tissue = self.tissue_factor[self.masked_ic50.index]
-        self.masked_msi = self.msi_factor[self.masked_ic50.index]
-
-        # Let us create an alias to indicate the main Y variable to be regressed
-        self.Y = self.masked_ic50
-
-        # about 15% of the time in those 4 lines.
-        positive_feature = self.masked_features.sum()
-        negative_feature = len(self.masked_features) - positive_feature
-        positive_msi = self.masked_msi.sum()
-        negative_msi = len(self.masked_msi) - positive_msi
-
-        positives = self.masked_ic50[self.masked_features==1]
-        negatives = self.masked_ic50[self.masked_features==0]
-        Npos = len(positives)
-        Nneg = len(negatives)
-
-        # Some validity tests to run the analysis or not
-        A = self.settings.includeMSI_factor and\
-            positive_feature >= self.settings.featFactorPopulationTh and\
-            negative_feature >= self.settings.featFactorPopulationTh and\
-            negative_msi >= self.settings.MSIfactorPopulationTh and\
-            positive_msi >= self.settings.MSIfactorPopulationTh
-        B = (not self.settings.includeMSI_factor) and\
-            positive_feature >= self.settings.featFactorPopulationTh and\
-            negative_feature >= self.settings.featFactorPopulationTh
-
-        if (A is False) and (B is False):
-            drug_name = 'Drug_' + str(drug_id) + '_IC50'
-            results = {'FEATURE': feature_name,
-                'Drug id': drug_name,
-                'Drug name': drug_name,
-                'Drug Target': drug_name,
-                'N_FEATURE_pos': Npos,
-                'N_FEATURE_neg': Nneg,
-                'log max.Conc.tested': None,
-                'log max.Conc.tested2': None,
-                'FEATUREpos_logIC50_MEAN': None,
-                'FEATUREneg_logIC50_MEAN': None,
-                'FEATURE_deltaMEAN_IC50': None,
-                'FEATUREpos_IC50_sd': None,
-                'FEATUREneg_IC50_sd': None,
-                'FEATURE_IC50_effect_size': None,
-                'FEATUREpos_Glass_delta': None,
-                'FEATUREneg_Glass_delta': None,
-                'FEATURE_ANOVA_pval': None,
-                'Tissue_ANOVA_pval': None,
-                'MSI_ANOVA_pval': None,
-                'FEATURE_IC50_T_pval': None
-                }
+        # if the status is False, it means the number of data points
+        # in a category (e.g., positive feature) is too low.
+        # If so, nothing to do, we return an 'empty' dictionary
+        if odof.status is False:
+            results = self._odof_dict.copy()
+            results['FEATURE'] = feature_name
+            results['Drug id'] = drug_name
+            results['Drug name'] = drug_name
+            results['Drug Target'] = drug_name
+            results['N_FEATURE_pos'] = odof.Npos
+            results['N_FEATURE_neg'] = odof.Nneg
             if production is True:
+                # return a dict
                 return results
             else:
-                # index is not relevant here
+                # or a dataframe; note that index is not relevant here but
+                # required.
                 df = pd.DataFrame(results, index=[1])
                 return df
 
-        # First, let us create a data frame to hold the relevant data sets
-        self.data = pd.DataFrame({'Y':self.Y, 'feature': self.masked_features,
-            'msi':self.masked_msi, 'tissue':self.masked_tissue},
-            columns=['Y', 'feature', 'msi', 'tissue'])
+        # with the data extract, we can now compute the regression.
 
-        # Order is important... Does not change total sum of square
+        # In R or statsmodels, the regression code is simple since
+        # it is based on the formula notation (Y~C(msi)+feature)
+        # Note, however, that in statsmodels this is pretty slow because
+        # it relies on an underlying code (patsy) that checks and cast
+        # lots of data. The code would look like:
+        #### self._mydata = pd.DataFrame({'Y':self.Y,
+        ####    'tissue':self.masked_tissue,
+        ####       'msi': self.masked_msi, 'feature':self.masked_features})
+        #### self.data_lm = ols('Y ~ C(tissue) + C(msi) + feature',
+        ####  data=self._mydata, missing='none').fit() #Specify C is category
+
+        # Note that order is important... Does not change total sum of square
         # but may change individual effects of the categorical
-        # components. Not sure how important this is and will need
-        # to consider other cases for robustness testing maybe.
-        if self.settings.analysisType == 'PANCAN':
-            # Note that tissue with less than N? values are dropped
-            # This is also the case in R.
-            # Possibly ntissue<3 ?
-            # See e.g., Drug_1 / ABL2_mut
-            #self.data_lm = ols('Y ~ C(tissue) + C(msi) + feature',
-            #        data=self.data, missing='none').fit() #Specify C for Categorical
+        # components.
 
-            #
-            # This is faster that above but messier
-            # The creation of this df represents 20% of the function time
-            df = pd.get_dummies(self.data['tissue']) # could use prefix_sep
-            # but there is no suffix_sep...
-            df.columns = ['C(tissue)[T.'+x +']' for x in df.columns]
-            df['C(msi)[T.1]'] = self.data['msi'].values
-            df['feature'] = self.data['feature'].values
-            df.insert(0, 'Intercept', [1]*len(df))
+        # Yet, this is slow and we decided to use OLS function instead of
+        # the recommended 'ols' api, which means we cannot use formula and
+        # need to create the input data sets ourself (get_dummies here
+        # below. Besides, the statsmodels.stats.anova_lm does not 
+        # work with typ=1 in the version tested or gives slightly different
+        # results as compared to R, so we reworte the anova_lm 
+        # This looks messier but is faster than ols + anova_lm
+        if self.settings.analysis_type == 'PANCAN':
+            # First, split tissues into N tissue columns
+            # Note that there is no suffix parameter, so we need to do it
+            # ourself.:
+            self._mydata = pd.DataFrame({'Y': odof.Y,
+                'tissue':odof.masked_tissue,
+                'msi':  odof.masked_msi, 'feature': odof.masked_features})
 
-            # Here, we need to get rid of some of the
-            #
+            df = pd.get_dummies(odof.masked_tissue)
+            columns = ['C(tissue)[T.'+x +']' for x in
+                    odof.masked_tissue.unique()]
+            Ntissue = len(columns)
+            df.columns = columns
+            self.ddd = df.copy()
+            # Here we set other variables with dataframe columns' names as 
+            # expected by OLS
+            df['C(msi)[T.1]'] = odof.masked_msi.values
+            df['feature'] = odof.masked_features.values
+            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
+
+            # Here, we need to get rid of some of the cases to agree with R....
+            # ??? why ?? TODO FIXME Could be that aov in R drops
+            # some columns if number of positive is not large enough ?
+            # dropping bladder across all give correct answers
+            # across all drugs and features ?!
+            # ?? if we remove skin instead of bladder, same results...
+            # ?? if we remove 2 tissues, then we starts to have different 
+            # thinkgs??? 
             df = df.drop('C(tissue)[T.Bladder]', axis=1)
+            Ntissue -= 1
 
-            self.data_lm = OLS(self.data['Y'], df).fit()
+            self.data_lm = OLS(odof.Y, df.values).fit()
 
-            # this sklean gives same as statsmolde.ols.params
-            # and as fast as OLS but faster than 'ols'
-            #lmres = LinearRegression(fit_intercept=True).fit(an.data[['msi',
-            #    'feature']], an.data['Y'])
-            # lmres.coef_
-
+            # SKLearn is also a possiblity
+            # works for msi+feature but not if we include tissues ?
+            # compared to R lm (not aov), we get the same
+            # self.dff = df
+            # ols = sklearn.linear_model.LinearRegression(fit_intercept=False)
+            # ols.fit(an.dff, an.Y).coef_
 
         elif self.settings.includeMSI_factor is True:
+            self._mydata = pd.DataFrame({'Y': odof.Y,
+                'msi':  odof.masked_msi, 'feature': odof.masked_features})
             self.data_lm = ols('Y ~ C(msi) + feature',
-                data=self.data).fit() #Specify C for Categorical
+                data=self._mydata).fit() #Specify C for Categorical
+            Ntissue = 0
         else:
+            self._mydata = pd.DataFrame({'Y': odof.Y,
+                'feature': odof.masked_features})
             self.data_lm = ols('Y ~ feature',
-                data=self.data).fit() #Specify C for Categorical
+                data=self._mydata).fit() #Specify C for Categorical
+            Ntissue = 0
 
-        # Get those stats from a local version of ANOVA
-        # The only values we want is PR(>F)
-        #self.stats = sm.stats.anova_lm(self.data_lm, typ=1)
+        self.anova_pvalues = self._get_anova_summary(self.data_lm, 
+                Ntissue, output='dict')
 
-        # Fvalues should be a vector with individual F values
-        # df should be a vector with indivudal df
-        df_tissue = len([x for x in self.data_lm.model.exog_names if 'C(tissue'
-            in x])
-        df = [df_tissue, 1, 1] # msi and feature have 1 df each
-        endog = self.data_lm.model.data.endog
-        exog = self.data_lm.model.data.exog
-        q,r = np.linalg.qr(exog)
-        effects = np.dot(q.T, endog)
-
-        Nterms = 3 + 1 # msi, tissue, feature + 1 (intercept)
-        Ncolumns = sum(df) + 1 # +1 for the intercept
-        arr = np.zeros((Nterms, Ncolumns))
-        term_names = ['Intercept', 'C(tissue)', 'C(msi)', 'feature']
-
-        design_info = {}
-        design_info['Intercept'] = (0, 1, None)
-        design_info['C(tissue)'] = (1, 1+df_tissue, None)
-        design_info['C(msi)'] = (df_tissue+1, df_tissue+2, None)
-        design_info['feature'] = (df_tissue+2, df_tissue+3, None)
-
-        slices = [slice(*design_info[name]) for name in term_names]
-        for i,slice_ in enumerate(slices):
-             arr[i, slice_] = 1
-        sum_sq = np.dot(arr, effects**2)
-        sum_sq = sum_sq[1:]
-        mean_sq = sum_sq / np.array(df)
-        Fvalues = mean_sq / (self.data_lm.ssr / self.data_lm.df_resid)
-        F_pvalues = scipy.stats.f.sf(Fvalues, df, self.data_lm.df_resid)
-        self.tt = F_pvalues
-
-        #pvalues = pd.DataFrame({'C(tissue)': F_pvalues[0],
-        #    'feature':F_pvalues[2], 'C(msi)': F_pvalues[1]})
-        self.stats = pd.DataFrame(
-                F_pvalues, columns=['PR(>F)'],
-                index=['C(tissue)', 'C(msi)', 'feature'])
-
-        # to be used with statsmodels.ols
-        pvalues = self.stats['PR(>F)']
-        # Then, compute t.test for p-value about feature independence
-        dfeat = self.data['feature']
         # Identical to R version. Note that equal_var is True
         # is importatn. Note also that the ANOVA_results.txt
         # obtained from SFTP had different values meaning that
         # the equal.var was set to False.
-        self.tfit = scipy.stats.ttest_ind(self.data['Y'][dfeat==0],
-                self.data['Y'][dfeat==1],
+        self.tfit = scipy.stats.ttest_ind(odof.negatives, odof.positives,
                 equal_var=self.settings.equal_var_ttest)
+
+        # try/except maybe faster than if/else
+        try:
+            tissue_PVAL = self.anova_pvalues['tissue']
+        except:
+            tissue_PVAL = None
+
+        try:
+            MSI_PVAL = self.anova_pvalues['msi']
+        except:
+            MSI_PVAL = None
+
+        try:
+            FEATURE_PVAL = self.anova_pvalues['feature']
+        except:
+            FEATURE_PVAL = None
 
         # some boxplot including all data
         if show_boxplot:
-            pylab.figure(1)
-            neg = self.Y[self.masked_features == 0].values
-            pos = self.Y[self.masked_features == 1].values
-            data = {'pos':pos, 'neg':neg}
-            self.data = data
-            self.plot3_tuning = boxswarm.boxswarm(data)
+            self._boxplot(odof, savefig=savefig, directory=directory,
+                    fignum=1)
 
-        # some data focusing on effect of (1) tissue and (2) MSI
-        if show_boxplot:
-            pylab.figure(2)
-            results = self._get_boxplot_data('tissue')
-            if results is None:
-                print("INFO: no tissue with at least 2 pos and 2 neg found. " +
-                    "No image created.")
-            else:
-                data, names, significance = results
-                bb = boxswarm.BoxSwarm(data, names)
-                bb.xlabel = r'%s log(IC50)' % drug_id.replace("_", "\_")
-                bb.title = 'FEATURE/Cancer-type interactions'
-                ax = bb.plot(vert=False)
-                # get info from left axis
-                common_ylim = ax.get_ylim()
-                common_ticks = ax.get_yticks()
-
-                self.ax = ax.twinx()
-                self.ax.set_ylim(common_ylim)
-                self.ax.set_yticks(common_ticks)
-                self.ax.set_yticklabels([len(this) for this in data])
-
-                pylab.tight_layout()
+        # a boxplot to show cell lines effects. This requires
+        # the settings.analyse_type to be PANCAN
+        if show_boxplot and self.settings.analysis_type == 'PANCAN':
+            self._boxplot_pancan(odof, directory=directory, 
+                    savefig=savefig, fignum=2, mode='tissue')
 
             if self.settings.includeMSI_factor:
                 pylab.figure(3)
-                results = self._get_boxplot_data('msi')
+                results = self._get_boxplot_data(odof, 'msi')
                 if results is None:
                     print("INFO: MSI with at least 2 pos and 2 neg found. " +
                         "No image created.")
                 else:
                     data, names, significance = results
                     bb = boxswarm.BoxSwarm(data, names)
-                    bb.xlabel = r'%s log(IC50)' % drug_id.replace("_", "\_")
+                    bb.xlabel = r'%s log(IC50)' % drug_name.replace("_", "\_")
                     bb.title = 'FEATURE/MS-instability interactions'
                     ax = bb.plot(vert=False)
 
@@ -559,58 +569,30 @@ class GDSC_ANOVA(object):
                     self.ax.set_yticklabels([len(this) for this in data])
 
                     pylab.tight_layout()
-
-        #iwith this index: [u'C(tissue)', u'C(msi)', u'feature', u'Residual']
-        if 'C(tissue)' in pvalues.index:
-            tissue_PVAL = pvalues['C(tissue)']
-        else:
-            tissue_PVAL = None
-
-        if 'C(msi)' in pvalues.index:
-            MSI_PVAL = pvalues['C(msi)']
-        else:
-            MSI_PVAL = None
-
-        if 'feature' in pvalues.index:
-            FEATURE_PVAL = pvalues['feature']
-        else:
-            FEATURE_PVAL = None
-
-        # STORE value to return
-        pos_IC50_mean = positives.mean()
-        neg_IC50_mean = negatives.mean()
-        delta_mean_IC50 = pos_IC50_mean - neg_IC50_mean
-
-        pos_IC50_std = positives.std(ddof=1)
-        neg_IC50_std = negatives.std(ddof=1)
+                    if savefig is True:
+                        pylab.savefig(directory+os.sep+'ODOFmsi_{}____{}.png'.format(
+                            drug_name, feature_name))
+                        pylab.savefig(directory+os.sep+'ODOFmsi_{}____{}.svg'.format(
+                        drug_name, feature_name))
 
 
-        EFFECTSIZE_IC50 = cohens.cohens(positives, negatives)
-        GLASS_d = glass.glass(positives, negatives)
-        # compute cohens between IC50 where feature is pos and IC50
-        # where feature is
-        # negative. same for GLASS
 
-        if drug_id.startswith("Drug"):
-            drug_id = int(drug_id.split("_")[1])
-
-        drug_name = 'Drug_' + str(drug_id) + '_IC50'
         results = {'FEATURE': feature_name,
                 'Drug id': drug_name,
                 'Drug name': drug_name,
                 'Drug Target': drug_name,
-                'N_FEATURE_pos': Npos,
-                'N_FEATURE_neg': Nneg,
+                'N_FEATURE_pos': odof.Npos,
+                'N_FEATURE_neg': odof.Nneg,
                 'log max.Conc.tested': None,
                 'log max.Conc.tested2': None,
-                'FEATUREpos_logIC50_MEAN': pos_IC50_mean,
-                'FEATUREneg_logIC50_MEAN': neg_IC50_mean,
-                'FEATURE_deltaMEAN_IC50': delta_mean_IC50,
-                'FEATUREpos_IC50_sd': pos_IC50_std,
-                'FEATUREneg_IC50_sd': neg_IC50_std,
-                'FEATURE_IC50_effect_size': EFFECTSIZE_IC50,
-                'FEATUREpos_Glass_delta': GLASS_d[0],
-                'FEATUREneg_Glass_delta': GLASS_d[1],
+                'FEATUREpos_logIC50_MEAN': odof.pos_IC50_mean,
+                'FEATUREneg_logIC50_MEAN': odof.neg_IC50_mean,
+                'FEATURE_deltaMEAN_IC50': odof.delta_mean_IC50,
+                'FEATUREpos_IC50_sd': odof.pos_IC50_std,
+                'FEATUREneg_IC50_sd': odof.neg_IC50_std,
+                'FEATURE_IC50_effect_size': odof.effectsize_ic50,
+                'FEATUREpos_Glass_delta': odof.pos_glass,
+                'FEATUREneg_Glass_delta': odof.neg_glass,
                 'FEATURE_ANOVA_pval': FEATURE_PVAL,
                 'Tissue_ANOVA_pval': tissue_PVAL,
                 'MSI_ANOVA_pval': MSI_PVAL,
@@ -624,6 +606,143 @@ class GDSC_ANOVA(object):
             df = pd.DataFrame(results, index=[1])
             return df
 
+    def _boxplot_pancan(self, odof, mode, savefig=False, 
+            directory='.',
+            fignum=1, title_prefix=''):
+        assert mode in ['tissue', 'msi']
+        drug_name = odof.drug_name.replace("_", "\_")
+        feature_name = odof.feature_name.replace("_", "\_")
+
+        results = self._get_boxplot_data(odof, mode)
+        if results is None:
+            print("INFO: no tissue with at least 2 pos and 2 neg found. " +
+                    "No image created.")
+            return
+
+        pylab.figure(2)
+        pylab.clf()
+        data, names, significance = results
+        bb = boxswarm.BoxSwarm(data, names)
+        bb.xlabel = r'%s log(IC50)' % drug_name
+        bb.title = 'FEATURE/Cancer-type interactions'
+        ax = bb.plot(vert=False)
+        # get info from left axis
+        common_ylim = ax.get_ylim()
+        common_ticks = ax.get_yticks()
+
+        self.ax = ax.twinx()
+        self.ax.set_ylim(common_ylim)
+        self.ax.set_yticks(common_ticks)
+        self.ax.set_yticklabels([len(this) for this in data])
+        pylab.tight_layout()
+        if savefig is True:
+            filename = directory + os.sep
+            filename += 'ODOF_tissue_{}____{}'.format(drug_name, feature_name)
+            pylab.savefig(filename + '.png')
+            pylab.savefig(filename + '.svg')
+
+
+    def _boxplot(self, data, savefig=False, directory='.', fignum=1):
+
+        pylab.figure(fignum)
+        pylab.clf()
+        # aliases
+        drug_name = data.drug_name.replace("_", "\_")
+        feature_name = data.feature_name.replace("_", "\_")
+        fontsize = self.settings.fontsize
+
+        # the plot itself
+        boxswarm.boxswarm({'pos': data.positives, 'neg': data.negatives},
+                lw=3)
+        
+        pylab.title('Individual association\n {0} {1}'.format(drug_name,
+            feature_name), fontsize=fontsize)
+        pylab.ylabel("{0} logIC50".format(drug_name),
+                fontsize=fontsize)
+
+        pylab.tight_layout()
+        if savefig is True:
+            filename = directory + os.sep
+            filename += 'ODOF_all_{}____{}'.format(drug_name, feature_name)
+            pylab.savefig(filename + '.png')
+            pylab.savefig(filename + '.svg')
+
+
+
+    #@do_profile()
+    def _get_anova_summary(self, data_lm, Ntissue, output='dict'):
+        # could use this with statsmodels
+        # The only values we want is PR(>F)
+        # self.stats = sm.stats.anova_lm(self.data_lm, typ=1)
+        # note that typ=1 does not work and typ=2,3 are differnt
+        # from R version, that uses type I surely.
+        q, r = np.linalg.qr(data_lm.model.data.exog)
+        effects = np.dot(q.T, data_lm.model.data.endog)
+
+        # create the W matrix using tissue and MSI if requested
+        term_names = ['Intercept']
+        design_info = {}
+        design_info['Intercept'] = (0, 1, None)
+        dof = [] 
+        indices = []
+        if self.settings.analysis_type == 'PANCAN':
+            term_names += ['C(tissue)']
+            design_info['C(tissue)'] = (1, 1+Ntissue, None)
+            dof.append(Ntissue)
+            indices.append('tissue')
+        if self.settings.includeMSI_factor is True:
+            term_names += ['C(msi)']
+            design_info['C(msi)'] = (Ntissue+1, Ntissue+2, None)
+            dof.append(1)
+            indices.append('msi')
+            shift = 1
+        else:
+            shift = 0
+        # Feature are always used.
+        term_names += ['feature']
+        design_info['feature'] = (Ntissue+1+shift, Ntissue+2+shift, None)
+        dof.append(1)
+        indices.append('feature')
+
+        Nterms = len(term_names)
+        Ncolumns = data_lm.model.data.exog.shape[1] 
+        #Ncolumns += 1 # +1 for intercept
+        arr = np.zeros((Nterms, Ncolumns))
+
+        # --  
+        slices = [slice(*design_info[name]) for name in term_names]
+        for i, slice_ in enumerate(slices):
+             arr[i, slice_] = 1
+        sum_sq = np.dot(arr, effects**2)
+        sum_sq = sum_sq[1:]
+        mean_sq = sum_sq / np.array(dof)
+        Fvalues = mean_sq / (data_lm.ssr / data_lm.df_resid)
+        F_pvalues = scipy.stats.f.sf(Fvalues, dof, data_lm.df_resid)
+
+        sum_sq = np.append(sum_sq, data_lm.ssr)
+        mean_sq = np.append(mean_sq, data_lm.mse_resid)
+        F_pvalues = np.append(F_pvalues, None)
+        Fvalues = np.append(Fvalues, None)
+        dof.append(data_lm.model.df_resid)
+        indices.append('Residuals')
+        # dataframe is slow, return just the dict of pvalues by default
+        if output == 'dataframe':
+            anova = pd.DataFrame({'Sum Sq': sum_sq, 'Mean Sq': mean_sq, 
+                'Df': dof, 'F value': Fvalues, 'PR(>F)': F_pvalues}, 
+                index=indices, 
+                columns=['Df', 'Sum Sq', 'Mean Sq', 'F value', 'PR(>F)'])
+            return anova
+        elif self.settings.analysis_type == 'PANCAN':
+            return {'tissue': F_pvalues[0], 'msi':F_pvalues[1],
+                    'feature':F_pvalues[2]}
+        elif self.settings.includeMSI_factor is True:
+            return {'msi': F_pvalues[0], 'feature':F_pvalues[1]}
+        else:
+            return {'feature': F_pvalues[0]}
+
+        #return anova
+
+
     #98% of time in  method anova_one_drug_one_feature
     def anova_one_drug(self, drug_id, animate=True):
         """Computes ANOVA for a given drug across all features
@@ -633,9 +752,6 @@ class GDSC_ANOVA(object):
 
 
         """
-        # Takes about 10s to run. could be nice to have
-        # a caching system.
-
         # some features can be dropped
         # TODO: parameters for settings here
 
@@ -644,7 +760,6 @@ class GDSC_ANOVA(object):
         #columns are the sample name and tissue feature
         # Then, we keep only cases with at least 3 features.
         # MSI could be used but is not like in original R code.
-
         features = self.features.df.copy()
 
         features = features[features.columns[3:]]
@@ -675,9 +790,6 @@ class GDSC_ANOVA(object):
         df = pd.DataFrame.from_records(res)
         df = df.T
 
-
-        #df = df[df['FEATURE_ANOVA_pval'].apply(lambda x: x is not None)]
-
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
         return df
 
@@ -701,7 +813,6 @@ class GDSC_ANOVA(object):
         vv = (self.ic50.df.isnull() == False).sum(axis=0)
         drug_names = vv.index[vv >= 6]
         self.drug_names = drug_names
-
 
         # if user provided a list of drugs, use them:
         if drugs is not None:
@@ -747,192 +858,19 @@ class GDSC_ANOVA(object):
         self.anova_df = df
         return df
 
-    def volcano_plot_all_drugs(self, df, FDR_threshold=20,
-            effect_threshold=0):
-        """Volcano plot for each drug
-
-        :param df: output of :meth:`anova_all`
-        """
-        drugs = list(df['Drug id'].unique())
-        pb = Progress(len(drugs), 1)
-        for i, drug in enumerate(drugs):
-            self.volcano_plot_one_drug(df, drug, FDR_threshold=FDR_threshold,
-                    effect_threshold=effect_threshold)
-            pylab.savefig("volcano_%s.png" % drug)
-            pb.animate(i+1)
-
-    def volcano_plot_all_features(self, df, FDR_threshold=20,
-            effect_threshold=0):
-        """Volcano plot for each feature
-
-        :param df: output of :meth:`anova_all`
-
-        Takes about 10 minutes for 265 drugs and 677 features
-        """
-        features = list(df['FEATURE'].unique())
-        pb = Progress(len(features), 1)
-        for i, feature in enumerate(features):
-            self.volcano_plot_one_feature(df, feature,
-                    FDR_threshold=FDR_threshold,
-                    effect_threshold=effect_threshold)
-            pylab.savefig("volcano_%s.png" % feature)
-            pb.animate(i+1)
-
-    def _get_volcano_global_data(self, df, FDR_threshold=20):
-        varname_pval = 'FEATURE_ANOVA_pval'
-        varname_qval = 'ANOVA FEATURE FDR %'
-
-        # using all data
-        minN = df['N_FEATURE_pos'].min()
-        maxN = df['N_FEATURE_pos'].max()
-        qvals = df[varname_qval]
-        pvals = df[varname_pval]
-        fdrlim = pvals[qvals<FDR_threshold].max()
-        fdrlim1 = pvals[qvals<10].max()
-        fdrlim2 = pvals[qvals<1].max()
-        fdrlim3 = pvals[qvals<0.01].max()
-
-        return {'minN': minN, 'maxN':maxN,
-                'fdrs': {FDR_threshold:fdrlim,
-                    0.01:fdrlim3, 1:fdrlim2,
-                    10:fdrlim1}}
-
-    def volcano_plot_one_feature(self,df, feature, FDR_threshold=20,
-            effect_threshold=0):
-        stats = self._get_volcano_global_data(df, FDR_threshold)
-        data = self._get_volcano_sub_data(df, 'FEATURE', feature,
-                effect_threshold=effect_threshold, FDR_threshold=FDR_threshold)
-
-        self.volcano_plot(data.signed_effects, data.pvals, data.markersize,
-                data.colors, data.annotations, stats, FDR_threshold,
-                title=feature)
-
-    def _get_volcano_sub_data(self, df, mode, target, effect_threshold=0,
-            FDR_threshold=20):
-        # using data related to the given drug
-
-        if mode == 'Drug id':
-            other = 'FEATURE'
-        elif mode == 'FEATURE':
-            other = 'Drug id'
-        else:
-            raise ValueError("mode parameter must be 'FEATURE' or 'Drug id'")
-
-        subdf = df[df[mode] == target].copy()
-
-        varname_pval = 'FEATURE_ANOVA_pval'
-        varname_qval = 'ANOVA FEATURE FDR %'
-        delta = subdf['FEATURE_deltaMEAN_IC50']
-        effects = subdf['FEATURE_IC50_effect_size']
-        signed_effects = np.sign(delta) * effects
-
-        qvals = list(subdf[varname_qval])
-        pvals = list(subdf[varname_pval])
-        features = subdf[other]
-
-        colors = []
-        annotations = []
-        labels = features
-        if self.settings.analysisType == 'PANCAN':
-            for sign, qval, pval, label in zip(signed_effects, qvals,
-                    pvals, labels):
-                if sign <= -effect_threshold and qval <= FDR_threshold:
-                    colors.append('green')
-                    annotations.append((sign,pval,label))
-                elif sign >= effect_threshold and qval <= FDR_threshold:
-                    colors.append('red')
-                    annotations.append((sign,pval,label))
-                else:
-                    colors.append('grey')
-        else:
-            raise NotImplementedError
-            #COL[which(qvals<=fdrth &
-            #             pval<=gdscANOVA.settings.pval_TH & delta>0)]<-redcol
-            #     COL[which(qvals<=fdrth &
-            #             pval<=gdscANOVA.settings.pval_TH & delta<0)]<-greencol
-
-        # here we normalise wrt the drug. In R code, normalised
-        # my max across all data (minN, maxN)
-        markersize = subdf['N_FEATURE_pos'] / subdf['N_FEATURE_pos'].max()
-        markersize = list(markersize*800)
-        markersize = [x if x>50 else 50 for x in markersize]
-
-        dd = {'colors':colors, 'annotations':annotations,
-                'signed_effects':signed_effects,
-                'markersize':markersize, 'qvals':qvals, 'pvals':pvals}
-        dd = AttrDict(**dd)
-        return dd
-
-
-    def volcano_plot_one_drug(self, df, drug_id, FDR_threshold=20,
-            effect_threshold=0):
-        """Volcano plot for one drug
-
-        :param df: output of :meth:`anova_all`
-
-        """
-        # needs to run :meth:`anova_all` first
-
-        # using all data, get the FDR limits
-        stats = self._get_volcano_global_data(df, FDR_threshold)
-        data = self._get_volcano_sub_data(df, 'Drug id', drug_id,
-                effect_threshold=effect_threshold, FDR_threshold=FDR_threshold)
-
-        self.volcano_plot(data.signed_effects, data.pvals, data.markersize,
-                data.colors, data.annotations, stats, FDR_threshold,
-                title=drug_id)
-
-    def volcano_plot(self, signed_effects, pvals, markersize,
-            colors, annotations, stats, FDR_threshold, title=''):
-
-        Y = -np.log10(list(pvals)) # somehow should be cast to list ?
-
-        pylab.clf()
-
-        pylab.scatter(list(signed_effects), Y, s=markersize, alpha=0.4, c=colors,
-                linewidth=0)
-
-        m = abs(signed_effects.min())
-        M = abs(signed_effects.max())
-        l = max([m, M]) * 1.1
-        pylab.xlim([-l, l])
-        pylab.xlabel("Signed effect size", fontsize=self.settings.fontsize)
-        pylab.ylabel('-log10(pvalues)', fontsize=self.settings.fontsize)
-        pylab.ylim([0, pylab.ylim()[1]])
-
-        #print(fdrlim, fdrlim1, fdrlim2, fdrlim3)
-        fdrlim = stats['fdrs'][FDR_threshold]
-        fdrlim1 = stats['fdrs'][10]
-        fdrlim2 = stats['fdrs'][1]
-        fdrlim3 = stats['fdrs'][0.01]
-        pylab.axhline(-np.log10(fdrlim), linestyle='--',
-            color='gray', alpha=1, label="FDR %s pct" % FDR_threshold)
-        pylab.axhline(-np.log10(fdrlim1), linestyle='-.',
-            color='gray', alpha=1, label="FDR 10 pct")
-        pylab.axhline(-np.log10(fdrlim2), linestyle=':',
-            color='gray', alpha=1, label="FDR 1 pct")
-        pylab.axhline(-np.log10(fdrlim3), linestyle='--',
-            color='black', alpha=1, label="FDR 0.01 pct")
-
-        pylab.axvline(0, color='gray', alpha=0.5)
-        ax = pylab.legend(loc='best')
-        ax.set_zorder(-1) # in case there is a circle behind the legend.
-        pylab.title("%s" % title.replace("_","\_"))
-        for this in annotations:
-            x,y,text = this
-            pylab.text(x,-pylab.log10(y),text.replace("_", "\_"))
-
-
-    def _get_boxplot_data(self, mode='tissue'):
+    def _get_boxplot_data(self, odof, mode='tissue'):
         # should be called by anova_one_drug_one_feature
         # since masked_tissue, masked_ic50 attributes must
         # be populated.
         assert mode in ['tissue', 'msi']
+
+        # Let us use Pandas, this will be easier
         df = pd.DataFrame(
-            {'tissue':self.masked_tissue.values,
-             'ic50':self.masked_ic50,
-             'feature':self.masked_features,
-             'msi':self.masked_msi.values})
+            {'tissue': odof.masked_tissue.values,
+             'ic50': odof.Y,
+             'feature': odof.masked_features,
+             'msi': odof.masked_msi.values})
+
         if mode == 'tissue':
             df.drop('msi', inplace=True, axis=1)
         elif mode == 'msi':
@@ -942,11 +880,11 @@ class GDSC_ANOVA(object):
         # counts items in each category and fill with NA
         counts = groups.count().unstack().fillna(0)
 
+        # if positive or negative for a combo, is not>=2, drop it
         cc = (counts>=2).all()
-        tissues = list(cc.unstack().columns[cc])
+        categories = list(cc.unstack().columns[cc])
 
-        print(tissues)
-        groups = df.query(mode + ' in @tissues').groupby([mode, 'feature'])
+        groups = df.query(mode + ' in @categories').groupby([mode, 'feature'])
 
         # TODO; move all this if block into a method
         # figure out the delta between pos and neg
@@ -957,33 +895,31 @@ class GDSC_ANOVA(object):
             significance = {}
             data = []
             names = []
-            for tissue in delta.ix['ic50'].index:
-                prefix_query = mode+"==@tissue"
+            for category in delta.ix['ic50'].index:
+                prefix_query = mode+"==@category"
                 neg = df.query(prefix_query+' and feature==0')['ic50']
                 pos = df.query(prefix_query+' and feature==1')['ic50']
                 # HERE in the original code, equal_var is False. why ?
                 res = scipy.stats.ttest_ind(neg, pos, equal_var=False)
-                significance[tissue] = res[1] # p-values
+                significance[category] = res[1] # p-values
                 data.append(neg.values)
                 data.append(pos.values)
                 if mode == 'tissue':
-                    name = tissue
+                    name = category
                 elif mode == 'msi':
-                    if tissue == 0:
+                    if category == 0:
                         name = 'MSI-stable'
-                    elif tissue == 1:
+                    elif category == 1:
                         name = 'MSI-unstable'
 
                 for this in [0.05, 0.01, 0.001]:
-                    if significance[tissue] < this:
+                    if significance[category] < this:
                         name = '*' + name
                 names.append(name + ' neg')
                 names.append(name + ' pos')
             return (data, names, significance)
         else:
             return None
-
-
 
 
 def multicore(ic50, maxcpu=4):
@@ -1020,6 +956,118 @@ def multicore(ic50, maxcpu=4):
 def analyse_one_drug(master, drug):
     res = master.anova_one_drug(drug_id=drug, animate=False)
     return (drug, res)
+
+
+class OneDrugOneFeature(Report):
+    def __init__(self, ic50, features=None, drug=None, feature=None):
+        self.factory = GDSC_ANOVA(ic50, features=features)
+        self.drug = drug
+        self.feature = feature
+        self.table_class = 'dataframe-summary'
+
+        filename = "{0}____{1}.html".format(self.drug,
+                self.feature.replace(" ", "_"))
+
+        super(OneDrugOneFeature, self).__init__(directory='odof',
+                filename=filename)
+
+    def run(self):
+        df = self.factory.anova_one_drug_one_feature(self.drug,
+                self.feature, savefig=True, show_boxplot=True,
+                directory=self.report_directory)
+        df.insert(0, 'association Id', 'a1')
+        return df
+
+    def to_html(self, df):
+        for this in ['FEATURE', 'Drug id', 'association Id']:
+            df[this] = df[this].apply(lambda x:
+                '<a href="{0}.html">{1}</a>'.format(x,x))
+        df = df.T
+        return df.to_html(escape=False, classes=self.table_class,
+                header=False)
+
+    def _create_report(self, onweb=True):
+        # generated pictures and results
+        print('Generating data, images and HTML')
+        df = self.run()
+
+        # Create the table and add it
+        html_table = self.to_html(df)
+        self.add_section(html_table, 'Individual association analysis')
+
+        section = ""
+        for prefix in ['ODOFall', 'ODOFmsi', 'ODOFtissue']:
+            tag = "{0}_{1}____{2}.svg".format(prefix, self.drug, self.feature)
+            section += '<img src="{0}"></svg>\n'.format(tag)
+
+        self.add_section(section, "Boxplots")
+
+
+class OneDrug(Report):
+    def __init__(self, ic50, drug=None):
+        self.factory = GDSC_ANOVA(ic50)
+        self.drug = drug
+        self.table_class = 'dataframe-summary'
+        filename = "{0}.html".format(self.drug)
+        super(OneDrug, self).__init__(directory='odof',
+                filename=filename)
+
+    def run(self, N=20):
+        from volcano_anova import VolcanoANOVA
+        va = VolcanoANOVA(alldf)
+        va.volcano_plot_one_drug(alldf, 'Drug_1047_IC50')
+        df = None
+        return df
+
+    def to_html(self, df):
+        for this in ['FEATURE', 'Drug id', 'association Id']:
+            df[this] = df[this].apply(lambda x:
+                '<a href="{0}.html">{1}</a>'.format(x,x))
+        return df.to_html(escape=False, classes=self.table_class,
+                header=False)
+
+    def _create_report(self, onweb=True):
+        # generated pictures and results
+        print('Generating data, images and HTML')
+        df = self.run()
+
+        # Create the table and add it
+        html_table = self.to_html(df)
+        self.add_section(html_table, 'Individual association analysis')
+
+        #section = ""
+        #for prefix in ['ODOFall', 'ODOFmsi', 'ODOFtissue']:
+        #    tag = "{0}_{1}____{2}.svg".format(prefix, self.drug, self.feature)
+        #    section += '<img src="{0}"></svg>\n'.format(tag)
+
+        self.add_section(section, "Boxplots")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
