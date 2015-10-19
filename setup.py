@@ -67,8 +67,9 @@ setup(
 
     # matplotlib 1.4.3 to use new functionalities in boxplot, which are used
     # in anova.py and boxswarm
+    # easydev 0.9.1 required to play with multicore+keyboard interruption
     install_requires = ['numpy', 'matplotlib>=1.4.3', 
-        'pandas', 'easydev', 'scipy'],
+        'pandas', 'easydev>=0.9.1', 'scipy'],
 
     entry_points = {
         'console_scripts': [
