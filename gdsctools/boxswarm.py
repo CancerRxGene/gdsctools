@@ -13,13 +13,14 @@ def boxswarm(data, names=None, vert=True, widths=0.5, **kwargs):
 
 
     """
-    b = BoxSwarm(data, names=names)
+    b = BoxSwarm(data, names=names, **kwargs)
     b.plot(vert=vert, widths=widths, **kwargs)
     return b
 
 
 class BoxSwarm(object):
-    def __init__(self, data, names=None):
+    def __init__(self, data, names=None, fontsize=20, hold=False, 
+            title='', lw=2, colors=['lightgrey', 'blue']):
         """
 
 
@@ -52,11 +53,12 @@ class BoxSwarm(object):
 
         self.ylabel = ''
         self.xlabel = ''
-        self.fontsize = 20
-        self.colors = ['lightgrey', 'blue']
-        self.hold = False
-        self.title = ''
-        self.lw = 2
+        self.fontsize = fontsize
+        self.colors = colors
+        self.hold = hold
+        self.title = title
+        self.lw = lw
+        self.markersize = 15
 
     def beeswarm(self, data, position, ratio=2.):
         """
@@ -94,7 +96,7 @@ class BoxSwarm(object):
             else:
                 X, Y = vector, self.beeswarm(vector, i+1)
             pylab.plot(X, Y,
-                'o', markersize=15, markerfacecolor=color,
+                'o', markersize=self.markersize, markerfacecolor=color,
                 markeredgewidth=0, alpha=0.5)
 
 
@@ -103,12 +105,14 @@ class BoxSwarm(object):
                vert=vert, patch_artist=True, 
                 positions=range(1, len(ordered_data)+1),
             showmeans=True, showfliers=False)
+        # meanline=True to have a line instead of a dot
 
         # for further tuning if needed.
         self.tuning = d
         # This is now in matplotlib 1.4.3 (dots instead of lines
         # though)
-        """
+        
+        # additional line for the 1 std
         means = [pylab.mean(data) for data in ordered_data]
         stds = [pylab.std(data) for data in ordered_data]
         for i, this in enumerate(means):
@@ -116,13 +120,19 @@ class BoxSwarm(object):
                 x1 = (i+1) - widths/2. / 1.5
                 x2 = (i+1) + widths/2. / 1.5
                 X = pylab.array([x1, x2])
-                pylab.plot(X, [this, this], lw=2, color='r')
+                y = this + stds[i]
+                pylab.plot(X, [y, y], lw=2, color='purple')
+                y = this - stds[i]
+                pylab.plot(X, [y, y], lw=2, color='purple')
             else:
                 y1 = (i+1) - widths/2. / 1.5
                 y2 = (i+1) + widths/2. / 1.5
                 Y = pylab.array([y1, y2])
-                pylab.plot([this, this], Y, lw=2, color='r')
-        """
+                x = this + stds[i]
+                pylab.plot([x, x], Y, lw=2, color='purple')
+                x = this - stds[i]
+                pylab.plot([x, x], Y, lw=2, color='purple')
+        
         for i, this in enumerate(d['boxes']):
             this.set_color('k')
             this.set_linewidth(self.lw)
