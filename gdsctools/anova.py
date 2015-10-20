@@ -29,9 +29,10 @@ from gdsctools.report import Report
 
 # TODO: Could inherit from a dataframe ?
 class GDSC_ANOVA_Results(object):
-    def __init__(self, data=None, input_feature=None, concentrations=None):
+    def __init__(self, data=None, input_feature=None, concentrations=None,
+            sep="\t"):
         if data is not None and isinstance(data, str):
-            self.read_csv(data)
+            self.df = self.read_csv(data, sep=sep)
         elif data is not None:
             self.df = data.copy() # assume it is a dataframe.
 
@@ -40,7 +41,10 @@ class GDSC_ANOVA_Results(object):
         self.varname_pval = 'FEATURE_ANOVA_pval'
         self.varname_qval = 'ANOVA FEATURE FDR %'
 
+
         if concentrations:
+            if "log max.Conc.tested" in self.df.columns:
+                raise ValueError("your dataframe already contains concentration")
             self.conc = pd.read_csv(concentrations, sep='\t')
             newdata = self.conc['Drug id'].apply(lambda x: "Drug_"+str(x)+"_IC50")
             self.conc['Drug id'] = newdata
@@ -61,6 +65,7 @@ class GDSC_ANOVA_Results(object):
     def read_csv(self, filename, sep="\t"):
         self.df = pd.read_csv(filename, sep=sep,
                 comment="#")
+        return self.df
 
     def _set_sensible_df(self, FDR_threshold=30, pval_threshold=None):
         if pval_threshold is None:
@@ -247,6 +252,15 @@ class GDSC_ANOVA_Results(object):
     def __str__(self):
         self.df.info()
         return ""
+    def check(self):
+        rold = GDSC_ANOVA_Results("anova_all.tsv",
+                concentrations='concentrations.tsv')
+        rold.df = rold.df[self.df.columns]
+        for x in self.df.columns:
+            try:
+                print x, max(self.df[x] - rold.df[x])
+            except:
+                print x, all(self.df[x] == rold.df[x])
 
 
 class GDSC_ANOVA(object):
@@ -276,6 +290,16 @@ class GDSC_ANOVA(object):
         """
         # Reads IC50
         self.ic50 = reader.IC50(ic50)
+ 
+        # Create a dictionary version of the data
+        # to be accessed per drug where NA have already been 
+        # removed. Each drug is a dictionary with 2 keys: 
+        # Y for the data and indices for the cosmicID where
+        # there is an IC50 measured.
+        ic50_parse = self.ic50.df.copy().unstack().dropna()
+        self.ic50_dict = dict([(d, {'indices': ic50_parse.ix[d].index,
+            'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
+
 
         # Reads features
         if features is None:
@@ -290,6 +314,21 @@ class GDSC_ANOVA(object):
         # and MSI (Microsatellite instability) status of the samples.
         self.msi_factor = self.features.df['MS-instability Factor Value']
 
+
+        # alias to speed up some code. Those are dictionary version of the
+        # 3 dataframes above.
+        self.features_dict = {}
+        self.msi_dict = {}
+        self.tissue_dict = {}
+        # FIXME not sure we need a copy here. could be a reference if not
+        # changed.
+        for drug_name in self.ic50.drugIds:
+            indices = self.ic50_dict[drug_name]['indices']
+            self.features_dict[drug_name] = self.features.df.ix[indices].copy()
+            self.msi_dict[drug_name] = self.msi_factor.ix[indices].copy()
+            self.tissue_dict[drug_name] = self.tissue_factor.ix[indices].copy()
+            
+
         # settings
         self.settings = {
             # include MSI as a co-factor
@@ -302,7 +341,7 @@ class GDSC_ANOVA(object):
             'pval_correction_method': 'fdr',   # or qvalue
             'equal_var_ttest': True,
             'fontsize': 20,
-            
+            'minimum_nonna_ic50': 6
             }
         # makes this dict keys accessible as attributes
         self.settings = AttrDict(**self.settings)
@@ -326,8 +365,54 @@ class GDSC_ANOVA(object):
         # a cache to compute ANOVA
         self.individual_anova = {}
 
+        # some preprocessing for the OLS compuation.
+        # We create the dummies for the tissue factor once for all
+        self._tissue_dummies = pd.get_dummies(self.tissue_factor)
+        columns = self._tissue_dummies.columns
+        columns = ['C(tissue)[T.' + x + ']' for x in columns]
+        self._tissue_dummies.columns = columns
 
-    def _get_one_drug_one_feature_data(self, drug_name, feature_name):
+    def _get_analysis_mode(self):
+        modes = []
+        if self.settings.analysis_type == 'PANCAN':
+            modes.append('tissue')
+
+        if self.settings.includeMSI_factor is True:
+            modes.append('msi')
+
+        modes.append('feature')
+        return modes
+
+    def diagnostics(self):
+        """
+
+        173390 feasible tests in v17 (96.65)
+        """
+        n_drugs = len(self.ic50.drugIds)
+        n_features = len(self.features.features) - 3
+        n_combos = n_drugs * n_features
+        feasible = 0
+        pb = Progress(n_drugs, 1)
+        counter = 0
+        for drug in self.ic50.drugIds:
+            for feature in self.features.features[3:]:
+                status = self._get_one_drug_one_feature_data(drug, feature,
+                        diagnostic_only=True)
+                if status is True:
+                    feasible += 1
+            counter += 1
+            pb.animate(counter)
+
+        results = {
+                'n_drug': n_drugs, 
+                'n_combos':n_combos,
+                'feasible_tests': feasible, 
+                'percentage_feasible_tests': float(feasible)/n_combos*100}
+        return results
+
+    #@do_profile()
+    def _get_one_drug_one_feature_data(self, drug_name, feature_name,
+            diagnostic_only=False):
         """
 
         return: empty dictionary if criteria not fulfilled, otherwise dictionary 
@@ -338,20 +423,41 @@ class GDSC_ANOVA(object):
 
         # select IC50 of a given drug
         # a fast way to select non-NA values from 1 column:
-        dd.Y = self.ic50.df[drug_name].dropna()
+        # dropna is actually faster than a method using a mask.
+        #dd.Y = self.ic50.df[drug_name].dropna()
+        #indices = dd.Y.index
+        #dd.masked_features = self.features.df[feature_name][indices]
+        #dd.masked_tissue = self.tissue_factor[indices]
+        #dd.masked_msi = self.msi_factor[indices]
+        #dd.positive_feature = dd.masked_features.values.sum()
+        #dd.negative_feature = len(dd.masked_features) - dd.positive_feature
+        #dd.positive_msi = dd.masked_msi.values.sum()
+        #dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
+        # using a mask instead of indices is 30% slower
+        #mask = self.ic50.df[drug_name].isnull()==False
+        #dd.masked_features = self.features.df[feature_name][mask]
+        #dd.masked_tissue = self.tissue_factor[mask]
+        #dd.masked_msi = self.msi_factor[mask]
+        
 
+        # Amother version using a dictionary instead of dataframer is actually
+        # 2-3 times faster. It requires to transform the dataframe into a
+        # dictionary once for all and dropping the NA as well.
+        # Now, the next line takes no time 
+        dd.Y = self.ic50_dict[drug_name]['Y']
         # an alias to the indices
-        indices = dd.Y.index
-
+        indices = self.ic50_dict[drug_name]['indices']
+        self.indices = indices
         # select only relevant tissues/msi/features
-        dd.masked_features = self.features.df[feature_name][indices]
-        dd.masked_tissue = self.tissue_factor[indices]
-        dd.masked_msi = self.msi_factor[indices]
+        # Those 3 lines takes 80% of the time
+        dd.masked_features = self.features_dict[drug_name][feature_name]
+        dd.masked_tissue = self.tissue_dict[drug_name]
+        dd.masked_msi = self.msi_dict[drug_name]
 
         # compute length of pos/neg features and MSI 
-        dd.positive_feature = dd.masked_features.values.sum()
+        dd.positive_feature = dd.masked_features.sum()
         dd.negative_feature = len(dd.masked_features) - dd.positive_feature
-        dd.positive_msi = dd.masked_msi.values.sum()
+        dd.positive_msi = dd.masked_msi.sum()
         dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
 
         # Some validity tests to run the analysis or not
@@ -367,8 +473,10 @@ class GDSC_ANOVA(object):
 
         # get length final pos/neg
         # use .values to access the data: 4x fastr
-        dd.positives = dd.Y.values[dd.masked_features.values==1]
-        dd.negatives = dd.Y.values[dd.masked_features.values==0]
+        #dd.positives = dd.Y.values[dd.masked_features.values==1]
+        #dd.negatives = dd.Y.values[dd.masked_features.values==0]
+        dd.positives = dd.Y[dd.masked_features.values==1]
+        dd.negatives = dd.Y[dd.masked_features.values==0]
         dd.Npos = len(dd.positives)
         dd.Nneg = len(dd.negatives)
 
@@ -379,11 +487,15 @@ class GDSC_ANOVA(object):
             return dd
         else:
             dd.status = True
+
+        if diagnostic_only is True:
+            return dd.status
         
         # compute mean and std of pos and neg sets
         dd.pos_IC50_mean = dd.positives.mean()
         dd.neg_IC50_mean = dd.negatives.mean()
         dd.delta_mean_IC50 = dd.pos_IC50_mean - dd.neg_IC50_mean
+        # note the ddof to agree with R convention.
         dd.pos_IC50_std = dd.positives.std(ddof=1)
         dd.neg_IC50_std = dd.negatives.std(ddof=1)
 
@@ -391,11 +503,9 @@ class GDSC_ANOVA(object):
         dd.effectsize_ic50 = cohens.cohens(dd.positives, dd.negatives)
         GLASS_d = glass.glass(dd.positives, dd.negatives)
         dd.pos_glass = GLASS_d[0]
-        dd.neg_glass = GLASS_d[0]
+        dd.neg_glass = GLASS_d[1]
         dd.feature_name = feature_name
         dd.drug_name = drug_name
-
-
         return dd
 
     #@do_profile()
@@ -460,16 +570,16 @@ class GDSC_ANOVA(object):
             # First, split tissues into N tissue columns
             # Note that there is no suffix parameter, so we need to do it
             # ourself.:
-            self._mydata = pd.DataFrame({'Y': odof.Y,
-                'tissue':odof.masked_tissue,
-                'msi':  odof.masked_msi, 'feature': odof.masked_features})
+            #self._mydata = pd.DataFrame({'Y': odof.Y,
+            #    'tissue':odof.masked_tissue,
+            #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
 
+            # FIXME: 40% of the time is used to create this data structure
             df = pd.get_dummies(odof.masked_tissue)
-            columns = ['C(tissue)[T.'+x +']' for x in
+
+            df.columns = ['C(tissue)[T.'+x +']' for x in
                     odof.masked_tissue.unique()]
-            Ntissue = len(columns)
-            df.columns = columns
-            self.ddd = df.copy()
+            Ntissue = len(df.columns)
             # Here we set other variables with dataframe columns' names as 
             # expected by OLS
             df['C(msi)[T.1]'] = odof.masked_msi.values
@@ -488,6 +598,7 @@ class GDSC_ANOVA(object):
             Ntissue -= 1
 
             self.data_lm = OLS(odof.Y, df.values).fit()
+            #self.data_lm = OLS(odof.Y, self.dummies2).fit()
 
             # SKLearn is also a possiblity
             # works for msi+feature but not if we include tissues ?
@@ -547,34 +658,8 @@ class GDSC_ANOVA(object):
                     savefig=savefig, fignum=2, mode='tissue')
 
             if self.settings.includeMSI_factor:
-                pylab.figure(3)
-                results = self._get_boxplot_data(odof, 'msi')
-                if results is None:
-                    print("INFO: MSI with at least 2 pos and 2 neg found. " +
-                        "No image created.")
-                else:
-                    data, names, significance = results
-                    bb = boxswarm.BoxSwarm(data, names)
-                    bb.xlabel = r'%s log(IC50)' % drug_name.replace("_", "\_")
-                    bb.title = 'FEATURE/MS-instability interactions'
-                    ax = bb.plot(vert=False)
-
-                    # get info from left axis
-                    common_ylim = ax.get_ylim()
-                    common_ticks = ax.get_yticks()
-
-                    self.ax = ax.twinx()
-                    self.ax.set_ylim(common_ylim)
-                    self.ax.set_yticks(common_ticks)
-                    self.ax.set_yticklabels([len(this) for this in data])
-
-                    pylab.tight_layout()
-                    if savefig is True:
-                        pylab.savefig(directory+os.sep+'ODOFmsi_{}____{}.png'.format(
-                            drug_name, feature_name))
-                        pylab.savefig(directory+os.sep+'ODOFmsi_{}____{}.svg'.format(
-                        drug_name, feature_name))
-
+                self._boxplot_pancan(odof, directory=directory, 
+                    savefig=savefig, fignum=2, mode='msi')
 
 
         results = {'FEATURE': feature_name,
@@ -611,7 +696,7 @@ class GDSC_ANOVA(object):
             fignum=1, title_prefix=''):
         assert mode in ['tissue', 'msi']
         drug_name = odof.drug_name.replace("_", "\_")
-        feature_name = odof.feature_name.replace("_", "\_")
+        #feature_name = odof.feature_name.replace("_", "\_")
 
         results = self._get_boxplot_data(odof, mode)
         if results is None:
@@ -624,7 +709,10 @@ class GDSC_ANOVA(object):
         data, names, significance = results
         bb = boxswarm.BoxSwarm(data, names)
         bb.xlabel = r'%s log(IC50)' % drug_name
-        bb.title = 'FEATURE/Cancer-type interactions'
+        if mode == 'tissue':
+            bb.title = 'FEATURE/Cancer-type interactions'
+        else:
+            bb.title = 'FEATURE/MS-instability interactions'
         ax = bb.plot(vert=False)
         # get info from left axis
         common_ylim = ax.get_ylim()
@@ -637,10 +725,10 @@ class GDSC_ANOVA(object):
         pylab.tight_layout()
         if savefig is True:
             filename = directory + os.sep
-            filename += 'ODOF_tissue_{}____{}'.format(drug_name, feature_name)
+            filename += 'ODOF_{}_{}____{}'.format(mode, 
+                    odof.drug_name, odof.feature_name)
             pylab.savefig(filename + '.png')
             pylab.savefig(filename + '.svg')
-
 
     def _boxplot(self, data, savefig=False, directory='.', fignum=1):
 
@@ -663,11 +751,10 @@ class GDSC_ANOVA(object):
         pylab.tight_layout()
         if savefig is True:
             filename = directory + os.sep
-            filename += 'ODOF_all_{}____{}'.format(drug_name, feature_name)
+            filename += 'ODOF_all_{}____{}'.format(data.drug_name, 
+                    data.feature_name)
             pylab.savefig(filename + '.png')
             pylab.savefig(filename + '.svg')
-
-
 
     #@do_profile()
     def _get_anova_summary(self, data_lm, Ntissue, output='dict'):
@@ -680,39 +767,33 @@ class GDSC_ANOVA(object):
         effects = np.dot(q.T, data_lm.model.data.endog)
 
         # create the W matrix using tissue and MSI if requested
-        term_names = ['Intercept']
-        design_info = {}
-        design_info['Intercept'] = (0, 1, None)
-        dof = [] 
-        indices = []
-        if self.settings.analysis_type == 'PANCAN':
-            term_names += ['C(tissue)']
-            design_info['C(tissue)'] = (1, 1+Ntissue, None)
-            dof.append(Ntissue)
-            indices.append('tissue')
-        if self.settings.includeMSI_factor is True:
-            term_names += ['C(msi)']
-            design_info['C(msi)'] = (Ntissue+1, Ntissue+2, None)
-            dof.append(1)
-            indices.append('msi')
-            shift = 1
-        else:
-            shift = 0
-        # Feature are always used.
-        term_names += ['feature']
-        design_info['feature'] = (Ntissue+1+shift, Ntissue+2+shift, None)
-        dof.append(1)
-        indices.append('feature')
-
-        Nterms = len(term_names)
+        # default is that the 3 features are used
+        modes = self._get_analysis_mode()
         Ncolumns = data_lm.model.data.exog.shape[1] 
-        #Ncolumns += 1 # +1 for intercept
-        arr = np.zeros((Nterms, Ncolumns))
 
-        # --  
-        slices = [slice(*design_info[name]) for name in term_names]
-        for i, slice_ in enumerate(slices):
-             arr[i, slice_] = 1
+        if 'tissue' in modes and 'msi' in modes:
+            dof = [Ntissue, 1, 1]
+            indices = ['tissue', 'msi', 'feature', 'Residuals']
+            # 4 stands for intercept + tissue + msi +feature
+            arr = np.zeros((4, Ncolumns))
+            arr[1, slice(1, Ntissue+1)] = 1
+            arr[2, Ntissue + 1] = 1
+            arr[3, Ntissue + 2] = 1
+        elif 'tissue' not in modes and 'msi' in modes:
+            dof = [1, 1]
+            indices = ['msi', 'feature', 'Residuals']
+            # 3 stands for intercept + msi +feature
+            arr = np.zeros((3, Ncolumns))
+            arr[1, Ntissue + 1] = 1
+            arr[2, Ntissue + 2] = 1
+        elif 'tissue' not in modes and 'msi' not in modes:
+            dof = [1]
+            indices = ['msi', 'feature', 'Residuals']
+            # 3 stands for intercept + msi +feature
+            arr = np.zeros((3, Ncolumns))
+            arr[1, Ntissue + 1] = 1
+        arr[0, 0] = 1                   # intercept
+
         sum_sq = np.dot(arr, effects**2)
         sum_sq = sum_sq[1:]
         mean_sq = sum_sq / np.array(dof)
@@ -811,7 +892,7 @@ class GDSC_ANOVA(object):
         # drop DRUG where number of IC50 (non-null) is below 5
         # axis=0 is default but we emphasize that sum is over column (i.e. drug
         vv = (self.ic50.df.isnull() == False).sum(axis=0)
-        drug_names = vv.index[vv >= 6]
+        drug_names = vv.index[vv >= self.settings.minimum_nonna_ic50]
         self.drug_names = drug_names
 
         # if user provided a list of drugs, use them:
@@ -838,25 +919,30 @@ class GDSC_ANOVA(object):
         # all ANOVA have been compute individually for each drug and each
         # feature.
         # Now, we compute the FDR correction
-        if self.settings.pval_correction_method == 'fdr':
-            data = df['FEATURE_ANOVA_pval'].values
-            FDR = fdrcorrection(data)[1]  * 100 # percentage ??
-        else:
-            raise NotImplementedError
-            # should be qvalue correction (see qvalue library in R)
-            FDR = [None] * len(df)
-
+        fdr = self._compute_fdr(df)
         # insert FDR as last column.
-        df.insert(len(df.columns), 'ANOVA FEATURE FDR %', FDR)
+        df.insert(len(df.columns), 'ANOVA FEATURE FDR %', fdr)
 
         # insert a unique identifier as first column
         N = len(df)
         df.insert(0, 'assoc_id', range(1,N+1))
         df = df[self.column_names]
+        df.reset_index(inplace=True)
 
         # save as attribute
         self.anova_df = df
         return df
+
+    def _compute_fdr(self, df):
+        if self.settings.pval_correction_method == 'fdr':
+            data = df['FEATURE_ANOVA_pval'].values
+            fdr = fdrcorrection(data)[1]  * 100 # percentage ??
+        else:
+            raise NotImplementedError
+            # should be qvalue correction (see qvalue library in R)
+            fdr = [None] * len(df)
+
+        return fdr
 
     def _get_boxplot_data(self, odof, mode='tissue'):
         # should be called by anova_one_drug_one_feature
@@ -922,6 +1008,9 @@ class GDSC_ANOVA(object):
             return None
 
 
+
+
+
 def multicore(ic50, maxcpu=4):
     """Using 4 cores, the entire analysis took 15 minutes using
     4 CPUs (16 Oct 2015).
@@ -964,7 +1053,6 @@ class OneDrugOneFeature(Report):
         self.drug = drug
         self.feature = feature
         self.table_class = 'dataframe-summary'
-
         filename = "{0}____{1}.html".format(self.drug,
                 self.feature.replace(" ", "_"))
 
@@ -972,9 +1060,11 @@ class OneDrugOneFeature(Report):
                 filename=filename)
 
     def run(self):
+        pylab.ioff()
         df = self.factory.anova_one_drug_one_feature(self.drug,
                 self.feature, savefig=True, show_boxplot=True,
                 directory=self.report_directory)
+        pylab.ion()
         df.insert(0, 'association Id', 'a1')
         return df
 
@@ -982,9 +1072,9 @@ class OneDrugOneFeature(Report):
         for this in ['FEATURE', 'Drug id', 'association Id']:
             df[this] = df[this].apply(lambda x:
                 '<a href="{0}.html">{1}</a>'.format(x,x))
-        df = df.T
+        #df = df.T
         return df.to_html(escape=False, classes=self.table_class,
-                header=False)
+                header=True)
 
     def _create_report(self, onweb=True):
         # generated pictures and results
@@ -996,10 +1086,9 @@ class OneDrugOneFeature(Report):
         self.add_section(html_table, 'Individual association analysis')
 
         section = ""
-        for prefix in ['ODOFall', 'ODOFmsi', 'ODOFtissue']:
+        for prefix in ['ODOF_all', 'ODOF_msi', 'ODOF_tissue']:
             tag = "{0}_{1}____{2}.svg".format(prefix, self.drug, self.feature)
             section += '<img src="{0}"></svg>\n'.format(tag)
-
         self.add_section(section, "Boxplots")
 
 
