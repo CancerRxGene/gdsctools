@@ -1,6 +1,23 @@
 import numpy as np
+import pylab
+import os
 
+class Savefig(object):
+    def __init__(self):
+        # This should be a parent class. 
+        # The child should have a directory attribute 
+        # or settings.directory. If not, default to local directory.
+        self.directory = '.'
 
+    def savefig(self, name, **kargs):
+        try:
+            directory = self.settings.directory
+        except:
+            directory = self.directory
+
+        filename = directory + os.sep + name
+        print('Saving %s' % filename)
+        pylab.savefig(filename, **kargs)
 
 
 class Logistic(object):
