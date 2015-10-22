@@ -90,7 +90,12 @@ class GenomicFeatures(Reader, CosmicRows):
                 "the features input file must contains a column named COSMIC ID"
             self.df.set_index('COSMIC ID', inplace=True)
         else:
-            self.df = filename.df.copy()
+            try:
+                # there is a df attribute
+                self.df = filename.df.copy()
+            except:
+                # it is a dataframe
+                self.df = filename
 
         # There are several types of features e.g., mutation, CNA,
         # methylation but all are stored within the same file
