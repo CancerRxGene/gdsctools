@@ -219,7 +219,11 @@ class GDSC_ANOVA_Results(Savefig):
         # and may change if FDR changes.
         self._set_sensible_df()
         df = pd.concat([self.sensible_df, self.resistant_df])
-        df.sort_values('assoc_id', inplace=True)
+        try:
+            df.sort_values('assoc_id', inplace=True)
+        except:
+            df.sort('assoc_id', inplace=True)
+
         return df
 
     def _get_data(self, df_count_sensible, df_count_resistant):
@@ -242,8 +246,13 @@ class GDSC_ANOVA_Results(Savefig):
         # which is the index. So let us add the index temporarily as
         # a column, sort, and remove 'name' column afterwards
         df_count['name'] = df_count.index
-        df_count.sort_values(by=['total', 'name'], ascending=False,
+        try:
+            df_count.sort_values(by=['total', 'name'], ascending=False,
                 inplace=True)
+        except:
+            df_count.sort_values(by=['total', 'name'], ascending=False,
+                inplace=True)
+
         df_count.drop('name', axis=1, inplace=True)
         return df_count
 
@@ -1144,7 +1153,10 @@ class GDSC_ANOVA(object):
         df = pd.concat(self.individual_anova, ignore_index=True)
 
         # sort all data by ANOVA p-values
-        df.sort_values('FEATURE_ANOVA_pval', inplace=True)
+        try:
+            df.sort_values('FEATURE_ANOVA_pval', inplace=True)
+        except:
+            df.sort('FEATURE_ANOVA_pval', inplace=True)
 
         # all ANOVA have been compute individually for each drug and each
         # feature.
@@ -1209,7 +1221,13 @@ class GDSC_ANOVA(object):
         means = groups.mean().unstack(mode)
         if len(means):
             delta = means.ix[0] - means.ix[1]
-            delta.sort_values(inplace=True)
+            try:
+                # new pandas v0.17
+                delta.sort_values(inplace=True)
+            except:
+                # sort_values not in anaconda for py3.3
+                delta.sort(inplace=True)
+
             significance = {}
             data = []
             names = []
@@ -1558,7 +1576,10 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         # Create table with links to all drugs
         groups = self.results.df.groupby('Drug id')
         try:
-            df = groups.mean()['ANOVA FEATURE FDR %'].sort_values()
+            try:
+                df = groups.mean()['ANOVA FEATURE FDR %'].sort_values()
+            except:
+                df = groups.mean()['ANOVA FEATURE FDR %'].sort()
             df = df.reset_index() # get back the Drug id in the dataframe columns
             # add another set of drug_id but sorted in alpha numerical order
             drugs = list(df['Drug id'].values)
@@ -1578,7 +1599,10 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         # Create full table with links to all features
         df = pd.DataFrame({'FEATURE': self.results.df['FEATURE'].unique()})
-        df.sort_values(by='FEATURE', inplace=True)
+        try:
+            df.sort_values(by='FEATURE', inplace=True)
+        except:
+            df.sort(by='FEATURE', inplace=True)
 
         groups = self.results.get_significant_set().groupby('FEATURE').groups
 
