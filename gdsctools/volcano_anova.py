@@ -4,7 +4,6 @@ import numpy as np
 import easydev
 
 from easydev import Progress, AttrDict
-from cno.misc.profiler import do_profile
 
 
 __all__ = ['VolcanoANOVA']
@@ -108,7 +107,6 @@ class VolcanoANOVA(Savefig):
         data = self._get_volcano_sub_data('FEATURE', feature)
         self.volcano_plot(data, title=feature)
 
-    #@do_profile()
     def _get_volcano_sub_data(self, mode, target=None):
         # using data related to the given drug
 
@@ -186,7 +184,6 @@ class VolcanoANOVA(Savefig):
         data['markersize'] = markersize
         return data
 
-    #@do_profile()
     def volcano_plot_one_drug(self, drug_id):
         """Volcano plot for one drug and all genomic features
 
@@ -199,7 +196,6 @@ class VolcanoANOVA(Savefig):
         data = self._get_volcano_sub_data('Drug id', drug_id)
         self.volcano_plot(data, title=drug_id)
 
-    #@do_profile()
     def volcano_plot(self, data, title=''):
         """Plots signed effects versus pvalues
 
