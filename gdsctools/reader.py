@@ -40,6 +40,10 @@ class Reader(object):
         self.df.info()
         return ""
 
+    def to_csv(self, filename, sep=None):
+        if sep is None:
+            sep = self._sep
+        self.df.to_csv(filename, sep=sep)
 
 class CosmicRows(object):
     """Parent class to IC50 and GenomicFeatures"""
