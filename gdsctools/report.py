@@ -16,12 +16,12 @@
 import os
 import shutil
 
-import pylab
 import easydev
 import pandas as pd
 
 
-# from cno
+import bs4
+
 class HTMLTable(object):
     def __init__(self, df, name, **kargs):
         self.df = df.copy() # because we will change its contents possibly
@@ -293,10 +293,10 @@ class Report(object):
         contents += "<hr>" + self.get_time_now()
         contents += self.get_footer()
 
-        import bs4
         contents = bs4.BeautifulSoup(contents).prettify()
         fh.write(contents)
         fh.close()
+
 
     def report(self, browse=True):
         self._create_report()
