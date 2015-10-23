@@ -58,6 +58,7 @@ def anova_pipeline(args=None):
 
     print options.drug
     print options.feature
+    print options.show_boxplots
     an = anova.GDSC_ANOVA(r)
     df = an.anova_one_drug_one_feature(options.drug, 
             feature_name=options.feature, 

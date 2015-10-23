@@ -1,4 +1,9 @@
 
+Version 0.2 23 Oct 2015
+==========================
+
+First working version with HTML output.
+
 Version 0.1 14 Oct 2015
 =======================
 

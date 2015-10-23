@@ -57,13 +57,6 @@ def test_anova_all():
     an = GDSC_ANOVA(tools.get_data(), features)
     df = an.anova_all()
 
-
-# Need a test file with a mutation that can be ignored beacause number of pos is
-# <2
-
-# need test includeMSI_factor set to False
-# need test analyseType != PANCAN
-
 def test_anova_summary():
     an = GDSC_ANOVA(tools.get_data())
     # by default  regression includes + msi + feature

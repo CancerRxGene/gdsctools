@@ -50,6 +50,7 @@ class Settings(AttrDict):
         self.pval_threshold = np.inf
         self.directory = 'gdsc'
         self.savefig = False
+        self.effect_threshold = 0 # use in volcano
 
     def check(self):
         # check validity of the settings
@@ -174,6 +175,8 @@ class GDSC_ANOVA_Results(Savefig):
         nsens = len(self.sensible_df)
         nres = len(self.resistant_df)
         N = nsens + nres
+        if N == 0:
+            return 0,0
         name = self.varname_pval
         data = self.df[name].ix[0:N-1]
         m, M = data.min(), data.max()
@@ -181,6 +184,8 @@ class GDSC_ANOVA_Results(Savefig):
     def _get_fdr_range(self):
         name = self.varname_qval
         data = self.df[name][(self.df[name]< self.settings.fdr_threshold)]
+        if len(data) == 0:
+            return 0,0
         m, M = data.min(), data.max()
         return m,M
 
@@ -189,9 +194,6 @@ class GDSC_ANOVA_Results(Savefig):
         pvals = df[self.varname_pval]
         pvalue = pvals[qvals < self.settings.fdr_threshold].max()
         return pvalue
-
-    def volcano_plot(self):
-        pass
 
     def read_csv(self, filename, sep="\t"):
         self.df = pd.read_csv(filename, sep=sep,
@@ -245,7 +247,7 @@ class GDSC_ANOVA_Results(Savefig):
         df_count.drop('name', axis=1, inplace=True)
         return df_count
 
-    def drug_summary(self, show=True, top=50, fontsize=10):
+    def drug_summary(self,  top=50, fontsize=10):
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -255,15 +257,14 @@ class GDSC_ANOVA_Results(Savefig):
 
         df_count = self._get_data(df_count_sensible, df_count_resistant)
 
-        if show is True:
+        if len(df_count):
             self._plot(df_count, 'drug', top)
-
-        if self.settings.savefig is True:
-            self.savefig('drug_summary.png')
+            if self.settings.savefig is True:
+                self.savefig('drug_summary.png')
 
         return df_count
 
-    def feature_summary(self, show=True, top=50, fontsize=10):
+    def feature_summary(self, top=50, fontsize=10):
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -291,10 +292,10 @@ class GDSC_ANOVA_Results(Savefig):
         #
         #size_total_domain = len(set(self.df['FEATURE']))
         #Gperc = size_domain /  float(size_total_domain)
-        if show is True:
+        if len(df_count)>0:
             self._plot(df_count, 'feature', top, fontsize=fontsize)
-        if self.settings.savefig is True:
-            self.savefig('feature_summary.png')
+            if self.settings.savefig is True:
+                self.savefig('feature_summary.png')
         return df_count
 
     def _plot(self, df_count, title_tag, top, fontsize=10):
@@ -336,6 +337,7 @@ class GDSC_ANOVA_Results(Savefig):
         strong_hits = []
         full_strong_hits = []
 
+        
         MC1 = self.df['log max.Conc.tested']
         MC2 = self.df['log max.Conc.tested2']
         mask2 = self.df['FEATUREpos_logIC50_MEAN'] < MC1
@@ -400,6 +402,7 @@ class GDSC_ANOVA_Results(Savefig):
                 print x, all(self.df[x] == rold.df[x])
 
     def create_html_associations(self):
+        print("Creating individual HTML pages for each association")
         df = self.get_significant_set()
         drugs = df['Drug id'].values
         features = df['FEATURE'].values
@@ -409,9 +412,8 @@ class GDSC_ANOVA_Results(Savefig):
         pb = Progress(N)
         html = OneDrugOneFeature(self.ic50, self.input_features,
                 drug='dummy', feature='dummy', fdr='dummy')
+        html.settings = self.settings
         for i in range(N):
-            if i not in [0,1,2,116,117,118]:
-                continue
             html.drug = drugs[i]
             html.feature = features[i]
             html.filename = str(assocs[i]) + '.html'
@@ -428,14 +430,15 @@ class GDSC_ANOVA_Results(Savefig):
         pb = Progress(N)
         for i, feature in enumerate(groups.indices.keys()):
             # get the indices and therefore subgroup
-            if feature not in ['BRAF_mut', 'MLL2_mut', 'KRAS_mut']:
-                continue
+            #if feature not in ['BRAF_mut', 'MLL2_mut', 'KRAS_mut']:
+            #    continue
             subdf = groups.get_group(feature)
             metadata = {}
             metadata['n_cell_lines'] = self.input_features[feature].sum()
             # get concentration range
             metadata['feature'] = feature
             html = HTMLOneFeature(self.df, subdf, metadata)
+            html.settings = self.settings
             self.subdf = subdf
             html.report(browse=False)
             pb.animate(i+1)
@@ -448,8 +451,8 @@ class GDSC_ANOVA_Results(Savefig):
         N = len(groups.indices.keys())
         pb = Progress(N)
         for i, drug in enumerate(groups.indices.keys()):
-            if drug not in ['Drug_330_IC50', 'Drug_1047_IC50']:
-                continue
+            #if drug not in ['Drug_330_IC50', 'Drug_1047_IC50']:
+            #    continue
             # get the indices and therefore subgroup
             subdf = groups.get_group(drug)
             metadata = {}
@@ -462,13 +465,16 @@ class GDSC_ANOVA_Results(Savefig):
             metadata['drug'] = drug
 
             html = HTMLOneDrug(self.df, subdf, metadata)
+            html.settings = self.settings
             html.report(browse=False)
             pb.animate(i+1)
 
     def create_html_main(self):
+        print("Creating main HTML page")
         buffer = self.settings.savefig
         self.settings.savefig = True
         html = HTML_main(self, 'index.html')
+        html.settings = self.settings
         html.report(browse=False)
         self.settings.savefig = buffer
 
@@ -482,7 +488,7 @@ class GDSC_ANOVA_Results(Savefig):
         self.create_html_drugs()
         self.create_html_features()
         self.create_html_associations()
-        self.create_manova()
+        self.create_html_manova()
 
 
 class GDSC_ANOVA(object):
@@ -1342,6 +1348,7 @@ class HTMLOneFeature(Report):
 
     def run(self, N=20):
         v = VolcanoANOVA(self.df)
+        v.settings = self.settings # get fdr, pval
         v.settings.savefig = True
         v.settings.directory = self.directory
         v.volcano_plot_one_feature(self.feature)
@@ -1409,6 +1416,7 @@ class HTMLOneDrug(Report):
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df)
+        v.settings = self.settings # get fdr, pval
         v.settings.savefig = True
         v.settings.directory = self.directory
         v.volcano_plot_one_drug(self.drug)
@@ -1484,16 +1492,22 @@ class HTML_main(Report):
     def _create_report(self, onweb=True):
         df = self.results.df
 
-        self.add_section(self.results.diagnostics().replace("\n","<br>"),
+        try:
+            self.add_section(self.results.diagnostics().replace("\n","<br>"),
                 'summary')
+        except:
+            self.add_section('not available','summary')
 
         print('Create summary plots')
         v = VolcanoANOVA(df)
-        v.df = v.df[v.df['ANOVA FEATURE FDR %']<60]
+        # this can be pretty slow. so drop some values
+        if len(v.df)>10000:
+            v.df = v.df[v.df['ANOVA FEATURE FDR %']<60]
+        v.settings = self.settings # get fdr, pval
         v.settings.savefig = True
         v.settings.directory = self.directory
         v.volcano_plot_all()
-
+        print('Creating sections')
         # volcano plot
         html = """
 <h3></h3>
@@ -1538,17 +1552,20 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         # Create table with links to all drugs
         groups = self.results.df.groupby('Drug id')
-        df = groups.mean()['ANOVA FEATURE FDR %'].sort_values()
-        df = df.reset_index() # get back the Drug id in the dataframe columns
-        # add another set of drug_id but sorted in alpha numerical order
-        drugs = list(df['Drug id'].values)
-        alphanum = lambda x: int(x.split("_")[1])
-        drugs.sort(key=alphanum)
-        df['Drug id (alpha order)'] = drugs
+        try:
+            df = groups.mean()['ANOVA FEATURE FDR %'].sort_values()
+            df = df.reset_index() # get back the Drug id in the dataframe columns
+            # add another set of drug_id but sorted in alpha numerical order
+            drugs = list(df['Drug id'].values)
+            alphanum = lambda x: int(x.split("_")[1])
+            drugs.sort(key=alphanum)
+            df['Drug id (alpha order)'] = drugs
+            table = HTMLTable(df, 'drugs')
+            table.add_href('Drug id')
+        except:
+            table = HTMLTable(df, 'drugs')
+            table.add_href('Drug id')
 
-        table = HTMLTable(df, 'drugs')
-        table.add_href('Drug id')
-        table.add_href('Drug id (alpha order)')
 
         html = "The following table provides links to dedicated pages for each drug (sorted by ascending FDR)"
         html += table.to_html(escape=False, header=True, index=False)
@@ -1588,7 +1605,7 @@ class SignificantHits(object):
         columns = [u'assoc_id', 'FEATURE',
             'Drug id', u'Drug name', 'Drug Target',
             'N_FEATURE_neg', 'N_FEATURE_pos',
-            'log max.Conc.tested',
+        #    'log max.Conc.tested',
             'FEATUREpos_logIC50_MEAN',
             'FEATUREneg_logIC50_MEAN',
             'FEATURE_deltaMEAN_IC50',

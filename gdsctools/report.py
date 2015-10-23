@@ -60,7 +60,10 @@ class HTMLTable(object):
         The clip mode means that data are positives and 
         """
         from colormap import rgb2hex 
+
         data = self.df[colname].values
+        if len(data) == 0:
+            return
         if mode == 'clip':
             data = [min(x, 2)/2. for x in data]
         elif mode == 'absmax':
