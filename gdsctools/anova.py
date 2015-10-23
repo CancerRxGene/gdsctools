@@ -1215,8 +1215,10 @@ class GDSC_ANOVA(object):
             names = []
             for category in delta.ix['ic50'].index:
                 prefix_query = mode+"==@category"
-                neg = df.query(prefix_query+' and feature==0')['ic50']
-                pos = df.query(prefix_query+' and feature==1')['ic50']
+                neg = df.query(prefix_query+' and feature==0', 
+                        engine='python')['ic50']
+                pos = df.query(prefix_query+' and feature==1',
+                        engine='python')['ic50']
                 # HERE in the original code, equal_var is False. why ?
                 res = scipy.stats.ttest_ind(neg, pos, equal_var=False)
                 significance[category] = res[1] # p-values
