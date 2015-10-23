@@ -474,6 +474,7 @@ class GDSC_ANOVA_Results(Savefig):
         buffer = self.settings.savefig
         self.settings.savefig = True
         html = HTML_main(self, 'index.html')
+        html._init_report() # created the directory 
         html.settings = self.settings
         html.report(browse=False)
         self.settings.savefig = buffer
@@ -1197,9 +1198,11 @@ class GDSC_ANOVA(object):
 
         # if positive or negative for a combo, is not>=2, drop it
         cc = (counts>=2).all()
+        # used in the query
         categories = list(cc.unstack().columns[cc])
 
-        groups = df.query(mode + ' in @categories').groupby([mode, 'feature'])
+        groups = df.query(mode + ' in @categories', 
+                engine='python').groupby([mode, 'feature'])
 
         # TODO; move all this if block into a method
         # figure out the delta between pos and neg

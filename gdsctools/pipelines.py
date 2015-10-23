@@ -59,7 +59,12 @@ def anova_pipeline(args=None):
     print options.drug
     print options.feature
     print options.show_boxplots
-    an = anova.GDSC_ANOVA(r)
+    print("Reading data")
+    an = anova.GDSC_ANOVA(r, features=options.features)
+    an.settings.savefig = options.savefig
+    print("analysing")
+    if options.savefig is True:
+        print("creating images")
     df = an.anova_one_drug_one_feature(options.drug, 
             feature_name=options.feature, 
             show_boxplot=options.show_boxplots)
@@ -102,13 +107,16 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("--ic50", dest='ic50',
                          default=None, type=str,
                          help="todo")
-        #group.add_argument("--features", dest='features',
-        #                 default=None, type=str,
-        #                 help="todo")
+        group.add_argument("--features", dest='features',
+                           default=None, type=str,
+                           help="todo")
         #group.add_argument("--data", dest='data',
         #                 default=None, type=str,
         #                 help="A TSV file with cosmic Ids as rows and Drug and"
         #                 + " features as columns. ")
+        group.add_argument("--save-images", dest='savefig',
+                         action="store_true",
+                         help="verbose option.")
         group.add_argument("--verbose", dest='verbose',
                          action="store_true",
                          help="verbose option.")

@@ -133,7 +133,9 @@ class Report(object):
         # if the directory already exists, print a warning
         try:
             os.mkdir(directory)
+            print("Created directory {}".format(directory))
         except Exception:
+            pass
             # already exists
             #txt = "Existing directory {}. Files may be overwritten".format(self.report_directory)
             #if self._overwrite_report is True:
@@ -142,7 +144,6 @@ class Report(object):
             #    raise IOError('Directory %s exists already. Set
             #    _overwrite_report to True or delete the directory' %
             #    directory)=
-            pass
 
         #for filename in ["dana.css", "tools.js"]:
         #    filename = easydev.gsf("cno", "", filename)
