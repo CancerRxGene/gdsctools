@@ -34,7 +34,6 @@ class VolcanoANOVA(Savefig):
         self.varname_pvalue = 'FEATURE_ANOVA_pval'
         self.varname_qvalue = 'ANOVA FEATURE FDR %'
 
-        self.stats = self._get_volcano_global_data()
 
         # intensive calls made once for all
         self.groups_by_drugs = self.df.groupby('Drug id').groups
@@ -242,6 +241,7 @@ class VolcanoANOVA(Savefig):
         ax.grid(color='white', linestyle='solid')
 
         #print(fdrlim, fdrlim1, fdrlim2, fdrlim3)
+        self.stats = self._get_volcano_global_data()
         fdrlim = self.stats['fdrs'][self.settings.fdr_threshold]
         fdrlim1 = self.stats['fdrs'][10]
         fdrlim2 = self.stats['fdrs'][1]
