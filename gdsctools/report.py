@@ -179,7 +179,9 @@ class Report(object):
 
     def get_time_now(self):
         import datetime
-        username = os.environ["USERNAME"]
+        import getpass
+        username = getpass.getuser()
+        # this is not working on some systems: os.environ["USERNAME"]
         msg = '<div class="date">Created on ' + str(datetime.datetime.now())
         msg +=  " by " + username +'</div>'
         return msg
