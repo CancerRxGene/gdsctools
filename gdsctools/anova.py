@@ -1137,7 +1137,7 @@ class GDSC_ANOVA(object):
         df = pd.concat(self.individual_anova, ignore_index=True)
 
         # sort all data by ANOVA p-values
-        df = df.sort('FEATURE_ANOVA_pval')
+        df.sort_values('FEATURE_ANOVA_pval', inplace=True)
 
         # all ANOVA have been compute individually for each drug and each
         # feature.
