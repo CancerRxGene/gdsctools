@@ -69,7 +69,7 @@ setup(
     # in anova.py and boxswarm
     # easydev 0.9.1 required to play with multicore+keyboard interruption
     install_requires = ['numpy', 'matplotlib>=1.4.3', 
-        'pandas', 'easydev>=0.9.1', 'scipy', "colormap>=0.9.6",
+        'pandas>=0.17', 'easydev>=0.9.1', 'scipy', "colormap>=0.9.6",
         "beautifulsoup4"],
 
     entry_points = {
