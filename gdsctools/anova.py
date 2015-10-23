@@ -397,9 +397,9 @@ class GDSC_ANOVA_Results(Savefig):
         rold.df = rold.df[self.df.columns]
         for x in self.df.columns:
             try:
-                print x, max(self.df[x] - rold.df[x])
+                print(x, max(self.df[x] - rold.df[x]))
             except:
-                print x, all(self.df[x] == rold.df[x])
+                print(x, all(self.df[x] == rold.df[x]))
 
     def create_html_associations(self):
         print("Creating individual HTML pages for each association")

@@ -56,9 +56,9 @@ def anova_pipeline(args=None):
 
     r = reader.IC50(options.ic50)
 
-    print options.drug
-    print options.feature
-    print options.show_boxplots
+    print(options.drug)
+    print(options.feature)
+    print(options.show_boxplots)
     print("Reading data")
     an = anova.GDSC_ANOVA(r, features=options.features)
     an.settings.savefig = options.savefig
