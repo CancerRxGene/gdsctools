@@ -250,7 +250,7 @@ class GDSC_ANOVA_Results(Savefig):
             df_count.sort_values(by=['total', 'name'], ascending=False,
                 inplace=True)
         except:
-            df_count.sort(by=['total', 'name'], ascending=False,
+            df_count.sort(columns=['total', 'name'], ascending=False,
                 inplace=True)
 
         df_count.drop('name', axis=1, inplace=True)
@@ -1602,7 +1602,7 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         try:
             df.sort_values(by='FEATURE', inplace=True)
         except:
-            df.sort(by='FEATURE', inplace=True)
+            df.sort('FEATURE', inplace=True)
 
         groups = self.results.get_significant_set().groupby('FEATURE').groups
 
