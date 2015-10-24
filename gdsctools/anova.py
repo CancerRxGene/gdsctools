@@ -250,7 +250,7 @@ class GDSC_ANOVA_Results(Savefig):
             df_count.sort_values(by=['total', 'name'], ascending=False,
                 inplace=True)
         except:
-            df_count.sort_values(by=['total', 'name'], ascending=False,
+            df_count.sort(by=['total', 'name'], ascending=False,
                 inplace=True)
 
         df_count.drop('name', axis=1, inplace=True)
