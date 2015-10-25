@@ -5,6 +5,7 @@
 """
 import pandas as pd
 import pylab
+import numpy as np
 import easydev
 
 
@@ -45,6 +46,7 @@ class Reader(object):
             sep = self._sep
         self.df.to_csv(filename, sep=sep)
 
+
 class CosmicRows(object):
     """Parent class to IC50 and GenomicFeatures"""
     def _get_cosmic(self):
@@ -79,6 +81,41 @@ class IC50(Reader, CosmicRows):
         return list(self.df.columns)
     drugIds = property(_get_drugs)
 
+    def plot_ic50_count(self):
+        """Plots the fraction of valid/measured IC50 per drug
+
+        :return: the fraction of valid/measured IC50 per drug"""
+        data = self.df.count()/len(self.df)
+        pylab.clf()
+        pylab.plot(data)
+        pylab.grid()
+        pylab.xlim([0,265])
+        pylab.xlabel('Drug index')
+        pylab.ylim([0,1])
+        pylab.ylabel('Percentage of valid IC50')
+        return  data
+
+    def hist(self, bins=20, **kargs):
+        """Histogram of the measured IC50
+
+        :return: all measured IC50"""
+        data = [x for x in self.df.values.flatten() if not np.isnan(x)]
+        pylab.clf()
+        pylab.hist(data, bins=bins, **kargs)
+        pylab.grid()
+        pylab.xlabel('log IC50')
+        return data
+
+    def __str__(self):
+        txt = "Number of drugs: %s\n" % len(self.drugIds)
+        txt += "Number of cell lines: %s\n" % len(self.df)
+        N = len(self.drugIds) * len(self.df)
+        Nna = self.df.isnull().sum().sum()
+        txt += "Percentage of NA {0}\n".format(Nna / float(N))
+        return txt
+
+
+    
 
 class GenomicFeatures(Reader, CosmicRows):
     def __init__(self, filename=None, sep="\t"):
@@ -122,16 +159,41 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def plot(self):
         data = pd.get_dummies(self.df['Tissue Factor Value']).sum()
+        data.index = [x.replace("_", " ") for x in data.index]
+        # deprecated but works for python 3.3
         data.sort(ascending=False)
+        pylab.figure(1)
+        pylab.clf()
         labels = list(data.index)
-        labels = [x.replace('_','\_') for x in labels]
         pylab.pie(data, labels=labels)
+        pylab.figure(2)
+        data.plot(kind='barh')
+        pylab.grid()
+        pylab.xlabel('Occurences')
         return data
 
+    def __str__(self):
+        txt = 'Genomic features distribution\n'
+        n_mutations = len([x for x in self.df.columns if x.endswith("_mut")])
+        txt += "Mutation: {}\n".format(n_mutations)
+
+        n_gain = len([x for x in self.df.columns if x.startswith("gain_cna")])
+        txt += "CNA (gain): {}\n".format(n_gain)
+        n_loss = len([x for x in self.df.columns if x.startswith("loss_cna")])
+        txt += "CNA (loss): {}".format(n_loss)
+        return txt
 
 
 class PANCAN(Reader):
-    def __init__(self, filename="PANCAN_simple_MOBEM.rdata"):
+    """Reads RData file wit all genomic features including methylation.
+
+    will be removed. Used to read original data in R format but
+    will provide the data as CSV or TSV
+    """
+    def __init__(self, filename=None):
+        if filename is None:
+            filename = easydev.get_share_file('gdsctools', 'data',
+                            'PANCAN_simple_MOBEM.rdata')
         super(PANCAN, self).__init__(filename)
         # Remove R dependencies
         from biokit.rtools import RSession
