@@ -1,4 +1,4 @@
-from gdsctools.reader import GenomicFeatures, IC50, PANCAN
+from gdsctools.readers import GenomicFeatures, IC50, PANCAN
 from easydev import TempFile
 
 def get_data(filename='test2.tsv'):

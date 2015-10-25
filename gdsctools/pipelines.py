@@ -14,12 +14,10 @@
 #
 ##############################################################################
 """Main standalone application dreamtools"""
-import os
 import argparse
 import sys
 from easydev.console import red, purple, darkgreen
-from easydev import DevTools
-from gdsctools import anova, reader
+from gdsctools import anova, readers
 
 
 
@@ -43,8 +41,6 @@ def anova_pipeline(args=None):
         dreamscoring --help
 
     """
-    d = DevTools()
-
     if args is None:
         args = sys.argv[:]
     user_options = ANOVAOptions(prog="gdsctools_anova")
@@ -54,7 +50,7 @@ def anova_pipeline(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
-    r = reader.IC50(options.ic50)
+    r = readers.IC50(options.ic50)
 
     print(options.drug)
     print(options.feature)

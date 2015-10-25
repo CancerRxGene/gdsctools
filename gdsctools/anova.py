@@ -11,7 +11,7 @@ from statsmodels.stats.multitest import fdrcorrection
 
 from easydev import Progress, AttrDict
 import easydev
-from gdsctools import boxswarm, reader
+from gdsctools import boxswarm, readers
 try:
     from cno.misc.profiler import do_profile
 except:
