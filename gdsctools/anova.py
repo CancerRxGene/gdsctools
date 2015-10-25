@@ -528,7 +528,7 @@ class GDSC_ANOVA(object):
         """
         # Reads IC50
         print('Reading data')
-        self.ic50 = reader.IC50(ic50)
+        self.ic50 = readers.IC50(ic50)
 
         # Create a dictionary version of the data
         # to be accessed per drug where NA have already been
@@ -544,9 +544,9 @@ class GDSC_ANOVA(object):
         # Reads features
         if features is None:
             # Reads default version provided with the package
-            self.features = reader.GenomicFeatures()
+            self.features = readers.GenomicFeatures()
         else:
-            self.features = reader.GenomicFeatures(features)
+            self.features = readers.GenomicFeatures(features)
 
         # save the tissues
         self.tissue_factor = self.features.df['Tissue Factor Value']
@@ -688,15 +688,15 @@ class GDSC_ANOVA(object):
         indices = self.ic50_dict[drug_name]['indices']
         self.indices = indices
         # select only relevant tissues/msi/features
-        # Those 3 lines takes 80% of the time
+        # This line takes 50% of the time
         dd.masked_features = self.features_dict[drug_name][feature_name]
         dd.masked_tissue = self.tissue_dict[drug_name]
         dd.masked_msi = self.msi_dict[drug_name]
 
         # compute length of pos/neg features and MSI
-        dd.positive_feature = dd.masked_features.sum()
+        dd.positive_feature = dd.masked_features.values.sum()
         dd.negative_feature = len(dd.masked_features) - dd.positive_feature
-        dd.positive_msi = dd.masked_msi.sum()
+        dd.positive_msi = dd.masked_msi.values.sum()
         dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
 
         # Some validity tests to run the analysis or not
@@ -709,11 +709,13 @@ class GDSC_ANOVA(object):
             dd.positive_feature >= self.settings.featFactorPopulationTh and\
             dd.negative_feature >= self.settings.featFactorPopulationTh
 
-
-        # get length final pos/neg
-        # use .values to access the data: 4x fastr
+        # We could of course use the mean() and std() functions from pandas or
+        # numpy. We could also use the glass and cohens modules but the
+        # following code is now optimised to speed up this function call by 5/10
+        # times.
         #dd.positives = dd.Y.values[dd.masked_features.values==1]
         #dd.negatives = dd.Y.values[dd.masked_features.values==0]
+
         dd.positives = dd.Y[dd.masked_features.values==1]
         dd.negatives = dd.Y[dd.masked_features.values==0]
         dd.Npos = len(dd.positives)
@@ -730,23 +732,46 @@ class GDSC_ANOVA(object):
         if diagnostic_only is True:
             return dd.status
 
-        # compute mean and std of pos and neg sets
-        dd.pos_IC50_mean = dd.positives.mean()
-        dd.neg_IC50_mean = dd.negatives.mean()
+        # compute mean and std of pos and neg sets; using mean() takes 15us and
+        # using the already computed sum and N takes 5us
+        pos_sum = dd.positives.sum()
+        neg_sum = dd.negatives.sum()
+        dd.pos_IC50_mean = pos_sum / dd.Npos
+        dd.neg_IC50_mean = neg_sum / dd.Nneg
         dd.delta_mean_IC50 = dd.pos_IC50_mean - dd.neg_IC50_mean
+
         # note the ddof to agree with R convention.
-        dd.pos_IC50_std = dd.positives.std(ddof=1)
-        dd.neg_IC50_std = dd.negatives.std(ddof=1)
+        #dd.pos_IC50_std = dd.positives.std(ddof=1)
+        #dd.neg_IC50_std = dd.negatives.std(ddof=1)
+
+        dd.pos_IC50_std = np.sqrt(( (dd.positives**2).sum() -
+            pos_sum**2/dd.Npos)/(dd.Npos-1.))
+        dd.neg_IC50_std = np.sqrt(( (dd.negatives**2).sum() -
+            neg_sum**2/dd.Nneg)/(dd.Nneg-1.))
 
         # Compute cohens and glass effects
-        dd.effectsize_ic50 = cohens.cohens(dd.positives, dd.negatives)
-        GLASS_d = glass.glass(dd.positives, dd.negatives)
-        dd.pos_glass = GLASS_d[0]
-        dd.neg_glass = GLASS_d[1]
+        # compute cohen and glass re-using the mean and std values
+        # this is much faster than calling the functions
+        md = np.abs(dd.pos_IC50_mean - dd.neg_IC50_mean) 
+        dd.pos_glass = md / dd.pos_IC50_std
+        dd.neg_glass = md / dd.neg_IC50_std
+
+        Nx = dd.Npos - 1
+        Ny = dd.Nneg - 1
+        csd = Nx * dd.pos_IC50_std + Ny * dd.neg_IC50_std
+        csd /= Nx + Ny  # make sure this is float
+        dd.effectsize_ic50 = np.sqrt(csd)
+
+        #dd.effectsize_ic50 = cohens.cohens(dd.positives, dd.negatives)
+        #GLASS_d = glass.glass(dd.positives, dd.negatives)
+        #dd.pos_glass = GLASS_d[0]
+        #dd.neg_glass = GLASS_d[1]
+
         dd.feature_name = feature_name
         dd.drug_name = drug_name
         return dd
 
+    #@do_profile()
     def anova_one_drug_one_feature(self, drug_name,
             feature_name, show_boxplot=False,
             production=False, savefig=False, directory='.'):
@@ -995,7 +1020,6 @@ class GDSC_ANOVA(object):
             pylab.savefig(filename + '.png')
             #pylab.savefig(filename + '.svg')
 
-    #@do_profile()
     def _get_anova_summary(self, data_lm, Ntissue, output='dict'):
         # could use this with statsmodels
         # The only values we want is PR(>F)
@@ -1141,6 +1165,8 @@ class GDSC_ANOVA(object):
 
         N = len(drug_names)
         pb = Progress(N, 1)
+        drug_names = list(drug_names)[0:30]
+        pylab.shuffle(drug_names)
         for i, drug_name in enumerate(drug_names):
             # TODO: try/except
             if drug_name in self.individual_anova.keys():
