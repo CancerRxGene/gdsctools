@@ -1,4 +1,4 @@
-from gdsctools.reader import IC50
+from gdsctools.readers import IC50
 
 
 

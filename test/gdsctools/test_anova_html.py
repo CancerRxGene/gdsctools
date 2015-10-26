@@ -1,7 +1,4 @@
 from gdsctools.anova import GDSC_ANOVA, GDSC_ANOVA_Results
-from gdsctools.reader import IC50
-import pandas as pd
-from easydev import assert_list_almost_equal
 from . import tools
 
 
