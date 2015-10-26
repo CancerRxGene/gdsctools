@@ -753,16 +753,14 @@ class GDSC_ANOVA(object):
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
 
-        Nx = dd.Npos - 1.
-        Ny = dd.Nneg - 1.
-        csd = Nx * dd.pos_IC50_std + Ny * dd.neg_IC50_std
-        csd /= Nx + Ny  # make sure this is float
+        csd = (dd.Npos -1.) * dd.pos_IC50_std + (dd.Nneg - 1.)* dd.neg_IC50_std
+        csd /= dd.Npos + dd.Nneg -2.  # make sure this is float
         dd.effectsize_ic50 = md / np.sqrt(csd)
 
-        dd.effectsize_ic502 = cohens.cohens(dd.positives, dd.negatives)
-        GLASS_d = glass.glass(dd.positives, dd.negatives)
-        dd.pos_glass2 = GLASS_d[0]
-        dd.neg_glass2 = GLASS_d[1]
+        #dd.effectsize_ic502 = cohens.cohens(dd.positives, dd.negatives)
+        #GLASS_d = glass.glass(dd.positives, dd.negatives)
+        #dd.pos_glass2 = GLASS_d[0]
+        #dd.neg_glass2 = GLASS_d[1]
 
         dd.feature_name = feature_name
         dd.drug_name = drug_name
