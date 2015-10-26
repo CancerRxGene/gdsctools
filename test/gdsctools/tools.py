@@ -1,13 +1,12 @@
 from gdsctools.readers import IC50
+import easydev
 
 
-
-def get_data(filename='IC50_10drugs.tsv'):
+def get_data(filename=None):
+    if filename is None:
+        filename = easydev.get_share_file('gdsctools', 'data', 
+                'IC50_10drugs.tsv')
     import os
-    try:
-        r = IC50(filename)
-    except:
-        r = IC50('test/gdsctools' + os.sep +  filename)
-    return r
+    r = IC50(filename)
 
 
