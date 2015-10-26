@@ -75,35 +75,57 @@ class VolcanoANOVA(Savefig):
         data = self._get_volcano_sub_data('ALL')
         data['annotation'] = ['' for x in range(len(data))]
 
-        self.volcano_plot(data, title='all')
+        self.volcano_plot(data, title='all drugs')
         if self.settings.savefig is True:
             self.savefig("volcano_all.png")
 
-    def _get_volcano_global_data(self):
+    def _get_fdr_from_pvalue_interp(self, pvalue):
+        pvalue += 1e-15
+        qvals = self.df[self.varname_qvalue]
+        pvals = self.df[self.varname_pvalue]
+        ya = qvals[pvals < pvalue].max()
+        yb = qvals[pvals > pvalue].min()
+        xa = pvals[pvals < pvalue].max()
+        xb = pvals[pvals > pvalue].min()
+        dx = xb - xa
+        dy = yb - ya
+        yc = ya + dy * (pvalue - xa) / dx
+        return yc
 
+    def _get_pvalue_from_fdr(self, fdr):
+        qvals = self.df[self.varname_qvalue]
+        pvals = self.df[self.varname_pvalue]
+        if isinstance(fdr, list):
+            pvalues = [pvals[qvals < this].max() for this in fdr]
+            return pvalues
+        else:
+            return pvals[qvals < fdr].max()
+
+    def _get_pvalue_from_fdr_interp(self, fdr):
+        # same as get_pvalue_from_fdr but with a linear inerpolation
+        fdr += 1e-15
+        qvals = self.df[self.varname_qvalue]
+        pvals = self.df[self.varname_pvalue]
+        ya = pvals[qvals < fdr].max()
+        yb = pvals[qvals > fdr].min()
+        xa = qvals[qvals < fdr].max()
+        xb = qvals[qvals > fdr].min()
+        dx = xb - xa
+        dy = yb - ya
+        xc = fdr
+        yc = ya + dy * (xc - xa) / dx
+        return yc
+
+    def _get_volcano_global_data(self):
         # using all data
         minN = self.df['N_FEATURE_pos'].min()
         maxN = self.df['N_FEATURE_pos'].max()
-        qvals = self.df[self.varname_qvalue]
-        pvals = self.df[self.varname_pvalue]
-        fdrlim = pvals[qvals < self.settings.fdr_threshold].max()
-        fdrlim1 = pvals[qvals < 10].max()
-        fdrlim2 = pvals[qvals < 1].max()
-        fdrlim3 = pvals[qvals < 0.01].max()
-
+        pvalues = self._get_pvalue_from_fdr(self.settings.fdr_threshold)
         return {'minN': minN, 'maxN': maxN,
-                'fdrs': {
-                    self.settings.fdr_threshold: fdrlim,
-                    0.01: fdrlim3,
-                    1: fdrlim2,
-                    10: fdrlim1}
-                }
+                'pvalues': (self.settings.fdr_threshold, pvalues)}
 
     def volcano_plot_one_feature(self, feature):
-        """Volcano plot for one feature (all drugs)
-
-
-        """
+        """Volcano plot for one feature (all drugs)"""
         data = self._get_volcano_sub_data('FEATURE', feature)
         self.volcano_plot(data, title=feature)
 
@@ -129,7 +151,6 @@ class VolcanoANOVA(Savefig):
 
         deltas = subdf['FEATURE_deltaMEAN_IC50']
         effects = subdf['FEATURE_IC50_effect_size']
-        assoc_ids = list(subdf.index)
         signed_effects = list(np.sign(deltas) * effects)
         qvals = list(subdf[self.varname_qvalue])
         pvals = list(subdf[self.varname_pvalue])
@@ -145,14 +166,16 @@ class VolcanoANOVA(Savefig):
         data['text'] = texts.values
         annotations = []
 
+        # just an alias
+        fdr_threshold = self.settings.fdr_threshold
         if self.settings.analysis_type == 'PANCAN':
             for sign, qval, pval in zip(signed_effects, qvals, pvals):
                 if sign <= -self.settings.effect_threshold and \
-                        qval <= self.settings.fdr_threshold:
+                        qval <= fdr_threshold:
                     colors.append('green')
                     annotations.append(True)
                 elif sign >= self.settings.effect_threshold and \
-                        qval <= self.settings.fdr_threshold:
+                        qval <= fdr_threshold:
                     colors.append('red')
                     annotations.append(True)
                 else:
@@ -161,23 +184,22 @@ class VolcanoANOVA(Savefig):
         else:
             for delta, qval, pval in zip(deltas, qvals, pvals):
                 if pval <= self.settings.pvalue_threshold and \
-                        qval <= self.settings.fdr_threshold and delta<0:
+                        qval <= fdr_threshold and delta < 0:
                     colors.append('green')
                     annotations.append(True)
                 elif pval <= self.settings.pvalue_threshold and \
-                        qval <= self.settings.fdr_threshold and delta>0:
+                        qval <= fdr_threshold and delta > 0:
                     colors.append('red')
                     annotations.append(True)
                 else:
                     colors.append('black')
                     annotations.append(False)
 
-
         # here we normalise wrt the drug. In R code, normalised
         # my max across all data (minN, maxN)
         markersize = subdf['N_FEATURE_pos'] / subdf['N_FEATURE_pos'].max()
         markersize = list(markersize*800)
-        markersize = [x if x>50 else 50 for x in markersize]
+        markersize = [x if x > 50 else 50 for x in markersize]
 
         data['color'] = colors
         data['annotation'] = annotations
@@ -236,21 +258,25 @@ class VolcanoANOVA(Savefig):
         pylab.xlim([-l, l])
         ax.grid(color='white', linestyle='solid')
 
-        #print(fdrlim, fdrlim1, fdrlim2, fdrlim3)
-        self.stats = self._get_volcano_global_data()
-        fdrlim = self.stats['fdrs'][self.settings.fdr_threshold]
-        fdrlim1 = self.stats['fdrs'][10]
-        fdrlim2 = self.stats['fdrs'][1]
-        fdrlim3 = self.stats['fdrs'][0.01]
+        #self.stats = self._get_volcano_global_data()
 
-        ax.axhline(-np.log10(fdrlim), linestyle='--',
-            color='red', alpha=1,
-            label="FDR %s " %  self.settings.fdr_threshold + " \%")
-        ax.axhline(-np.log10(fdrlim1), linestyle='-.',
+        fdr = self.settings.fdr_threshold
+        #pvalue = self._get_pvalue_from_fdr(fdr)
+        pvalue = self._get_pvalue_from_fdr_interp(fdr)
+        ax.axhline(-np.log10(pvalue), linestyle='--',
+            color='red', alpha=1, label="FDR %s " %  fdr + " \%")
+
+        #pvalue = self._get_pvalue_from_fdr(10)
+        pvalue = self._get_pvalue_from_fdr_interp(10)
+        ax.axhline(-np.log10(pvalue), linestyle='-.',
             color='red', alpha=1, label="FDR 10 \%")
-        ax.axhline(-np.log10(fdrlim2), linestyle=':',
+
+        pvalue = self._get_pvalue_from_fdr_interp(1)
+        ax.axhline(-np.log10(pvalue), linestyle=':',
             color='red', alpha=1, label="FDR 1 \%")
-        ax.axhline(-np.log10(fdrlim3), linestyle='--',
+
+        pvalue = self._get_pvalue_from_fdr_interp(0.01)
+        ax.axhline(-np.log10(pvalue), linestyle='--',
             color='black', alpha=1, label="FDR 0.01 \%")
 
         pylab.ylim([0, pylab.ylim()[1]*1.2]) # times 1.2 to put the legend
@@ -258,6 +284,19 @@ class VolcanoANOVA(Savefig):
         ax.axvline(0, color='gray', alpha=0.5)
         axl = pylab.legend(loc='upper left')
         axl.set_zorder(-1) # in case there is a circle behind the legend.
+
+        self.axx = ax.twinx()
+        self.common_ticks = ax.get_yticks()
+        self.common_ylim = ax.get_ylim()
+        pvals = self.df[self.varname_pvalue]
+        y1 = pvals.min()
+        y2 = pvals.max()
+        fdr1 = self._get_fdr_from_pvalue_interp(y1)
+        fdr2 = self._get_fdr_from_pvalue_interp(y2-2e-15) # make sure it exists
+        self.axx.set_ylim([fdr2, fdr1])
+        self.axx.set_ylabel('FDR \%', fontsize=self.settings.fontsize)
+
+
 
         # For the static version
         pylab.title("%s" % title.replace("_","\_"))
@@ -273,8 +312,8 @@ class VolcanoANOVA(Savefig):
             ind = event.ind
             print('on pick scatter:', ind, np.take(X, ind)[0],
                     np.take(Y, ind)[0])
-        """fig.canvas.mpl_connect('pick_event', onpick)
-
+        #fig.canvas.mpl_connect('pick_event', onpick)
+        """
         # for the JS version
         import mpld3
         labels = []
