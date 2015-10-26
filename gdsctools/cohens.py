@@ -17,7 +17,6 @@ def cohens(x, y):
     Ny = len(y) - 1.
     # mean difference: 
     md = np.abs(x.mean() - y.mean()) 
-
     # here, we want same as in R that is unbiased variance
     # so we use ddof = 1
     xv = x.var(ddof=1)

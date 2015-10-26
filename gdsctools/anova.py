@@ -607,6 +607,10 @@ class GDSC_ANOVA(object):
         columns = self._tissue_dummies.columns
         columns = ['C(tissue)[T.' + x + ']' for x in columns]
         self._tissue_dummies.columns = columns
+        N = len(self._tissue_dummies)
+        self._tissue_dummies['C(msi)[T.1]'] = [1]*N
+        self._tissue_dummies['feature'] = [1] * N
+        self._tissue_dummies.insert(0, 'Intercept', [1] * N)
 
     def _get_analysis_mode(self):
         modes = []
@@ -738,8 +742,8 @@ class GDSC_ANOVA(object):
         dd.delta_mean_IC50 = dd.pos_IC50_mean - dd.neg_IC50_mean
 
         # note the ddof to agree with R convention.
-        #dd.pos_IC50_std = dd.positives.std(ddof=1)
-        #dd.neg_IC50_std = dd.negatives.std(ddof=1)
+        dd.pos_IC50_std = dd.positives.std(ddof=1)
+        dd.neg_IC50_std = dd.negatives.std(ddof=1)
 
         dd.pos_IC50_std = np.sqrt(( (dd.positives**2).sum() -
             pos_sum**2/dd.Npos)/(dd.Npos-1.))
@@ -753,10 +757,10 @@ class GDSC_ANOVA(object):
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
 
-        csd = (dd.Npos -1.) * dd.pos_IC50_std + (dd.Nneg - 1.)* dd.neg_IC50_std
+        csd = (dd.Npos -1.) * dd.pos_IC50_std**2 + \
+                (dd.Nneg - 1.)*dd.neg_IC50_std**2
         csd /= dd.Npos + dd.Nneg -2.  # make sure this is float
         dd.effectsize_ic50 = md / np.sqrt(csd)
-
         #dd.effectsize_ic502 = cohens.cohens(dd.positives, dd.negatives)
         #GLASS_d = glass.glass(dd.positives, dd.negatives)
         #dd.pos_glass2 = GLASS_d[0]
@@ -835,16 +839,31 @@ class GDSC_ANOVA(object):
             #    data=self._mydata).fit() #Specify C for Categorical
 
             # FIXME: 40% of the time is used to create this data structure
-            df = pd.get_dummies(odof.masked_tissue)
+            # We could use pd.get_dummies but pretty slow
+            # instead we create the full matrix of dummies and 
+            # then set relevant data. The issue is that some
+            # columns end up with sum == 0 and needs to be dropped
+            df = self._tissue_dummies.ix[odof.masked_tissue.index]
+            todrop = df.columns[df.values.sum(axis=0)==0]
+            #tokeep = df.columns[df.values.sum(axis=0)>0]
+            #self.tokeep = tokeep
+            #self.df1 = df[tokeep]
+            df = df.drop(todrop, axis=1)
 
-            df.columns = ['C(tissue)[T.'+x +']' for x in
-                    odof.masked_tissue.unique()]
-            Ntissue = len(df.columns)
+            self.df = df
+
+
+            #df = pd.get_dummies(odof.masked_tissue)
+            #df.columns = ['C(tissue)[T.'+x +']' for x in
+            #        odof.masked_tissue.unique()]
+            #self.df = df.copy()
+            
+            Ntissue = len(df.columns) - 3
             # Here we set other variables with dataframe columns' names as
             # expected by OLS
             df['C(msi)[T.1]'] = odof.masked_msi.values
             df['feature'] = odof.masked_features.values
-            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
+            #df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
 
             # Here, we need to get rid of some of the cases to agree with R....
             # ??? why ?? TODO FIXME Could be that aov in R drops
@@ -865,7 +884,7 @@ class GDSC_ANOVA(object):
             # self.dff = df
             # ols = sklearn.linear_model.LinearRegression(fit_intercept=False)
             # ols.fit(an.dff, an.Y).coef_
-
+            self.odof = odof
         elif self.settings.includeMSI_factor is True:
             self._mydata = pd.DataFrame({'Y': odof.Y,
                 'msi':  odof.masked_msi, 'feature': odof.masked_features})
@@ -1159,8 +1178,9 @@ class GDSC_ANOVA(object):
 
         N = len(drug_names)
         pb = Progress(N, 1)
-        drug_names = list(drug_names)[0:30]
+        drug_names = list(drug_names)
         pylab.shuffle(drug_names)
+        self.times = []
         for i, drug_name in enumerate(drug_names):
             # TODO: try/except
             if drug_name in self.individual_anova.keys():
@@ -1170,6 +1190,8 @@ class GDSC_ANOVA(object):
                 self.individual_anova[drug_name] = res
             if animate is True:
                 pb.animate(i+1)
+
+            self.times.append(pb.elapsed)
         df = pd.concat(self.individual_anova, ignore_index=True)
 
         # sort all data by ANOVA p-values
