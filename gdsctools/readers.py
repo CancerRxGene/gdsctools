@@ -206,14 +206,12 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def _cleanup(self, required_feature=0):
         todrop = list(self.df.columns[self.df.sum()<=required_feature])
-        print len(todrop)
         for this in [self._col_tissue, self._col_msi, self._col_sample]:
             try:
                 todrop.remove(this)
                 print('ignore ', this)
             except:
                 pass
-        print (len(todrop))
         self.df.drop(todrop, axis=1, inplace=True)
 
 
