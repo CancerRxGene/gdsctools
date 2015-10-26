@@ -261,21 +261,25 @@ class VolcanoANOVA(Savefig):
         #self.stats = self._get_volcano_global_data()
 
         fdr = self.settings.fdr_threshold
-        #pvalue = self._get_pvalue_from_fdr(fdr)
-        pvalue = self._get_pvalue_from_fdr_interp(fdr)
+        pvalue = self._get_pvalue_from_fdr(fdr)
         ax.axhline(-np.log10(pvalue), linestyle='--',
             color='red', alpha=1, label="FDR %s " %  fdr + " \%")
+        #pvalue = self._get_pvalue_from_fdr_interp(fdr)
+        #ax.axhline(-np.log10(pvalue), linestyle='--',
+        #    color='red', alpha=1, label="FDR %s " %  fdr + " \%")
 
-        #pvalue = self._get_pvalue_from_fdr(10)
-        pvalue = self._get_pvalue_from_fdr_interp(10)
+        pvalue = self._get_pvalue_from_fdr(10)
+        #pvalue = self._get_pvalue_from_fdr_interp(10)
         ax.axhline(-np.log10(pvalue), linestyle='-.',
             color='red', alpha=1, label="FDR 10 \%")
 
-        pvalue = self._get_pvalue_from_fdr_interp(1)
+        #pvalue = self._get_pvalue_from_fdr_interp(1)
+        pvalue = self._get_pvalue_from_fdr(1)
         ax.axhline(-np.log10(pvalue), linestyle=':',
             color='red', alpha=1, label="FDR 1 \%")
 
         pvalue = self._get_pvalue_from_fdr_interp(0.01)
+        pvalue = self._get_pvalue_from_fdr(0.01)
         ax.axhline(-np.log10(pvalue), linestyle='--',
             color='black', alpha=1, label="FDR 0.01 \%")
 
@@ -285,23 +289,22 @@ class VolcanoANOVA(Savefig):
         axl = pylab.legend(loc='upper left')
         axl.set_zorder(-1) # in case there is a circle behind the legend.
 
-        self.axx = ax.twinx()
-        self.common_ticks = ax.get_yticks()
-        self.common_ylim = ax.get_ylim()
-        pvals = self.df[self.varname_pvalue]
-        y1 = pvals.min()
-        y2 = pvals.max()
-        fdr1 = self._get_fdr_from_pvalue_interp(y1)
-        fdr2 = self._get_fdr_from_pvalue_interp(y2-2e-15) # make sure it exists
-        self.axx.set_ylim([fdr2, fdr1])
-        self.axx.set_ylabel('FDR \%', fontsize=self.settings.fontsize)
-
-
+        #self.ax = ax
+        #self.axx = ax.twinx()
+        #self.common_ticks = ax.get_yticks()
+        #self.common_ylim = ax.get_ylim()
+        #pvals = self.df[self.varname_pvalue]
+        #y1 = pvals.min()
+        #y2 = pvals.max()
+        #fdr1 = self._get_fdr_from_pvalue_interp(y1)
+        #fdr2 = self._get_fdr_from_pvalue_interp(y2-2e-15) # make sure it exists
+        #self.axx.set_ylim([fdr2, fdr1])
+        #self.axx.set_ylabel('FDR \%', fontsize=self.settings.fontsize)
 
         # For the static version
         pylab.title("%s" % title.replace("_","\_"))
         labels = []
-        for index, row in data.iterrows():
+        """for index, row in data.iterrows():
             text = data[['feature', 'drug',
                     'signed_effect','pvalue']].ix[0].to_frame()
             if row.annotation == True:
@@ -313,6 +316,7 @@ class VolcanoANOVA(Savefig):
             print('on pick scatter:', ind, np.take(X, ind)[0],
                     np.take(Y, ind)[0])
         #fig.canvas.mpl_connect('pick_event', onpick)
+        """
         """
         # for the JS version
         import mpld3
