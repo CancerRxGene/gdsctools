@@ -145,9 +145,9 @@ class Report(object):
             #    _overwrite_report to True or delete the directory' %
             #    directory)=
 
-        #for filename in ["dana.css", "tools.js"]:
-        #    filename = easydev.gsf("cno", "", filename)
-        #    shutil.copy(filename, directory)
+        for filename in ["dana.css"]:
+            filename = easydev.gsf("gdsctools", "data", filename)
+            shutil.copy(filename, directory)
         return directory
 
     def get_header(self):
