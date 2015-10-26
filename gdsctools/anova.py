@@ -91,14 +91,14 @@ class GDSC_ANOVA_Results(Savefig):
                     "may differ from the one used to generate the data")
                 self.settings = Settings()
 
-        input_features = reader.GenomicFeatures(input_feature)
+        input_features = readers.GenomicFeatures(input_feature)
         self.input_features = input_features.df
 
         self._colname_drug_id = 'Drug id'
         self.varname_pval = 'FEATURE_ANOVA_pval'
         self.varname_qval = 'ANOVA FEATURE FDR %'
 
-        self.ic50 = reader.IC50(ic50)
+        self.ic50 = readers.IC50(ic50)
 
         if concentrations:
             # input may not have the concentrations columns right now.
@@ -116,8 +116,6 @@ class GDSC_ANOVA_Results(Savefig):
 
         # create some data
         self._set_sensible_df()
-
-
 
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
@@ -346,7 +344,6 @@ class GDSC_ANOVA_Results(Savefig):
         strong_hits = []
         full_strong_hits = []
 
-        
         MC1 = self.df['log max.Conc.tested']
         MC2 = self.df['log max.Conc.tested2']
         mask2 = self.df['FEATUREpos_logIC50_MEAN'] < MC1
@@ -506,8 +503,8 @@ class GDSC_ANOVA(object):
 
     ::
 
-        from gdsctools import reader, anova
-        r = reader.IC50('valid_file.tsv')
+        from gdsctools import readers, anova
+        r = readers.IC50('valid_file.tsv')
         an = GDSC_ANOVA(r.ic50, r.features)
         an.anova_one_drug_one_feature('Drug_1_IC50', 'TP53_mut',
             show_boxplot=True)
@@ -567,7 +564,6 @@ class GDSC_ANOVA(object):
             self.msi_dict[drug_name] = self.msi_factor.ix[indices].copy()
             self.tissue_dict[drug_name] = self.tissue_factor.ix[indices].copy()
 
-
         # settings
         self.settings = {
             # include MSI as a co-factor
@@ -599,7 +595,8 @@ class GDSC_ANOVA(object):
             'ANOVA FEATURE FDR %']
 
         # skip assoc_id for now
-        self._odof_dict = dict([(name, None) for name in self.column_names[1:]])
+        self._odof_dict = dict([(name, None)
+            for name in self.column_names[1:]])
 
         # a cache to compute ANOVA
         self.individual_anova = {}
@@ -644,7 +641,7 @@ class GDSC_ANOVA(object):
 
         results = {
                 'n_drug': n_drugs,
-                'n_combos':n_combos,
+                'n_combos': n_combos,
                 'feasible_tests': feasible,
                 'percentage_feasible_tests': float(feasible)/n_combos*100}
         return results
@@ -756,16 +753,16 @@ class GDSC_ANOVA(object):
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
 
-        Nx = dd.Npos - 1
-        Ny = dd.Nneg - 1
+        Nx = dd.Npos - 1.
+        Ny = dd.Nneg - 1.
         csd = Nx * dd.pos_IC50_std + Ny * dd.neg_IC50_std
         csd /= Nx + Ny  # make sure this is float
-        dd.effectsize_ic50 = np.sqrt(csd)
+        dd.effectsize_ic50 = md / np.sqrt(csd)
 
-        #dd.effectsize_ic50 = cohens.cohens(dd.positives, dd.negatives)
-        #GLASS_d = glass.glass(dd.positives, dd.negatives)
-        #dd.pos_glass = GLASS_d[0]
-        #dd.neg_glass = GLASS_d[1]
+        dd.effectsize_ic502 = cohens.cohens(dd.positives, dd.negatives)
+        GLASS_d = glass.glass(dd.positives, dd.negatives)
+        dd.pos_glass2 = GLASS_d[0]
+        dd.neg_glass2 = GLASS_d[1]
 
         dd.feature_name = feature_name
         dd.drug_name = drug_name
@@ -1094,7 +1091,6 @@ class GDSC_ANOVA(object):
         :param str drug_id: a valid drug identifier.
         :return: a dataframe
 
-
         """
         # some features can be dropped
         # TODO: parameters for settings here
@@ -1118,11 +1114,11 @@ class GDSC_ANOVA(object):
         pb = Progress(N, 10)
         res = {}
         # note that we start at idnex 4 to drop sample name, tissue and MSI
-        for i,feature in enumerate(selected_features.columns):
+        for i, feature in enumerate(selected_features.columns):
             # production True, means we do not want to create a DataFrame
             # for each call to the anova_one_drug_one_feature function
             # Instead, we require dictionaries
-            this  = self.anova_one_drug_one_feature(drug_id, feature,
+            this = self.anova_one_drug_one_feature(drug_id, feature,
                     production=True)
             if this['FEATURE_ANOVA_pval'] is not None:
                 res[feature] = this
@@ -1185,11 +1181,8 @@ class GDSC_ANOVA(object):
             df.sort('FEATURE_ANOVA_pval', inplace=True)
 
         # all ANOVA have been compute individually for each drug and each
-        # feature.
-        # Now, we compute the FDR correction
-        fdr = self._compute_fdr(df)
-        # insert FDR as last column.
-        df.insert(len(df.columns), 'ANOVA FEATURE FDR %', fdr)
+        # feature. Now, we need to compute the FDR correction
+        df = self.add_fdr_column(df)
 
         # insert a unique identifier as first column
         N = len(df)
@@ -1201,6 +1194,17 @@ class GDSC_ANOVA(object):
         self.anova_df = df
         return df
 
+    def add_fdr_column(self, df):
+        """Add the FDR columns based on pvalues"""
+        fdr = self._compute_fdr(df)
+        # insert FDR as last column.
+        try:
+            df.insert(len(df.columns), 'ANOVA FEATURE FDR %', fdr)
+        except:
+            # replaces it
+            df['ANOVA FEATURE FDR %'] = fdr
+        return df
+
     def _compute_fdr(self, df):
         if self.settings.pval_correction_method == 'fdr':
             data = df['FEATURE_ANOVA_pval'].values
@@ -1209,7 +1213,6 @@ class GDSC_ANOVA(object):
             raise NotImplementedError
             # should be qvalue correction (see qvalue library in R)
             fdr = [None] * len(df)
-
         return fdr
 
     def _get_boxplot_data(self, odof, mode='tissue'):
@@ -1285,7 +1288,9 @@ class GDSC_ANOVA(object):
         else:
             return None
 
-
+    def __str__(self):
+        txt = self.ic50.__str_()
+        txt += "\n" + self.features.__str_()
 
 
 
