@@ -8,5 +8,6 @@ def get_data(filename=None):
                 'IC50_10drugs.tsv')
     import os
     r = IC50(filename)
+    return r
 
 
