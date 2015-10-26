@@ -146,7 +146,7 @@ class Report(object):
             #    directory)=
 
         for filename in ["dana.css"]:
-            filename = easydev.get_share_filename("gdsctools", "data", 
+            filename = easydev.get_share_file("gdsctools", "data", 
                     filename)
             shutil.copy(filename, directory)
         return directory
