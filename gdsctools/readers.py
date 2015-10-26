@@ -87,9 +87,9 @@ class IC50(Reader, CosmicRows):
         :return: the fraction of valid/measured IC50 per drug"""
         data = self.df.count()/len(self.df)
         pylab.clf()
-        pylab.plot(data)
+        pylab.plot(data.values)
         pylab.grid()
-        pylab.xlim([0,265])
+        pylab.xlim([0, len(self.drugIds)+1])
         pylab.xlabel('Drug index')
         pylab.ylim([0,1])
         pylab.ylabel('Percentage of valid IC50')
@@ -177,14 +177,44 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def __str__(self):
         txt = 'Genomic features distribution\n'
+        Ntissue = len(self.df[self._col_tissue].unique())
+        txt += 'Number of unique tissues {0}\n'.format(Ntissue)
+        
+        Nfeatures = len(self.features)
+        txt += 'Number of unique features {0} with\n'.format(Nfeatures)
+
         n_mutations = len([x for x in self.df.columns if x.endswith("_mut")])
-        txt += "Mutation: {}\n".format(n_mutations)
+        txt += "- Mutation: {}\n".format(n_mutations)
 
         n_gain = len([x for x in self.df.columns if x.startswith("gain_cna")])
-        txt += "CNA (gain): {}\n".format(n_gain)
+        txt += "- CNA (gain): {}\n".format(n_gain)
         n_loss = len([x for x in self.df.columns if x.startswith("loss_cna")])
-        txt += "CNA (loss): {}".format(n_loss)
+        txt += "- CNA (loss): {}".format(n_loss)
         return txt
+
+    def drop_tissue_in(self, tissues):
+        raise NotImplementedError
+        tissues = easydev.to_list(tissues)
+        #mask = an.features.df[an.features._col_tissue].isin(tissues)
+        #self.features.df
+
+    def keep_tissue_in(self, tissues):
+        tissues = easydev.to_list(tissues)
+        mask = self.df[self._col_tissue].isin(tissues)
+        self.df = self.df[mask]
+        self._cleanup()
+
+    def _cleanup(self, required_feature=0):
+        todrop = list(self.df.columns[self.df.sum()<=required_feature])
+        print len(todrop)
+        for this in [self._col_tissue, self._col_msi, self._col_sample]:
+            try:
+                todrop.remove(this)
+                print('ignore ', this)
+            except:
+                pass
+        print (len(todrop))
+        self.df.drop(todrop, axis=1, inplace=True)
 
 
 class PANCAN(Reader):

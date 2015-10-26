@@ -104,7 +104,9 @@ class GDSC_ANOVA_Results(Savefig):
             # input may not have the concentrations columns right now.
             # This should be fixed in input data set
             if "log max.Conc.tested" in self.df.columns:
-                raise ValueError("your dataframe already contains concentration")
+                print("your dataframe already contains concentration. replace them")
+            self.df.drop('log max.Conc.tested', axis=1, inplace=True)
+            self.df.drop('log max.Conc.tested2', axis=1, inplace=True)
             drugid = self._colname_drug_id
             self.conc = pd.read_csv(concentrations, sep='\t')
             newdata = self.conc[drugid].apply(lambda x: "Drug_"+str(x)+"_IC50")
@@ -156,7 +158,7 @@ class GDSC_ANOVA_Results(Savefig):
         txt.append("Total number of significant associations: {0} ({1} for    sensitivity and {2} for resistance".format(nsens+nres,nsens,nres))
 
         txt.append("p-value significance threshold: {}".format(self.settings.pval_threshold))
-        txt.append("% FDR significance threshold: {}".format(self.settings.fdr_threshold))
+        txt.append("FDR significance threshold: {}".format(self.settings.fdr_threshold))
 
         p1, p2 = self._get_pval_range()
         p1 = easydev.precision(p1, 2)
@@ -417,7 +419,8 @@ class GDSC_ANOVA_Results(Savefig):
         N = len(drugs)
         pb = Progress(N)
         html = OneDrugOneFeature(self.ic50, self.input_features,
-                drug='dummy', feature='dummy', fdr='dummy')
+                drug='dummy', feature='dummy', fdr='dummy',
+                directory=self.settings.directory)
         html.settings = self.settings
         for i in range(N):
             html.drug = drugs[i]
@@ -443,7 +446,8 @@ class GDSC_ANOVA_Results(Savefig):
             metadata['n_cell_lines'] = self.input_features[feature].sum()
             # get concentration range
             metadata['feature'] = feature
-            html = HTMLOneFeature(self.df, subdf, metadata)
+            html = HTMLOneFeature(self.df, subdf, metadata,
+                    directory=self.settings.directory)
             html.settings = self.settings
             self.subdf = subdf
             html.report(browse=False)
@@ -470,7 +474,8 @@ class GDSC_ANOVA_Results(Savefig):
             metadata['conc_max'] = conc
             metadata['drug'] = drug
 
-            html = HTMLOneDrug(self.df, subdf, metadata)
+            html = HTMLOneDrug(self.df, subdf, metadata,
+                    directory=self.settings.directory)
             html.settings = self.settings
             html.report(browse=False)
             pb.animate(i+1)
@@ -479,7 +484,7 @@ class GDSC_ANOVA_Results(Savefig):
         print("Creating main HTML page")
         buffer = self.settings.savefig
         self.settings.savefig = True
-        html = HTML_main(self, 'index.html')
+        html = HTML_main(self, 'index.html', directory=self.settings.directory)
         html._init_report() # created the directory 
         html.settings = self.settings
         html.report(browse=False)
@@ -487,7 +492,7 @@ class GDSC_ANOVA_Results(Savefig):
 
     def create_html_manova(self):
         df = self.get_significant_set()
-        html = HTMLManova(df)
+        html = HTMLManova(df, directory=self.settings.directory)
         html.report(browse=False)
 
     def create_html_pages(self):
@@ -545,25 +550,6 @@ class GDSC_ANOVA(object):
         else:
             self.features = readers.GenomicFeatures(features)
 
-        # save the tissues
-        self.tissue_factor = self.features.df['Tissue Factor Value']
-
-        # and MSI (Microsatellite instability) status of the samples.
-        self.msi_factor = self.features.df['MS-instability Factor Value']
-
-        # alias to speed up some code. Those are dictionary version of the
-        # 3 dataframes above.
-        self.features_dict = {}
-        self.msi_dict = {}
-        self.tissue_dict = {}
-        # FIXME not sure we need a copy here. could be a reference if not
-        # changed.
-        for drug_name in self.ic50.drugIds:
-            indices = self.ic50_dict[drug_name]['indices']
-            self.features_dict[drug_name] = self.features.df.ix[indices].copy()
-            self.msi_dict[drug_name] = self.msi_factor.ix[indices].copy()
-            self.tissue_dict[drug_name] = self.tissue_factor.ix[indices].copy()
-
         # settings
         self.settings = {
             # include MSI as a co-factor
@@ -600,6 +586,44 @@ class GDSC_ANOVA(object):
 
         # a cache to compute ANOVA
         self.individual_anova = {}
+
+        self._init()
+
+    def set_cancer_type(self, ctype):
+       assert ctype in self.features.tissues
+       self.features.keep_tissue_in(ctype)
+       self.ic50.df = self.ic50.df.ix[self.features.df.index]
+       self.msi_factor = self.msi_factor.ix[self.features.df.index]
+       # TODO: < or <=
+       if self.msi_factor.sum() <=  self.settings.MSIfactorPopulationTh:
+           self.settings.includeMSI_factor = False
+       self.settings.analysis_type = ctype
+       self._init()
+
+    def _init(self):
+        # Some preprocessing to speed up data access
+        print('Creating data structures')
+        ic50_parse = self.ic50.df.copy().unstack().dropna()
+        self.ic50_dict = dict([(d, {'indices': ic50_parse.ix[d].index,
+            'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
+        # save the tissues
+        self.tissue_factor = self.features.df['Tissue Factor Value']
+
+        # and MSI (Microsatellite instability) status of the samples.
+        self.msi_factor = self.features.df['MS-instability Factor Value']
+
+        # alias to speed up some code. Those are dictionary version of the
+        # 3 dataframes above.
+        self.features_dict = {}
+        self.msi_dict = {}
+        self.tissue_dict = {}
+        # FIXME not sure we need a copy here. could be a reference if not
+        # changed.
+        for drug_name in self.ic50.drugIds:
+            indices = self.ic50_dict[drug_name]['indices']
+            self.features_dict[drug_name] = self.features.df.ix[indices].copy()
+            self.msi_dict[drug_name] = self.msi_factor.ix[indices].copy()
+            self.tissue_dict[drug_name] = self.tissue_factor.ix[indices].copy()
 
         # some preprocessing for the OLS compuation.
         # We create the dummies for the tissue factor once for all
@@ -845,18 +869,11 @@ class GDSC_ANOVA(object):
             # columns end up with sum == 0 and needs to be dropped
             df = self._tissue_dummies.ix[odof.masked_tissue.index]
             todrop = df.columns[df.values.sum(axis=0)==0]
-            #tokeep = df.columns[df.values.sum(axis=0)>0]
-            #self.tokeep = tokeep
-            #self.df1 = df[tokeep]
             df = df.drop(todrop, axis=1)
-
-            self.df = df
-
-
             #df = pd.get_dummies(odof.masked_tissue)
             #df.columns = ['C(tissue)[T.'+x +']' for x in
             #        odof.masked_tissue.unique()]
-            #self.df = df.copy()
+            # Ntissue = len(df.columns) - 3
             
             Ntissue = len(df.columns) - 3
             # Here we set other variables with dataframe columns' names as
@@ -886,17 +903,27 @@ class GDSC_ANOVA(object):
             # ols.fit(an.dff, an.Y).coef_
             self.odof = odof
         elif self.settings.includeMSI_factor is True:
-            self._mydata = pd.DataFrame({'Y': odof.Y,
-                'msi':  odof.masked_msi, 'feature': odof.masked_features})
-            self.data_lm = ols('Y ~ C(msi) + feature',
-                data=self._mydata).fit() #Specify C for Categorical
+            #self._mydata = pd.DataFrame({'Y': odof.Y,
+            #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
+            #self.data_lm = ols('Y ~ C(msi) + feature',
+            #    data=self._mydata).fit() #Specify C for Categorical
+            df = pd.DataFrame()
+            df['C(msi)[T.1]'] = odof.masked_msi.values
+            df['feature'] = odof.masked_features.values
+            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
+            self.data_lm = OLS(odof.Y, df.values).fit()
             Ntissue = 0
         else:
-            self._mydata = pd.DataFrame({'Y': odof.Y,
-                'feature': odof.masked_features})
-            self.data_lm = ols('Y ~ feature',
-                data=self._mydata).fit() #Specify C for Categorical
+            df = pd.DataFrame()
+            df['feature'] = odof.masked_features.values
+            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
+            self.data_lm = OLS(odof.Y, df.values).fit()
             Ntissue = 0
+            #self._mydata = pd.DataFrame({'Y': odof.Y,
+            #    'feature': odof.masked_features})
+            #self.data_lm = ols('Y ~ feature',
+            #    data=self._mydata).fit() #Specify C for Categorical
+            #Ntissue = 0
 
         self.anova_pvalues = self._get_anova_summary(self.data_lm,
                 Ntissue, output='dict')
@@ -1065,9 +1092,9 @@ class GDSC_ANOVA(object):
             arr[2, Ntissue + 2] = 1
         elif 'tissue' not in modes and 'msi' not in modes:
             dof = [1]
-            indices = ['msi', 'feature', 'Residuals']
+            indices = ['feature', 'Residuals']
             # 3 stands for intercept + msi +feature
-            arr = np.zeros((3, Ncolumns))
+            arr = np.zeros((2, Ncolumns))
             arr[1, Ntissue + 1] = 1
         arr[0, 0] = 1                   # intercept
 
@@ -1194,6 +1221,8 @@ class GDSC_ANOVA(object):
             self.times.append(pb.elapsed)
         df = pd.concat(self.individual_anova, ignore_index=True)
 
+        if len(df) == 0:
+            return df
         # sort all data by ANOVA p-values
         try:
             df.sort_values('FEATURE_ANOVA_pval', inplace=True)
@@ -1211,7 +1240,6 @@ class GDSC_ANOVA(object):
         df.reset_index(inplace=True)
 
         # save as attribute
-        self.anova_df = df
         return df
 
     def add_fdr_column(self, df):
@@ -1309,8 +1337,9 @@ class GDSC_ANOVA(object):
             return None
 
     def __str__(self):
-        txt = self.ic50.__str_()
-        txt += "\n" + self.features.__str_()
+        txt = self.ic50.__str__()
+        txt += "\n" + self.features.__str__()
+        return txt
 
 
 
@@ -1554,9 +1583,8 @@ class HTMLOneDrug(Report):
 
 
 class HTML_main(Report):
-    def __init__(self, results, filename='index.html',
-            directory='gdsc'):
-        super(HTML_main, self).__init__(directory=directory,
+    def __init__(self, results, filename='index.html', directory='gdsc'):
+        super(HTML_main, self).__init__(directory=directory, 
                 filename=filename)
         self.results = results
         self.directory = directory
@@ -1565,7 +1593,6 @@ class HTML_main(Report):
 
     def _create_report(self, onweb=True):
         df = self.results.df
-
         try:
             self.add_section(self.results.diagnostics().replace("\n","<br>"),
                 'summary')
