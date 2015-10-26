@@ -7,3 +7,7 @@ except:
     # setup changes
     version = "0.1"
 
+import easydev
+
+ic50_test = easydev.get_share_file('gdsctools', 'data', 'IC50_10drugs.tsv')
+
