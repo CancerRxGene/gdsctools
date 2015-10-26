@@ -40,6 +40,6 @@ def test_read_gf():
     r.plot()
 
 
-def test_pancan_reader_rdata():
+def _test_pancan_reader_rdata():
     r = PANCAN()
     len(r.df)
