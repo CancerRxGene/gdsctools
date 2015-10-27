@@ -11,7 +11,7 @@ def test_html():
     an = GDSC_ANOVA(tools.get_data(), features)
     df = an.anova_all()
 
-    r = GDSC_ANOVA_Results(df, ic50=an.ic50)
+    r = GDSC_ANOVA_Results(gdsc=an, result=df)
     # long but should cover everthinh.
     r.create_html_pages()
 
