@@ -21,8 +21,8 @@ class VolcanoANOVA(Savefig):
 
         # this is redundant coul reuse the input ??
         self.settings = {
-            'pval_threshold': np.inf,
-            'fdr_threshold': 25,
+            'pvalue_threshold': np.inf,
+            'FDR_threshold': 25,
             'effect_threshold': 0,
             'fontsize': 20,
             'analysis_type': 'PANCAN',
@@ -120,9 +120,9 @@ class VolcanoANOVA(Savefig):
         # using all data
         minN = self.df['N_FEATURE_pos'].min()
         maxN = self.df['N_FEATURE_pos'].max()
-        pvalues = self._get_pvalue_from_fdr(self.settings.fdr_threshold)
+        pvalues = self._get_pvalue_from_fdr(self.settings.FDR_threshold)
         return {'minN': minN, 'maxN': maxN,
-                'pvalues': (self.settings.fdr_threshold, pvalues)}
+                'pvalues': (self.settings.FDR_threshold, pvalues)}
 
     def volcano_plot_one_feature(self, feature):
         """Volcano plot for one feature (all drugs)"""
@@ -167,15 +167,15 @@ class VolcanoANOVA(Savefig):
         annotations = []
 
         # just an alias
-        fdr_threshold = self.settings.fdr_threshold
+        FDR_threshold = self.settings.FDR_threshold
         if self.settings.analysis_type == 'PANCAN':
             for sign, qval, pval in zip(signed_effects, qvals, pvals):
                 if sign <= -self.settings.effect_threshold and \
-                        qval <= fdr_threshold:
+                        qval <= FDR_threshold:
                     colors.append('green')
                     annotations.append(True)
                 elif sign >= self.settings.effect_threshold and \
-                        qval <= fdr_threshold:
+                        qval <= FDR_threshold:
                     colors.append('red')
                     annotations.append(True)
                 else:
@@ -184,11 +184,11 @@ class VolcanoANOVA(Savefig):
         else:
             for delta, qval, pval in zip(deltas, qvals, pvals):
                 if pval <= self.settings.pvalue_threshold and \
-                        qval <= fdr_threshold and delta < 0:
+                        qval <= FDR_threshold and delta < 0:
                     colors.append('green')
                     annotations.append(True)
                 elif pval <= self.settings.pvalue_threshold and \
-                        qval <= fdr_threshold and delta > 0:
+                        qval <= FDR_threshold and delta > 0:
                     colors.append('red')
                     annotations.append(True)
                 else:
@@ -234,8 +234,9 @@ class VolcanoANOVA(Savefig):
         # However, plot cannot take different sizes/colors
         # Takes about 0.36 s per call and half the time
         # is spent in the scatter() call
+
         fig = pylab.figure(num=1)
-        pylab.clf()
+        fig.clf()
         ax = pylab.axes(axisbg='#EEEEEE')
         ax = fig.gca()
         X = [easydev.precision(x, digit=2) for x in signed_effects]
@@ -260,7 +261,7 @@ class VolcanoANOVA(Savefig):
 
         #self.stats = self._get_volcano_global_data()
 
-        fdr = self.settings.fdr_threshold
+        fdr = self.settings.FDR_threshold
         pvalue = self._get_pvalue_from_fdr(fdr)
         ax.axhline(-np.log10(pvalue), linestyle='--',
             color='red', alpha=1, label="FDR %s " %  fdr + " \%")
@@ -317,8 +318,9 @@ class VolcanoANOVA(Savefig):
                     np.take(Y, ind)[0])
         #fig.canvas.mpl_connect('pick_event', onpick)
         """
-        """
+        
         # for the JS version
+        # TODO: for the first 1 to 2000 entries ?
         import mpld3
         labels = []
         for i, row in data[['drug','feature']].iterrows():
@@ -329,7 +331,7 @@ class VolcanoANOVA(Savefig):
 
         tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels)
         mpld3.plugins.connect(fig, tooltip)
-        """
+        
         #mpld3.display()
 
         self.scatter = scatter

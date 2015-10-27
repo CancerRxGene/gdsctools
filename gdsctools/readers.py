@@ -118,7 +118,24 @@ class IC50(Reader, CosmicRows):
     
 
 class GenomicFeatures(Reader, CosmicRows):
+    """Read Matrix with Genomic Features
+
+    Recognised column names are :
+        
+        - 'Tissue Factor Value'
+        - 'Sample Name'
+        - 'MS-instability Factor Value'
+        - columns ending in "_mut" to encode a gene mutation (e.g., BRAF_mut)
+        - columns starting with "gain_cna"
+        - columns starting with "loss_cna"
+
+    Those columns will be removed:
+
+        - starting with "Drug_", which are supposibly from the IC50 matrix
+
+    """
     def __init__(self, filename=None, sep="\t"):
+
         # first reset the filename to the shared data (if not provided)
         if filename is None:
             filename = easydev.get_share_file('gdsctools', 'data',
@@ -137,6 +154,10 @@ class GenomicFeatures(Reader, CosmicRows):
             except:
                 # it is a dataframe
                 self.df = filename
+
+        # Remove columns related to Drug, which should be in the IC50 matrix
+        self.df = self.df[[x for x in self.df.columns 
+            if x.startswith('Drug_') is False]]
 
         # There are several types of features e.g., mutation, CNA,
         # methylation but all are stored within the same file
@@ -179,9 +200,10 @@ class GenomicFeatures(Reader, CosmicRows):
         txt = 'Genomic features distribution\n'
         Ntissue = len(self.df[self._col_tissue].unique())
         txt += 'Number of unique tissues {0}\n'.format(Ntissue)
-        
+       
+        # -3 since we have also the MSI, tissue, sample columns
         Nfeatures = len(self.features)
-        txt += 'Number of unique features {0} with\n'.format(Nfeatures)
+        txt += 'Number of unique features {0} with\n'.format(Nfeatures-3)
 
         n_mutations = len([x for x in self.df.columns if x.endswith("_mut")])
         txt += "- Mutation: {}\n".format(n_mutations)
@@ -204,8 +226,8 @@ class GenomicFeatures(Reader, CosmicRows):
         self.df = self.df[mask]
         self._cleanup()
 
-    def _cleanup(self, required_feature=0):
-        todrop = list(self.df.columns[self.df.sum()<=required_feature])
+    def _cleanup(self, required_features=0):
+        todrop = list(self.df.columns[self.df.sum()<=required_features])
         for this in [self._col_tissue, self._col_msi, self._col_sample]:
             try:
                 todrop.remove(this)

@@ -16,7 +16,7 @@ class Savefig(object):
             directory = self.directory
 
         filename = directory + os.sep + name
-        print('Saving %s' % filename)
+        #print('Saving %s' % filename)
         pylab.savefig(filename, **kargs)
 
 

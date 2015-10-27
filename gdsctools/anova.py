@@ -16,7 +16,7 @@ try:
     from cno.misc.profiler import do_profile
 except:
     pass
-from gdsctools import cohens, glass
+#from gdsctools import cohens, glass
 # See reader module to get the format. The file IC50_input.txt was provided
 # by Howard as a test case
 #data = reader.IC50()
@@ -34,9 +34,10 @@ from gdsctools.volcano_anova import VolcanoANOVA
 class Settings(AttrDict):
     def __init__(self, **kargs):
         super(Settings, self).__init__(**kargs)
+
+        ## ANALYSIS ---------------------------
         # include MSI as a co-factor
         self.includeMSI_factor = True
-
         # number of positive samples required to perform the test
         self.featFactorPopulationTh = 3
         # How many MSI samples must be present to perform the test
@@ -44,10 +45,12 @@ class Settings(AttrDict):
         self.analysis_type = 'PANCAN'
         self.pval_correction_method = 'fdr'   # or qvalue
         self.equal_var_ttest = True
-        self.fontsize = 20
         self.minimum_nonna_ic50 = 6
-        self.fdr_threshold = 25
-        self.pval_threshold = np.inf
+
+
+        self.fontsize = 20
+        self.FDR_threshold = 25
+        self.pvalue_threshold = np.inf
         self.directory = 'gdsc'
         self.savefig = False
         self.effect_threshold = 0 # use in volcano
@@ -63,42 +66,94 @@ class Settings(AttrDict):
         html = settings.to_html(header=True, index=False)
         return html
 
+    def copy(self):
+        # not used
+        print('!!!! Buggy can access to key as attribute after a copy')
+        s =  Settings(**{'test':1})
+        for k,v in self.items():
+            s[k] = k
+        del s['test'] 
+        return s
+
+class ColumnTypes(object):
+
+    def __init__(self):
+
+        self.mapping = {
+             'Drug Target': np.dtype('O'),
+             'Drug id': np.dtype('O'),
+             'Drug name': np.dtype('O'),
+             'FEATURE': np.dtype('O'),
+             'FEATURE_ANOVA_pval': np.dtype('float64'),
+             'FEATURE_IC50_T_pval': np.dtype('float64'),
+             'FEATURE_IC50_effect_size': np.dtype('float64'),
+             'FEATURE_deltaMEAN_IC50': np.dtype('float64'),
+             'FEATUREneg_Glass_delta': np.dtype('float64'),
+             'FEATUREneg_IC50_sd': np.dtype('float64'),
+             'FEATUREneg_logIC50_MEAN':  np.dtype('float64'),
+             'FEATUREpos_Glass_delta': np.dtype('float64'),
+             'FEATUREpos_IC50_sd': np.dtype('float64'),
+             'FEATUREpos_logIC50_MEAN': np.dtype('float64'),
+             'MSI_ANOVA_pval': np.dtype('O'),
+             'N_FEATURE_neg': np.dtype('int64'),
+             'N_FEATURE_pos': np.dtype('int64'),
+             'Tissue_ANOVA_pval': np.dtype('O'),
+             'log max.Conc.tested': np.dtype('O'),
+             'log max.Conc.tested2': np.dtype('O')}
+
+    def astype(self, df):
+        df = df.apply(lambda x: pd.to_numeric(x, errors='ignore'))
+        return df
+
+
 
 # TODO: Could inherit from a dataframe ?
 class GDSC_ANOVA_Results(Savefig):
-    def __init__(self, data=None, input_feature=None, concentrations=None,
-            ic50=None, sep="\t"):
+    """
+
+    an = GDSC_ANOVA_Results('ic50.txt','features.txt')
+    an.setttings.analyse_type = 'Bladder' # to filter the data if needed
+    # the command above set settings.analyse_type to Bladder
+    # so that tissue are not used
+    # If MSI column is all 0, the msi factor is also set to False 
+    df = an.anova_all()
+
+    r = GDSC_ANOVA_Results(df, ic50=an.ic50, input_features=an.features, 
+        concentrations='concentrations.csv')
+    r.settings.pvalue_threshold = 0.001
+    r.settings.FDR_threshold = 28
+    r.settings.includeMSI_factor = False
+    r.settings.analysis_type = 'Bladder'
+    r.settings.directory = 'BLCA'
+
+    """
+    def __init__(self, gdsc, results, concentrations=None, sep="\t"):
 
         super(GDSC_ANOVA_Results, self).__init__()
 
+        data = results
         # data can be a file with all results as exported
         # by ANOVA analysis
         if data is not None and isinstance(data, str):
-            print("Reading the data from a file")
-            print("Creating a standard settings, which may differ from actual ones")
+            print("Reading the results from a file")
             self.df = self.read_csv(data, sep=sep)
-            self.settings = Settings()
         elif data is not None:
-            # or an instance of GDSC_ANOVA, in which case we can retrieve
-            # the settings and dataframe
             try:
                 self.df = data.df.copy()
-                self.settings = data.settings.copy()
             except:
                 # or an instance of a dataframe
                 self.df = data.copy()
-                print("no settings found, generate a standard version that " +
-                    "may differ from the one used to generate the data")
-                self.settings = Settings()
 
-        input_features = readers.GenomicFeatures(input_feature)
-        self.input_features = input_features.df
+        self.settings = Settings()
+        for k, v in gdsc.settings.items():
+            self.settings[k] = v
 
         self._colname_drug_id = 'Drug id'
         self.varname_pval = 'FEATURE_ANOVA_pval'
         self.varname_qval = 'ANOVA FEATURE FDR %'
 
-        self.ic50 = readers.IC50(ic50)
+        self.ic50 = readers.IC50(gdsc.ic50)
+        self.input_features = readers.GenomicFeatures(gdsc.features).df
 
         if concentrations:
             # input may not have the concentrations columns right now.
@@ -144,6 +199,8 @@ class GDSC_ANOVA_Results(Savefig):
 
         txt.append("""Total number of ANOVA tests performed: {0} ({1}%% of total number of drug/feature combos)\n""".format(self.n_tests, ratio))
 
+        # FIXME the total number of drugs tested or total number of drugs
+        # with at least 2 IC50 ?
         txt.append("Total number of tested drugs: {0}\n".format(self.n_drugs))
         txt.append("""Total number of tested genomic features (mutated driver genes and copy number altered genomic regions): {0}""".format(self.n_features))
 
@@ -157,18 +214,16 @@ class GDSC_ANOVA_Results(Savefig):
         nres = len(self.resistant_df)
         txt.append("Total number of significant associations: {0} ({1} for    sensitivity and {2} for resistance".format(nsens+nres,nsens,nres))
 
-        txt.append("p-value significance threshold: {}".format(self.settings.pval_threshold))
-        txt.append("FDR significance threshold: {}".format(self.settings.fdr_threshold))
+        
+        txt.append("p-value significance threshold: {}".format(self.settings.pvalue_threshold))
+        txt.append("FDR significance threshold: {}".format(self.settings.FDR_threshold))
 
         p1, p2 = self._get_pval_range()
-        p1 = easydev.precision(p1, 2)
-        p2 = easydev.precision(p2, 2)
-        txt.append('range of significant p-values [{}, {}]'.format(p1,p2))
+        txt.append('range of significant p-values [{:.4}, {:.4}]'.format(p1,p2))
         f1, f2 = self._get_fdr_range()
-        f1 = easydev.precision(f1, 2)
-        f2 = easydev.precision(f2, 2)
+        f1 = easydev.precision(f1, 3)
+        f2 = easydev.precision(f2, 3)
         txt.append('range of significant % FDRs: [{} {}]'.format(f1,f2))
-
         return "\n".join(txt)
 
     def _get_pval_range(self):
@@ -181,9 +236,10 @@ class GDSC_ANOVA_Results(Savefig):
         data = self.df[name].ix[0:N-1]
         m, M = data.min(), data.max()
         return m,M
+
     def _get_fdr_range(self):
         name = self.varname_qval
-        data = self.df[name][(self.df[name]< self.settings.fdr_threshold)]
+        data = self.df[name][(self.df[name]< self.settings.FDR_threshold)]
         if len(data) == 0:
             return 0,0
         m, M = data.min(), data.max()
@@ -192,7 +248,7 @@ class GDSC_ANOVA_Results(Savefig):
     def _get_pvalue_from_fdr(self):
         qvals = df[self.varname_qval]
         pvals = df[self.varname_pval]
-        pvalue = pvals[qvals < self.settings.fdr_threshold].max()
+        pvalue = pvals[qvals < self.settings.FDR_threshold].max()
         return pvalue
 
     def read_csv(self, filename, sep="\t"):
@@ -205,8 +261,8 @@ class GDSC_ANOVA_Results(Savefig):
         logand = np.logical_and
 
         # select sensible data set
-        mask1 = self.df['ANOVA FEATURE FDR %'] < self.settings.fdr_threshold
-        mask2 = self.df['FEATURE_ANOVA_pval'] < self.settings.pval_threshold
+        mask1 = self.df['ANOVA FEATURE FDR %'] < self.settings.FDR_threshold
+        mask2 = self.df['FEATURE_ANOVA_pval'] < self.settings.pvalue_threshold
         mask3 = self.df['FEATURE_deltaMEAN_IC50'] < 0
         self.sensible_df = self.df[logand(logand(mask1, mask2), mask3)]
 
@@ -333,7 +389,7 @@ class GDSC_ANOVA_Results(Savefig):
         pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
                     "\nassociated with drug  response", fontsize=15)
         pylab.xlabel(r'Number of significant associations (FDR %s %s %s) '
-                    % ("$>$", self.settings.fdr_threshold, "$\%$"),
+                    % ("$>$", self.settings.FDR_threshold, "$\%$"),
                     fontsize=15)
         pylab.legend(loc='lower right')
         pylab.tight_layout()
@@ -422,6 +478,10 @@ class GDSC_ANOVA_Results(Savefig):
                 drug='dummy', feature='dummy', fdr='dummy',
                 directory=self.settings.directory)
         html.settings = self.settings
+        html.factory.settings.includeMSI_factor = self.settings.includeMSI_factor
+        html.factory.settings.analysis_type = self.settings.analysis_type
+
+        self.html = html
         for i in range(N):
             html.drug = drugs[i]
             html.feature = features[i]
@@ -496,6 +556,7 @@ class GDSC_ANOVA_Results(Savefig):
         html.report(browse=False)
 
     def create_html_pages(self):
+        self._set_sensible_df()
         self.create_html_main()
         self.create_html_drugs()
         self.create_html_features()
@@ -551,19 +612,9 @@ class GDSC_ANOVA(object):
             self.features = readers.GenomicFeatures(features)
 
         # settings
-        self.settings = {
-            # include MSI as a co-factor
-            'includeMSI_factor': True,
-            # number of positive samples required to perform the test
-            'featFactorPopulationTh': 3,
-            # How many MSI samples must be present to perform the test
-            'MSIfactorPopulationTh': 2,
-            'analysis_type': 'PANCAN',
-            'pval_correction_method': 'fdr',   # or qvalue
-            'equal_var_ttest': True,
-            'fontsize': 20,
-            'minimum_nonna_ic50': 6
-            }
+        self.settings = Settings()
+        
+        
         # makes this dict keys accessible as attributes
         self.settings = AttrDict(**self.settings)
 
@@ -589,28 +640,58 @@ class GDSC_ANOVA(object):
 
         self._init()
 
+    def _autoset_msi(self):
+        # if the number of positives factors is not large enough then
+        # the MSI factor is not used
+        # FIXME TODO actually, we should check the inverse if negatives
+        # is not large enough
+        self.msi_factor = self.features.df['MS-instability Factor Value']
+        total = len(self.msi_factor)
+        positives = self.msi_factor.sum()
+        negatives = total - positives
+        # we must have at least 1 positive
+        # FIXME here we use a < (check that this is not <=)
+        # by default the MSI factor equals 2. Having only 1 pos seems 
+        # not robust.
+        if positives <  self.settings.MSIfactorPopulationTh:
+            self.settings.includeMSI_factor = False
+        # and 1 negative
+        if negatives <  self.settings.MSIfactorPopulationTh:
+            self.settings.includeMSI_factor = False
+
+    def _autoset_tissue(self):
+        self.tissue_factor = self.features.df['Tissue Factor Value']
+        if len(self.tissue_factor.unique()) == 1:
+            # there is only one tissue
+            tissue = self.tissue_factor.unique()[0]
+            self.settings.analysis_type = tissue
+        else:
+            # this is a PANCAN analysis
+            self.settings.analysis_type = 'PANCAN'
+
     def set_cancer_type(self, ctype):
        assert ctype in self.features.tissues
+
+       # keep only features that correspond to the tissue
+       # and have at least featFactorPopulationTh positives
        self.features.keep_tissue_in(ctype)
+
        self.ic50.df = self.ic50.df.ix[self.features.df.index]
-       self.msi_factor = self.msi_factor.ix[self.features.df.index]
-       # TODO: < or <=
-       if self.msi_factor.sum() <=  self.settings.MSIfactorPopulationTh:
-           self.settings.includeMSI_factor = False
-       self.settings.analysis_type = ctype
        self._init()
 
     def _init(self):
         # Some preprocessing to speed up data access
         print('Creating data structures')
         ic50_parse = self.ic50.df.copy().unstack().dropna()
-        self.ic50_dict = dict([(d, {'indices': ic50_parse.ix[d].index,
-            'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
+        self.ic50_dict = dict([(d, 
+            {'indices': ic50_parse.ix[d].index,
+             'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
+
         # save the tissues
-        self.tissue_factor = self.features.df['Tissue Factor Value']
+        self._autoset_tissue()
 
         # and MSI (Microsatellite instability) status of the samples.
-        self.msi_factor = self.features.df['MS-instability Factor Value']
+        self._autoset_msi()
 
         # alias to speed up some code. Those are dictionary version of the
         # 3 dataframes above.
@@ -1174,6 +1255,8 @@ class GDSC_ANOVA(object):
         df = pd.DataFrame.from_records(res)
         df = df.T
 
+
+        df = ColumnTypes().astype(df)
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
         return df
 
@@ -1238,6 +1321,7 @@ class GDSC_ANOVA(object):
         df.insert(0, 'assoc_id', range(1,N+1))
         df = df[self.column_names]
         df.reset_index(inplace=True)
+        # make sure the types are correct
 
         # save as attribute
         return df
@@ -1423,7 +1507,7 @@ class OneDrugOneFeature(Report):
 
     def _create_report(self, onweb=True):
         # generated pictures and results
-        print('Generating data, images and HTML')
+        #print('Generating data, images and HTML')
         df = self.run()
 
         # Create the table and add it
@@ -1454,6 +1538,11 @@ class HTMLOneFeature(Report):
         v.settings = self.settings # get fdr, pval
         v.settings.savefig = True
         v.settings.directory = self.directory
+        # FIXME: insiced volvano_plot, we add tooltip
+        # when we call volcano again, the tooltip form the
+        # previous call are still there. The only solution 
+        # so far is to close the figure.
+        pylab.close(1)
         v.volcano_plot_one_feature(self.feature)
         v.savefig('volcano_{}.png'.format(self.feature))
 
@@ -1464,7 +1553,7 @@ class HTMLOneFeature(Report):
 
     def _create_report(self, onweb=True):
         # generated pictures and results
-        print('Generating data, images and HTML')
+        #print('Generating data, images and HTML')
         self.run()
         # could be a table with no border ?
         summary = """
@@ -1538,7 +1627,7 @@ class HTMLOneDrug(Report):
 
     def _create_report(self, onweb=True):
         # generated pictures and results
-        print('Generating data, images and HTML')
+        #print('Generating data, images and HTML')
         self.create_pictures()
         # could be a table with no border ?
         summary = """
@@ -1601,9 +1690,10 @@ class HTML_main(Report):
 
         print('Create summary plots')
         v = VolcanoANOVA(df)
-        # this can be pretty slow. so drop some values
-        if len(v.df)>10000:
-            v.df = v.df[v.df['ANOVA FEATURE FDR %']<60]
+        # this can be pretty slow. so keep only 1000 most relevant
+        # values and 1000 random ones to get an idea of the distribution 
+        v.df = selector(df)
+
         v.settings = self.settings # get fdr, pval
         v.settings.savefig = True
         v.settings.directory = self.directory
@@ -1613,6 +1703,11 @@ class HTML_main(Report):
         html = """
 <h3></h3>
 <img src="volcano_all.png">
+
+<br>
+Possibly, a javascript version is available 
+<a href="volcano_all_js.html">here</a>
+
         """
         try:
             import mpld3
@@ -1648,7 +1743,8 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 <h3>Drug whose response is frequently associated with afeature</h3>
 <img src="drug_summary.png">
 <br>You can <a href="{}">download the significant-features table</a> in tsv format.
-"""
+""".format( filename)
+
         self.add_section(html, 'Drug summary')
 
         # Create table with links to all drugs
@@ -1666,9 +1762,13 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
             df['Drug id (alpha order)'] = drugs
             table = HTMLTable(df, 'drugs')
             table.add_href('Drug id')
+            table.add_href('Drug id (alpha order)')
         except:
             table = HTMLTable(df, 'drugs')
             table.add_href('Drug id')
+        # rename one columns
+        table.df.columns = [x.replace('ANOVA FEATURE FDR', 
+            'mean ANOVA FEATURE FDR') for x in table.df.columns]
 
 
         html = "The following table provides links to dedicated pages for each drug (sorted by ascending FDR)"
@@ -1744,3 +1844,19 @@ class SignificantHits(object):
         return html.to_html(escape=escape, header=header, index=index,
                 justify='center')
 
+
+
+def selector(df, Nbest=1000, Nrandom=1000):
+    if len(df)<Nbest:
+        return df
+    Nmax =  Nbest + Nrandom
+    N  = len(df)
+    if N > Nbest:
+        x = range(Nbest, N)
+        pylab.shuffle(x)
+        n2pick = min(N, Nmax) - Nbest
+        indices = range(0, Nbest) + x[0:n2pick]
+    else:
+        indices = range(0,Nbest)
+    df = df.ix[indices]
+    return df
