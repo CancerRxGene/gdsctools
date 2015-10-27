@@ -7,13 +7,11 @@ def test_html():
     # same as above, could factorise
     an = GDSC_ANOVA(tools.get_data())
     features = an.features.df
-    features = features[features.columns[0:13]]
+    features = features[features.columns[0:30]]
     an = GDSC_ANOVA(tools.get_data(), features)
     df = an.anova_all()
 
-    r = GDSC_ANOVA_Results(df, 
-            ic50=tools.get_data())
-    r.settings.fdr_threshold= 90
+    r = GDSC_ANOVA_Results(df, ic50=an.ic50)
     # long but should cover everthinh.
     r.create_html_pages()
 
