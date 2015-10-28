@@ -2,15 +2,19 @@ import pylab
 import numpy as np
 
 
+__all__ = ['boxswarm', 'BoxSwarm']
 
 
 def boxswarm(data, names=None, vert=True, widths=0.5, **kwargs):
-    """Plot boxplot with all points as circles
+    """Plot boxplot with all points as circles.
 
+    :param data:
+    :param names:
+    :param vert:
+    :param widths:
+    :param **kargs:
 
-
-    See :class:`BoxSwarm`documentation for details
-
+    See :class:`BoxSwarm` documentation for details
 
     """
     b = BoxSwarm(data, names=names, **kwargs)
@@ -19,13 +23,34 @@ def boxswarm(data, names=None, vert=True, widths=0.5, **kwargs):
 
 
 class BoxSwarm(object):
-    def __init__(self, data, names=None, fontsize=20, hold=False, 
-            title='', lw=2, colors=['lightgrey', 'blue']):
-        """
+    """Simple beeswarm plot (boxplot + dots for each data point)
 
+
+    .. plot::
+        :include-source:
+        :width: 80%
+
+        from pylab import randn
+        from gdsctools.boxswarm import BoxSwarm
+        b = BoxSwarm({'a':randn(100), 'b':randn(20)+2})
+        b.plot(vert=False)
+
+
+    .. note:: could use pybeeswarm, which is a proper implementation
+        of beeswarm.
+
+    """
+    def __init__(self, data, names=None, fontsize=20, hold=False,
+            title='', lw=2, colors=['lightgrey', 'blue']):
+        """.. rubric:: Constructor
 
         :param: a list of list (not same size) or a dictionary of lists
 
+        :param data:
+        :param names:
+        :param vert:
+        :param widths:
+        :param **kargs:
 
 
         """
@@ -49,7 +74,8 @@ class BoxSwarm(object):
                     assert len(names) == len(data)
                     self.names = names
 
-                self.data = dict([(name, d) for name, d in zip(self.names, data)])
+                self.data = dict([(name, d)
+                    for name, d in zip(self.names, data)])
 
         self.ylabel = ''
         self.xlabel = ''
@@ -61,11 +87,20 @@ class BoxSwarm(object):
         self.markersize = 15
 
     def beeswarm(self, data, position, ratio=2.):
-        """
+        """Naiva plotting of the data 
 
-        dat = data + (U()-0.5)/2 * factor
+        assume gaussian distribution that is lots of data centered, and
+        few data in the tails. Use::
 
-        factor = 1 or distance to media 1 / (abs(median-x)/std)
+            data = data + (U()-0.5)/ ratio * factor
+
+        where ::
+
+            factor = 1 - arctan( (data-m)/ ( pi/2))
+
+        The farther the point is from the mean, the higher change it has
+        to lie on the axes that goes through the boxplot.
+        
         """
         N = len(data)
         m = np.median(data)
@@ -77,7 +112,7 @@ class BoxSwarm(object):
         return newdata
 
     def plot(self, vert=True, widths=0.5, **kwargs):
-        """
+        """Plot the boxplots and dots
 
 
         """
@@ -99,10 +134,9 @@ class BoxSwarm(object):
                 'o', markersize=self.markersize, markerfacecolor=color,
                 markeredgewidth=0, alpha=0.5)
 
-
         #show means but not outliers
         d = pylab.boxplot(ordered_data, widths=self.widths,
-               vert=vert, patch_artist=True, 
+               vert=vert, patch_artist=True,
                 positions=range(1, len(ordered_data)+1),
             showmeans=True, showfliers=False)
         # meanline=True to have a line instead of a dot
@@ -111,7 +145,7 @@ class BoxSwarm(object):
         self.tuning = d
         # This is now in matplotlib 1.4.3 (dots instead of lines
         # though)
-        
+
         # additional line for the 1 std
         means = [pylab.mean(data) for data in ordered_data]
         stds = [pylab.std(data) for data in ordered_data]
@@ -132,7 +166,7 @@ class BoxSwarm(object):
                 pylab.plot([x, x], Y, lw=2, color='purple')
                 x = this - stds[i]
                 pylab.plot([x, x], Y, lw=2, color='purple')
-        
+
         for i, this in enumerate(d['boxes']):
             this.set_color('k')
             this.set_linewidth(self.lw)
@@ -147,7 +181,7 @@ class BoxSwarm(object):
             this.set_linewidth(self.lw)
         for this in d['medians']:
             this.set_linewidth(self.lw)
-       
+
         # we will extend the limits by 5%
         m = min([min(this) for this in self.data.values()])
         M = max([max(this) for this in self.data.values()])
@@ -172,5 +206,4 @@ class BoxSwarm(object):
         pylab.grid()
         pylab.tight_layout()
 
-        # TODO: is this returning the correct axes ?
         return pylab.gca()

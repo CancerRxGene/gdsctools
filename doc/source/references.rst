@@ -23,7 +23,39 @@ Statistical Tools
 
 Readers
 ----------
-.. automodule:: gdsctools.reader
+.. automodule:: gdsctools.readers
     :members:
     :undoc-members:
+
+Visualisation
+---------------
+.. automodule:: gdsctools.volcano
+    :members:
+    :undoc-members:
+
+.. automodule:: gdsctools.boxswarm
+    :members:
+    :undoc-members:
+
+others
+--------
+.. automodule:: gdsctools.pipelines
+    :members:
+    :undoc-members:
+
+.. automodule:: gdsctools.tissues
+    :members:
+    :undoc-members:
+
+.. automodule:: gdsctools.report
+    :members:
+    :undoc-members:
+
+
+ 
+.. automodule:: gdsctools.tools
+    :members:
+    :undoc-members:
+
+
 

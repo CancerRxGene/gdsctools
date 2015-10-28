@@ -21,15 +21,19 @@ import pandas as pd
 import bs4
 
 
+__all__ = ['HTMLTable', 'Report']
+
+
 class HTMLTable(object):
-    """Handler of dataframe to export to HTML table.
+    """Handler to export dataframe into HTML table.
 
-    Additional features:
+    Features:
 
-        * transform a column contents into HTML references.
-          See :meth:`add_href`
-        * add a HTML background columns in cells (numeric content)
-          that exceeds some values.
+        * Takes each cell in a given column and creates an HTML
+          reference in each cell. See :meth:`add_href` method.
+        * add an HTML background into cells (numeric content) of
+          a given column using different methods (e.g., normalise).
+          See :meth:`add_bgcolor`
 
     ::
 
@@ -56,6 +60,15 @@ class HTMLTable(object):
                 'precision': 2}
 
     def to_html(self, index=False, escape=False, header=True, **kargs):
+        """Return HTML version of the table
+
+        :param bool index: do not include the index
+        :param bool escape: do not escape special characters
+        :param bool header: include header
+        :param **kargs: any parameter accepted by
+            :meth:`pandas.DataFrame.to_html`
+
+        """
         _buffer = {}
         for k, v in self.pd_options.items():
             # save the current option
@@ -64,26 +77,39 @@ class HTMLTable(object):
             pd.set_option(k, v)
 
         table = self.df.to_html(escape=escape, header=header, index=index,
-                **kargs)
+                                **kargs)
 
         # get back to default options
         for k, v in _buffer.items():
             pd.set_option(k, v)
         return table
 
-    def add_bgcolor(self, colname, cmap='copper', mode='absmax', 
-            threshold=None):
-        """
+    def add_bgcolor(self, colname, cmap='copper', mode='absmax',
+            threshold=2):
+        """Change column content into HTML paragraph with background color
 
-        add a background color style by adding <p> tags and bgcolor
-        This is apply on one column.
-        The color are set according to the colormap provided (cmap)
-        and a normalisation of the data defined by the mode. cmap values
-        are between 0 and 1 so, let us normalise the data in that range as
-        well. Then, we can easily get the hex values. If the mode is absmax,
-        the max is the abs max and data is scaled between 0 and 1.
-        If you have only positive values then, data is between 0.5 and 1.
-        The clip mode means that data are positives and
+        :param colname:
+        :param cmap: a colormap (matplotlib) or created using 
+            colormap package (from pypi).
+        :param mode: type of normalisation in 'absmax', 'max', 'clip' 
+            (see details below)
+        :param threshold: used if mode is set to 'clip'
+       
+        Colormap have values between 0 and 1 so we need to normalised the data
+        between 0 and 1. There are 3 mode to normalise the data so far.
+
+        If mode is set to 'absmax', negatives and positives values are
+        expected to be found in a range from -inf to inf. Values are 
+        scaled in between [0,1] X' = (X / M +1) /2. where m is the absolute
+        maximum. Ideally a colormap should be made of 3 colors, the first 
+        color used for negative values, the second for zeros and third color 
+        for positive values.
+
+        If mode is set to 'clip', values are clipped to a max value (parameter
+        *threshold* and values are normalised by that same threshold.
+
+        If mode is set to 'max', values are normalised by the max.
+
         """
         from colormap import rgb2hex, cmap_builder
         try:
@@ -93,14 +119,15 @@ class HTMLTable(object):
             pass
 
         data = self.df[colname].values
+
         if len(data) == 0:
             return
         if mode == 'clip':
-            data = [min(x, 2)/2. for x in data]
+            data = [min(x, threshold)/float(threshold) for x in data]
         elif mode == 'absmax':
             m = abs(data.min())
             M = abs(data.max())
-            M = max([m,M])
+            M = max([m, M])
             data = (data / M + 1)/2.
         elif mode == 'max':
             data = data/float(data.max())
@@ -113,7 +140,8 @@ class HTMLTable(object):
         data = self.df[colname].values
         # need to set precision since this is going to be a text not a number
         # so pandas will not use the precision for those cases:
-        data = [easydev.precision(x, self.pd_options['precision']) for x in data]
+        data = [easydev.precision(x, self.pd_options['precision'])
+                for x in data]
         html_formatter = '<p style="background-color:{0}">{1}</p>'
         self.df[colname] = [html_formatter.format(x,y)
                 for x,y in zip(hexcolors, data)]
@@ -127,52 +155,101 @@ class HTMLTable(object):
 
 
 class Report(object):
+    """A base class to create HTML pages
 
+    This :class:`Report` class holds the CSS and HTML layout and will ease
+    the creation of new reports and HTML pages. For instance, it will add
+    a footer and header automatically, save files in the proper directory,
+    create that directory if it is missing.
+
+
+    ::
+
+        from gdsctools import Report
+        r = Report()
+        r.add_section('Example with some text', 'Example' )
+        r.report()
+
+    """
     def __init__(self, filename='index.html', directory='report',
                  overwrite=True, verbose=True, dependencies=True):
+        """.. rubric:: Constructor
+
+        :param filename:
+        :param directory:
+        :param overwrite: default to True
+        :param verbose: default to True
+        :param dependencies: add the dependencies table at the end of the
+            document
+
+        """
+        #: name of the analysis added in the title
         self.analysis = 'anova'
+        self.pkgname = 'gdsctools'
         from gdsctools import version
+        #: version added in the sub title
         self.version = version
+
         self._directory = directory
         self._filename = filename
+
+        # This contains the sections and their names when
+        # method add_section is used
         self.sections = []
         self.section_names = []
+
+        #: flag to add dependencies
         self.add_dependencies = False
+
+        #: flag to add text before TOC
         self.pretoc = None
+
+        #: flag to add a "back to main" link
         if filename != 'index.html':
             self.goback_link = True
         else:
             self.goback_link = False
 
-        #self._init_report()
+        self._init_report()
 
     def _get_filename(self):
         return self._filename
-    filename = property(_get_filename)
+    def _set_filename(self, filename):
+        self._filename = filename
+    filename = property(_get_filename, _set_filename,
+        doc="The filename of the HTML document")
 
     def _get_directory(self):
         return self._directory
-    directory = property(_get_directory)
+    def _set_directory(self, directory):
+        self._directory = directory
+    directory = property(_get_directory, _set_directory,
+            doc="The directory where to save the HTML document")
 
     def _get_abspath(self):
         return self.directory + os.sep + self.filename
-    abspath = property(_get_abspath)
+    abspath = property(_get_abspath,
+            doc="The absolute path of the document (read only)")
 
     def show(self):
+        """Opens a tab in a browser to see the document"""
         from browse import browse as bs
         bs(self.abspath)
 
     def close_body(self):
+        """returns BODY closing tag"""
         return "</body>"
 
     def close_html(self):
+        """returns HTML closing tag"""
         return "</html>"
 
     def get_footer(self):
+        """Return  HTML closing tag"""
         return self.close_body() + "\n" + self.close_html()
 
     def _init_report(self):
-        """create the report directroy and return the directory name"""
+        """create the report directory and return the directory name"""
         self.sections = []
         self.section_names = []
         # if the directory already exists, print a warning
@@ -199,8 +276,7 @@ class Report(object):
      <head>
      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
      <title>GDSCtools report</title>
-     <link rel="stylesheet" href="dana.css" type="text/css" />
-     <script type='text/javascript' src='tools.js'></script>
+     <link rel="stylesheet" href="gdsc.css" type="text/css" />
  </head>
 
  <body>
@@ -216,6 +292,7 @@ class Report(object):
         return str_
 
     def get_time_now(self):
+        """Returns a time stamp"""
         import datetime
         import getpass
         username = getpass.getuser()
@@ -225,13 +302,13 @@ class Report(object):
         return msg
 
     def get_table_dependencies(self):
-        """Returns dependencies of the pipeline into a HTML/XML table
+        """Returns dependencies of the pipeline as an HTML/XML table
 
-        dependencies are the python dependencies as returned by pkg_resource.
-        additionally, r dependencies added in :attr:`dependencies` are also added.
+        The dependencies are the python dependencies as returned by
+        pkg_resource module.
 
         """
-        dependencies = easydev.get_dependencies('gdsctools')
+        dependencies = easydev.get_dependencies(self.pkgname)
 
         # TODO: Could re-use new method in HTMLTable for adding href
         # but needs some extra work in the add_href method.
@@ -252,13 +329,23 @@ class Report(object):
         return table
 
     def add_pretoc(self, content):
+        """A content is added in the HTML page but content may be added
+        before using this method"""
         self.pretoc = content
 
     def add_rawhtml(self, content):
+        """Add some HTML code in the document"""
         self.sections.append(content)
 
     def add_section(self, content, title, references=[], position=None):
+        """Adds an H2 section in the document
 
+        :param content: text to add in the section
+        :param title: with this title (h2 tag)
+        :param references: not currently used
+        :param position: sections are added sequentially but position may
+            be set to insert a section at a given place.
+        """
         reftxt = self._create_references(references)
         section = """<div class="section" id="%(id)s">
         <h2> <a class="toc-backref" href="#id%(index)s">%(title)s</a></h2>
@@ -277,6 +364,7 @@ class Report(object):
             self.section_names.append(title)
 
     def get_toc(self):
+        """Returns a table of contents"""
         toc = """<div class="contents local topic" id="contents">
         <ul class="simple">"""
         for i, name in enumerate(self.section_names):
@@ -287,9 +375,6 @@ class Report(object):
 </li>""" % {'i':i+1, 'name':name, 'href':"#"+name.replace(" ", "_"), 'id':'id%s' % str(i+1)}
         toc += """</ul>\n</div>"""
         return toc
-
-    def _create_parameters(self):
-        raise NotImplementedError
 
     def _create_references(self, references):
         if len(references) == 0:
@@ -309,7 +394,11 @@ class Report(object):
         </div>"""
         return txt
 
-    def write(self ):
+    def write(self):
+        """Creates the entire HTML document based on previous command calls
+
+        Save the HTML document into the :attr:`abspath`
+        """
         fh =  open(self.abspath, "w")
         contents = self.get_header()
 
@@ -338,10 +427,11 @@ class Report(object):
         fh.close()
 
     def report(self, browse=True):
+        """Creates the report, save it, opens in a browser"""
         self._create_report()
         self.write()
         if browse:
             self.show()
 
     def _create_report(self):
-        raise NotImplementedError
+        pass

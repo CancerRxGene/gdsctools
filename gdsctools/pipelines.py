@@ -20,8 +20,9 @@ from easydev.console import red, purple, darkgreen
 from gdsctools import anova, readers
 
 
+__all__ = ['anova_pipeline', 'ANOVAOptions']
 
-# ------------------------------------------------ The User Interface
+
 def print_color(txt, func_color, underline=False):
     import easydev
     try:
@@ -34,11 +35,12 @@ def print_color(txt, func_color, underline=False):
 
 
 def anova_pipeline(args=None):
-    """This function is used by the standalone application called dreamscoring
+    """This function is used by the standalone application called
+    **gdsctools_anova**
 
     ::
 
-        dreamscoring --help
+        gdsctools_anova --help
 
     """
     if args is None:
@@ -73,6 +75,10 @@ def anova_pipeline(args=None):
 
 
 class ANOVAOptions(argparse.ArgumentParser):
+    """Define user interface for the gdsctools_anova standalone application
+
+
+    """
     description = "tests"
     def __init__(self, version="1.0", prog=None):
 
@@ -96,11 +102,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
         self.add_input_options()
 
     def add_input_options(self):
-        """The input oiptions.
-
-        Default is None. Keep it that way because otherwise, the contents of
-        the ini file is overwritten in :class:`apps.Apps`.
-        """
+        """The input options to gdsctools_anova are defined here"""
         group = self.add_argument_group("General", 'General options (compulsary or not)')
 
         group.add_argument("--ic50", dest='ic50',

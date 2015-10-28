@@ -10,12 +10,9 @@ import easydev
 
 
 class Reader(object):
-    """
-
-
-    """
+    """Base class to read csv file"""
     def __init__(self, filename, sep="\t"):
-        """
+        """.. rubric:: Constructor
 
         :param input: could be a filename
 
@@ -42,6 +39,7 @@ class Reader(object):
         return ""
 
     def to_csv(self, filename, sep=None):
+        """Save data into a CSV file (actually, TSV) """
         if sep is None:
             sep = self._sep
         self.df.to_csv(filename, sep=sep)
@@ -57,12 +55,41 @@ class CosmicRows(object):
 class IC50(Reader, CosmicRows):
     """Reader of IC50 data set
 
-    Matrix containing the IC50 for each drug. First column must
-    contain the COSMIC ID and other columns are the DRUGS
+    The input matrix must be a tab-separated value file.
 
-    DRUG label must be "Drug_XX_IC50"
+    The matrix must have at least 2 columns and 2 rows.
 
+    The first row is the header with one column being named "COSMIC ID"
+    and other columns must be named "Drug_XX_IC50" where XX is a positive
+    integer (order is not important).
+
+    The columns "COSMIC ID" contains the the cosmic identifiers. The other
+    columns should be filled with the IC50 for the drug in correspondance with
+    the cosmic identifier.
+    
     Extra columns will be ignored.
+
+    e.g::
+
+        COSMIC ID   Drug_1_IC50 Drug_20_IC50
+        111111      0.5         0.8
+        222222      1           2
+
+
+    A test file is provided in the gdsctools package::
+
+        from gdsctools import ic50_test
+
+    If you want to use a comma-separated file, provide the separator (see
+    constructor).
+
+    .. plot::
+        :width: 80%
+        :include-source:
+
+        from gdsctools import IC50, ic50_test
+        r = IC50(ic50_test)
+        r.plot_ic50_count()
 
     """
     def __init__(self, filename='ANOVA_input.txt', sep="\t"):

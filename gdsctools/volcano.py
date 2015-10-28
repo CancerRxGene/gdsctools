@@ -7,17 +7,34 @@ from easydev import Progress, AttrDict
 from gdsctools.tools import Savefig
 
 
-
-
 __all__ = ['VolcanoANOVA']
 
 
-
-
 class VolcanoANOVA(Savefig):
-    def __init__(self, data, sep="\t", settings=None):
-        """
+    """Utilities related to volcano plots
+    
+    
+    .. plot:: 
+        :include-source:
+        :width: 80%
 
+        from gdsctools import ANOVA, ic50_test, VolcanoANOVA
+        an = ANOVA(ic50_test)
+
+        an = anova.ANOVA(ic50_test)
+        an.set_cancer_type('breast')
+        df = an.anova_all()
+        v = VolcanoANOVA(df)
+
+
+    .. note:: **for developers**: there is experimental code to 
+        connect the volcano plot using mpld3 package and javascript.
+    """
+    def __init__(self, data, sep="\t", settings=None):
+        """.. rubric::
+
+        :param data: a dataframe are returned by e.g., :meth:`ANOVA.anova_all`
+        :param settings: an instance of :class:`ANOVASettings`
 
         """
         super(VolcanoANOVA, self).__init__()

@@ -770,6 +770,7 @@ class ANOVA(Logging):
             self.settings.includeMSI_factor = False
 
     def _autoset_tissue(self):
+        # select tissue based on the features
         self.tissue_factor = self.features.df['Tissue Factor Value']
         if len(self.tissue_factor.unique()) == 1:
             # there is only one tissue
@@ -780,14 +781,17 @@ class ANOVA(Logging):
             self.settings.analysis_type = 'PANCAN'
 
     def set_cancer_type(self, ctype):
-       assert ctype in self.features.tissues
+        ctype = easydev.to_list(ctype)
+        for this in ctype:
+           assert this in self.features.tissues
 
-       # keep only features that correspond to the tissue
-       # and have at least featFactorPopulationTh positives
-       self.features.keep_tissue_in(ctype)
 
-       self.ic50.df = self.ic50.df.ix[self.features.df.index]
-       self._init()
+        # keep only features that correspond to the tissue
+        # and have at least featFactorPopulationTh positives
+        self.features.keep_tissue_in(ctype)
+
+        self.ic50.df = self.ic50.df.ix[self.features.df.index]
+        self._init()
 
     def _init(self):
         # Some preprocessing to speed up data access
