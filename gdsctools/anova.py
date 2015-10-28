@@ -197,7 +197,7 @@ class ColumnTypes(object):
 
 
 
-class ANOVAReport(Logging, Savefig):
+class ANOVAReport(Savefig):
     """
 
     an = ANOVAReport('ic50.txt','features.txt')
@@ -216,10 +216,9 @@ class ANOVAReport(Logging, Savefig):
     r.settings.directory = 'BLCA'
 
     """
-    def __init__(self, gdsc, results, concentrations=None, sep="\t", 
-            verbose=True):
+    def __init__(self, gdsc, results, concentrations=None, sep="\t"):
 
-        super(ANOVAReport, self).__init__(verbose=verbose)
+        super(ANOVAReport, self).__init__()
 
         data = results
         # data can be a file with all results as exported
