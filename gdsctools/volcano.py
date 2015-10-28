@@ -31,7 +31,7 @@ class VolcanoANOVA(Savefig):
         connect the volcano plot using mpld3 package and javascript.
     """
     def __init__(self, data, sep="\t", settings=None):
-        """.. rubric::
+        """.. rubric:: Constructor
 
         :param data: a dataframe are returned by e.g., :meth:`ANOVA.anova_all`
         :param settings: an instance of :class:`ANOVASettings`

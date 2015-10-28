@@ -460,8 +460,10 @@ class ANOVAReport(Savefig):
         df = df_count.ix[0:top][[u'sens assoc', u'res assoc']]
         labels = list(df.index)
         labels = [x.replace('_', '\_') for x in labels]
-        ind = range(0, len(labels))
-        ind.reverse()
+        ind = xrange(0, len(labels))
+        # reverse does not exist with python3
+        #ind.reverse()
+        ind = ind[::-1]
         data1 = df['sens assoc'].values
         data2 = df['res assoc'].values
         pylab.figure(1)

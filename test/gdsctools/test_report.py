@@ -13,6 +13,6 @@ def test_htmltable():
     html.add_bgcolor('A')
     html.add_bgcolor('B', mode='clip', threshold=2)
     html.add_bgcolor('C', mode='max', threshold=2)
-    print html.to_html()
+    print(html.to_html())
 
 
