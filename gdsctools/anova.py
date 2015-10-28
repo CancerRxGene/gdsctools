@@ -28,12 +28,15 @@ except:
 from gdsctools.report import Report, HTMLTable
 from gdsctools.tools import Savefig
 from colormap import cmap_builder
-from gdsctools.volcano_anova import VolcanoANOVA
+from gdsctools.volcano import VolcanoANOVA
 
 
-class Settings(AttrDict):
+__all__ = ['ANOVASettings', 'ANOVA', 'ANOVAReport']
+
+
+class ANOVASettings(AttrDict):
     def __init__(self, **kargs):
-        super(Settings, self).__init__(**kargs)
+        super(ANOVASettings, self).__init__(**kargs)
 
         ## ANALYSIS ---------------------------
         # include MSI as a co-factor
@@ -69,7 +72,7 @@ class Settings(AttrDict):
     def copy(self):
         # not used
         print('!!!! Buggy can access to key as attribute after a copy')
-        s =  Settings(**{'test':1})
+        s =  ANOVASettings(**{'test':1})
         for k,v in self.items():
             s[k] = k
         del s['test'] 
@@ -108,17 +111,17 @@ class ColumnTypes(object):
 
 
 # TODO: Could inherit from a dataframe ?
-class GDSC_ANOVA_Results(Savefig):
+class ANOVAReport(Savefig):
     """
 
-    an = GDSC_ANOVA_Results('ic50.txt','features.txt')
+    an = ANOVAReport('ic50.txt','features.txt')
     an.setttings.analyse_type = 'Bladder' # to filter the data if needed
     # the command above set settings.analyse_type to Bladder
     # so that tissue are not used
     # If MSI column is all 0, the msi factor is also set to False 
     df = an.anova_all()
 
-    r = GDSC_ANOVA_Results(df, ic50=an.ic50, input_features=an.features, 
+    r = ANOVAReport(df, ic50=an.ic50, input_features=an.features, 
         concentrations='concentrations.csv')
     r.settings.pvalue_threshold = 0.001
     r.settings.FDR_threshold = 28
@@ -129,7 +132,7 @@ class GDSC_ANOVA_Results(Savefig):
     """
     def __init__(self, gdsc, results, concentrations=None, sep="\t"):
 
-        super(GDSC_ANOVA_Results, self).__init__()
+        super(ANOVAReport, self).__init__()
 
         data = results
         # data can be a file with all results as exported
@@ -144,7 +147,7 @@ class GDSC_ANOVA_Results(Savefig):
                 # or an instance of a dataframe
                 self.df = data.copy()
 
-        self.settings = Settings()
+        self.settings = ANOVASettings()
         for k, v in gdsc.settings.items():
             self.settings[k] = v
 
@@ -456,7 +459,7 @@ class GDSC_ANOVA_Results(Savefig):
         self.df.info()
         return ""
     def check(self):
-        rold = GDSC_ANOVA_Results("anova_all.tsv",
+        rold = ANOVAReport("anova_all.tsv",
                 concentrations='concentrations.tsv')
         rold.df = rold.df[self.df.columns]
         for x in self.df.columns:
@@ -466,7 +469,7 @@ class GDSC_ANOVA_Results(Savefig):
                 print(x, all(self.df[x] == rold.df[x]))
 
     def create_html_associations(self):
-        print("Creating individual HTML pages for each association")
+        print("\nCreating individual HTML pages for each association")
         df = self.get_significant_set()
         drugs = df['Drug id'].values
         features = df['FEATURE'].values
@@ -494,7 +497,7 @@ class GDSC_ANOVA_Results(Savefig):
     def create_html_features(self):
         df = self.get_significant_set()
         groups = df.groupby('FEATURE')
-        print("Creating individual HTML pages for each feature")
+        print("\nCreating individual HTML pages for each feature")
         N = len(groups.indices.keys())
         pb = Progress(N)
         for i, feature in enumerate(groups.indices.keys()):
@@ -517,7 +520,7 @@ class GDSC_ANOVA_Results(Savefig):
         # group by driugs
         df = self.get_significant_set()
         groups = df.groupby('Drug id')
-        print("Creating individual HTML pages for each drug")
+        print("\nCreating individual HTML pages for each drug")
         N = len(groups.indices.keys())
         pb = Progress(N)
         for i, drug in enumerate(groups.indices.keys()):
@@ -541,7 +544,8 @@ class GDSC_ANOVA_Results(Savefig):
             pb.animate(i+1)
 
     def create_html_main(self):
-        print("Creating main HTML page")
+        print("Creating main HTML page in directory %s" %
+                (self.settings.directory))
         buffer = self.settings.savefig
         self.settings.savefig = True
         html = HTML_main(self, 'index.html', directory=self.settings.directory)
@@ -564,14 +568,14 @@ class GDSC_ANOVA_Results(Savefig):
         self.create_html_manova()
 
 
-class GDSC_ANOVA(object):
+class ANOVA(object):
     """ANOVA analysis of the IC50 vs Feature matrices
 
     ::
 
         from gdsctools import readers, anova
         r = readers.IC50('valid_file.tsv')
-        an = GDSC_ANOVA(r.ic50, r.features)
+        an = ANOVA(r.ic50, r.features)
         an.anova_one_drug_one_feature('Drug_1_IC50', 'TP53_mut',
             show_boxplot=True)
 
@@ -603,7 +607,6 @@ class GDSC_ANOVA(object):
         self.ic50_dict = dict([(d, {'indices': ic50_parse.ix[d].index,
             'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
 
-
         # Reads features
         if features is None:
             # Reads default version provided with the package
@@ -612,8 +615,7 @@ class GDSC_ANOVA(object):
             self.features = readers.GenomicFeatures(features)
 
         # settings
-        self.settings = Settings()
-        
+        self.settings = ANOVASettings()
         
         # makes this dict keys accessible as attributes
         self.settings = AttrDict(**self.settings)
@@ -716,6 +718,14 @@ class GDSC_ANOVA(object):
         self._tissue_dummies['C(msi)[T.1]'] = [1]*N
         self._tissue_dummies['feature'] = [1] * N
         self._tissue_dummies.insert(0, 'Intercept', [1] * N)
+
+    def _get_drug_names(self):
+        return self.ic50.drugIds
+    drugIds = property(_get_drug_names)
+    
+    def _get_feature_names(self):
+        return self.features.features
+    feature_names = property(_get_feature_names)
 
     def _get_analysis_mode(self):
         modes = []
@@ -885,7 +895,12 @@ class GDSC_ANOVA(object):
             a dictionary. This is to speed up analysis when scanning
             the drug across all features.
         """
-
+        if drug_name not in self.drugIds:
+            raise ValueError('Unknown drug name %s. Use e.g., %s' 
+                    % (drug_name, self.drugIds[0]))
+        if feature_name not in self.feature_names:
+            raise ValueError('Unknown feature name %s. Use e.g., %s' 
+                    % (feature_name, self.feature_names[0]))
         # This extract the relevant data and some simple metrics
         odof = self._get_one_drug_one_feature_data(drug_name, feature_name)
 
@@ -1279,7 +1294,6 @@ class GDSC_ANOVA(object):
         # axis=0 is default but we emphasize that sum is over column (i.e. drug
         vv = (self.ic50.df.isnull() == False).sum(axis=0)
         drug_names = vv.index[vv >= self.settings.minimum_nonna_ic50]
-        self.drug_names = drug_names
 
         # if user provided a list of drugs, use them:
         if drugs is not None:
@@ -1437,7 +1451,7 @@ def multicore(ic50, maxcpu=4):
 
     import time
     t1 = time.time()
-    master = GDSC_ANOVA(ic50)
+    master = ANOVA(ic50)
 
     drugs = master.ic50.drugIds
 
@@ -1448,7 +1462,7 @@ def multicore(ic50, maxcpu=4):
         t.add_job(_analyse_one_drug, master, drug)
     t.run()
 
-    # populate the GDSC_ANOVA instance with the results
+    # populate the ANOVA instance with the results
     for this in t.results:
         drug = this[0]
         result = this[1]
@@ -1479,7 +1493,7 @@ class HTMLManova(Report):
 class OneDrugOneFeature(Report):
     def __init__(self, ic50, features=None, drug=None, feature=None,
             directory='gdsc', fdr='?'):
-        self.factory = GDSC_ANOVA(ic50, features=features)
+        self.factory = ANOVA(ic50, features=features)
         self.drug = drug
         self.feature = feature
         self.directory = directory
@@ -1684,15 +1698,15 @@ class HTML_main(Report):
         df = self.results.df
         try:
             self.add_section(self.results.diagnostics().replace("\n","<br>"),
-                'summary')
+                'Summary')
         except:
             self.add_section('not available','summary')
 
         print('Create summary plots')
-        v = VolcanoANOVA(df)
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution 
-        v.df = selector(df)
+        v = VolcanoANOVA(df)
+        v.selector(v.df, 1000,1000, inplace=True)
 
         v.settings = self.settings # get fdr, pval
         v.settings.savefig = True
@@ -1718,7 +1732,7 @@ Possibly, a javascript version is available
         fh.write(htmljs)
         fh.close()
 
-        self.add_section(html, 'volcano plot')
+        self.add_section(html, 'Volcano plot')
 
         # feature summary
         df_features = self.results.feature_summary()
@@ -1730,10 +1744,10 @@ Possibly, a javascript version is available
 <br>
 You can <a href="{}">download the significant-features table</a> in tsv format.
 """.format(filename)
-        self.add_section(html, 'feature summary')
+        self.add_section(html, 'Feature summary')
 
         # MANOVA link
-        self.add_section('Explore all significant associations following this link <a href="manova.html">manova</a>', "manova")
+        self.add_section('Explore all significant associations following this link <a href="manova.html">manova</a>', "MANOVA")
 
         # drug summary
         df_drugs = self.results.drug_summary()
@@ -1846,17 +1860,3 @@ class SignificantHits(object):
 
 
 
-def selector(df, Nbest=1000, Nrandom=1000):
-    if len(df)<Nbest:
-        return df
-    Nmax =  Nbest + Nrandom
-    N  = len(df)
-    if N > Nbest:
-        x = range(Nbest, N)
-        pylab.shuffle(x)
-        n2pick = min(N, Nmax) - Nbest
-        indices = range(0, Nbest) + x[0:n2pick]
-    else:
-        indices = range(0,Nbest)
-    df = df.ix[indices]
-    return df

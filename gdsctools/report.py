@@ -18,11 +18,36 @@ import shutil
 
 import easydev
 import pandas as pd
-
-
 import bs4
 
+
 class HTMLTable(object):
+    """Handler of dataframe to export to HTML table.
+
+    Additional features:
+
+        * transform a column contents into HTML references.
+          See :meth:`add_href`
+        * add a HTML background columns in cells (numeric content)
+          that exceeds some values.
+
+    ::
+
+        import pandas as pd
+        df = pd.DataFrame({'A':[1,2,10], 'B':[1,10,2]})
+        from gdsctools import HTMLTable
+        html = HTMLTable(df)
+
+
+
+    .. note:: similar project : prettytable but could not do
+        exactly what we wanted at the time gdsctools was developed.
+
+    .. note:: Could be moved to biokit or easydev package.
+
+
+
+    """
     def __init__(self, df, name, **kargs):
         self.df = df.copy() # because we will change its contents possibly
         self.name = name
@@ -37,8 +62,8 @@ class HTMLTable(object):
             _buffer[k] = pd.get_option(k)
             # set with user value
             pd.set_option(k, v)
-    
-        table = self.df.to_html(escape=escape, header=header, index=index, 
+
+        table = self.df.to_html(escape=escape, header=header, index=index,
                 **kargs)
 
         # get back to default options
@@ -46,20 +71,26 @@ class HTMLTable(object):
             pd.set_option(k, v)
         return table
 
-    def add_bgcolor(self, colname, cmap, mode='absmax', threshold=None):
+    def add_bgcolor(self, colname, cmap='copper', mode='absmax', 
+            threshold=None):
         """
 
         add a background color style by adding <p> tags and bgcolor
-        This is apply on one column. 
+        This is apply on one column.
         The color are set according to the colormap provided (cmap)
         and a normalisation of the data defined by the mode. cmap values
         are between 0 and 1 so, let us normalise the data in that range as
-        well. Then, we can easily get the hex values. If the mode is absmax, 
+        well. Then, we can easily get the hex values. If the mode is absmax,
         the max is the abs max and data is scaled between 0 and 1.
         If you have only positive values then, data is between 0.5 and 1.
-        The clip mode means that data are positives and 
+        The clip mode means that data are positives and
         """
-        from colormap import rgb2hex 
+        from colormap import rgb2hex, cmap_builder
+        try:
+            # if no cmap provided, it may be just a known cmap name
+            cmap = cmap_builder(cmap)
+        except:
+            pass
 
         data = self.df[colname].values
         if len(data) == 0:
@@ -74,7 +105,7 @@ class HTMLTable(object):
         elif mode == 'max':
             data = data/float(data.max())
 
-        # the expected RGB values for a given data point 
+        # the expected RGB values for a given data point
         rgbcolors = [cmap(x)[0:3] for x in data]
         hexcolors = [rgb2hex(*x, normalised=True) for x in rgbcolors]
 
@@ -84,7 +115,7 @@ class HTMLTable(object):
         # so pandas will not use the precision for those cases:
         data = [easydev.precision(x, self.pd_options['precision']) for x in data]
         html_formatter = '<p style="background-color:{0}">{1}</p>'
-        self.df[colname] = [html_formatter.format(x,y) 
+        self.df[colname] = [html_formatter.format(x,y)
                 for x,y in zip(hexcolors, data)]
 
     def add_href(self, colname, urls=None):
@@ -108,6 +139,10 @@ class Report(object):
         self.section_names = []
         self.add_dependencies = False
         self.pretoc = None
+        if filename != 'index.html':
+            self.goback_link = True
+        else:
+            self.goback_link = False
 
     def show(self):
         from browse import browse as bs
@@ -146,7 +181,7 @@ class Report(object):
             #    directory)=
 
         for filename in ["dana.css"]:
-            filename = easydev.get_share_file("gdsctools", "data", 
+            filename = easydev.get_share_file("gdsctools", "data",
                     filename)
             shutil.copy(filename, directory)
         return directory
@@ -169,14 +204,13 @@ class Report(object):
   <div class="document" id="unset">
 
      <h1 class="title">ANOVA analysis summary</h1>
-     <h2 class="subtitle", id="unset2">Report created with <br>gdsctools</br> (version %(version)s)</h2>
+     <h2 class="subtitle">Report created with gdsctools (version %(version)s)</h2>
      <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCtools github page</a> for downloads and documentation.</p>
      <br>
-     Go back to <a href="index.html">main page</a>.<br>
-     
      """ % params
+        if self.goback_link is True:
+            str_ += 'Go back to <a href="index.html">main page</a>.<br>'
         return str_
-
 
     def get_time_now(self):
         import datetime
@@ -194,27 +228,25 @@ class Report(object):
         additionally, r dependencies added in :attr:`dependencies` are also added.
 
         """
-
         dependencies = easydev.get_dependencies('gdsctools')
         names = [x.project_name for x in dependencies]
         versions = [x.version for x in dependencies]
-        links = ["""https://pypi.python.org/pypi/%s"""%p for p in names]
+        links = ["""https://pypi.python.org/pypi/%s""" % p for p in names]
 
         df = pd.DataFrame({
-            'package': ["""<a href="%s">%s</a>"""%(links[i],p)
-                for i,p in enumerate(names)],
-            'version':versions})
+            'package': ["""<a href="%s">%s</a>"""%(links[i], p)
+                for i, p in enumerate(names)],
+            'version': versions})
 
         table = HTMLTable(df, name="dependencies", escape=False)
 
         return table
 
-    def add_pretoc(self,content):
+    def add_pretoc(self, content):
         self.pretoc = content
 
     def add_rawhtml(self, content):
         self.sections.append(content)
-        #self.section_names.append(None)
 
     def add_section(self, content, title, references=[], position=None):
 
@@ -225,8 +257,8 @@ class Report(object):
         %(references)s\n
         %(content)s
     </div>
-        """ % {'title':title, 'references':reftxt,'content':content,
-               'id': title.replace(" ", "_"), 'index':len(self.sections)+1}
+        """ % {'title': title, 'references': reftxt, 'content': content,
+               'id': title.replace(" ", "_"), 'index': len(self.sections)+1}
         # check that it is correct
         if position is not None:
             self.sections.insert(position, section)
@@ -270,9 +302,7 @@ class Report(object):
 
     def write(self ):
         fh =  open(self.report_directory + os.sep + self.filename, "w")
-
         contents = self.get_header()
-
 
         # Get toc should be done here and no more sections should be added
         self.add_section(self.get_toc(), "Contents", position=0)
@@ -298,7 +328,6 @@ class Report(object):
         fh.write(contents)
         fh.close()
 
-
     def report(self, browse=True):
         self._create_report()
         self.write()
@@ -307,9 +336,3 @@ class Report(object):
 
     def _create_report(self):
         raise NotImplementedError
-
-
-
-
-
-

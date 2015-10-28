@@ -1,4 +1,4 @@
-from gdsctools.anova import GDSC_ANOVA
+from gdsctools.anova import ANOVA
 from gdsctools.readers import IC50
 import pandas as pd
 from easydev import assert_list_almost_equal
@@ -8,7 +8,7 @@ from . import tools
 
 def test_anova_one_drug_one_feature():
 
-    an = GDSC_ANOVA(tools.get_data())
+    an = ANOVA(tools.get_data())
 
     # test 1 drug
     drug_id = 'Drug_999_IC50'
@@ -43,22 +43,22 @@ def test_anova_one_drug_one_feature():
 
 def test_anova_one_drug():
     # test entire drug across all fearures
-    an = GDSC_ANOVA(tools.get_data())
+    an = ANOVA(tools.get_data())
     df = an.anova_one_drug('Drug_999_IC50')
 
 
 def test_anova_all():
-    an = GDSC_ANOVA(tools.get_data())
+    an = ANOVA(tools.get_data())
     # slow, let us cut the features to keep only tenish
     # this is a trick but would be nice to have this in the API
     features = an.features.df
     features = features[features.columns[0:13]]
 
-    an = GDSC_ANOVA(tools.get_data(), features)
+    an = ANOVA(tools.get_data(), features)
     df = an.anova_all()
 
 def test_anova_summary():
-    an = GDSC_ANOVA(tools.get_data())
+    an = ANOVA(tools.get_data())
     # by default  regression includes + msi + feature
     drug_id = 'Drug_999_IC50'
 
@@ -87,7 +87,7 @@ def test_anova_summary():
 
 
 def test_get_boxplot_data():
-    an = GDSC_ANOVA(tools.get_data())
+    an = ANOVA(tools.get_data())
     odof = an._get_one_drug_one_feature_data('Drug_1047_IC50','TP53_mut')
     data = an._get_boxplot_data(odof, mode='msi')
     assert data[1] == ['***MSI-stable neg', '***MSI-stable pos',

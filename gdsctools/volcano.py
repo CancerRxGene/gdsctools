@@ -4,14 +4,22 @@ import numpy as np
 import easydev
 
 from easydev import Progress, AttrDict
+from gdsctools.tools import Savefig
+
+
 
 
 __all__ = ['VolcanoANOVA']
 
-from gdsctools.tools import Savefig
+
+
 
 class VolcanoANOVA(Savefig):
-    def __init__(self, data, sep="\t"):
+    def __init__(self, data, sep="\t", settings=None):
+        """
+
+
+        """
         super(VolcanoANOVA, self).__init__()
 
         if isinstance(data, str):
@@ -20,15 +28,11 @@ class VolcanoANOVA(Savefig):
             self.df = data.copy()
 
         # this is redundant coul reuse the input ??
-        self.settings = {
-            'pvalue_threshold': np.inf,
-            'FDR_threshold': 25,
-            'effect_threshold': 0,
-            'fontsize': 20,
-            'analysis_type': 'PANCAN',
-            'savefig': True,
-            'directory': '.'}
-        self.settings = AttrDict(**self.settings)
+        if settings is None:
+            from gdsctools.anova import ANOVASettings
+            self.settings = ANOVASettings()
+        else:
+            self.settings = AttrDict(**settings)
         self.drugs = set(self.df['Drug id']) # set on values
         self.varname_pvalue = 'FEATURE_ANOVA_pval'
         self.varname_qvalue = 'ANOVA FEATURE FDR %'
@@ -37,6 +41,30 @@ class VolcanoANOVA(Savefig):
         # intensive calls made once for all
         self.groups_by_drugs = self.df.groupby('Drug id').groups
         self.groups_by_features = self.df.groupby('FEATURE').groups
+
+    def selector(self, df, Nbest=1000, Nrandom=1000, inplace=False):
+        """Select first N best rows and N random ones
+
+        Used to select a representative set of rows and the best rows (in
+        a sorted dataframe). This is used to create the volcano plots quickly.
+
+        """
+        if len(df)<Nbest:
+            return df
+        Nmax =  Nbest + Nrandom
+        N  = len(df)
+        if N > Nbest:
+            x = range(Nbest, N)
+            pylab.shuffle(x)
+            n2pick = min(N, Nmax) - Nbest
+            indices = range(0, Nbest) + x[0:n2pick]
+        else:
+            indices = range(0,Nbest)
+        df = df.ix[indices]
+        if inplace is True:
+            self.df = df
+        else:
+            return df
 
     def volcano_plot_all_drugs(self):
         """Volcano plot for each drug and savefig
@@ -318,7 +346,7 @@ class VolcanoANOVA(Savefig):
                     np.take(Y, ind)[0])
         #fig.canvas.mpl_connect('pick_event', onpick)
         """
-        
+
         # for the JS version
         # TODO: for the first 1 to 2000 entries ?
         import mpld3
@@ -331,12 +359,12 @@ class VolcanoANOVA(Savefig):
 
         tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels)
         mpld3.plugins.connect(fig, tooltip)
-        
+
         #mpld3.display()
 
         self.scatter = scatter
         self.current_fig = fig
         #fh = open('test.html', 'w'); mpld3.save_html(v.current_fig, fh);
         #fh.close()
-        
+
 

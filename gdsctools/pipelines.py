@@ -52,18 +52,21 @@ def anova_pipeline(args=None):
 
     r = readers.IC50(options.ic50)
 
-    print(options.drug)
-    print(options.feature)
-    print(options.show_boxplots)
-    print("Reading data")
-    an = anova.GDSC_ANOVA(r, features=options.features)
+    an = anova.ANOVA(r, features=options.features)
     an.settings.savefig = options.savefig
-    print("analysing")
+    print options
     if options.savefig is True:
-        print("creating images")
-    df = an.anova_one_drug_one_feature(options.drug, 
+        options.show_boxplots = True
+    try:
+        df = an.anova_one_drug_one_feature(options.drug, 
             feature_name=options.feature, 
-            show_boxplot=options.show_boxplots)
+            show_boxplot=options.show_boxplots, 
+            savefig=options.savefig)
+        print('ok')
+    except Exception as err:
+        print(red(err.__str__()))
+        return
+
     print(df.T)
     import pylab
     pylab.show()
@@ -102,10 +105,21 @@ http://github.com/CancerRxGene/gdsctools/issues """
 
         group.add_argument("--ic50", dest='ic50',
                          default=None, type=str,
-                         help="todo")
+                         help="""A file in TSV format with IC50s. First column
+                         should be the COSMIC identifiers. Following columns
+                         contain the IC50s for a set of drugs. The header must
+                         be COSMIC IDS, Drug_1_IC50, Drug_2_IC50, ... """)
         group.add_argument("--features", dest='features',
                            default=None, type=str,
-                           help="todo")
+                           help="""A matrix of genomic features. First column 
+                           is made of COSMIC identifiers that should match 
+                           those from the IC50s matrix. Then 3 compulsary 
+                           columns are required named 'Sample', 'Tissue', 
+                           'MSI'. Other
+                           columns should be the genomic features. There are
+                           recognised if the (1) ends in _mut for mutation, or
+                           starts with loss or gain for the CNA cases. 
+                           """)
         #group.add_argument("--data", dest='data',
         #                 default=None, type=str,
         #                 help="A TSV file with cosmic Ids as rows and Drug and"
@@ -119,9 +133,14 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("--show-boxplots", dest='show_boxplots',
                          action="store_true",
                          help="show images.")
+        group.add_argument("--on-web", dest='on_web',
+                         action="store_true",
+                         help="TODO")
         group.add_argument("--drug", dest="drug",
-                         help="")
+                         help="""The name of a valid drug identifier to be 
+                         found in the header of the IC50 matrix""")
         group.add_argument("--feature", dest="feature",
-                         help="")
+                         help="""The name of a valid feature to be found in the
+                         Genomic Feature matrix""")
 
 

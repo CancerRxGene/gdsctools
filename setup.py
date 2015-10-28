@@ -70,7 +70,7 @@ setup(
     # easydev 0.9.1 required to play with multicore+keyboard interruption
     install_requires = ['numpy', 'matplotlib>=1.4.3', 
         'pandas>=0.16.2', 'easydev>=0.9.1', 'scipy', "colormap>=0.9.6",
-        "beautifulsoup4"],
+        "beautifulsoup4", 'mpld3'],
 
     entry_points = {
         'console_scripts': [
