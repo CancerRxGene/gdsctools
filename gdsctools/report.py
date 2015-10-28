@@ -133,8 +133,8 @@ class Report(object):
         self.analysis = 'anova'
         from gdsctools import version
         self.version = version
-        self.report_directory = directory
-        self.filename = filename
+        self._directory = directory
+        self._filename = filename
         self.sections = []
         self.section_names = []
         self.add_dependencies = False
@@ -144,9 +144,23 @@ class Report(object):
         else:
             self.goback_link = False
 
+        #self._init_report()
+
+    def _get_filename(self):
+        return self._filename
+    filename = property(_get_filename)
+
+    def _get_directory(self):
+        return self._directory
+    directory = property(_get_directory)
+
+    def _get_abspath(self):
+        return self.directory + os.sep + self.filename
+    abspath = property(_get_abspath)
+
     def show(self):
         from browse import browse as bs
-        bs(self.report_directory + os.sep + self.filename)
+        bs(self.abspath)
 
     def close_body(self):
         return "</body>"
@@ -157,34 +171,23 @@ class Report(object):
     def get_footer(self):
         return self.close_body() + "\n" + self.close_html()
 
-    def _init_report(self, directory=None):
+    def _init_report(self):
         """create the report directroy and return the directory name"""
         self.sections = []
         self.section_names = []
-
-        if directory is None:
-            directory = self.report_directory
-
         # if the directory already exists, print a warning
         try:
-            os.mkdir(directory)
-            print("Created directory {}".format(directory))
+            if os.path.isdir(self.directory) is False:
+                print("Created directory {}".format(self.directory))
+                os.mkdir(self.directory)
         except Exception:
             pass
-            # already exists
-            #txt = "Existing directory {}. Files may be overwritten".format(self.report_directory)
-            #if self._overwrite_report is True:
-            #    self.warning("Directory %s exists already. Files may be overwritten" % directory)
-            #else:
-            #    raise IOError('Directory %s exists already. Set
-            #    _overwrite_report to True or delete the directory' %
-            #    directory)=
-
-        for filename in ["dana.css"]:
-            filename = easydev.get_share_file("gdsctools", "data",
-                    filename)
-            shutil.copy(filename, directory)
-        return directory
+        finally:
+            target = self.directory + os.sep + "gdsc.css"
+            if os.path.isfile(target) is False:
+                filename = easydev.get_share_file("gdsctools", "data",
+                    "gdsc.css")
+                shutil.copy(filename, self.directory)
 
     def get_header(self):
         """a possible common header ? """
@@ -229,17 +232,23 @@ class Report(object):
 
         """
         dependencies = easydev.get_dependencies('gdsctools')
+
+        # TODO: Could re-use new method in HTMLTable for adding href
+        # but needs some extra work in the add_href method.
         names = [x.project_name for x in dependencies]
         versions = [x.version for x in dependencies]
         links = ["""https://pypi.python.org/pypi/%s""" % p for p in names]
 
         df = pd.DataFrame({
-            'package': ["""<a href="%s">%s</a>"""%(links[i], p)
+            'package': ["""<a href="%s">%s</a>""" % (links[i], p)
                 for i, p in enumerate(names)],
             'version': versions})
+        try:
+            df.sort_values(by='package', inplace=True)
+        except:
+            df.sort(columns='package', inplace=True)
 
         table = HTMLTable(df, name="dependencies", escape=False)
-
         return table
 
     def add_pretoc(self, content):
@@ -301,7 +310,7 @@ class Report(object):
         return txt
 
     def write(self ):
-        fh =  open(self.report_directory + os.sep + self.filename, "w")
+        fh =  open(self.abspath, "w")
         contents = self.get_header()
 
         # Get toc should be done here and no more sections should be added

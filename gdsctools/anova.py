@@ -1,3 +1,26 @@
+# -*- python -*-
+#
+#  This file is part of GDSCtools software
+#
+#  Copyright (c) 2015 - Sanger
+#
+#  File author(s): Thomas Cokelaer <cokelaer@gmail.com>
+#
+#  Distributed under the GPLv3 License.
+#  See accompanying file LICENSE.txt or copy at
+#      http://www.gnu.org/licenses/gpl-3.0.html
+#
+#  website: http://github.com/CancerRxGene/gdsctools
+#
+##############################################################################
+"""Code related to the ANOVA analysis to find associations between drug IC50s
+and genomic features
+
+
+
+"""
+
+
 import os
 import pandas as pd
 import scipy
@@ -75,7 +98,7 @@ class ANOVASettings(AttrDict):
         s =  ANOVASettings(**{'test':1})
         for k,v in self.items():
             s[k] = k
-        del s['test'] 
+        del s['test']
         return s
 
 class ColumnTypes(object):
@@ -118,10 +141,10 @@ class ANOVAReport(Savefig):
     an.setttings.analyse_type = 'Bladder' # to filter the data if needed
     # the command above set settings.analyse_type to Bladder
     # so that tissue are not used
-    # If MSI column is all 0, the msi factor is also set to False 
+    # If MSI column is all 0, the msi factor is also set to False
     df = an.anova_all()
 
-    r = ANOVAReport(df, ic50=an.ic50, input_features=an.features, 
+    r = ANOVAReport(df, ic50=an.ic50, input_features=an.features,
         concentrations='concentrations.csv')
     r.settings.pvalue_threshold = 0.001
     r.settings.FDR_threshold = 28
@@ -217,7 +240,7 @@ class ANOVAReport(Savefig):
         nres = len(self.resistant_df)
         txt.append("Total number of significant associations: {0} ({1} for    sensitivity and {2} for resistance".format(nsens+nres,nsens,nres))
 
-        
+
         txt.append("p-value significance threshold: {}".format(self.settings.pvalue_threshold))
         txt.append("FDR significance threshold: {}".format(self.settings.FDR_threshold))
 
@@ -488,9 +511,9 @@ class ANOVAReport(Savefig):
         for i in range(N):
             html.drug = drugs[i]
             html.feature = features[i]
-            html.filename = str(assocs[i]) + '.html'
-            html.fdr = fdrs[i] 
-            html._init_report() # since we have one shared instance 
+            html._filename = str(assocs[i]) + '.html'
+            html.fdr = fdrs[i]
+            html._init_report() # since we have one shared instance
             html.report(browse=False)
             pb.animate(i+1)
 
@@ -549,7 +572,7 @@ class ANOVAReport(Savefig):
         buffer = self.settings.savefig
         self.settings.savefig = True
         html = HTML_main(self, 'index.html', directory=self.settings.directory)
-        html._init_report() # created the directory 
+        html._init_report() # created the directory
         html.settings = self.settings
         html.report(browse=False)
         self.settings.savefig = buffer
@@ -594,7 +617,7 @@ class ANOVA(object):
         to the analysis or visulation.
         """
         # Reads IC50
-        print('Reading data')
+        print('Reading data and building data structures')
         self.ic50 = readers.IC50(ic50)
 
         # Create a dictionary version of the data
@@ -602,7 +625,6 @@ class ANOVA(object):
         # removed. Each drug is a dictionary with 2 keys:
         # Y for the data and indices for the cosmicID where
         # there is an IC50 measured.
-        print('Creating data structures')
         ic50_parse = self.ic50.df.copy().unstack().dropna()
         self.ic50_dict = dict([(d, {'indices': ic50_parse.ix[d].index,
             'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
@@ -616,7 +638,7 @@ class ANOVA(object):
 
         # settings
         self.settings = ANOVASettings()
-        
+
         # makes this dict keys accessible as attributes
         self.settings = AttrDict(**self.settings)
 
@@ -653,7 +675,7 @@ class ANOVA(object):
         negatives = total - positives
         # we must have at least 1 positive
         # FIXME here we use a < (check that this is not <=)
-        # by default the MSI factor equals 2. Having only 1 pos seems 
+        # by default the MSI factor equals 2. Having only 1 pos seems
         # not robust.
         if positives <  self.settings.MSIfactorPopulationTh:
             self.settings.includeMSI_factor = False
@@ -683,9 +705,8 @@ class ANOVA(object):
 
     def _init(self):
         # Some preprocessing to speed up data access
-        print('Creating data structures')
         ic50_parse = self.ic50.df.copy().unstack().dropna()
-        self.ic50_dict = dict([(d, 
+        self.ic50_dict = dict([(d,
             {'indices': ic50_parse.ix[d].index,
              'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
 
@@ -722,7 +743,7 @@ class ANOVA(object):
     def _get_drug_names(self):
         return self.ic50.drugIds
     drugIds = property(_get_drug_names)
-    
+
     def _get_feature_names(self):
         return self.features.features
     feature_names = property(_get_feature_names)
@@ -868,7 +889,7 @@ class ANOVA(object):
         # Compute cohens and glass effects
         # compute cohen and glass re-using the mean and std values
         # this is much faster than calling the functions
-        md = np.abs(dd.pos_IC50_mean - dd.neg_IC50_mean) 
+        md = np.abs(dd.pos_IC50_mean - dd.neg_IC50_mean)
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
 
@@ -896,10 +917,10 @@ class ANOVA(object):
             the drug across all features.
         """
         if drug_name not in self.drugIds:
-            raise ValueError('Unknown drug name %s. Use e.g., %s' 
+            raise ValueError('Unknown drug name %s. Use e.g., %s'
                     % (drug_name, self.drugIds[0]))
         if feature_name not in self.feature_names:
-            raise ValueError('Unknown feature name %s. Use e.g., %s' 
+            raise ValueError('Unknown feature name %s. Use e.g., %s'
                     % (feature_name, self.feature_names[0]))
         # This extract the relevant data and some simple metrics
         odof = self._get_one_drug_one_feature_data(drug_name, feature_name)
@@ -960,7 +981,7 @@ class ANOVA(object):
 
             # FIXME: 40% of the time is used to create this data structure
             # We could use pd.get_dummies but pretty slow
-            # instead we create the full matrix of dummies and 
+            # instead we create the full matrix of dummies and
             # then set relevant data. The issue is that some
             # columns end up with sum == 0 and needs to be dropped
             df = self._tissue_dummies.ix[odof.masked_tissue.index]
@@ -970,7 +991,7 @@ class ANOVA(object):
             #df.columns = ['C(tissue)[T.'+x +']' for x in
             #        odof.masked_tissue.unique()]
             # Ntissue = len(df.columns) - 3
-            
+
             Ntissue = len(df.columns) - 3
             # Here we set other variables with dataframe columns' names as
             # expected by OLS
@@ -1388,7 +1409,7 @@ class ANOVA(object):
         # used in the query
         categories = list(cc.unstack().columns[cc])
 
-        groups = df.query(mode + ' in @categories', 
+        groups = df.query(mode + ' in @categories',
                 engine='python').groupby([mode, 'feature'])
 
         # TODO; move all this if block into a method
@@ -1408,7 +1429,7 @@ class ANOVA(object):
             names = []
             for category in delta.ix['ic50'].index:
                 prefix_query = mode+"==@category"
-                neg = df.query(prefix_query+' and feature==0', 
+                neg = df.query(prefix_query+' and feature==0',
                         engine='python')['ic50']
                 pos = df.query(prefix_query+' and feature==1',
                         engine='python')['ic50']
@@ -1478,9 +1499,30 @@ def _analyse_one_drug(master, drug):
 
 
 class HTMLManova(Report):
+    """Creates an HTML page dedicated to significant hits
+
+    ::
+
+        # analyse the data across all drugs and features
+        df = anova.anova_all()
+        # Create a table for the first 10 significant hits (table is sorted
+        # by ascending FDR)
+        h = HTMLManova(df.ix[0:10, directory='.')
+        # Create the HTML page (pops up by default)
+        h.report()
+
+    """
     def __init__(self, df, directory='gdsc'):
+        """
+
+        :param : a dataframe as output by :meth:`ANOVA.anova_all`
+        :param directory: where to save the file
+        
+        The HTML filename is stored in the :attr:`filename`, which can 
+        be changes (default is manova.html)
+        """
         self.df = df
-        self.filename = 'manova.html'
+        self._filename = 'manova.html'
         super(HTMLManova, self).__init__(directory=directory,
                 filename=self.filename)
 
@@ -1496,7 +1538,6 @@ class OneDrugOneFeature(Report):
         self.factory = ANOVA(ic50, features=features)
         self.drug = drug
         self.feature = feature
-        self.directory = directory
         self.fdr = fdr
         filename = "{0}____{1}.html".format(self.drug,
                 self.feature.replace(" ", "_"))
@@ -1508,7 +1549,7 @@ class OneDrugOneFeature(Report):
         #pylab.ioff()
         df = self.factory.anova_one_drug_one_feature(self.drug,
                 self.feature, savefig=True, show_boxplot=True,
-                directory=self.report_directory)
+                directory=self.directory)
         #pylab.ion()
         df.insert(0, 'assoc_id', 'a1')
         df['ANOVA FEATURE FDR %'] = self.fdr
@@ -1542,7 +1583,6 @@ class HTMLOneFeature(Report):
         self.subdf = subdata
         self.feature = metadata['feature']
         self.metadata = metadata
-        self.directory = directory
         filename = "{0}.html".format(self.feature)
         super(HTMLOneFeature, self).__init__(directory=directory,
                 filename=filename)
@@ -1554,7 +1594,7 @@ class HTMLOneFeature(Report):
         v.settings.directory = self.directory
         # FIXME: insiced volvano_plot, we add tooltip
         # when we call volcano again, the tooltip form the
-        # previous call are still there. The only solution 
+        # previous call are still there. The only solution
         # so far is to close the figure.
         pylab.close(1)
         v.volcano_plot_one_feature(self.feature)
@@ -1615,7 +1655,6 @@ class HTMLOneDrug(Report):
         self.subdf = subdata
         self.drug = metadata['drug']
         self.metadata = metadata
-        self.directory = directory
         filename = "{0}.html".format(self.drug)
         super(HTMLOneDrug, self).__init__(directory=directory,
                 filename=filename)
@@ -1687,10 +1726,9 @@ class HTMLOneDrug(Report):
 
 class HTML_main(Report):
     def __init__(self, results, filename='index.html', directory='gdsc'):
-        super(HTML_main, self).__init__(directory=directory, 
+        super(HTML_main, self).__init__(directory=directory,
                 filename=filename)
         self.results = results
-        self.directory = directory
         self.add_dependencies = True
         self.settings = self.results.settings
 
@@ -1704,7 +1742,7 @@ class HTML_main(Report):
 
         print('Create summary plots')
         # this can be pretty slow. so keep only 1000 most relevant
-        # values and 1000 random ones to get an idea of the distribution 
+        # values and 1000 random ones to get an idea of the distribution
         v = VolcanoANOVA(df)
         v.selector(v.df, 1000,1000, inplace=True)
 
@@ -1719,7 +1757,7 @@ class HTML_main(Report):
 <img src="volcano_all.png">
 
 <br>
-Possibly, a javascript version is available 
+Possibly, a javascript version is available
 <a href="volcano_all_js.html">here</a>
 
         """
@@ -1781,7 +1819,7 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
             table = HTMLTable(df, 'drugs')
             table.add_href('Drug id')
         # rename one columns
-        table.df.columns = [x.replace('ANOVA FEATURE FDR', 
+        table.df.columns = [x.replace('ANOVA FEATURE FDR',
             'mean ANOVA FEATURE FDR') for x in table.df.columns]
 
 
