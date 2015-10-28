@@ -16,5 +16,5 @@ ic50_test = easydev.get_share_file('gdsctools', 'data', 'IC50_10drugs.tsv')
 
 from gdsctools.report import HTMLTable, Report
 from gdsctools.readers import IC50, GenomicFeatures
-from gdsctools.anova import ANOVA, ANOVAReport
+from gdsctools.anova import ANOVA, ANOVAReport, ANOVASettings
 from gdsctools.volcano import VolcanoANOVA

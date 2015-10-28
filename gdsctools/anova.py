@@ -19,20 +19,18 @@ and genomic features
 
 
 """
-
-
 import os
 import pandas as pd
 import scipy
 import pylab
 import numpy as np
 
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
+#import statsmodels.api as sm
+#from statsmodels.formula.api import ols
 from statsmodels.formula.api import OLS
 from statsmodels.stats.multitest import fdrcorrection
 
-from easydev import Progress, AttrDict
+from easydev import Progress, AttrDict, Logging
 import easydev
 from gdsctools import boxswarm, readers
 try:
@@ -58,10 +56,71 @@ __all__ = ['ANOVASettings', 'ANOVA', 'ANOVAReport']
 
 
 class ANOVASettings(AttrDict):
+    """Class to store and manipulate settings of the analysis
+
+    This class behaves as a dictionary but values for a given
+    key (setting) can be accessed and changed easily like an 
+    attribute:
+
+    ::
+
+        >>> from gdsctools import ANOVASettings
+        >>> s = ANOVASettings()
+        >>> s.FDR_threshold
+        25 
+        >>> s.FDR_threshold = 20
+
+    When you change a value, you can check its validity by calling the 
+    :meth:`check`  method.
+
+    Finally, the method :meth:`to_html` creates an HTML text.
+
+    .. note:: **for developers** a key can be changed or accessed to as if
+       it was an attribute. This prevents some functionalities (such as copy()
+       or property) to be used effectively normaly hence the creation of the
+       :meth:`check` method to check validity of the values rather than
+       using properties.
+       
+    Here are the current values used:
+
+    ======================= ========= =================================
+    Name                    Default   Description
+    ======================= ========= =================================
+    includeMSI_factor       True      Include MSI in the regression
+    featFactorPopulationTh  3         Discard association where a 
+                                      genomic feature has less than 3
+                                      positives or 3 negatives values 
+                                      (e.g., 0, 1 or 2)
+    MSIfactorPopulationTh   2         Discard association where a MSI
+                                      count has less than 2 positives
+                                      or 2 negatives values (e.g., 0, 
+                                      or 1).
+    analysis_type           PANCAN    Type of analysis. PANCAN means 
+                                      use all data. Otherwise, you must
+                                      provide a valid tissue name to 
+                                      be found in the Genomic Feature
+                                      data set.
+    pval_correction_method  fdr       Type of p-values correction 
+                                      method used. Only 'fdr' 
+                                      implemented
+    equal_var_ttest         True      Assume equal variance in the 
+                                      t-test
+    minimum_nonna_ic50      6         Minimum number of IC50 required
+                                      to perform an analysis.
+    fontsize                20        Used in some plots for labels
+    FDR_threshold           25        FDR threshold used in volcano 
+                                      plot and significant hits
+    pvalue_threshold        np.inf    Used to select significant hits
+    directory               gdsc
+    savefig                 False     Save the figure in PNG format
+    effect_threshold        0         Used in the volcano plot
+    ======================= ========= =================================
+
+    """
     def __init__(self, **kargs):
         super(ANOVASettings, self).__init__(**kargs)
 
-        ## ANALYSIS ---------------------------
+        ## ANALYSIS ---------------------------------
         # include MSI as a co-factor
         self.includeMSI_factor = True
         # number of positive samples required to perform the test
@@ -73,7 +132,7 @@ class ANOVASettings(AttrDict):
         self.equal_var_ttest = True
         self.minimum_nonna_ic50 = 6
 
-
+        # Visualisation and HTML related ---------------------
         self.fontsize = 20
         self.FDR_threshold = 25
         self.pvalue_threshold = np.inf
@@ -82,24 +141,29 @@ class ANOVASettings(AttrDict):
         self.effect_threshold = 0 # use in volcano
 
     def check(self):
+        """Checks the values of the parameters"""
+        inrange = easydev.check_range
+        inlist = easydev.check_param_in_list
         # check validity of the settings
-        raise NotImplementedError
+        inlist(self.includeMSI_factor, [False, True], 'MSI')
+        inrange(self.featFactorPopulationTh, 0, np.inf)
+        inrange(self.MSIfactorPopulationTh, 0, np.inf)
+        inlist(self.pval_correction_method, ['fdr'],
+                'pvalue correction method')
+        inlist(self.equal_var_ttest, [True, False], 'equal_var_ttest')
+        inrange(self.minimum_nonna_ic50, 0, np.inf)
+        inrange(self.FDR_threshold, 0, 100)
+        inrange(self.pvalue_threshold, 0, np.inf)
+        inrange(self.effect_threshold, 0, np.inf)
 
     def to_html(self):
+        """Convert the sets of parameters into a nice HTML table"""
         settings = pd.DataFrame(self, index=[0]).transpose()
         settings.reset_index(inplace=True)
         settings.columns = ['name', 'value']
         html = settings.to_html(header=True, index=False)
         return html
 
-    def copy(self):
-        # not used
-        print('!!!! Buggy can access to key as attribute after a copy')
-        s =  ANOVASettings(**{'test':1})
-        for k,v in self.items():
-            s[k] = k
-        del s['test']
-        return s
 
 class ColumnTypes(object):
 
@@ -133,8 +197,7 @@ class ColumnTypes(object):
 
 
 
-# TODO: Could inherit from a dataframe ?
-class ANOVAReport(Savefig):
+class ANOVAReport(Logging, Savefig):
     """
 
     an = ANOVAReport('ic50.txt','features.txt')
@@ -153,9 +216,10 @@ class ANOVAReport(Savefig):
     r.settings.directory = 'BLCA'
 
     """
-    def __init__(self, gdsc, results, concentrations=None, sep="\t"):
+    def __init__(self, gdsc, results, concentrations=None, sep="\t", 
+            verbose=True):
 
-        super(ANOVAReport, self).__init__()
+        super(ANOVAReport, self).__init__(verbose=verbose)
 
         data = results
         # data can be a file with all results as exported
@@ -591,19 +655,41 @@ class ANOVAReport(Savefig):
         self.create_html_manova()
 
 
-class ANOVA(object):
+class ANOVA(Logging):
     """ANOVA analysis of the IC50 vs Feature matrices
 
-    ::
+    This class is the core of the analysis. It can be used to 
+    compute 
+    
+    #. One association between a drug and a feature
+    #. The association**S** between a drug and a set of features
+    #. All assocations between a set of deugs and a set of features.
 
-        from gdsctools import readers, anova
-        r = readers.IC50('valid_file.tsv')
-        an = ANOVA(r.ic50, r.features)
-        an.anova_one_drug_one_feature('Drug_1_IC50', 'TP53_mut',
-            show_boxplot=True)
+    For instance here below, we read an IC50 matrix and compute the
+    association for a given drug with a specific feature. 
+
+    Note that genomic features are not provided as input but a default
+    file is provided with this package that contains 677 genomic 
+    features for 1001 cell lines. If your IC50 contains unknown cell lines,
+    you can provide your own file. 
+    
+    .. see also:: data format
+    .. todo:: data format
+
+    .. plot::
+        :include-source:
+        :width: 80%
+
+        from gdsctools import IC50, ANOVA, ic50_test
+        ic = IC50(ic50_test)
+        an = ANOVA(ic)
+        # This is to select a specific tissue
+        an.set_cancer_type('breast')
+        df = an.anova_one_drug_one_feature('Drug_1047_IC50',
+            'TP53_mut', show_boxplot=True)
 
     """
-    def __init__(self, ic50, features=None):
+    def __init__(self, ic50, features=None, verbose='INFO'):
         """.. rubric:: Constructor
 
         :param DataFrame IC50: a dataframe with the IC50. Rows should be
@@ -616,8 +702,9 @@ class ANOVA(object):
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
+        super(ANOVA, self).__init__(level=verbose)
         # Reads IC50
-        print('Reading data and building data structures')
+        self.logging.info('Reading data and building data structures')
         self.ic50 = readers.IC50(ic50)
 
         # Create a dictionary version of the data
@@ -837,6 +924,8 @@ class ANOVA(object):
         dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
 
         # Some validity tests to run the analysis or not
+
+
         A = self.settings.includeMSI_factor and\
             dd.positive_feature >= self.settings.featFactorPopulationTh and\
             dd.negative_feature >= self.settings.featFactorPopulationTh and\
@@ -848,8 +937,8 @@ class ANOVA(object):
 
         # We could of course use the mean() and std() functions from pandas or
         # numpy. We could also use the glass and cohens modules but the
-        # following code is now optimised to speed up this function call by 5/10
-        # times.
+        # following code is now optimised to speed up this function 
+        # call by 5/10 times.
         #dd.positives = dd.Y.values[dd.masked_features.values==1]
         #dd.negatives = dd.Y.values[dd.masked_features.values==0]
 
@@ -1122,8 +1211,7 @@ class ANOVA(object):
 
         results = self._get_boxplot_data(odof, mode)
         if results is None:
-            print("INFO: no tissue with at least 2 pos and 2 neg found. " +
-                    "No image created.")
+            self.logging.info("INFO: no tissue with at least 2 pos and 2 neg found. " + "No image created.")
             return
 
         pylab.figure(fignum)
@@ -1250,11 +1338,13 @@ class ANOVA(object):
         """Computes ANOVA for a given drug across all features
 
         :param str drug_id: a valid drug identifier.
+        :param animate: shows the progress bar
         :return: a dataframe
 
+        Calls :meth:`anova_one_drug_one_feature` for each feature.
+
         """
-        # some features can be dropped
-        # TODO: parameters for settings here
+        # some features can be dropped ??
 
         # drop first and second columns that are made of strings
         # works under python2 but not python 3. Assume that the 2 first
@@ -1290,7 +1380,6 @@ class ANOVA(object):
         # df = pid.concat(res, ignore_index=True)
         df = pd.DataFrame.from_records(res)
         df = df.T
-
 
         df = ColumnTypes().astype(df)
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
@@ -1362,7 +1451,12 @@ class ANOVA(object):
         return df
 
     def add_fdr_column(self, df):
-        """Add the FDR columns based on pvalues"""
+        """Add the FDR columns based on pvalues
+        
+        Called by :meth:`anova_all` and `anova_one_drug` to populate
+        the FDR column of a dataframe based on the p-values
+
+        """
         fdr = self._compute_fdr(df)
         # insert FDR as last column.
         try:
@@ -1517,8 +1611,8 @@ class HTMLManova(Report):
 
         :param : a dataframe as output by :meth:`ANOVA.anova_all`
         :param directory: where to save the file
-        
-        The HTML filename is stored in the :attr:`filename`, which can 
+
+        The HTML filename is stored in the :attr:`filename`, which can
         be changes (default is manova.html)
         """
         self.df = df
