@@ -1,10 +1,9 @@
 from gdsctools.readers import GenomicFeatures, IC50, PANCAN
 from easydev import TempFile
-from tools import get_data
-
+from gdsctools import ic50_test
 
 def test_read_ic50():
-    r = IC50(get_data())
+    r = IC50(ic50_test)
     # we can also instanciate from a valid dataframe
     r = IC50(r)
 

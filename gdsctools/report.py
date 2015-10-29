@@ -422,7 +422,7 @@ class Report(object):
         contents += "<hr>" + self.get_time_now()
         contents += self.get_footer()
 
-        contents = bs4.BeautifulSoup(contents).prettify()
+        contents = bs4.BeautifulSoup(contents, 'html.parser').prettify()
         fh.write(contents)
         fh.close()
 
