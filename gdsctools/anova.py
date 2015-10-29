@@ -297,41 +297,64 @@ class ANOVAReport(Savefig):
     n_celllines = property(_get_ncelllines, 
             doc="return number of cell lines")
 
+    def _df_append(self, df, data):
+        count = len(df)
+        df.ix[count] = data
+        return df
+
     def diagnostics(self):
-        """Return summary of the analysis (text)"""
+        """Return summary of the analysis (dataframe)"""
+        df = pd.DataFrame({'text':[], 'value':[]})
         txt = []
 
-        ratio = float(self.n_tests)/(self.n_drugs*self.n_features) * 100
+        N = float(self.n_drugs*self.n_features)
+        ratio = float(self.n_tests)/(N) * 100
         ratio = easydev.precision(ratio, digit=2)
 
-        txt.append("""Total number of ANOVA tests performed: {0} ({1}%% of total number of drug/feature combos)\n""".format(self.n_tests, ratio))
+        msg = "Total number of possible drug/feature associations"
+        df = self._df_append(df, [msg, N])
+        msg = "Total number of ANOVA tests performed"
+        df = self._df_append(df, [msg, self.n_tests])
+        msg = "Percentage of tests performed"
+        df = self._df_append(df, [msg, ratio])
 
-        # FIXME the total number of drugs tested or total number of drugs
-        # with at least 2 IC50 ?
-        txt.append("Total number of tested drugs: {0}\n".format(self.n_drugs))
-        txt.append("""Total number of tested genomic features (mutated driver genes and copy number altered genomic regions): {0}""".format(self.n_features))
+        msg = "Total number of tested drugs"
+        df = self._df_append(df, [msg, self.n_drugs])
+        msg = "Total number of genomic features"
+        df = self._df_append(df, [msg, self.n_features])
 
-        txt.append("Total number of screened cell lines: {0}".format(self.n_celllines))
+        msg = "Total number of screened cell lines"
+        df = self._df_append(df, [msg, self.n_celllines])
 
+        msg = "MicroSatellite instability included as factor"
         msi = self.settings.includeMSI_factor
-        txt.append("MicroSatellite instability included as factor = {}".format(msi))
+        df = self._df_append(df, [msg, msi])
 
-        txt.append("\n<hr>\n")
         nsens = len(self.sensible_df)
         nres = len(self.resistant_df)
-        txt.append("Total number of significant associations: {0} ({1} for    sensitivity and {2} for resistance".format(nsens+nres,nsens,nres))
+        msg = "Total number of significant associations"
+        df = self._df_append(df, [msg, nsens+nres])
+        msg = " - sensitive"
+        df = self._df_append(df, [msg, nsens])
+        msg = " - resistant"
+        df = self._df_append(df, [msg, nres])
 
-
-        txt.append("p-value significance threshold: {}".format(self.settings.pvalue_threshold))
-        txt.append("FDR significance threshold: {}".format(self.settings.FDR_threshold))
-
+        msg = "p-value significance threshold"
+        df = self._df_append(df, [msg, self.settings.FDR_threshold])
+        
         p1, p2 = self._get_pval_range()
-        txt.append('range of significant p-values [{:.4}, {:.4}]'.format(p1,p2))
+        msg = 'Range of significant p-values'
+        value = "[{:.4}, {:.4}]".format(p1,p2)
+        df = self._df_append(df, [msg, value])
+
         f1, f2 = self._get_fdr_range()
         f1 = easydev.precision(f1, 3)
         f2 = easydev.precision(f2, 3)
-        txt.append('range of significant % FDRs: [{} {}]'.format(f1,f2))
-        return "\n".join(txt)
+        msg = "range of significant % FDRs"
+        value = '[{} {}]'.format(f1,f2)
+        df = self._df_append(df, [msg, value])
+        #return "\n".join(txt)
+        return df
 
     def _get_pval_range(self):
         """Get pvalues range of the significant hits"""
@@ -897,7 +920,7 @@ class ANOVA(Logging):
         return modes
 
     def diagnostics(self):
-        """
+        """Return dataframe with information about the analysis
 
         173390 feasible tests in v17 (96.65)
         """
@@ -1870,17 +1893,18 @@ class HTML_main(Report):
         self.settings = self.results.settings
 
     def _create_report(self, onweb=True):
-        df = self.results.df
-        try:
-            self.add_section(self.results.diagnostics().replace("\n","<br>"),
-                'Summary')
-        except:
-            self.add_section('not available','summary')
+        # A summary table
+        diag = self.results.diagnostics()
+        table = HTMLTable(diag, 'summary')
+        txt = ''
+        for index, row in diag.iterrows():
+            txt += row.text + ": " +  str(row.value) + "<br/>"
+        self.add_section(txt, 'Summary')
 
         print('Create summary plots')
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
-        v = VolcanoANOVA(df)
+        v = VolcanoANOVA(self.results.df)
         v.selector(v.df, 1000,1000, inplace=True)
 
         v.settings = self.settings # get fdr, pval
