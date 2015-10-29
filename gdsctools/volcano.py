@@ -12,9 +12,9 @@ __all__ = ['VolcanoANOVA']
 
 class VolcanoANOVA(Savefig):
     """Utilities related to volcano plots
-    
-    
-    .. plot:: 
+
+
+    .. plot::
         :include-source:
         :width: 80%
 
@@ -27,7 +27,7 @@ class VolcanoANOVA(Savefig):
         v = VolcanoANOVA(df)
 
 
-    .. note:: **for developers**: there is experimental code to 
+    .. note:: **for developers**: there is experimental code to
         connect the volcano plot using mpld3 package and javascript.
     """
     def __init__(self, data, sep="\t", settings=None):

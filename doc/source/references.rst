@@ -57,5 +57,10 @@ others
     :members:
     :undoc-members:
 
+.. automodule:: gdsctools.datasets
+    :members:
+    :undoc-members:
+
+
 
 

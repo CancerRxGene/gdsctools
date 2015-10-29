@@ -15,7 +15,8 @@ class Savefig(object):
     def savefig(self, name, **kargs):
         """Save a matploltib figure
 
-        :param : accepts all parameters known by pylab.savefig
+        :param str filename: where to save the figure.
+        :param **kargs: accepts all parameters known by pylab.savefig
         """
         try:
             directory = self.settings.directory

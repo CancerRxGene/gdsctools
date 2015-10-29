@@ -628,7 +628,7 @@ class ANOVAReport(Savefig):
             html._filename = str(assocs[i]) + '.html'
             html.fdr = fdrs[i]
             html._init_report() # since we have one shared instance
-            html.report(browse=False)
+            html.report(onweb=False)
             pb.animate(i+1)
 
     def create_html_features(self):
@@ -651,7 +651,7 @@ class ANOVAReport(Savefig):
                     directory=self.settings.directory)
             html.settings = self.settings
             self.subdf = subdf
-            html.report(browse=False)
+            html.report(onweb=False)
             pb.animate(i+1)
 
     def create_html_drugs(self):
@@ -683,10 +683,10 @@ class ANOVAReport(Savefig):
             html = HTMLOneDrug(self.df, subdf, metadata,
                     directory=self.settings.directory)
             html.settings = self.settings
-            html.report(browse=False)
+            html.report(onweb=False)
             pb.animate(i+1)
 
-    def create_html_main(self):
+    def create_html_main(self, onweb=False):
         """Create HTML main document (summary)"""
         print("Creating main HTML page in directory %s" %
                 (self.settings.directory))
@@ -695,19 +695,19 @@ class ANOVAReport(Savefig):
         html = HTML_main(self, 'index.html', directory=self.settings.directory)
         html._init_report() # created the directory
         html.settings = self.settings
-        html.report(browse=False)
+        html.report(onweb=onweb)
         self.settings.savefig = buffer
 
     def create_html_manova(self):
         """Create summary table with all significant hits"""
         df = self.get_significant_set()
         html = HTMLManova(df, directory=self.settings.directory)
-        html.report(browse=False)
+        html.report(onweb=False)
 
-    def create_html_pages(self):
+    def create_html_pages(self, onweb=False):
         """Create all HTML pages"""
         self._set_sensible_df()
-        self.create_html_main()
+        self.create_html_main(onweb=onweb)
         self.create_html_drugs()
         self.create_html_features()
         self.create_html_associations()
@@ -961,7 +961,6 @@ class ANOVA(Logging):
                 'percentage_feasible_tests': float(feasible)/n_combos*100}
         return results
 
-    #@do_profile()
     def _get_one_drug_one_feature_data(self, drug_name, feature_name,
             diagnostic_only=False):
         """
@@ -1185,6 +1184,7 @@ class ANOVA(Logging):
             Ntissue -= 1
 
             self.data_lm = OLS(odof.Y, df.values).fit()
+            
 
             # SKLearn is also a possiblity
             # works for msi+feature but not if we include tissues ?
@@ -1535,7 +1535,7 @@ class ANOVA(Logging):
 
     def add_fdr_column(self, df):
         """Add the FDR column in a datafream based on pvalues
-        
+
         .. seealso:: :meth:`anova_all`
         """
         fdr = self._compute_fdr(df)
@@ -1714,6 +1714,7 @@ class OneDrugOneFeature(Report):
         self.drug = drug
         self.feature = feature
         self.fdr = fdr
+        self.add_settings = False
         filename = "{0}____{1}.html".format(self.drug,
                 self.feature.replace(" ", "_"))
 
@@ -1726,6 +1727,7 @@ class OneDrugOneFeature(Report):
                 self.feature, savefig=True, show_boxplot=True,
                 directory=self.directory)
         #pylab.ion()
+        # FIXME assoc id
         df.insert(0, 'assoc_id', 'a1')
         df['ANOVA FEATURE FDR %'] = self.fdr
         return df
@@ -1749,6 +1751,10 @@ class OneDrugOneFeature(Report):
             tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
             section += '<img src="{0}">\n'.format(tag)
         self.add_section(section, "Boxplots")
+
+        if self.add_settings is True:
+            table = ANOVASettings(**self.factory.settings)
+            self.add_section(table.to_html(), 'Settings')
 
 
 

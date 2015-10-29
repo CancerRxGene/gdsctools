@@ -67,3 +67,9 @@ Developers Guide
 
     references.rst
     ChangeLog.rst
+
+
+.. toctree::
+    :hidden::
+
+    glossary

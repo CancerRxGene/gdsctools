@@ -17,8 +17,7 @@
 import argparse
 import sys
 from easydev.console import red, purple, darkgreen
-from gdsctools import anova, readers
-
+print(1)
 
 __all__ = ['anova_pipeline', 'ANOVAOptions']
 
@@ -43,6 +42,7 @@ def anova_pipeline(args=None):
         gdsctools_anova --help
 
     """
+    from gdsctools import anova, readers
     if args is None:
         args = sys.argv[:]
     user_options = ANOVAOptions(prog="gdsctools_anova")
@@ -52,26 +52,52 @@ def anova_pipeline(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
-    r = readers.IC50(options.ic50)
+    if options.drug is not None and options.feature is not None:
+        anova_one_drug_one_feature(options)
+    elif options.drug is not None:
+        anova_one_drug(options)
+    else: # analyse everything 
+        anova_all(options)
 
-    an = anova.ANOVA(r, features=options.features)
-    an.settings.savefig = options.savefig
-    print options
-    if options.savefig is True:
-        options.show_boxplots = True
-    try:
-        df = an.anova_one_drug_one_feature(options.drug, 
-            feature_name=options.feature, 
-            show_boxplot=options.show_boxplots, 
-            savefig=options.savefig)
-        print('ok')
-    except Exception as err:
-        print(red(err.__str__()))
-        return
 
+def anova_one_drug(options):
+    from gdsctools import anova, readers
+    an = anova.ANOVA(options.ic50, options.features)
+    df = an.anova_one_drug(options.drug)
+    df = an.add_fdr_column(df)
+
+    N = len(df)
+    df.insert(0, 'assoc_id', range(1, N+1))
+
+    r = anova.ANOVAReport(an, results=df)
+    print("Creating all figure and html documents in %s" % 
+            r.settings.directory)
+    r.create_html_pages(onweb=options.onweb)
+
+
+def anova_all(options):
+    from gdsctools import anova, readers
+    an = anova.ANOVA(options.ic50, options.features)
+    df = an.anova_all()
+    r = anova.ANOVAReport(an, results=df)
+    print("Creating all figure and html documents in %s" % 
+            r.settings.directory)
+    r.create_html_pages(onweb=options.onweb)
+
+
+def anova_one_drug_one_feature(options):
+    from gdsctools import anova, readers
+    an = anova.OneDrugOneFeature(options.ic50, 
+            features=options.features,
+            drug=options.drug, 
+            feature=options.feature)
+    an.add_dependencies = True
+    an.add_settings = True
+    df = an.run()
+    an.report(onweb=options.onweb)
     print(df.T)
-    import pylab
-    pylab.show()
+    #import pylab
+    #pylab.show()
 
 
 class ANOVAOptions(argparse.ArgumentParser):
@@ -81,9 +107,15 @@ class ANOVAOptions(argparse.ArgumentParser):
     """
     description = "tests"
     def __init__(self, version="1.0", prog=None):
+        print(2)
 
-        usage = """usage: python %s --challenge d8c1 --sub-challenge sc1a --submission <filename>\n""" % prog
-        usage += """      python %s --challenge d5c2 --submission <filename>""" % prog
+        usage = """gdsctools_anova --ic50 <filename> --drug <drug name> --onweb \n"""
+
+        usage += """gdsctools_anova --ic50 <filename> --drug <drug name> --feature <feature name> --onweb \n""" 
+        
+        usage += """gdsctools_anova --ic50 <filename> --onweb"""
+
+
         epilog="""Author(s): Thomas Cokelaer (GDSCtools) and authors from
 the GDSCtools repository. .
 
@@ -135,7 +167,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("--show-boxplots", dest='show_boxplots',
                          action="store_true",
                          help="show images.")
-        group.add_argument("--on-web", dest='on_web',
+        group.add_argument("--on-web", dest='onweb',
                          action="store_true",
                          help="TODO")
         group.add_argument("--drug", dest="drug",

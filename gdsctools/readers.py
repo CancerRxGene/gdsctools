@@ -172,7 +172,7 @@ class IC50(Reader, CosmicRows):
         """Histogram of the measured IC50
 
         :param bins: binning of the histogram
-        :param **kargs: any argument accepted by pylab.hist function.
+        :param kargs: any argument accepted by pylab.hist function.
         :return: all measured IC50"""
         data = [x for x in self.df.values.flatten() if not np.isnan(x)]
         pylab.clf()
@@ -209,7 +209,6 @@ class GenomicFeatures(Reader, CosmicRows):
     Those columns will be removed:
 
         - starting with `Drug_`, which are supposibly from the IC50 matrix
-
 
     ::
 

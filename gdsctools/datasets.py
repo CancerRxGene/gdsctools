@@ -45,7 +45,6 @@ def dataset(dataname):
         d.filename = easydev.get_share_file('gdsctools', 
                 'data', 'IC50_10drugs.tsv')
         d.description = 'IC50s for 10 public drugs across cell lines'
-        return d
     elif dataname == 'genomic_features':
         d = Data()
         d.filename = easydev.get_share_file('gdsctools', 
@@ -55,6 +54,7 @@ def dataset(dataname):
 
 #: dataset with IC50s for 10 drugs
 ic50_test = dataset('ic50_test')
+
 #: dataset with genomic features for 1001 cell lines and 680 features
 genomic_features = dataset('genomic_features')
 

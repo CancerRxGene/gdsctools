@@ -65,7 +65,7 @@ class HTMLTable(object):
         :param bool index: do not include the index
         :param bool escape: do not escape special characters
         :param bool header: include header
-        :param **kargs: any parameter accepted by
+        :param kargs: any parameter accepted by
             :meth:`pandas.DataFrame.to_html`
 
         """
@@ -426,11 +426,11 @@ class Report(object):
         fh.write(contents)
         fh.close()
 
-    def report(self, browse=True):
+    def report(self, onweb=True):
         """Creates the report, save it, opens in a browser"""
         self._create_report()
         self.write()
-        if browse:
+        if onweb:
             self.show()
 
     def _create_report(self):

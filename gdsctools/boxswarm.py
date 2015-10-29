@@ -12,7 +12,7 @@ def boxswarm(data, names=None, vert=True, widths=0.5, **kwargs):
     :param names:
     :param vert:
     :param widths:
-    :param **kargs:
+    :param kargs:
 
     See :class:`BoxSwarm` documentation for details
 
