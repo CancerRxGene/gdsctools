@@ -655,7 +655,7 @@ class ANOVAReport(Savefig):
             html.report(browse=False)
             pb.animate(i+1)
 
-     def create_html_main(self):
+    def create_html_main(self):
         """Create HTML main document (summary)"""
         print("Creating main HTML page in directory %s" %
                 (self.settings.directory))
