@@ -55,21 +55,22 @@ class CosmicRows(object):
 class IC50(Reader, CosmicRows):
     """Reader of IC50 data set
 
-    The input matrix must be a tab-separated value file.
+    The input matrix must be a tab-separated value file (TSV) although
+    comma-seprated files may be provided (see constructor section here below).
 
     The matrix must have at least 2 columns and 2 rows.
 
-    The first row is the header with one column being named "COSMIC ID"
-    and other columns must be named "Drug_XX_IC50" where XX is a positive
-    integer (order is not important).
+    The first row is the header describing the columns' contents. One column
+    must be named "COSMIC ID". Other columns must be named "Drug_XX_IC50" 
+    where XX is a positive integer (order is not important).
 
-    The columns "COSMIC ID" contains the the cosmic identifiers. The other
-    columns should be filled with the IC50 for the drug in correspondance with
-    the cosmic identifier.
+    The column "COSMIC ID" contains the cosmic identifiers (cell line). The 
+    other columns should be filled with the IC50s corresponding to a pair
+    of COSMIC Id and Drug.
     
-    Extra columns will be ignored.
+    Extra columns (e.g., tissue, sample name, MSI, features) will be ignored.
 
-    e.g::
+    Here is a simple example of a valid TSV file::
 
         COSMIC ID   Drug_1_IC50 Drug_20_IC50
         111111      0.5         0.8
@@ -80,8 +81,7 @@ class IC50(Reader, CosmicRows):
 
         from gdsctools import ic50_test
 
-    If you want to use a comma-separated file, provide the separator (see
-    constructor).
+    You can read it using this class and plot information as follows:
 
     .. plot::
         :width: 80%
@@ -91,8 +91,27 @@ class IC50(Reader, CosmicRows):
         r = IC50(ic50_test)
         r.plot_ic50_count()
 
+    You can get basic information using the print function::
+
+        >>> from gdsctools import IC50, ic50_test
+        >>> r = IC50(ic50_test)
+        >>> print(r)
+        Number of drugs: 11
+        Number of cell lines: 988
+        Percentage of NA 0.206569746043
+
+
     """
     def __init__(self, filename='ANOVA_input.txt', sep="\t"):
+        """.. rubric:: Constructor
+
+        :param filename: input filename of IC50s. May also be an instance
+            of :class:`IC50` or a valid dataframe. The data is stored as a 
+            dataframe in the attribute called :attr:`df`.
+        :param sep: separator between columns (default to tabulation)
+
+
+        """
         super(IC50, self).__init__(filename, sep=sep)
 
         if isinstance(filename, str):
@@ -101,8 +120,13 @@ class IC50(Reader, CosmicRows):
             columns += [x for x in self.rawdf.columns if x.startswith('Drug')]
             self.df = self.rawdf[columns].copy() # is copy  required ?
             self.df.set_index('COSMIC ID', inplace=True)
-        else:
+        elif isintance(filename, IC50):
             self.df = filename.df.copy()
+        elif isintance(filename, pd.DataFrame):
+            self.df = filename.copy()
+        else:
+            raise TypeError("Input must be a filename, a IC50 instance, or " +
+                            "a dataframe.")
 
     def _get_drugs(self):
         return list(self.df.columns)
@@ -125,6 +149,8 @@ class IC50(Reader, CosmicRows):
     def hist(self, bins=20, **kargs):
         """Histogram of the measured IC50
 
+        :param bins: binning of the histogram
+        :param **kargs: any argument accepted by pylab.hist function.
         :return: all measured IC50"""
         data = [x for x in self.df.values.flatten() if not np.isnan(x)]
         pylab.clf()

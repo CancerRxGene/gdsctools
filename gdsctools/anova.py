@@ -192,7 +192,12 @@ class ColumnTypes(object):
              'log max.Conc.tested2': np.dtype('O')}
 
     def astype(self, df):
-        df = df.apply(lambda x: pd.to_numeric(x, errors='ignore'))
+        try:
+            # does not work in python3.3 on travis but should work
+            # we newer pandas version.
+            df = df.apply(lambda x: pd.to_numeric(x, errors='ignore'))
+        except:
+            pass
         return df
 
 
