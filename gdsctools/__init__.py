@@ -5,16 +5,13 @@ try:
 except:
     # update this manually is possible when the version in the
     # setup changes
-    version = "0.1"
-
-import easydev
-
-ic50_test = easydev.get_share_file('gdsctools', 'data', 'IC50_10drugs.tsv')
-
-
+    version = "0.3"
 
 
 from gdsctools.report import HTMLTable, Report
 from gdsctools.readers import IC50, GenomicFeatures
 from gdsctools.anova import ANOVA, ANOVAReport, ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
+from gdsctools.datasets import ic50_test, genomic_features
+
+
