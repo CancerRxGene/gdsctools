@@ -311,12 +311,18 @@ class ANOVAReport(Savefig):
         ratio = float(self.n_tests)/(N) * 100
         ratio = easydev.precision(ratio, digit=2)
 
+        msg = "Type of analysis"
+        df = self._df_append(df, [msg, self.settings.analysis_type])
+
         msg = "Total number of possible drug/feature associations"
         df = self._df_append(df, [msg, N])
         msg = "Total number of ANOVA tests performed"
         df = self._df_append(df, [msg, self.n_tests])
         msg = "Percentage of tests performed"
         df = self._df_append(df, [msg, ratio])
+        
+        # trick to have an empty line
+        df = self._df_append(df, ["", ""])
 
         msg = "Total number of tested drugs"
         df = self._df_append(df, [msg, self.n_drugs])
@@ -330,6 +336,8 @@ class ANOVAReport(Savefig):
         msi = self.settings.includeMSI_factor
         df = self._df_append(df, [msg, msi])
 
+        # trick to have an empty line
+        df = self._df_append(df, ["", ""])
         nsens = len(self.sensible_df)
         nres = len(self.resistant_df)
         msg = "Total number of significant associations"
@@ -1984,7 +1992,8 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
             table.add_href('Drug id')
             table.add_href('Drug id (alpha order)')
         except:
-            table = HTMLTable(df, 'drugs')
+            # FIXME 
+            table = HTMLTable(self.results.df, 'drugs')
             table.add_href('Drug id')
         # rename one columns
         table.df.columns = [x.replace('ANOVA FEATURE FDR',

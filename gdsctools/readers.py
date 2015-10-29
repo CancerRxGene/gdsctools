@@ -10,14 +10,29 @@ __all__ = ['IC50', 'GenomicFeatures', 'CosmicRows', 'Reader']
 
 class Reader(object):
     """Base class to read csv file"""
-    def __init__(self, filename, sep="\t"):
+    def __init__(self, data, sep="\t"):
         """.. rubric:: Constructor
 
         :param input: could be a filename
 
         """
-        self._filename = filename
         self._sep = sep
+        
+        # Input data can be a filename to be read
+        if isinstance(data, str):
+            self._reader(data)
+            self._filename = data
+        elif hasattr(data, 'filename'):
+            # could be a data sets from gdsctools.datasets.Data
+            self._reader(data.filename)
+            self._filename = data.filename
+        elif hasattr(data, 'df'): # an IC50 or genomic features ?
+            self.df = data.df.copy()
+        elif isinstance(data, pd.DataFrame):
+            self.df = data.copy()
+        else:
+            raise TypeError("Input must be a filename, a IC50 instance, or " +
+                            "a dataframe.")
 
     def read_matrix_from_r(self, name):
         print("Reading matrix %s " % (name))
@@ -123,24 +138,17 @@ class IC50(Reader, CosmicRows):
             dataframe in the attribute called :attr:`df`.
         :param sep: separator between columns (default to tabulation)
 
-
         """
         super(IC50, self).__init__(filename, sep=sep)
-
-        if isinstance(filename, str):
-            self.rawdf = pd.read_csv(self._filename, sep=self._sep)
-            columns = ['COSMIC ID']
-            columns += [x for x in self.rawdf.columns if x.startswith('Drug')]
-            self.df = self.rawdf[columns].copy() # is copy  required ?
-            self.df.set_index('COSMIC ID', inplace=True)
-        elif isinstance(filename, IC50):
-            self.df = filename.df.copy()
-        elif isinstance(filename, pd.DataFrame):
-            self.df = filename.copy()
-        else:
-            raise TypeError("Input must be a filename, a IC50 instance, or " +
-                            "a dataframe.")
         self.check()
+
+    def _reader(self, filename):
+        rawdf = pd.read_csv(filename, sep=self._sep)
+        columns = ['COSMIC ID']
+        columns += [x for x in rawdf.columns if x.startswith('Drug')]
+        self.df = rawdf[columns]
+        del rawdf # make sure it is deleted. may not be required.
+        self.df.set_index('COSMIC ID', inplace=True)
 
     def _get_drugs(self):
         return list(self.df.columns)
@@ -225,22 +233,10 @@ class GenomicFeatures(Reader, CosmicRows):
         """
         # first reset the filename to the shared data (if not provided)
         if filename is None:
-            filename = easydev.get_share_file('gdsctools', 'data',
-                            'genomic_features.tsv')
+            from gdsctools.datasets import genomic_features
+            filename = genomic_features
         super(GenomicFeatures, self).__init__(filename)
 
-        if isinstance(filename, str):
-            self.df = pd.read_csv(self._filename, sep=self._sep)
-            assert 'COSMIC ID' in self.df.columns, \
-                "the features input file must contains a column named COSMIC ID"
-            self.df.set_index('COSMIC ID', inplace=True)
-        else:
-            try:
-                # there is a df attribute
-                self.df = filename.df.copy()
-            except:
-                # it is a dataframe
-                self.df = filename
 
         # Remove columns related to Drug, which should be in the IC50 matrix
         self.df = self.df[[x for x in self.df.columns
@@ -257,6 +253,12 @@ class GenomicFeatures(Reader, CosmicRows):
         for name in names:
             assert name in self.df.columns , 'Could not find column %s' % name
         self.check()
+
+    def _reader(self, filename):
+        self.df = pd.read_csv(filename, sep=self._sep)
+        assert 'COSMIC ID' in self.df.columns, \
+            "the features input file must contains a column named COSMIC ID"
+        self.df.set_index('COSMIC ID', inplace=True)
 
     def _get_features(self):
         return list(self.df.columns)
