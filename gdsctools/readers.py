@@ -43,6 +43,19 @@ class Reader(object):
             sep = self._sep
         self.df.to_csv(filename, sep=sep)
 
+    def check(self):
+        """Checking the format of the matrix
+
+        Currently, only checks that there is no duplicated column names
+
+        """
+        if len(self.df.columns.unique()) != len(self.df.columns):
+            columns = list(self.df.columns)
+            for this in columns:
+                if columns.count(this)>1:
+                    msg ='Found identical named columns (%s)' % this
+                    raise ValueError(msg)
+
 
 class CosmicRows(object):
     """Parent class to IC50 and GenomicFeatures to handle cosmic identifiers"""
@@ -127,6 +140,7 @@ class IC50(Reader, CosmicRows):
         else:
             raise TypeError("Input must be a filename, a IC50 instance, or " +
                             "a dataframe.")
+        self.check()
 
     def _get_drugs(self):
         return list(self.df.columns)
@@ -242,6 +256,7 @@ class GenomicFeatures(Reader, CosmicRows):
         names = [self._col_tissue, self._col_sample, self._col_msi]
         for name in names:
             assert name in self.df.columns , 'Could not find column %s' % name
+        self.check()
 
     def _get_features(self):
         return list(self.df.columns)

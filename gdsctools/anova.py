@@ -280,12 +280,13 @@ class ANOVAReport(Savefig):
 
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
-    n_drugs = property(_get_ndrugs)
+    n_drugs = property(_get_ndrugs, doc="return number of drugs")
 
     def _get_nfeatures(self):
         # !! -3 to remove sample name, tissue, msi columns
         return len(self.input_features.columns) - 3
-    n_features = property(_get_nfeatures)
+    n_features = property(_get_nfeatures, 
+            doc="return number of features ignoring MSI, sample and tissue")
 
     def _get_ntests(self):
         return len(self.df.index)
@@ -293,9 +294,11 @@ class ANOVAReport(Savefig):
 
     def _get_ncelllines(self):
         return len(self.input_features.index)
-    n_celllines = property(_get_ncelllines)
+    n_celllines = property(_get_ncelllines, 
+            doc="return number of cell lines")
 
     def diagnostics(self):
+        """Return summary of the analysis (text)"""
         txt = []
 
         ratio = float(self.n_tests)/(self.n_drugs*self.n_features) * 100
@@ -331,6 +334,7 @@ class ANOVAReport(Savefig):
         return "\n".join(txt)
 
     def _get_pval_range(self):
+        """Get pvalues range of the significant hits"""
         nsens = len(self.sensible_df)
         nres = len(self.resistant_df)
         N = nsens + nres
@@ -342,6 +346,7 @@ class ANOVAReport(Savefig):
         return m,M
 
     def _get_fdr_range(self):
+        """Get FDR range of the significant hits"""
         name = self.varname_qval
         data = self.df[name][(self.df[name]< self.settings.FDR_threshold)]
         if len(data) == 0:
@@ -356,6 +361,7 @@ class ANOVAReport(Savefig):
         return pvalue
 
     def read_csv(self, filename, sep="\t"):
+        """Reads a result file and store it in :attr:`df`"""
         self.df = pd.read_csv(filename, sep=sep,
                 comment="#")
         return self.df
@@ -375,6 +381,7 @@ class ANOVAReport(Savefig):
         self.resistant_df = self.df[logand(logand(mask1, mask2), mask3)]
 
     def get_significant_set(self):
+        """Return signiificant hits (resistant and sensible)"""
         # a property that is long to compute
         # and may change if FDR changes.
         self._set_sensible_df()
@@ -383,11 +390,9 @@ class ANOVAReport(Savefig):
             df.sort_values('assoc_id', inplace=True)
         except:
             df.sort('assoc_id', inplace=True)
-
         return df
 
     def _get_data(self, df_count_sensible, df_count_resistant):
-
         # we can drop all columns except one, which is renamed as count
         df1 = df_count_sensible['assoc_id']
         df1.name = 'sens assoc'
@@ -417,6 +422,7 @@ class ANOVAReport(Savefig):
         return df_count
 
     def drug_summary(self,  top=50, fontsize=10):
+        """Return dataframe with significant drugs"""
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -434,6 +440,7 @@ class ANOVAReport(Savefig):
         return df_count
 
     def feature_summary(self, top=50, fontsize=10):
+        """Return dataframe with significant features"""
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -442,25 +449,6 @@ class ANOVAReport(Savefig):
 
         df_count = self._get_data(df_count_sensible, df_count_resistant)
 
-        # let us add another column with the n_altered_samples
-        # Seems to be wrong in R code should be sum across row, i.e
-        # get a vector of same length as df_count. Here it should be correct
-        # but is therefore different from the R code (15oct2015)
-        # Not used anyway so commented for now
-        ##n_altered_samples = self.input_features[df_count.index].sum(axis=0)
-        ##n_altered_samples = pd.DataFrame(n_altered_samples,
-        ##    columns=['n_altered_samples'])
-        ##df_count = df_count.join(pd.DataFrame(n_altered_samples), how='outer')
-        ##df_count = df_count[['n_altered_samples', 'total', 'sens assoc',
-        ##'res assoc']]
-
-        #
-        #s1 = set(self.sensible_df['FEATURE'])
-        #s2 = set(self.resistant_df['FEATURE'])
-        #size_domain = len(s1.union(s2))
-        #
-        #size_total_domain = len(set(self.df['FEATURE']))
-        #Gperc = size_domain /  float(size_total_domain)
         if len(df_count)>0:
             self._plot(df_count, 'feature', top, fontsize=fontsize)
             if self.settings.savefig is True:
@@ -468,7 +456,8 @@ class ANOVAReport(Savefig):
         return df_count
 
     def _plot(self, df_count, title_tag, top, fontsize=10):
-
+        """Used by drug_summary and feature_summary to plot the
+        bar plot"""
         if top > len(df_count):
             top = len(df_count)
 
@@ -645,8 +634,12 @@ class ANOVAReport(Savefig):
 
             # get concentration range
             conc = subdf['log max.Conc.tested'].unique()[0]
-            metadata['conc_min'] = conc / 4.**4
-            metadata['conc_max'] = conc
+            if pd.isnull(conc) is False:
+                metadata['conc_min'] = conc / 4.**4
+                metadata['conc_max'] = conc
+            else:
+                metadata['conc_min'] = "?"
+                metadata['conc_max'] = "?"
             metadata['drug'] = drug
 
             html = HTMLOneDrug(self.df, subdf, metadata,
@@ -716,6 +709,20 @@ class ANOVA(Logging):
         df = an.anova_one_drug_one_feature('Drug_1047_IC50',
             'TP53_mut', show_boxplot=True)
 
+    :Details about the anova analysis: In the example above, we perform a
+        regression/anova test based on OLS regression. This is done for
+        one feature one drug across all cell lines (tissue) in the method
+        :meth:`anova_one_drug`. The regression
+        takes into account the following factors: tissue, MSI and features. 
+        The order matters. If there is only one tissue, this factor is 
+        dropped. If the number of MSI values is less than a pre-defined 
+        parameter (see :class:`ANOVASettings`), it is dropped. The other
+        methods :meth:`anova_one_drug` and :meth:`anova_all` are wrappers 
+        around :meth:`anova_one_drug_one_feature` to loop over all drugs, and
+        loop over all drugs and all features, respectively.
+
+
+
     """
     def __init__(self, ic50, features=None, verbose='INFO'):
         """.. rubric:: Constructor
@@ -726,6 +733,8 @@ class ANOVA(Logging):
         :param features: another dataframe with rows as in the IC50 matrix
             and columns as features.  The first 3 columns must be named
             specifically to hold tissues, MSI (see format).
+        :param verbose: verbosity in "WARNING", "ERROR", "DEBUG", "INFO"
+            
 
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
@@ -810,6 +819,15 @@ class ANOVA(Logging):
             self.settings.analysis_type = 'PANCAN'
 
     def set_cancer_type(self, ctype):
+        """Select only a set of tissues.
+        
+        Input IC50 may be PANCAN (several cancer tissues).
+        This  function can be used to select a subset of tissues. 
+        This function changes the :attr:`ic50` dataframe and possibly
+        the feature as well is some are not relevant anymore (sum of the
+        column is zero for instance).
+
+        """
         ctype = easydev.to_list(ctype)
         for this in ctype:
            assert this in self.features.tissues
@@ -1007,9 +1025,9 @@ class ANOVA(Logging):
         dd.neg_IC50_std = np.sqrt(( (dd.negatives**2).sum() -
             neg_sum**2/dd.Nneg)/(dd.Nneg-1.))
 
-        # Compute cohens and glass effects
-        # compute cohen and glass re-using the mean and std values
-        # this is much faster than calling the functions
+        # Compute Cohens and Glass effect size. Since underlying code
+        # has lots in common, we do not use the modules but add
+        # the code here below
         md = np.abs(dd.pos_IC50_mean - dd.neg_IC50_mean)
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
@@ -1018,11 +1036,8 @@ class ANOVA(Logging):
                 (dd.Nneg - 1.)*dd.neg_IC50_std**2
         csd /= dd.Npos + dd.Nneg -2.  # make sure this is float
         dd.effectsize_ic50 = md / np.sqrt(csd)
-        #dd.effectsize_ic502 = cohens.cohens(dd.positives, dd.negatives)
-        #GLASS_d = glass.glass(dd.positives, dd.negatives)
-        #dd.pos_glass2 = GLASS_d[0]
-        #dd.neg_glass2 = GLASS_d[1]
 
+        # additional information
         dd.feature_name = feature_name
         dd.drug_name = drug_name
         return dd
@@ -1417,15 +1432,15 @@ class ANOVA(Logging):
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
         return df
 
-    def anova_all(self, animate=True, drugs=None, features=None):
+    def anova_all(self, animate=True, drugs=None):
         """Run all ANOVA tests for all drugs and all features.
 
+        :param drugs: you may select a subset of drugs
 
-        :param drugs: select a subset of drugs
-        :param features: select a subset of  features (not implemented yet)
-
-        .. todo:: features
-
+        Loops over all drugs calling :meth:`anova_one_drug` for each 
+        drug and concatenating all results together. Note that once all
+        data are gathered, an extra column containing the FDR corrections
+        is added to the dataframe using :meth:`add_fdr_column` method.
 
         .. note:: comparison with version contained in this package
             gives same results. FDR (~1e-6) and FEATURE_IC50_T_pval differs
@@ -1433,7 +1448,8 @@ class ANOVA(Logging):
             close to 1 but nothing to worry about.
         """
         # drop DRUG where number of IC50 (non-null) is below 5
-        # axis=0 is default but we emphasize that sum is over column (i.e. drug
+        # axis=0 is default but we emphasize that sum is over 
+        # column (i.e. drug
         vv = (self.ic50.df.isnull() == False).sum(axis=0)
         drug_names = vv.index[vv >= self.settings.minimum_nonna_ic50]
 
@@ -1442,11 +1458,9 @@ class ANOVA(Logging):
             # todo: check valifity of the drug names
             drug_names = drugs[:]
 
-        N = len(drug_names)
-        pb = Progress(N, 1)
+        pb = Progress(len(drug_names), 1)
         drug_names = list(drug_names)
         pylab.shuffle(drug_names)
-        self.times = []
         for i, drug_name in enumerate(drug_names):
             # TODO: try/except
             if drug_name in self.individual_anova.keys():
@@ -1457,7 +1471,6 @@ class ANOVA(Logging):
             if animate is True:
                 pb.animate(i+1)
 
-            self.times.append(pb.elapsed)
         df = pd.concat(self.individual_anova, ignore_index=True)
 
         if len(df) == 0:
@@ -1474,20 +1487,18 @@ class ANOVA(Logging):
 
         # insert a unique identifier as first column
         N = len(df)
-        df.insert(0, 'assoc_id', range(1,N+1))
+        df.insert(0, 'assoc_id', range(1, N+1))
+
+        # ordered as defined in the __init__ method
         df = df[self.column_names]
         df.reset_index(inplace=True)
-        # make sure the types are correct
 
-        # save as attribute
         return df
 
     def add_fdr_column(self, df):
-        """Add the FDR columns based on pvalues
+        """Add the FDR column in a datafream based on pvalues
         
-        Called by :meth:`anova_all` and `anova_one_drug` to populate
-        the FDR column of a dataframe based on the p-values
-
+        .. seealso:: :meth:`anova_all`
         """
         fdr = self._compute_fdr(df)
         # insert FDR as last column.

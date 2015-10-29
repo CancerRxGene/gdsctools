@@ -1,6 +1,7 @@
 from gdsctools.readers import GenomicFeatures, IC50, PANCAN
 from easydev import TempFile
 from gdsctools import ic50_test
+import pandas as pd
 
 def test_read_ic50():
     r = IC50(ic50_test)
@@ -15,6 +16,17 @@ def test_read_ic50():
     f = TempFile()
     r.to_csv(f.name)
     f.delete()
+
+    # columns may be duplicated
+    r = IC50(ic50_test)
+    df = pd.concat([r.df, r.df['Drug_999_IC50']], axis=1)
+    # create new instance that should raise an error
+    try:
+        IC50(df)
+        assert False
+    except:
+        assert True
+
 
 def test_read_gf():
     # Reads a default file
