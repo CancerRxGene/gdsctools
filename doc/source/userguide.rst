@@ -1,5 +1,13 @@
-User Guide
-==========
+Quick Start
+=============
+
+Data format
+------------
+
+
+
+Example
+---------
 
 
 You can analyse a given drug for a given genomic feature
@@ -34,3 +42,21 @@ number of drugs and features (30 minutes for 250 drugs and 1000 features):
     drugs = an.drugs[0:5] + ['Drug_29_IC50']
     dfall = an.anova_all(drugs=drugs)
     an.volcano_plot_one_drug(dfall, 'Drug_29_IC50')
+
+
+Output and visualisation
+==========================
+
+
+HTML report
+==============
+
+
+
+Standalone applications
+==========================
+
+
+
+Notebooks
+===============

@@ -515,8 +515,13 @@ class ANOVAReport(Savefig):
         pylab.legend(loc='lower right')
         pylab.tight_layout()
 
-    def get_significant_hits(self, concentrations='concentrations.tsv'):
-        """Return a summary of significan hits"""
+    def get_significant_hits(self, concentrations='concentrations.tsv', 
+            show=True):
+        """Return a summary of significant hits
+        
+        :param show: show a plot with the distribution of significant hits
+
+        """
         fdrs = range(5, 50+1, 5)
 
         significants = []
@@ -563,11 +568,13 @@ class ANOVAReport(Savefig):
         df.columns = ['1) significant', '2) 1 + meaningful',
         '3) 2 + strong', '4) 2+ very strong']
 
-        pylab.clf()
-        ax = pylab.gca()
-        df.plot(kind='bar', width=.8, colors=['r', 'gray', 'orange', 'black'],
-                rot=0, ax=ax)
-        pylab.grid()
+        if show is True:
+            pylab.clf()
+            ax = pylab.gca()
+            df.plot(kind='bar', width=.8, 
+                    color=['r', 'gray', 'orange', 'black'],
+                    rot=0, ax=ax)
+            pylab.grid()
         # original is 'aquamarine4','cyan2','cornflowerblue    ','aquamarine'),
         return df
 
@@ -2025,7 +2032,6 @@ class SignificantHits(object):
         columns = [u'assoc_id', 'FEATURE',
             'Drug id', u'Drug name', 'Drug Target',
             'N_FEATURE_neg', 'N_FEATURE_pos',
-        #    'log max.Conc.tested',
             'FEATUREpos_logIC50_MEAN',
             'FEATUREneg_logIC50_MEAN',
             'FEATURE_deltaMEAN_IC50',
@@ -2039,10 +2045,15 @@ class SignificantHits(object):
         self.df = self.df[columns]
 
     def to_html(self, escape=False, header=True, index=False):
+        # If there is a value below 0.01, a scientific notation is
+        # use. we prefer to use 2 digits and write <0.01 
+        colname = 'ANOVA FEATURE FDR %'
+        self.df.loc[self.df[colname] <0.01, colname] = '<0.01'
         html = HTMLTable(self.df, self.name)
         # Those columns should be links
         for this in ['FEATURE', 'Drug id', 'assoc_id']:
             html.add_href(this)
+
 
         for this in ['FEATURE_IC50_effect_size', 'FEATUREneg_Glass_delta',
                 'FEATUREpos_Glass_delta']:

@@ -23,7 +23,7 @@ metainfo = {
     'url' : ['http://pypi.python.org/pypi/gdsctools'],
     'description':'Set of tools and pipelines to analyse GDSC data (cancerrxgene.org)' ,
     'platforms' : ['Linux', 'Unix', 'MacOsX', 'Windows'],
-    'keywords' : ['gdsc', 'drug', 'anova'],
+    'keywords' : ['gdsc', 'drug response', 'anova', 'genomic features'],
     'classifiers' : [
           'Development Status :: 1 - Planning',
           'Intended Audience :: Developers',
