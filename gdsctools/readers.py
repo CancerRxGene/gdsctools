@@ -1,12 +1,11 @@
-"""Some Readers
-
-
-
-"""
+"""IO functionalities"""
 import pandas as pd
 import pylab
 import numpy as np
 import easydev
+
+
+__all__ = ['IC50', 'GenomicFeatures', 'CosmicRows', 'Reader']
 
 
 class Reader(object):
@@ -46,10 +45,11 @@ class Reader(object):
 
 
 class CosmicRows(object):
-    """Parent class to IC50 and GenomicFeatures"""
+    """Parent class to IC50 and GenomicFeatures to handle cosmic identifiers"""
     def _get_cosmic(self):
         return list(self.df.index)
-    cosmicIds = property(_get_cosmic, doc="return list of cosmic ids")
+    cosmicIds = property(_get_cosmic,
+            doc="return list of cosmic ids (could have duplicates)")
 
 
 class IC50(Reader, CosmicRows):
@@ -61,13 +61,13 @@ class IC50(Reader, CosmicRows):
     The matrix must have at least 2 columns and 2 rows.
 
     The first row is the header describing the columns' contents. One column
-    must be named "COSMIC ID". Other columns must be named "Drug_XX_IC50" 
+    must be named "COSMIC ID". Other columns must be named "Drug_XX_IC50"
     where XX is a positive integer (order is not important).
 
-    The column "COSMIC ID" contains the cosmic identifiers (cell line). The 
+    The column "COSMIC ID" contains the cosmic identifiers (cell line). The
     other columns should be filled with the IC50s corresponding to a pair
     of COSMIC Id and Drug.
-    
+
     Extra columns (e.g., tissue, sample name, MSI, features) will be ignored.
 
     Here is a simple example of a valid TSV file::
@@ -106,7 +106,7 @@ class IC50(Reader, CosmicRows):
         """.. rubric:: Constructor
 
         :param filename: input filename of IC50s. May also be an instance
-            of :class:`IC50` or a valid dataframe. The data is stored as a 
+            of :class:`IC50` or a valid dataframe. The data is stored as a
             dataframe in the attribute called :attr:`df`.
         :param sep: separator between columns (default to tabulation)
 
@@ -120,9 +120,9 @@ class IC50(Reader, CosmicRows):
             columns += [x for x in self.rawdf.columns if x.startswith('Drug')]
             self.df = self.rawdf[columns].copy() # is copy  required ?
             self.df.set_index('COSMIC ID', inplace=True)
-        elif isintance(filename, IC50):
+        elif isinstance(filename, IC50):
             self.df = filename.df.copy()
-        elif isintance(filename, pd.DataFrame):
+        elif isinstance(filename, pd.DataFrame):
             self.df = filename.copy()
         else:
             raise TypeError("Input must be a filename, a IC50 instance, or " +
@@ -130,7 +130,7 @@ class IC50(Reader, CosmicRows):
 
     def _get_drugs(self):
         return list(self.df.columns)
-    drugIds = property(_get_drugs)
+    drugIds = property(_get_drugs, doc='list the drug identifier name')
 
     def plot_ic50_count(self):
         """Plots the fraction of valid/measured IC50 per drug
@@ -168,27 +168,47 @@ class IC50(Reader, CosmicRows):
         return txt
 
 
-    
-
 class GenomicFeatures(Reader, CosmicRows):
     """Read Matrix with Genomic Features
 
-    Recognised column names are :
-        
+    There are compulsary column names required (note the spaces):
+
+        - 'COSMIC ID'
         - 'Tissue Factor Value'
         - 'Sample Name'
         - 'MS-instability Factor Value'
+
+    and features can be also encoded with the following convention:
+
         - columns ending in "_mut" to encode a gene mutation (e.g., BRAF_mut)
         - columns starting with "gain_cna"
         - columns starting with "loss_cna"
 
     Those columns will be removed:
 
-        - starting with "Drug_", which are supposibly from the IC50 matrix
+        - starting with `Drug_`, which are supposibly from the IC50 matrix
+
+
+    ::
+
+        >>> from gdsctools import GenomicFeatures
+        >>> gf = GenomicFeatures()
+        >>> print(gf)
+        Genomic features distribution
+        Number of unique tissues 27
+        Number of unique features 677 with
+        - Mutation: 270
+        - CNA (gain): 116
+        - CNA (loss): 291
 
     """
     def __init__(self, filename=None, sep="\t"):
+        """.. rubric:: Constructor
 
+        If not file is provided, using the edfault file provided in the 
+        package that is made of 1001 cell lines times 680 features.
+
+        """
         # first reset the filename to the shared data (if not provided)
         if filename is None:
             filename = easydev.get_share_file('gdsctools', 'data',
@@ -209,7 +229,7 @@ class GenomicFeatures(Reader, CosmicRows):
                 self.df = filename
 
         # Remove columns related to Drug, which should be in the IC50 matrix
-        self.df = self.df[[x for x in self.df.columns 
+        self.df = self.df[[x for x in self.df.columns
             if x.startswith('Drug_') is False]]
 
         # There are several types of features e.g., mutation, CNA,
@@ -225,13 +245,29 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def _get_features(self):
         return list(self.df.columns)
-    features = property(_get_features)
+    features = property(_get_features, doc="return list of features")
 
     def _get_tissues(self):
         return list(self.df[self._col_tissue])
-    tissues = property(_get_tissues)
+    tissues = property(_get_tissues, doc='return list of tissues')
+    
+    def _get_unique_tissues(self):
+        return list(self.df[self._col_tissue].unique())
+    unique_tissues = property(_get_unique_tissues, doc='return set of tissues')
 
     def plot(self):
+        """Histogram of the tissues found
+
+        .. plot::
+            :include-source:
+            :width: 80%
+
+            from gdsctools import GenomicFeatures
+            gf = GenomicFeatures() # use the default file
+            gf.plot()
+
+
+        """
         data = pd.get_dummies(self.df['Tissue Factor Value']).sum()
         data.index = [x.replace("_", " ") for x in data.index]
         # deprecated but works for python 3.3
@@ -247,13 +283,14 @@ class GenomicFeatures(Reader, CosmicRows):
         data.plot(kind='barh')
         pylab.grid()
         pylab.xlabel('Occurences')
+        pylab.tight_layout()
         return data
 
     def __str__(self):
         txt = 'Genomic features distribution\n'
         Ntissue = len(self.df[self._col_tissue].unique())
         txt += 'Number of unique tissues {0}\n'.format(Ntissue)
-       
+
         # -3 since we have also the MSI, tissue, sample columns
         Nfeatures = len(self.features)
         txt += 'Number of unique features {0} with\n'.format(Nfeatures-3)
@@ -268,23 +305,40 @@ class GenomicFeatures(Reader, CosmicRows):
         return txt
 
     def drop_tissue_in(self, tissues):
-        raise NotImplementedError
+        """Drop tissues from the list
+
+        :param list tissues: a list of tissues to drop. If you have only
+            one tissue, can be provided as a string. Since rows are removed
+            some features (columns) may now be empty (all zeros). If so, those
+            columns are dropped (except for the special columns (e.g, MSI).
+
+        """
         tissues = easydev.to_list(tissues)
-        #mask = an.features.df[an.features._col_tissue].isin(tissues)
-        #self.features.df
+        mask = self.df[self._col_tissue].isin(tissues) == False
+        self.df = self.df[mask]
+        self._cleanup()
 
     def keep_tissue_in(self, tissues):
+        """Drop tissues from the list
+
+        :param list tissues: a list of tissues to drop. If you have only
+            one tissue, can be provided as a string. Since rows are removed
+            some features (columns) may now be empty (all zeros). If so, those
+            columns are dropped (except for the special columns (e.g, MSI).
+
+        """
+        tissues = easydev.to_list(tissues)
         tissues = easydev.to_list(tissues)
         mask = self.df[self._col_tissue].isin(tissues)
         self.df = self.df[mask]
         self._cleanup()
 
     def _cleanup(self, required_features=0):
-        todrop = list(self.df.columns[self.df.sum()<=required_features])
+        todrop = list(self.df.columns[self.df.sum() <= required_features])
+        print(len(todrop))
         for this in [self._col_tissue, self._col_msi, self._col_sample]:
             try:
                 todrop.remove(this)
-                print('ignore ', this)
             except:
                 pass
         self.df.drop(todrop, axis=1, inplace=True)
