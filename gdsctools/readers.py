@@ -334,13 +334,12 @@ class GenomicFeatures(Reader, CosmicRows):
         self._cleanup()
 
     def _cleanup(self, required_features=0):
-        todrop = list(self.df.columns[self.df.sum() <= required_features])
-        print(len(todrop))
-        for this in [self._col_tissue, self._col_msi, self._col_sample]:
-            try:
-                todrop.remove(this)
-            except:
-                pass
+        to_ignore = [self._col_tissue, self._col_msi, self._col_sample]
+        # create a view ignoring the informative columns
+        view = self.df[[x for x in self.df.columns if x not in to_ignore]]
+
+        todrop = list(view.columns[view.sum() <= required_features])
+                
         self.df.drop(todrop, axis=1, inplace=True)
 
 

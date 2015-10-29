@@ -203,26 +203,36 @@ class ColumnTypes(object):
 
 
 class ANOVAReport(Savefig):
-    """
+    """Class used to create final HTML reports on an :class:`ANOVA` analysis
 
-    an = ANOVAReport('ic50.txt','features.txt')
-    an.setttings.analyse_type = 'Bladder' # to filter the data if needed
-    # the command above set settings.analyse_type to Bladder
-    # so that tissue are not used
-    # If MSI column is all 0, the msi factor is also set to False
-    df = an.anova_all()
 
-    r = ANOVAReport(df, ic50=an.ic50, input_features=an.features,
-        concentrations='concentrations.csv')
-    r.settings.pvalue_threshold = 0.001
-    r.settings.FDR_threshold = 28
-    r.settings.includeMSI_factor = False
-    r.settings.analysis_type = 'Bladder'
-    r.settings.directory = 'BLCA'
+    ::
+
+        from gdsctools import *
+
+        # Perform the analysis itself to get a set of results (dataframe)
+        an = ANOVA(ic50_test)
+        results = an.anova_all()
+
+        # now, we can create the report. Note that we must currently provide
+        # a file that contains the concentrations used for each drug
+        r = ANOVAReport(gdsc=an, results=results, 
+            concentrations='concentrations.csv')
+        r.settings.pvalue_threshold = 0.001
+        r.settings.FDR_threshold = 28
+        r.settings.directory = 'testing'
+        r.report()
 
     """
     def __init__(self, gdsc, results, concentrations=None, sep="\t"):
+        """.. rubric:: Constructor
 
+
+        :param gdsc: the instance with which you created the results to report
+        :param results: the results returned by :meth:`ANOVA.anova_all`
+        :param concentrations: todo
+
+        """
         super(ANOVAReport, self).__init__()
 
         data = results
@@ -494,6 +504,7 @@ class ANOVAReport(Savefig):
         pylab.tight_layout()
 
     def get_significant_hits(self, concentrations='concentrations.tsv'):
+        """Return a summary of significan hits"""
         fdrs = range(5, 50+1, 5)
 
         significants = []
@@ -554,7 +565,9 @@ class ANOVAReport(Savefig):
     def __str__(self):
         self.df.info()
         return ""
+
     def check(self):
+        """for developers (check local file agreement). will be removed."""
         rold = ANOVAReport("anova_all.tsv",
                 concentrations='concentrations.tsv')
         rold.df = rold.df[self.df.columns]
@@ -565,6 +578,7 @@ class ANOVAReport(Savefig):
                 print(x, all(self.df[x] == rold.df[x]))
 
     def create_html_associations(self):
+        """Create an HTML page for each significant association"""
         print("\nCreating individual HTML pages for each association")
         df = self.get_significant_set()
         drugs = df['Drug id'].values
@@ -591,6 +605,7 @@ class ANOVAReport(Savefig):
             pb.animate(i+1)
 
     def create_html_features(self):
+        """Create an HTML page for each significant feature"""
         df = self.get_significant_set()
         groups = df.groupby('FEATURE')
         print("\nCreating individual HTML pages for each feature")
@@ -613,6 +628,7 @@ class ANOVAReport(Savefig):
             pb.animate(i+1)
 
     def create_html_drugs(self):
+        """Create an HTML page for each significant drug"""
         # group by driugs
         df = self.get_significant_set()
         groups = df.groupby('Drug id')
@@ -639,7 +655,8 @@ class ANOVAReport(Savefig):
             html.report(browse=False)
             pb.animate(i+1)
 
-    def create_html_main(self):
+     def create_html_main(self):
+        """Create HTML main document (summary)"""
         print("Creating main HTML page in directory %s" %
                 (self.settings.directory))
         buffer = self.settings.savefig
@@ -651,11 +668,13 @@ class ANOVAReport(Savefig):
         self.settings.savefig = buffer
 
     def create_html_manova(self):
+        """Create summary table with all significant hits"""
         df = self.get_significant_set()
         html = HTMLManova(df, directory=self.settings.directory)
         html.report(browse=False)
 
     def create_html_pages(self):
+        """Create all HTML pages"""
         self._set_sensible_df()
         self.create_html_main()
         self.create_html_drugs()
