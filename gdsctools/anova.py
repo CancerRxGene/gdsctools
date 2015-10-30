@@ -519,6 +519,7 @@ class ANOVAReport(Savefig):
             html.feature = features[i]
             html._filename = str(assocs[i]) + '.html'
             html.fdr = fdrs[i]
+            html.assoc_id = assocs[i]
             html._init_report() # since we have one shared instance
             html.report(onweb=False)
             pb.animate(i+1)
@@ -1623,11 +1624,11 @@ class HTMLManova(Report):
 
 class OneDrugOneFeature(Report):
     def __init__(self, ic50, features=None, drug=None, feature=None,
-            directory='gdsc', fdr='?'):
+            directory='gdsc', fdr='?', assoc_id='?'):
         # FIXME here we lose the setttings since we create a new instance
         self.factory = ANOVA(ic50, features=features)
         self.factory.settings.directory = directory
-
+        self.assoc_id = assoc_id
 
         self.drug = drug
         self.feature = feature
@@ -1646,7 +1647,7 @@ class OneDrugOneFeature(Report):
                 directory=self.directory)
         #pylab.ion()
         # FIXME assoc id
-        df.insert(0, 'assoc_id', 'a1')
+        df.insert(0, 'assoc_id', self.assoc_id)
         df['ANOVA FEATURE FDR %'] = self.fdr
         return df
 
