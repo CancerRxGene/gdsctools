@@ -57,6 +57,13 @@ def anova_pipeline(args=None):
     else:
         options = user_options.parse_args(args[1:])
 
+    if options.summary is True:
+        from gdsctools import anova
+        an = anova.ANOVA(options.ic50, options.features)
+        print(an)
+        return
+
+
     try:
         if options.drug is not None and options.feature is not None:
             anova_one_drug_one_feature(options)
@@ -64,6 +71,10 @@ def anova_pipeline(args=None):
             anova_one_drug(options)
         else: # analyse everything
             anova_all(options)
+        if options.onweb is False:
+            msg = "\nNote that a directory {} was created and files saved into it"
+            print(purple(msg.format(options.directory)))
+
     except Exception as err:
         msg = """An error was caught while using gdsctools_anova.
 This may be due to your input or a mis-spelled parameter (e.g. unknown feature),
@@ -99,6 +110,7 @@ def anova_one_drug(options):
     df.insert(0, 'assoc_id', range(1, N+1))
 
 
+
     r = anova.ANOVAReport(an, results=df)
     print(darkgreen("\nCreating all figure and html documents in %s" %
             r.settings.directory))
@@ -124,8 +136,9 @@ def anova_one_drug_one_feature(options):
     an = anova.OneDrugOneFeature(options.ic50,
             features=options.features,
             drug=options.drug,
-            feature=options.feature)
-    an.factory.settings.directory = options.directory
+            feature=options.feature,
+            directory=options.directory)
+    #an.factory.settings.directory = options.directory
     an.factory.settings.includeMSI_factor = options.include_msi
     an.factory.set_cancer_type(options.tissue)
     an.factory.settings.check()
@@ -201,14 +214,14 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group = self.add_argument_group("General", 
                                         'General options (compulsary or not)')
 
-        group.add_argument("--ic50", dest='ic50',
+        group.add_argument("-I", "--ic50", dest='ic50',
                            default=None, type=str,
                            help="""A file in TSV format with IC50s.
                            First column should be the COSMIC identifiers
                            Following columns contain the IC50s for a set of
                            drugs. The header must
                            be COSMIC IDS, Drug_1_IC50, Drug_2_IC50, ... """)
-        group.add_argument("--features", dest='features',
+        group.add_argument("-F", "--features", dest='features',
                            default=None, type=str,
                            help="""A matrix of genomic features. First column
                            is made of COSMIC identifiers that should match
@@ -219,26 +232,29 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            recognised if the (1) ends in _mut for mutation, or
                            starts with loss or gain for the CNA cases.
                            """)
-        group.add_argument("--save-images", dest='savefig',
-                           action="store_true",
-                           help="verbose option.")
+        #group.add_argument("--save-images", dest='savefig',
+        #                   action="store_true",
+        #                   help="verbose option.")
         group.add_argument("--output-directory", default='html_gdsc_anova',
                            action="store_true", dest='directory',
                            help="""directory where to save images and HTML
                            files.""")
-        group.add_argument("--verbose", dest='verbose',
+        group.add_argument( "--verbose", dest='verbose',
                            action="store_true",
                            help="verbose option.")
         group.add_argument("--on-web", dest='onweb',
                            action="store_true",
                            help="TODO")
-        group.add_argument("--drug", dest="drug",
+        group.add_argument("--onweb", dest='onweb',
+                           action="store_true",
+                           help="same as -on-web")
+        group.add_argument("-d", "--drug", dest="drug",
                            help="""The name of a valid drug identifier to be
                            found in the header of the IC50 matrix""")
-        group.add_argument("--feature", dest="feature",
+        group.add_argument("-f", "--feature", dest="feature",
                            help="""The name of a valid feature to be found in
                           the Genomic Feature matrix""")
-        group.add_argument("--tissue", dest="tissue", type=str,
+        group.add_argument("-t", "--tissue", dest="tissue", type=str,
                            help="""The name of a specific cancer type
                           i.e., tissue to restrict the analysis
                           to """)

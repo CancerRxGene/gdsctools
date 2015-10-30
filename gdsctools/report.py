@@ -122,7 +122,6 @@ class HTMLTable(object):
 
         if len(data) == 0:
             return
-        print(data)
         if mode == 'clip':
             data = [min(x, threshold)/float(threshold) for x in data]
         elif mode == 'absmax':

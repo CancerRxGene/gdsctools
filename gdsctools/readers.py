@@ -320,12 +320,17 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def __str__(self):
         txt = 'Genomic features distribution\n'
-        Ntissue = len(self.df[self._col_tissue].unique())
+        tissues = list(self.df[self._col_tissue].unique())
+        Ntissue = len(tissues)
         txt += 'Number of unique tissues {0}\n'.format(Ntissue)
+        if Ntissue < 10:
+            txt += 'Here are the tissues:' + tissues + "\n"
+        else:
+            txt += 'Here are first 10 tissues:' + ", ".join(tissues[0:10]) + "\n"
 
         # -3 since we have also the MSI, tissue, sample columns
         Nfeatures = len(self.features)
-        txt += 'Number of unique features {0} with\n'.format(Nfeatures-3)
+        txt += '\nThere are {0} unique features distributed as\n'.format(Nfeatures-3)
 
         n_mutations = len([x for x in self.df.columns if x.endswith("_mut")])
         txt += "- Mutation: {}\n".format(n_mutations)

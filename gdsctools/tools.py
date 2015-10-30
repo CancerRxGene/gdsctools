@@ -84,7 +84,7 @@ class Logistic(object):
     def get_y(self, X=None, N=100):
         """Get the Y values given X and the 2 logistic function parameters"""
         if X is None:
-            X = self.getX()
+            X = self.get_x()
         else:
             X = np.array(X)
 

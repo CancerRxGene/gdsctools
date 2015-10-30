@@ -547,7 +547,7 @@ class ANOVAReport(Savefig):
             pb.animate(i+1)
 
     def create_html_drugs(self):
-        """Create an HTML page for each significant drug"""
+        """Create an HTML page for each drug that has at least one significant association"""
         # group by driugs
         df = self.get_significant_set()
         groups = df.groupby('Drug id')
@@ -1609,7 +1609,11 @@ class HTMLManova(Report):
 class OneDrugOneFeature(Report):
     def __init__(self, ic50, features=None, drug=None, feature=None,
             directory='gdsc', fdr='?'):
+        # FIXME here we lose the setttings since we create a new instance
         self.factory = ANOVA(ic50, features=features)
+        self.factory.settings.directory = directory
+
+
         self.drug = drug
         self.feature = feature
         self.fdr = fdr
@@ -1980,6 +1984,3 @@ class SignificantHits(object):
         html.df.columns = [x.replace("_", " ") for x in html.df.columns]
         return html.to_html(escape=escape, header=header, index=index,
                 justify='center')
-
-
-
