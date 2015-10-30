@@ -1,3 +1,20 @@
+# coding=utf-8
+# -*- python -*-
+#
+#  This file is part of GDSCTools software
+#
+#  Copyright (c) 2015 - Wellcome Trust Sanger Institute
+#  All rights reserved
+#
+#  File author(s): Thomas Cokelaer <cokelaer@gmail.com>
+#
+#  Distributed under the BSD 3-Clause License.
+#  See accompanying file LICENSE.txt distributed with this software
+#
+#  website: http://github.com/CancerRxGene/gdsctools
+#
+##############################################################################
+"""Volcano plot utilities"""
 import pandas as pd
 import pylab
 import numpy as np
@@ -46,14 +63,13 @@ class VolcanoANOVA(Savefig):
 
         # this is redundant coul reuse the input ??
         if settings is None:
-            from gdsctools.anova import ANOVASettings
+            from gdsctools.settings import ANOVASettings
             self.settings = ANOVASettings()
         else:
             self.settings = AttrDict(**settings)
         self.drugs = set(self.df['Drug id']) # set on values
         self.varname_pvalue = 'FEATURE_ANOVA_pval'
         self.varname_qvalue = 'ANOVA FEATURE FDR %'
-
 
         # intensive calls made once for all
         self.groups_by_drugs = self.df.groupby('Drug id').groups
@@ -383,5 +399,3 @@ class VolcanoANOVA(Savefig):
         self.current_fig = fig
         #fh = open('test.html', 'w'); mpld3.save_html(v.current_fig, fh);
         #fh.close()
-
-

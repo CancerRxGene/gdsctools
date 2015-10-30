@@ -1,3 +1,19 @@
+# -*- python -*-
+# -*- coding utf-8 -*-
+#
+#  This file is part of GDSCTools software
+#
+#  Copyright (c) 2015 - Wellcome Trust Sanger Institute
+#  All rights reserved
+#
+#  File author(s): Thomas Cokelaer <cokelaer@gmail.comWE HERE>
+#
+#  Distributed under the BSD 3-Clause License.
+#  See accompanying file LICENSE.txt distributed with this software
+#
+#  website: http://github.com/CancerRxGene/gdsctools
+#
+##############################################################################
 import numpy as np
 import pylab
 import os
@@ -13,7 +29,7 @@ class Savefig(object):
         self.directory = '.'
 
     def savefig(self, name, **kargs):
-        """Save a matploltib figure
+        """Save a matplotlib figure
 
         :param str filename: where to save the figure.
         :param **kargs: accepts all parameters known by pylab.savefig
@@ -57,14 +73,16 @@ class Logistic(object):
         self.Asym = Asym
         self._N = 10
 
-    def getX(self, N=100):
+    def get_x(self, N=100):
+        """Return a sensible linear space of X values """
 
         dX = abs(self.scale) 
         X = np.linspace(self.xmid - dX * self._N, 
                 self.xmid + dX * self._N, N)
         return  X
 
-    def getY(self, X=None, N=100):
+    def get_y(self, X=None, N=100):
+        """Get the Y values given X and the 2 logistic function parameters"""
         if X is None:
             X = self.getX()
         else:
@@ -74,10 +92,11 @@ class Logistic(object):
         return Y
 
     def plot(self, X=None, N=100, hold=False):
-        Y = self.getY(X=X, N=N)
+        """Plot the logistic function"""
+        Y = self.get_y(X=X, N=N)
         import pylab
         if X is None:
-            X = self.getX()
+            X = self.get_x()
         if hold is False:
             pylab.clf();
         pylab.plot(X, Y, 'o-')

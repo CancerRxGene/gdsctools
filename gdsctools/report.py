@@ -1,18 +1,20 @@
+# coding=utf-8
 # -*- python -*-
 #
-#  This file is part of GDSCtools software
+#  This file is part of GDSCTools software
 #
-#  Copyright (c) 2013-2014 - EBI-EMBL
+#  Copyright (c) 2015 - Wellcome Trust Sanger Institute
+#  All rights reserved
 #
-#  File author(s): Thomas Cokelaer <cokelaer@ebi.ac.uk>
+#  File author(s): Thomas Cokelaer <cokelaer@gmail.com>
 #
-#  Distributed under the GPLv3 License.
-#  See accompanying file LICENSE.txt or copy at
-#      http://www.gnu.org/licenses/gpl-3.0.html
+#  Distributed under the BSD 3-Clause License.
+#  See accompanying file LICENSE.txt distributed with this software
 #
-#  website: http://github.com/cellnopt/cellnopt
+#  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
+"""Base classes to create HTML reports easily"""
 import os
 import shutil
 
@@ -48,8 +50,6 @@ class HTMLTable(object):
         exactly what we wanted at the time gdsctools was developed.
 
     .. note:: Could be moved to biokit or easydev package.
-
-
 
     """
     def __init__(self, df, name, **kargs):
@@ -122,6 +122,7 @@ class HTMLTable(object):
 
         if len(data) == 0:
             return
+        print(data)
         if mode == 'clip':
             data = [min(x, threshold)/float(threshold) for x in data]
         elif mode == 'absmax':
@@ -130,7 +131,7 @@ class HTMLTable(object):
             M = max([m, M])
             data = (data / M + 1)/2.
         elif mode == 'max':
-            data = data/float(data.max())
+            data = data / float(data.max())
 
         # the expected RGB values for a given data point
         rgbcolors = [cmap(x)[0:3] for x in data]
