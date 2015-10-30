@@ -1,3 +1,19 @@
+# -*- python -*-
+# -*- coding utf-8 -*-
+
+#  This file is part of GDSCTools software
+#
+#  Copyright (c) 2015 - Wellcome Trust Sanger Institute
+#  All rights reserved
+#
+#  File author(s): Thomas Cokelaer <cokelaer@gmail.com>
+#
+#  Distributed under the BSD 3-Clause License.
+#  See accompanying file LICENSE.txt distributed with this software
+#
+#  website: http://github.com/CancerRxGene/gdsctools
+#
+##############################################################################
 """IO functionalities"""
 import pandas as pd
 import pylab
