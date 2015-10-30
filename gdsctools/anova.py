@@ -1211,12 +1211,12 @@ class ANOVA(Logging):
         self.ax.set_ylim(common_ylim)
         self.ax.set_yticks(common_ticks)
         self.ax.set_yticklabels([len(this) for this in data])
-        pylab.tight_layout()
+        #pylab.tight_layout()
         if savefig is True:
             filename = directory + os.sep
             filename += 'ODOF_{}_{}____{}'.format(mode,
                     odof.drug_name, odof.feature_name)
-            pylab.savefig(filename + '.png')
+            pylab.savefig(filename + '.png', bbox_inches='tight')
             #pylab.savefig(filename + '.svg')
 
     def _boxplot(self, data, savefig=False, directory='.', fignum=1):
@@ -1237,12 +1237,12 @@ class ANOVA(Logging):
         pylab.ylabel("{0} logIC50".format(drug_name),
                 fontsize=fontsize)
 
-        pylab.tight_layout()
+        #pylab.tight_layout()
         if savefig is True:
             filename = directory + os.sep
             filename += 'ODOF_all_{}____{}'.format(data.drug_name,
                     data.feature_name)
-            pylab.savefig(filename + '.png')
+            pylab.savefig(filename + '.png', bbox_inches='tight')
             #pylab.savefig(filename + '.svg')
 
     def _get_anova_summary(self, data_lm, Ntissue, output='dict'):

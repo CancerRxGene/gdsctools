@@ -98,7 +98,7 @@ class BoxSwarm(object):
 
         self.ylabel = ''
         self.xlabel = ''
-        self.fontsize = fontsize
+        self.fontsize = fontsize/2.
         self.colors = colors
         self.hold = hold
         self.title = title
