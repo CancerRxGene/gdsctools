@@ -132,15 +132,12 @@ def anova_all(options):
     an = anova.ANOVA(options.input_ic50, options.input_features)
 
     if options.drugs is not None:
-        an.ic50.drugIds = options.drugs
+        an.drugIds = options.drugs
         # need to reinit, which is done when set_cancer_type is called
         # here below
 
     if options.features:
-        an.features.features = options.features
-
-
-
+        an.feature_names = options.features
 
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi

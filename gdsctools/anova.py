@@ -807,13 +807,28 @@ class ANOVA(Logging):
         self._tissue_dummies['feature'] = [1] * N
         self._tissue_dummies.insert(0, 'Intercept', [1] * N)
 
+    def _get_cosmics(self):
+        return self.ic50.cosmicIds
+    def _set_cosmics(self, cosmics):
+        self.ic50.cosmicIds = cosmics
+        self.features.cosmicIds = cosmics
+        self._init()
+    cosmicIds = property(_get_cosmics, _set_cosmics,
+        doc="get/set the cosmic identifiers in the IC50 and feature matrices")
+
     def _get_drug_names(self):
         return self.ic50.drugIds
-    drugIds = property(_get_drug_names)
+    def _set_drug_names(self, drugs):
+        self.ic50.drugIds = drugs
+        self._init()
+    drugIds = property(_get_drug_names, _set_drug_names)
 
     def _get_feature_names(self):
         return self.features.features
-    feature_names = property(_get_feature_names)
+    def _set_features_names(self, features):
+        self.features.features = features
+        self._init()
+    feature_names = property(_get_feature_names, _set_features_names)
 
     def _get_analysis_mode(self):
         modes = []
