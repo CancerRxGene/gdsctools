@@ -1,14 +1,15 @@
 # -*- python -*-
+# -*- coding utf-8 -*-
+
+#  This file is part of GDSCTools software
 #
-#  This file is part of GDSCtools software
+#  Copyright (c) 2015 - Wellcome Trust Sanger Institute
+#  All rights reserved
 #
-#  Copyright (c) 2015 - Sanger
+#  File author(s): Thomas Cokelaer <cokelaer@gmail.comWE HERE>
 #
-#  File author(s): Thomas Cokelaer <cokelaer@gmail.com>
-#
-#  Distributed under the GPLv3 License.
-#  See accompanying file LICENSE.txt or copy at
-#      http://www.gnu.org/licenses/gpl-3.0.html
+#  Distributed under the BSD 3-Clause License.
+#  See accompanying file LICENSE.txt distributed with this software
 #
 #  website: http://github.com/CancerRxGene/gdsctools
 #
@@ -50,119 +51,10 @@ from gdsctools.report import Report, HTMLTable
 from gdsctools.tools import Savefig
 from colormap import cmap_builder
 from gdsctools.volcano import VolcanoANOVA
+from gdsctools.settings import ANOVASettings
 
 
-__all__ = ['ANOVASettings', 'ANOVA', 'ANOVAReport']
-
-
-class ANOVASettings(AttrDict):
-    """Class to store and manipulate settings of the analysis
-
-    This class behaves as a dictionary but values for a given
-    key (setting) can be accessed and changed easily like an 
-    attribute:
-
-    ::
-
-        >>> from gdsctools import ANOVASettings
-        >>> s = ANOVASettings()
-        >>> s.FDR_threshold
-        25 
-        >>> s.FDR_threshold = 20
-
-    When you change a value, you can check its validity by calling the 
-    :meth:`check`  method.
-
-    Finally, the method :meth:`to_html` creates an HTML text.
-
-    .. note:: **for developers** a key can be changed or accessed to as if
-       it was an attribute. This prevents some functionalities (such as copy()
-       or property) to be used effectively normaly hence the creation of the
-       :meth:`check` method to check validity of the values rather than
-       using properties.
-       
-    Here are the current values used:
-
-    ======================= ========= =================================
-    Name                    Default   Description
-    ======================= ========= =================================
-    includeMSI_factor       True      Include MSI in the regression
-    featFactorPopulationTh  3         Discard association where a 
-                                      genomic feature has less than 3
-                                      positives or 3 negatives values 
-                                      (e.g., 0, 1 or 2)
-    MSIfactorPopulationTh   2         Discard association where a MSI
-                                      count has less than 2 positives
-                                      or 2 negatives values (e.g., 0, 
-                                      or 1).
-    analysis_type           PANCAN    Type of analysis. PANCAN means 
-                                      use all data. Otherwise, you must
-                                      provide a valid tissue name to 
-                                      be found in the Genomic Feature
-                                      data set.
-    pval_correction_method  fdr       Type of p-values correction 
-                                      method used. Only 'fdr' 
-                                      implemented
-    equal_var_ttest         True      Assume equal variance in the 
-                                      t-test
-    minimum_nonna_ic50      6         Minimum number of IC50 required
-                                      to perform an analysis.
-    fontsize                20        Used in some plots for labels
-    FDR_threshold           25        FDR threshold used in volcano 
-                                      plot and significant hits
-    pvalue_threshold        np.inf    Used to select significant hits
-    directory               gdsc
-    savefig                 False     Save the figure in PNG format
-    effect_threshold        0         Used in the volcano plot
-    ======================= ========= =================================
-
-    """
-    def __init__(self, **kargs):
-        super(ANOVASettings, self).__init__(**kargs)
-
-        ## ANALYSIS ---------------------------------
-        # include MSI as a co-factor
-        self.includeMSI_factor = True
-        # number of positive samples required to perform the test
-        self.featFactorPopulationTh = 3
-        # How many MSI samples must be present to perform the test
-        self.MSIfactorPopulationTh = 2
-        self.analysis_type = 'PANCAN'
-        self.pval_correction_method = 'fdr'   # or qvalue
-        self.equal_var_ttest = True
-        self.minimum_nonna_ic50 = 6
-
-        # Visualisation and HTML related ---------------------
-        self.fontsize = 20
-        self.FDR_threshold = 25
-        self.pvalue_threshold = np.inf
-        self.directory = 'gdsc'
-        self.savefig = False
-        self.effect_threshold = 0 # use in volcano
-
-    def check(self):
-        """Checks the values of the parameters"""
-        inrange = easydev.check_range
-        inlist = easydev.check_param_in_list
-        # check validity of the settings
-        inlist(self.includeMSI_factor, [False, True], 'MSI')
-        inrange(self.featFactorPopulationTh, 0, np.inf)
-        inrange(self.MSIfactorPopulationTh, 0, np.inf)
-        inlist(self.pval_correction_method, ['fdr'],
-                'pvalue correction method')
-        inlist(self.equal_var_ttest, [True, False], 'equal_var_ttest')
-        inrange(self.minimum_nonna_ic50, 0, np.inf)
-        inrange(self.FDR_threshold, 0, 100)
-        inrange(self.pvalue_threshold, 0, np.inf)
-        inrange(self.effect_threshold, 0, np.inf)
-
-    def to_html(self):
-        """Convert the sets of parameters into a nice HTML table"""
-        settings = pd.DataFrame(self, index=[0]).transpose()
-        settings.reset_index(inplace=True)
-        settings.columns = ['name', 'value']
-        html = settings.to_html(header=True, index=False)
-        return html
+__all__ = [ 'ANOVA', 'ANOVAReport']
 
 
 class ColumnTypes(object):
@@ -606,7 +498,7 @@ class ANOVAReport(Savefig):
 
     def create_html_associations(self):
         """Create an HTML page for each significant association"""
-        print("\nCreating individual HTML pages for each association")
+        print("\n\nCreating individual HTML pages for each association")
         df = self.get_significant_set()
         drugs = df['Drug id'].values
         features = df['FEATURE'].values
@@ -635,7 +527,7 @@ class ANOVAReport(Savefig):
         """Create an HTML page for each significant feature"""
         df = self.get_significant_set()
         groups = df.groupby('FEATURE')
-        print("\nCreating individual HTML pages for each feature")
+        print("\n\nCreating individual HTML pages for each feature")
         N = len(groups.indices.keys())
         pb = Progress(N)
         for i, feature in enumerate(groups.indices.keys()):
@@ -659,7 +551,7 @@ class ANOVAReport(Savefig):
         # group by driugs
         df = self.get_significant_set()
         groups = df.groupby('Drug id')
-        print("\nCreating individual HTML pages for each drug")
+        print("\n\nCreating individual HTML pages for each drug")
         N = len(groups.indices.keys())
         pb = Progress(N)
         for i, drug in enumerate(groups.indices.keys()):
@@ -688,7 +580,7 @@ class ANOVAReport(Savefig):
 
     def create_html_main(self, onweb=False):
         """Create HTML main document (summary)"""
-        print("Creating main HTML page in directory %s" %
+        print("\n\nCreating main HTML page in directory %s" %
                 (self.settings.directory))
         buffer = self.settings.savefig
         self.settings.savefig = True
@@ -777,6 +669,7 @@ class ANOVA(Logging):
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
+        import scipy # placed here to speed up initialisation of gdsctools
         super(ANOVA, self).__init__(level=verbose)
         # Reads IC50
         self.logging.info('Reading data and building data structures')
@@ -801,9 +694,6 @@ class ANOVA(Logging):
         # settings
         self.settings = ANOVASettings()
 
-        # makes this dict keys accessible as attributes
-        self.settings = AttrDict(**self.settings)
-
         # is it used ?
         self.column_names = [
             'assoc_id', 'FEATURE', 'Drug id', 'Drug name',
@@ -827,18 +717,17 @@ class ANOVA(Logging):
         self._init()
 
     def _autoset_msi(self):
-        # if the number of positives factors is not large enough then
+        # if the number of positives(or negatives) factors is not large enough then
         # the MSI factor is not used
-        # FIXME TODO actually, we should check the inverse if negatives
-        # is not large enough
         self.msi_factor = self.features.df['MS-instability Factor Value']
         total = len(self.msi_factor)
         positives = self.msi_factor.sum()
         negatives = total - positives
-        # we must have at least 1 positive
-        # FIXME here we use a < (check that this is not <=)
-        # by default the MSI factor equals 2. Having only 1 pos seems
-        # not robust.
+
+        # we must have at least 2 positives or 2 negative
+        # This is therefore a < comparison here below. See in
+        # _get_one_drug_one_feature_data that we use >= which
+        # is consistent
         if positives <  self.settings.MSIfactorPopulationTh:
             self.settings.includeMSI_factor = False
         # and 1 negative
@@ -856,7 +745,7 @@ class ANOVA(Logging):
             # this is a PANCAN analysis
             self.settings.analysis_type = 'PANCAN'
 
-    def set_cancer_type(self, ctype):
+    def set_cancer_type(self, ctype=None):
         """Select only a set of tissues.
         
         Input IC50 may be PANCAN (several cancer tissues).
@@ -866,6 +755,8 @@ class ANOVA(Logging):
         column is zero for instance).
 
         """
+        if ctype is None:
+            return
         ctype = easydev.to_list(ctype)
         for this in ctype:
            assert this in self.features.tissues
@@ -896,6 +787,7 @@ class ANOVA(Logging):
         self.features_dict = {}
         self.msi_dict = {}
         self.tissue_dict = {}
+
         # FIXME not sure we need a copy here. could be a reference if not
         # changed.
         for drug_name in self.ic50.drugIds:
@@ -965,8 +857,9 @@ class ANOVA(Logging):
             diagnostic_only=False):
         """
 
-        return: empty dictionary if criteria not fulfilled, otherwise dictionary
-            of relevatn data
+        return: a dictionary with relevant information. There is also
+            a test to see if the data can be analysis or not. This is
+            stored ad a boolean value with key called *status*.
         """
         # dictionary  struture to hold results (can set values as attributes)
         dd = AttrDict()
@@ -1011,8 +904,6 @@ class ANOVA(Logging):
         dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
 
         # Some validity tests to run the analysis or not
-
-
         A = self.settings.includeMSI_factor and\
             dd.positive_feature >= self.settings.featFactorPopulationTh and\
             dd.negative_feature >= self.settings.featFactorPopulationTh and\
@@ -1180,8 +1071,11 @@ class ANOVA(Logging):
             # ?? if we remove skin instead of bladder, same results...
             # ?? if we remove 2 tissues, then we starts to have different
             # thinkgs???
-            df = df.drop('C(tissue)[T.Bladder]', axis=1)
-            Ntissue -= 1
+            try:
+                df = df.drop('C(tissue)[T.Bladder]', axis=1)
+                Ntissue -= 1
+            except:
+                pass
 
             self.data_lm = OLS(odof.Y, df.values).fit()
             
@@ -1441,7 +1335,8 @@ class ANOVA(Logging):
         features = features[features.columns[3:]]
         mask = features.sum(axis=0) >= 3
 
-        #TODO: MSI, tissues, name must always be kept
+        # TODO: MSI, tissues, name must always be kept
+        #
         selected_features = features[features.columns[mask]]
 
         # scan all features for a given drug
@@ -1499,6 +1394,8 @@ class ANOVA(Logging):
         pb = Progress(len(drug_names), 1)
         drug_names = list(drug_names)
         pylab.shuffle(drug_names)
+        if animate is True:
+            pb.animate(0)
         for i, drug_name in enumerate(drug_names):
             # TODO: try/except
             if drug_name in self.individual_anova.keys():
@@ -1538,6 +1435,8 @@ class ANOVA(Logging):
 
         .. seealso:: :meth:`anova_all`
         """
+        if len(df) == 0:
+            return
         fdr = self._compute_fdr(df)
         # insert FDR as last column.
         try:
@@ -1932,7 +1831,6 @@ class HTML_main(Report):
         v.settings.savefig = True
         v.settings.directory = self.directory
         v.volcano_plot_all()
-        print('Creating sections')
         # volcano plot
         html = """
 <h3></h3>
