@@ -1,3 +1,19 @@
+# coding=utf-8
+# -*- python -*-
+#
+#  This file is part of GDSCTools software
+#
+#  Copyright (c) 2015 - Wellcome Trust Sanger Institute
+#  All rights reserved
+#
+#  File author(s): Thomas Cokelaer <cokelaer@gmail.com>
+#
+#  Distributed under the BSD 3-Clause License.
+#  See accompanying file LICENSE.txt distributed with this software
+#
+#  website: http://github.com/CancerRxGene/gdsctools
+#
+##############################################################################
 import pylab
 import numpy as np
 
@@ -48,8 +64,11 @@ class BoxSwarm(object):
 
         :param data:
         :param names:
-        :param vert:
-        :param widths:
+        :param fontsize:
+        :param hold:
+        :param title:
+        :param lw: width of lines
+        :param colors: loop over the list of colors provided to fill boxplots
         :param **kargs:
 
 
