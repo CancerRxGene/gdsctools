@@ -92,8 +92,20 @@ class CosmicRows(object):
     """Parent class to IC50 and GenomicFeatures to handle cosmic identifiers"""
     def _get_cosmic(self):
         return list(self.df.index)
-    cosmicIds = property(_get_cosmic,
+    def _set_cosmic(self, cosmics):
+        for cosmic in cosmics:
+            if cosmic not in self.cosmicIds:
+                raise ValueError('Unknown cosmic identifier')
+        self.df = self.df.ix[cosmics]
+    cosmicIds = property(_get_cosmic, _set_cosmic,
             doc="return list of cosmic ids (could have duplicates)")
+
+    def drop_cosmic(self, cosmics):
+        """drop a drug or a list of cosmic ids"""
+        cosmics = easydev.to_list(cosmics)
+        tokeep = [x for x in self.cosmicIds if x not in cosmics]
+        self.cosmicIds = tokeep
+
 
 
 class IC50(Reader, CosmicRows):
@@ -145,6 +157,16 @@ class IC50(Reader, CosmicRows):
         Percentage of NA 0.206569746043
 
 
+    You can get the drug identifiers as follows::
+
+        r.drugIds
+
+    and set the drugs, which means other will be removed::
+
+        r.drugsIds = ['Drug_1_IC50', 'Drug_1000_IC50']
+
+
+
     """
     def __init__(self, filename='ANOVA_input.txt', sep="\t"):
         """.. rubric:: Constructor
@@ -168,7 +190,28 @@ class IC50(Reader, CosmicRows):
 
     def _get_drugs(self):
         return list(self.df.columns)
-    drugIds = property(_get_drugs, doc='list the drug identifier name')
+    def _set_drugs(self, drugs):
+        for drug in drugs:
+            if drug not in self.drugIds:
+                raise ValueError('Unknown drug name')
+        self.df = self.df[drugs]
+    drugIds = property(_get_drugs, _set_drugs,
+                       doc='list the drug identifier name or select sub set')
+
+    def drop_drugs(self, drugs):
+        """drop a drug or a list of drugs"""
+        drugs = easydev.to_list(drugs)
+        tokeep = [x for x in self.drugIds if x not in drugs]
+        self.drugIds = tokeep
+
+    def __contains__(self, item):
+        if item in self.drugIds:
+            return True
+        else:
+            return False
+
+    #ef __iter__(self):
+
 
     def plot_ic50_count(self):
         """Plots the fraction of valid/measured IC50 per drug
@@ -277,7 +320,15 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def _get_features(self):
         return list(self.df.columns)
-    features = property(_get_features, doc="return list of features")
+    def _set_features(self, features):
+        for feature in features:
+            if feature not in self.features:
+                raise ValueError('Unknown drug name')
+        features = [self._col_sample, self._col_tissue, self._col_msi] + features
+        self.df = self.df[features]
+
+    features = property(_get_features, _set_features,
+                        doc="return list of features")
 
     def _get_tissues(self):
         return list(self.df[self._col_tissue])
@@ -322,11 +373,15 @@ class GenomicFeatures(Reader, CosmicRows):
         txt = 'Genomic features distribution\n'
         tissues = list(self.df[self._col_tissue].unique())
         Ntissue = len(tissues)
-        txt += 'Number of unique tissues {0}\n'.format(Ntissue)
-        if Ntissue < 10:
-            txt += 'Here are the tissues:' + tissues + "\n"
+        txt += 'Number of unique tissues {0}'.format(Ntissue)
+        if Ntissue == 1:
+             txt += ' ({0})'.format(tissues[0])
+        elif Ntissue < 10:
+            txt += '\nHere are the tissues: '
+            txt += ",".join(tissues) + "\n"
         else:
-            txt += 'Here are first 10 tissues:' + ", ".join(tissues[0:10]) + "\n"
+            txt += '\nHere are first 10 tissues: '
+            txt += ", ".join(tissues[0:10]) + "\n"
 
         # -3 since we have also the MSI, tissue, sample columns
         Nfeatures = len(self.features)

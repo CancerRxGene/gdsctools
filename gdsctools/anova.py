@@ -1652,7 +1652,7 @@ class OneDrugOneFeature(Report):
         section = ""
         for prefix in ['ODOF_all', 'ODOF_msi', 'ODOF_tissue']:
             tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
-            section += '<img src="{0}">\n'.format(tag)
+            section += '<img alt="association {0}" src="{0}">\n'.format(tag)
         self.add_section(section, "Boxplots")
 
         if self.add_settings is True:
@@ -1704,7 +1704,7 @@ class HTMLOneFeature(Report):
         N = len(self.subdf)
 
         # Just a paragraph to give the drug name
-        self.add_pretoc("<p><br>Individual Feature analysis :</br> {0}</p>".format(self.feature))
+        self.add_pretoc("<p><br>Individual Feature analysis :<br> {0}</p>".format(self.feature))
 
         # Intro section
         section = summary % self.metadata
@@ -1717,7 +1717,7 @@ class HTMLOneFeature(Report):
         self.add_section(section, 'Individual association analysis')
 
         # image section
-        section = '<img src="volcano_{0}.png">\n'.format(self.feature)
+        section = '<img alt="volcano plot {0}" src="volcano_{0}.png">\n'.format(self.feature)
 
         self.add_section(section, "All-tests volcano plot")
 
@@ -1790,7 +1790,7 @@ class HTMLOneDrug(Report):
             pass
 
         # Just a paragraph to give the drug name
-        self.add_pretoc("<p><br>Drug id :</br> {0}</p>".format(self.drug))
+        self.add_pretoc("<p><br>Drug id :<br> {0}</p>".format(self.drug))
 
         # Intro section
         section = summary % self.metadata
@@ -1803,7 +1803,7 @@ class HTMLOneDrug(Report):
         self.add_section(section, 'Individual association analysis')
 
         # image section
-        section = '<img src="volcano_{0}.png">\n'.format(self.drug)
+        section = '<img alt="volcano plot" src="volcano_{0}.png">\n'.format(self.drug)
 
         self.add_section(section, "All-tests volcano plot")
 
@@ -1838,7 +1838,7 @@ class HTML_main(Report):
         # volcano plot
         html = """
 <h3></h3>
-<img src="volcano_all.png">
+<img alt="volcanot plot for all associations" src="volcano_all.png">
 
 <br>
 Possibly, a javascript version is available
@@ -1862,7 +1862,7 @@ Possibly, a javascript version is available
         df_features.to_csv(self.directory + os.sep + filename, sep='\t')
         html = """
 <h3>Features most frequently associated with a drug response</h3>
-<img src="feature_summary.png">
+<img alt="summary of significant features" src="feature_summary.png">
 <br>
 You can <a href="{}">download the significant-features table</a> in tsv format.
 """.format(filename)
@@ -1877,7 +1877,7 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         df_drugs.to_csv(self.directory + os.sep + filename, sep='\t')
         html = """
 <h3>Drug whose response is frequently associated with afeature</h3>
-<img src="drug_summary.png">
+<img alt="summary of significant drugs" src="drug_summary.png">
 <br>You can <a href="{}">download the significant-features table</a> in tsv format.
 """.format( filename)
 

@@ -59,10 +59,20 @@ def anova_pipeline(args=None):
 
     if options.summary is True:
         from gdsctools import anova
-        an = anova.ANOVA(options.ic50, options.features)
+        an = anova.ANOVA(options.input_ic50, options.input_features)
         print(an)
         return
 
+    # users may select a subset of drugs:
+    if options.drugs is not None and options.drug is not None:
+        print('Note that --include-drugs has not effect since you provided --drug')
+    if options.drugs: # clean it up
+        options.drugs = [x.strip(",") for x in options.drugs]
+        options.drugs = [x for x in options.drugs if len(x)]
+
+
+
+    # or a subset of features
 
     try:
         if options.drug is not None and options.feature is not None:
@@ -91,7 +101,7 @@ together with your command line and input file
 
 def anova_one_drug(options):
     from gdsctools import anova, readers
-    an = anova.ANOVA(options.ic50, options.features)
+    an = anova.ANOVA(options.input_ic50, options.input_features)
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi
     an.set_cancer_type(options.tissue)
@@ -119,7 +129,19 @@ def anova_one_drug(options):
 
 def anova_all(options):
     from gdsctools import anova, readers
-    an = anova.ANOVA(options.ic50, options.features)
+    an = anova.ANOVA(options.input_ic50, options.input_features)
+
+    if options.drugs is not None:
+        an.ic50.drugIds = options.drugs
+        # need to reinit, which is done when set_cancer_type is called
+        # here below
+
+    if options.features:
+        an.features.features = options.features
+
+
+
+
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi
     an.set_cancer_type(options.tissue)
@@ -133,8 +155,8 @@ def anova_all(options):
 
 def anova_one_drug_one_feature(options):
     from gdsctools import anova, readers
-    an = anova.OneDrugOneFeature(options.ic50,
-            features=options.features,
+    an = anova.OneDrugOneFeature(options.input_ic50,
+            features=options.input_features,
             drug=options.drug,
             feature=options.feature,
             directory=options.directory)
@@ -174,7 +196,7 @@ class ANOVAOptions(argparse.ArgumentParser):
    in a browser. This can be very long (5 minutes to several hours) depending
    on the size of the files:
 
-    gdsctools_anova --ic50 <filename>  --onweb
+    gdsctools_anova --input-ic50 <filename>  --onweb
 
 2. on the same data as above, analyse only one association for a given
    drug <drug> and a given genomic features <feature>. The drug name should
@@ -182,12 +204,12 @@ class ANOVAOptions(argparse.ArgumentParser):
    should match one of the header of the genomic feature file or if you use
    the default file, one of the feature in the default file (e.g., BRAF_mut)
 
-   gdsctools_anova --ic50 <filename> --drug <drug> --feature <feature>
+   gdsctools_anova --input-ic50 <filename> --drug <drug> --feature <feature>
        --onweb
 
 3. on the same data as above, analyse one drug across all features.
 
-    gdsctools_anova --ic50 <filename> --onweb --drug <drug>
+    gdsctools_anova --input-ic50 <filename> --onweb --drug <drug>
 
 to obtain more help about the parameters, please type
 
@@ -214,14 +236,14 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group = self.add_argument_group("General", 
                                         'General options (compulsary or not)')
 
-        group.add_argument("-I", "--ic50", dest='ic50',
-                           default=None, type=str,
+        group.add_argument("-I", "--input-ic50", dest='input_ic50',
+                           default=None, type=str, required=True,
                            help="""A file in TSV format with IC50s.
                            First column should be the COSMIC identifiers
                            Following columns contain the IC50s for a set of
                            drugs. The header must
                            be COSMIC IDS, Drug_1_IC50, Drug_2_IC50, ... """)
-        group.add_argument("-F", "--features", dest='features',
+        group.add_argument("-F", "--input-features", dest='input_features',
                            default=None, type=str,
                            help="""A matrix of genomic features. First column
                            is made of COSMIC identifiers that should match
@@ -232,11 +254,9 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            recognised if the (1) ends in _mut for mutation, or
                            starts with loss or gain for the CNA cases.
                            """)
-        #group.add_argument("--save-images", dest='savefig',
-        #                   action="store_true",
-        #                   help="verbose option.")
+
         group.add_argument("--output-directory", default='html_gdsc_anova',
-                           action="store_true", dest='directory',
+                           dest='directory',
                            help="""directory where to save images and HTML
                            files.""")
         group.add_argument( "--verbose", dest='verbose',
@@ -248,12 +268,16 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("--onweb", dest='onweb',
                            action="store_true",
                            help="same as -on-web")
+
+        # if one drug one feature only
         group.add_argument("-d", "--drug", dest="drug",
                            help="""The name of a valid drug identifier to be
                            found in the header of the IC50 matrix""")
         group.add_argument("-f", "--feature", dest="feature",
                            help="""The name of a valid feature to be found in
                           the Genomic Feature matrix""")
+
+        # selector tissue
         group.add_argument("-t", "--tissue", dest="tissue", type=str,
                            help="""The name of a specific cancer type
                           i.e., tissue to restrict the analysis
@@ -264,3 +288,17 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("--summary", dest="summary",
                             action="store_true",
                            help="Print summary about the data (e.g., tissue)")
+
+        group.add_argument('--include-drugs-in', dest='drugs',
+                           nargs="+", default=[],
+                           help="todo"
+                           )
+
+        group.add_argument('--include-features-in', dest='features',
+                           nargs="+", default=[],
+                           help="todo"
+                           )
+
+
+
+
