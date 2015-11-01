@@ -295,7 +295,6 @@ class GenomicFeatures(Reader, CosmicRows):
             filename = genomic_features
         super(GenomicFeatures, self).__init__(filename)
 
-
         # Remove columns related to Drug, which should be in the IC50 matrix
         self.df = self.df[[x for x in self.df.columns
             if x.startswith('Drug_') is False]]
@@ -505,5 +504,36 @@ class Extra(Reader):
         pylab.grid(True)
         pylab.xlabel('AUC')
         pylab.ylabel(r'\#')
+
+
+class DrugDecoder(Reader):
+    """Reads a "drug decode" file
+
+    The format should a a 3-column tabular-separated file.
+    ::
+
+        DRUG_ID     DRUG_NAME   PUTATIVE_TARGET
+        999         Erlotinib   EGFR
+        1039        SL 0101-1   RSK, AURKB, PIM3    
+
+
+    """
+    def __init__(self, filename, sep='\t'):
+        """.. rubric:: Constructor"""
+        super(DrugDecoder, self).__init__(filename)
+
+    def _reader(self, filename):
+        self.df = pd.read_csv(filename, sep=self._sep)
+        for name in ['DRUG_ID', 'DRUG_NAME', 'PUTATIVE_TARGET']:
+            if name not in self.df.columns:
+                msg = "%s column must be in the header of the"
+                raise ValueError(msg % name)
+        self.df.set_index('DRUG_ID', inplace=True)
+
+    def _get_drug_ids(self):
+        return list(self.df.index)
+    drugIds = property(_get_drug_ids, 
+            doc="return list of drug identifiers")
+
 
 
