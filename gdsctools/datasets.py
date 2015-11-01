@@ -18,7 +18,7 @@
 import easydev
 
 
-__all__ = ['dataset', 'ic50_test', 'genomic_features']
+__all__ = ['dataset', 'ic50_test', 'genomic_features', 'drug_test']
 
 
 class Data(object):
@@ -57,7 +57,7 @@ def dataset(dataname):
         ic50_test.filename
     
     """
-    valid = ['ic50_test', 'genomic_features']
+    valid = ['ic50_test', 'genomic_features', 'drug_test']
     easydev.check_param_in_list(dataname, valid)
 
     d = Data()
@@ -68,10 +68,18 @@ def dataset(dataname):
         d.filename = easydev.get_share_file('gdsctools', 
                 'data', 'genomic_features.tsv')
         d.descritption = 'Set of genomic features + tissue + sample name + msi'
+    elif dataname == 'drug_test':
+        d.filename = easydev.get_share_file('gdsctools', 
+                'data', 'DRUG_DECODE.txt')
+        d.descritption = "Mapping between drug identifiers, drug " +\
+                         "name and drug target"
     return d
 
-#: dataset with IC50s for 10 drugs
+#: dataset with IC50s for 10 drugs (for testing)
 ic50_test = dataset('ic50_test')
 
 #: dataset with genomic features for 1001 cell lines and 680 features
 genomic_features = dataset('genomic_features')
+
+#: dataset with drug name and targets (for testing)
+drug_test = dataset('drug_test')

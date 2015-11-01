@@ -1,9 +1,8 @@
 from gdsctools.anova import ANOVA
-from gdsctools.readers import IC50
 import pandas as pd
 from easydev import assert_list_almost_equal
 from . import tools
-
+from nose.tools import assert_almost_equal
 
 
 def test_anova_one_drug_one_feature():
@@ -56,6 +55,11 @@ def test_anova_all():
 
     an = ANOVA(tools.get_data(), features)
     df = an.anova_all()
+
+
+    assert_almost_equal( df['ANOVA FEATURE FDR %'].sum(), 
+            10312.23061065521, 6)
+
 
 def test_anova_summary():
     an = ANOVA(tools.get_data())

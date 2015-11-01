@@ -1,6 +1,6 @@
-from gdsctools.readers import GenomicFeatures, IC50, PANCAN
+from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecoder
 from easydev import TempFile
-from gdsctools import ic50_test
+from gdsctools import ic50_test, drug_test
 import pandas as pd
 
 def test_read_ic50():
@@ -51,3 +51,8 @@ def test_read_gf():
 def _test_pancan_reader_rdata():
     r = PANCAN()
     len(r.df)
+
+
+def test_drugs():
+    r = DrugDecoder(drug_test)
+    r.drugIds

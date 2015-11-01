@@ -13,6 +13,6 @@ from gdsctools.readers import IC50, GenomicFeatures
 from gdsctools.anova import ANOVA, ANOVAReport 
 from gdsctools.settings import ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
-from gdsctools.datasets import ic50_test, genomic_features
+from gdsctools.datasets import *
 
 
