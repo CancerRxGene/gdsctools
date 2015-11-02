@@ -30,6 +30,8 @@ from statsmodels.stats.multitest import fdrcorrection
 from easydev import Progress, AttrDict, Logging
 import easydev
 from gdsctools import boxswarm, readers
+
+
 try:
     from cno.misc.profiler import do_profile
 except:
@@ -143,8 +145,10 @@ class ANOVAReport(Savefig):
         self.varname_pval = 'FEATURE_ANOVA_pval'
         self.varname_qval = 'ANOVA FEATURE FDR %'
 
-        self.ic50 = readers.IC50(gdsc.ic50)
-        self.input_features = readers.GenomicFeatures(gdsc.features).df
+        #self.ic50 = readers.IC50(gdsc.ic50)
+        #self.input_features = readers.GenomicFeatures(gdsc.features).df
+        self.gdsc = gdsc
+
 
         if concentrations:
             # input may not have the concentrations columns right now.
@@ -171,7 +175,7 @@ class ANOVAReport(Savefig):
 
     def _get_nfeatures(self):
         # !! -3 to remove sample name, tissue, msi columns
-        return len(self.input_features.columns) - 3
+        return len(self.gdsc.features.df.columns) - 3
     n_features = property(_get_nfeatures,
             doc="return number of features ignoring MSI, sample and tissue")
 
@@ -180,7 +184,7 @@ class ANOVAReport(Savefig):
     n_tests = property(_get_ntests)
 
     def _get_ncelllines(self):
-        return len(self.input_features.index)
+        return len(self.gdsc.features.df.index)
     n_celllines = property(_get_ncelllines,
             doc="return number of cell lines")
 
@@ -501,7 +505,7 @@ class ANOVAReport(Savefig):
         fdrs = df['ANOVA FEATURE FDR %'].values
         N = len(drugs)
         pb = Progress(N)
-        html = OneDrugOneFeature(self.ic50, self.input_features,
+        html = OneDrugOneFeature(self.gdsc,
                 drug='dummy', feature='dummy', fdr='dummy',
                 directory=self.settings.directory)
         html.settings = self.settings
@@ -532,7 +536,7 @@ class ANOVAReport(Savefig):
             #    continue
             subdf = groups.get_group(feature)
             metadata = {}
-            metadata['n_cell_lines'] = self.input_features[feature].sum()
+            metadata['n_cell_lines'] = self.gdsc.features.df[feature].sum()
             # get concentration range
             metadata['feature'] = feature
             html = HTMLOneFeature(self.df, subdf, metadata,
@@ -556,7 +560,7 @@ class ANOVAReport(Savefig):
             # get the indices and therefore subgroup
             subdf = groups.get_group(drug)
             metadata = {}
-            metadata['n_cell_lines'] = len(self.ic50.df[drug].dropna())
+            metadata['n_cell_lines'] = len(self.gdsc.ic50.df[drug].dropna())
 
             # get concentration range
             conc = subdf['log max.Conc.tested'].unique()[0]
@@ -633,7 +637,7 @@ class ANOVA(Logging):
         # This is to select a specific tissue
         an.set_cancer_type('breast')
         df = an.anova_one_drug_one_feature('Drug_1047_IC50',
-            'TP53_mut', show_boxplot=True)
+            'TP53_mut', show=True)
 
     :Details about the anova analysis: In the example above, we perform a
         regression/anova test based on OLS regression. This is done for
@@ -686,6 +690,22 @@ class ANOVA(Logging):
             self.features = readers.GenomicFeatures()
         else:
             self.features = readers.GenomicFeatures(features)
+
+        # We prune the genomic features by settings the cosmic ids of
+        # the features to be those of the cosmic ids of the IC50. See 
+        # readers module. This affectation, prune the features dataframe
+        # automatically. This fails if a cosmic identifier is not
+        # found in the features' cosmic ids, so let us catch the error
+        # before hand to give a
+        unknowns = set(self.ic50.cosmicIds).difference(
+                set(self.features.cosmicIds))
+        if len(unknowns) > 0:
+            self.warning(
+                "%s cosmic identifiers in your IC50 " % len(unknowns) + 
+                "could not be found in the genomic feature matrix. "+
+                "They have been dropped. Consider using a user-defined " +
+                "genomic features matrix")
+        self.features.cosmicIds  = self.ic50.cosmicIds
 
         # settings
         self.settings = ANOVASettings()
@@ -981,9 +1001,9 @@ class ANOVA(Logging):
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
 
-        csd = (dd.Npos -1.) * dd.pos_IC50_std**2 + \
-                (dd.Nneg - 1.)*dd.neg_IC50_std**2
-        csd /= dd.Npos + dd.Nneg -2.  # make sure this is float
+        csd = (dd.Npos - 1.) * dd.pos_IC50_std**2 + \
+                (dd.Nneg - 1.) * dd.neg_IC50_std**2
+        csd /= dd.Npos + dd.Nneg - 2.  # make sure this is float
         dd.effectsize_ic50 = md / np.sqrt(csd)
 
         # additional information
@@ -991,8 +1011,9 @@ class ANOVA(Logging):
         dd.drug_name = drug_name
         return dd
 
+    #@do_profile()
     def anova_one_drug_one_feature(self, drug_name,
-            feature_name, show_boxplot=False,
+            feature_name, show=False,
             production=False, savefig=False, directory='.'):
         """Compute ANOVA and various tests on one drug and one feature
 
@@ -1096,13 +1117,14 @@ class ANOVA(Logging):
             #df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
 
             self.data_lm = OLS(odof.Y, df.values).fit()
-            # SKLearn is also a possiblity
-            # works for msi+feature but not if we include tissues ?
-            # compared to R lm (not aov), we get the same
-            # self.dff = df
-            # ols = sklearn.linear_model.LinearRegression(fit_intercept=False)
-            # ols.fit(an.dff, an.Y).coef_
-            self.odof = odof
+            # SKLearn is also a possiblity but then we need to compute 
+            # anova summary, which I could not find easily (see draft()
+            # function#
+
+            #from sklearn import linear_model
+            #ols = linear_model.LinearRegression()
+            #f = ols.fit(df, odof.Y)
+
         elif self.settings.includeMSI_factor is True:
             #self._mydata = pd.DataFrame({'Y': odof.Y,
             #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
@@ -1136,7 +1158,7 @@ class ANOVA(Logging):
         self.tfit = scipy.stats.ttest_ind(odof.negatives, odof.positives,
                 equal_var=self.settings.equal_var_ttest)
 
-        # try/except maybe faster than if/else
+        # try/except faster than if/else
         try:
             tissue_PVAL = self.anova_pvalues['tissue']
         except:
@@ -1153,13 +1175,13 @@ class ANOVA(Logging):
             FEATURE_PVAL = None
 
         # some boxplot including all data
-        if show_boxplot:
+        if show:
             self._boxplot(odof, savefig=savefig, directory=directory,
                     fignum=1)
 
         # a boxplot to show cell lines effects. This requires
         # the settings.analyse_type to be PANCAN
-        if show_boxplot and self.settings.analysis_type == 'PANCAN':
+        if show and self.settings.analysis_type == 'PANCAN':
             self._boxplot_pancan(odof, directory=directory,
                     savefig=savefig, fignum=2, mode='tissue')
 
@@ -1209,7 +1231,7 @@ class ANOVA(Logging):
             return
 
         pylab.figure(fignum)
-        pylab.clf()
+        pylab.clf()  # or close ?
         data, names, significance = results
         bb = boxswarm.BoxSwarm(data, names)
         bb.xlabel = r'%s log(IC50)' % drug_name
@@ -1232,7 +1254,7 @@ class ANOVA(Logging):
             filename += 'ODOF_{}_{}____{}'.format(mode,
                     odof.drug_name, odof.feature_name)
             pylab.savefig(filename + '.png', bbox_inches='tight')
-            #pylab.savefig(filename + '.svg')
+            #pylab.savefig(filename + '.svg', bbox_inches='tight')
 
     def _boxplot(self, data, savefig=False, directory='.', fignum=1):
 
@@ -1325,6 +1347,15 @@ class ANOVA(Logging):
             return {'feature': F_pvalues[0]}
 
         #return anova
+
+    def _draft(self):
+        # using sklearn
+        #ols = linear_model.LinearRegression()
+        #f = ols.fit(an.dff, an.Y)
+        #sse = sum(np.square((f.predict(an.dff).T - an.Y))) / 
+        #           float(an.dff.shape[0] - an.dff.shape[1]) 
+        # ssr = sum(np.square((f.predict(an.dff).T - an.Y.mean())))
+        pass
 
     def test(self):
         # for drug1047 and featuer ABCB1_mut
@@ -1638,10 +1669,10 @@ class HTMLManova(Report):
 
 
 class OneDrugOneFeature(Report):
-    def __init__(self, ic50, features=None, drug=None, feature=None,
+    def __init__(self, factory,drug=None, feature=None,
             directory='gdsc', fdr='?', assoc_id='?'):
         # FIXME here we lose the setttings since we create a new instance
-        self.factory = ANOVA(ic50, features=features)
+        self.factory = factory
         self.factory.settings.directory = directory
         self.assoc_id = assoc_id
 
@@ -1656,11 +1687,9 @@ class OneDrugOneFeature(Report):
                 filename=filename)
 
     def run(self):
-        #pylab.ioff()
         df = self.factory.anova_one_drug_one_feature(self.drug,
-                self.feature, savefig=True, show_boxplot=True,
+                self.feature, savefig=True, show=True,
                 directory=self.directory)
-        #pylab.ion()
         # FIXME assoc id
         df.insert(0, 'assoc_id', self.assoc_id)
         df['ANOVA FEATURE FDR %'] = self.fdr
@@ -2001,7 +2030,6 @@ class SignificantHits(object):
         # Those columns should be links
         for this in ['FEATURE', 'Drug id', 'assoc_id']:
             html.add_href(this)
-
 
         for this in ['FEATURE_IC50_effect_size', 'FEATUREneg_Glass_delta',
                 'FEATUREpos_Glass_delta']:
