@@ -65,6 +65,13 @@ setup(
     zip_safe=False,
     packages = find_packages(),
 
+    include_package_data = True,
+
+    package_data = {
+        'share' : ['*.txt', '*.csv', '*tsv', 'README.rst'],
+        '' : ['README.rst'],
+        },
+
     # matplotlib 1.4.3 to use new functionalities in boxplot, which are used
     # in anova.py and boxswarm
     # easydev 0.9.1 required to play with multicore+keyboard interruption
