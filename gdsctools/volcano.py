@@ -67,12 +67,14 @@ class VolcanoANOVA(Savefig):
             self.settings = ANOVASettings()
         else:
             self.settings = AttrDict(**settings)
-        self.drugs = set(self.df['Drug id']) # set on values
+        self.colname_drugid = 'DRUG_ID'
+
+        self.drugs = set(self.df[self.colname_drugid]) # set on values
         self.varname_pvalue = 'FEATURE_ANOVA_pval'
-        self.varname_qvalue = 'ANOVA FEATURE FDR %'
+        self.varname_qvalue = 'ANOVA_FEATURE_FDR_%'
 
         # intensive calls made once for all
-        self.groups_by_drugs = self.df.groupby('Drug id').groups
+        self.groups_by_drugs = self.df.groupby(self.colname_drugid).groups
         self.groups_by_features = self.df.groupby('FEATURE').groups
 
     def selector(self, df, Nbest=1000, Nrandom=1000, inplace=False):
@@ -104,7 +106,7 @@ class VolcanoANOVA(Savefig):
 
         :param df: output of :meth:`anova_all`
         """
-        drugs = list(self.df['Drug id'].unique())
+        drugs = list(self.df[self.colname_drugid].unique())
         pb = Progress(len(drugs), 1)
         pylab.ioff()
         for i, drug in enumerate(drugs):
@@ -194,18 +196,18 @@ class VolcanoANOVA(Savefig):
         # using data related to the given drug
 
         # groups created in the constructor once for all
-        if mode == 'Drug id':
+        if mode == 'DRUG_ID':
             subdf = self.df.ix[self.groups_by_drugs[target]]
             texts = subdf['FEATURE']
         elif mode == 'FEATURE':
             subdf = self.df.ix[self.groups_by_features[target]]
-            texts = subdf['Drug id']
+            texts = subdf['DRUG_ID']
         elif mode == 'ALL':
             # nothing to do, get all data
             subdf = self.df
             texts = subdf['FEATURE'] # TODO + drug
         else:
-            raise ValueError("mode parameter must be in [FEATURE, Drug id, ALL]")
+            raise ValueError("mode parameter must be in [FEATURE, DRUG_ID, ALL]")
 
         # replaced by groups created in the constructor
         #subdf = self.df[self.df[mode] == target]
@@ -223,7 +225,7 @@ class VolcanoANOVA(Savefig):
         data['pvalue'] = pvals
         data['signed_effect'] = signed_effects
         data['feature'] = list(subdf['FEATURE'])
-        data['drug'] = list(subdf['Drug id'])
+        data['drug'] = list(subdf['DRUG_ID'])
         data['text'] = texts.values
         annotations = []
 
@@ -276,7 +278,7 @@ class VolcanoANOVA(Savefig):
         assert drug_id in self.drugs, 'unknown drug name'
         # needs to run :meth:`anova_all` first
         # using all data, get the FDR limits
-        data = self._get_volcano_sub_data('Drug id', drug_id)
+        data = self._get_volcano_sub_data(self.colname_drugid, drug_id)
         self.volcano_plot(data, title=drug_id)
 
     def volcano_plot(self, data, title=''):
