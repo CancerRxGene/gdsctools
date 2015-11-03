@@ -118,8 +118,12 @@ class ANOVASettings(AttrDict):
         inlist(self.includeMSI_factor, [False, True], 'MSI')
         inrange(self.featFactorPopulationTh, 0, np.inf)
         inrange(self.MSIfactorPopulationTh, 0, np.inf)
-        inlist(self.pval_correction_method, ['fdr'],
-                'pvalue correction method')
+
+        # all those methods are from statsmodels.stats.multitest.multipletests
+        inlist(self.pval_correction_method, ['bonferroni', 'sidak',
+            'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh', 
+            'fdr_tsbj', 'fdr_tskby', 'fdr'],
+            'pvalue correction method')
         inlist(self.equal_var_ttest, [True, False], 'equal_var_ttest')
         inrange(self.minimum_nonna_ic50, 0, np.inf)
         inrange(self.FDR_threshold, 0, 100)
@@ -140,3 +144,10 @@ class ANOVASettings(AttrDict):
         settings.columns = ['name', 'value']
         html = settings.to_html(header=True, index=False)
         return html
+
+    def __str__(self):
+        txt = ''
+        for k,v in self.items():
+            txt += '- %s: %s\n' % (k,v)
+        return txt
+
