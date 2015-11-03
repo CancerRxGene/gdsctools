@@ -13,5 +13,12 @@ def test_html():
 
     r = ANOVAReport(gdsc=an, results=df)
     # long but should cover everthinh.
-    r.create_html_pages()
+    try:
+        r.create_html_pages()
+    except Exception as err:
+        raise err
+    finally:
+        import shutil
+        shutil.rmtree('html_gdsc_anova')
+
 
