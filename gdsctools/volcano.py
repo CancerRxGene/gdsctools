@@ -224,9 +224,10 @@ class VolcanoANOVA(Savefig):
         data = pd.DataFrame(index=range(len(qvals)))
         data['pvalue'] = pvals
         data['signed_effect'] = signed_effects
-        data['feature'] = list(subdf['FEATURE'])
-        data['drug'] = list(subdf['DRUG_ID'])
+        data['Feature'] = list(subdf['FEATURE'])
+        data['Drug'] = list(subdf['DRUG_ID'])
         data['text'] = texts.values
+        data['FDR'] = subdf['ANOVA_FEATURE_FDR_%']
         annotations = []
 
         # just an alias
@@ -386,7 +387,7 @@ class VolcanoANOVA(Savefig):
         # TODO: for the first 1 to 2000 entries ?
         import mpld3
         labels = []
-        for i, row in data[['drug','feature']].iterrows():
+        for i, row in data[['Drug','Feature', 'FDR']].iterrows():
             label = row.to_frame()
             label.columns = ['Row {0}'.format(i)]
             # .to_html() is unicode; so make leading 'u' go away with str()

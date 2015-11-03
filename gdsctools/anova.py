@@ -225,7 +225,7 @@ class ANOVAReport(Savefig):
 
         msg = "Total number of tested drugs"
         df = self._df_append(df, [msg, self.n_drugs])
-        msg = "Total number of genomic features"
+        msg = "Total number of genomic features used"
         df = self._df_append(df, [msg, self.n_features])
 
         msg = "Total number of screened cell lines"
@@ -257,10 +257,9 @@ class ANOVAReport(Savefig):
         f1, f2 = self._get_fdr_range()
         f1 = easydev.precision(f1, 3)
         f2 = easydev.precision(f2, 3)
-        msg = "range of significant % FDRs"
+        msg = "Range of significant % FDRs"
         value = '[{} {}]'.format(f1,f2)
         df = self._df_append(df, [msg, value])
-        #return "\n".join(txt)
         return df
 
     def _get_pval_range(self):
@@ -269,7 +268,7 @@ class ANOVAReport(Savefig):
         nres = len(self.resistant_df)
         N = nsens + nres
         if N == 0:
-            return 0,0
+            return 0, 0
         name = self.varname_pval
         data = self.df[name].ix[0:N-1]
         m, M = data.min(), data.max()
@@ -280,7 +279,7 @@ class ANOVAReport(Savefig):
         name = self.varname_qval
         data = self.df[name][(self.df[name]< self.settings.FDR_threshold)]
         if len(data) == 0:
-            return 0,0
+            return 0, 0
         m, M = data.min(), data.max()
         return m,M
 
@@ -486,23 +485,9 @@ class ANOVAReport(Savefig):
         # original is 'aquamarine4','cyan2','cornflowerblue    ','aquamarine'),
         return df
 
-    def family_based_drug_summary(self):
-        raise NotImplementedError
-
     def __str__(self):
         self.df.info()
         return ""
-
-    def check(self):
-        """for developers (check local file agreement). will be removed."""
-        rold = ANOVAReport("anova_all.tsv",
-                concentrations='concentrations.tsv')
-        rold.df = rold.df[self.df.columns]
-        for x in self.df.columns:
-            try:
-                print(x, max(self.df[x] - rold.df[x]))
-            except:
-                print(x, all(self.df[x] == rold.df[x]))
 
     def create_html_associations(self):
         """Create an HTML page for each significant association"""
@@ -1555,7 +1540,7 @@ class HTMLManova(Report):
 
 
 class OneDrugOneFeature(Report):
-    def __init__(self, factory,drug=None, feature=None,
+    def __init__(self, factory, drug=None, feature=None,
             directory='gdsc', fdr='?', assoc_id='?'):
         # FIXME here we lose the setttings since we create a new instance
         self.factory = factory
@@ -1577,7 +1562,7 @@ class OneDrugOneFeature(Report):
                 self.feature, savefig=True, show=True,
                 directory=self.directory)
         # FIXME assoc id
-        df.insert(0, 'assoc_ID', self.assoc_id)
+        df['assoc_ID'] = self.assoc_id
         df['ANOVA_FEATURE_FDR_%'] = self.fdr
         return df
 
@@ -1768,7 +1753,7 @@ class HTML_main(Report):
         table = HTMLTable(diag, 'summary')
         txt = ''
         for index, row in diag.iterrows():
-            txt += row.text + ": " +  str(row.value) + "<br/>"
+            txt += row.text + "---- " +  str(row.value) + "<br/>"
         self.add_section(txt, 'Summary')
 
         print('Create summary plots')

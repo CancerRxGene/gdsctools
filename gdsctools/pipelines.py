@@ -100,7 +100,7 @@ together with your command line and input file
 
 
 def anova_one_drug(options):
-    from gdsctools import anova, readers
+    from gdsctools import anova
     an = anova.ANOVA(options.input_ic50, options.input_features)
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi
@@ -114,10 +114,10 @@ def anova_one_drug(options):
         print(red("\nNo valid associations tested. Please try another drug"))
         return
 
-    df = an.add_fdr_column(df)
+    df = an.add_corrected_pvalues(df)
 
     N = len(df)
-    df.insert(0, 'assoc_id', range(1, N+1))
+    df.insert(0, 'assoc_ID', range(1, N+1))
 
 
 
@@ -128,7 +128,7 @@ def anova_one_drug(options):
 
 
 def anova_all(options):
-    from gdsctools import anova, readers
+    from gdsctools import anova 
     an = anova.ANOVA(options.input_ic50, options.input_features)
 
     if options.drugs is not None:
@@ -151,21 +151,22 @@ def anova_all(options):
 
 
 def anova_one_drug_one_feature(options):
-    from gdsctools import anova, readers
-    an = anova.OneDrugOneFeature(options.input_ic50,
-            features=options.input_features,
+    from gdsctools import anova
+    gdsc = anova.ANOVA(options.input_ic50, options.input_features)
+
+    odof = anova.OneDrugOneFeature(gdsc,
             drug=options.drug,
             feature=options.feature,
             directory=options.directory)
     #an.factory.settings.directory = options.directory
-    an.factory.settings.includeMSI_factor = options.include_msi
-    an.factory.set_cancer_type(options.tissue)
-    an.factory.settings.check()
+    odof.factory.settings.includeMSI_factor = options.include_msi
+    odof.factory.set_cancer_type(options.tissue)
+    odof.factory.settings.check()
 
     # for the HTML
-    an.add_dependencies = True
-    an.add_settings = True
-    df = an.run()
+    odof.add_dependencies = True
+    odof.add_settings = True
+    df = odof.run()
 
     if df.ix[1]['FEATURE_IC50_effect_size'] is None:
         msg = "association %s vs %s not valid for testing (not enough" +\
