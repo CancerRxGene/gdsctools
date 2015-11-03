@@ -13,11 +13,11 @@ def test_anova_one_drug_one_feature():
     drug_id = 'Drug_999_IC50'
     df = an.anova_one_drug_one_feature(
         drug_name=drug_id,
-        feature_name='ABCB1_mut', show_boxplot=True)
+        feature_name='ABCB1_mut', show=True)
 
-    control = {'Drug id': {1: drug_id},
-        'Drug name': {1: drug_id},
-        'Drug Target': {1: drug_id},
+    control = {'DRUG_ID': {1: drug_id},
+        'DRUG_NAME': {1: drug_id},
+        'DRUG_TARGET': {1: drug_id},
         'FEATURE': {1: 'ABCB1_mut'},
         'FEATURE_ANOVA_pval': {1: 0.86842684367357359},
         'FEATURE_IC50_T_pval': {1: 0.48586107208790896},
@@ -32,7 +32,7 @@ def test_anova_one_drug_one_feature():
         'MSI_ANOVA_pval': {1: 0.14598946672374763},
         'N_FEATURE_neg': {1: 370},
         'N_FEATURE_pos': {1: 5},
-        'Tissue_ANOVA_pval': {1: 3.2808255732569986e-06},
+        'TISSUE_ANOVA_pval': {1: 3.2808255732569986e-06},
         'log max.Conc.tested': {1: None},
         'log max.Conc.tested2': {1: None}}
     control = pd.DataFrame(control)
@@ -57,7 +57,7 @@ def test_anova_all():
     df = an.anova_all()
 
 
-    assert_almost_equal( df['ANOVA FEATURE FDR %'].sum(), 
+    assert_almost_equal( df['ANOVA_FEATURE_FDR_%'].sum(), 
             10312.23061065521, 6)
 
 
@@ -90,14 +90,6 @@ def test_anova_summary():
 
 
 
-def test_get_boxplot_data():
-    an = ANOVA(tools.get_data())
-    odof = an._get_one_drug_one_feature_data('Drug_1047_IC50','TP53_mut')
-    data = an._get_boxplot_data(odof, mode='msi')
-    assert data[1] == ['***MSI-stable neg', '***MSI-stable pos',
-                  '**MSI-unstable neg',  '**MSI-unstable pos']
-    expected = [2.0108071495663922e-47, 0.0012564798887037905]
-    assert_list_almost_equal([data[2][0], data[2][1]], expected)  
 
 
 
