@@ -21,7 +21,8 @@ import numpy as np
 import easydev
 
 
-__all__ = ['IC50', 'GenomicFeatures', 'CosmicRows', 'Reader']
+__all__ = ['IC50', 'GenomicFeatures', 'CosmicRows', 'Reader', 
+    'DrugDecoder']
 
 
 class Reader(object):
@@ -522,9 +523,11 @@ class DrugDecoder(Reader):
         """.. rubric:: Constructor"""
         super(DrugDecoder, self).__init__(filename)
 
-    def _reader(self, filename):
+    def _reader(self, filename=None):
+        header = ['DRUG_ID', 'DRUG_NAME', 'PUTATIVE_TARGET']
+
         self.df = pd.read_csv(filename, sep=self._sep)
-        for name in ['DRUG_ID', 'DRUG_NAME', 'PUTATIVE_TARGET']:
+        for name in header:
             if name not in self.df.columns:
                 msg = "%s column must be in the header of the"
                 raise ValueError(msg % name)
@@ -535,5 +538,15 @@ class DrugDecoder(Reader):
     drugIds = property(_get_drug_ids, 
             doc="return list of drug identifiers")
 
-
-
+    def check(self):
+        for x in self.drugIds:
+            try:
+                x += 1
+            except TypeError as err:
+                print("drug identifiers must be numeric values")
+                raise err
+        # it may happen that a drug has no target in the database ! so we
+        # cannot check that for the moment:
+        #if  self.df.isnull().sum().sum()>0:
+        #   print(d.df.isnull().sum())
+        #    raise ValueError("all values must be non-na. check tabulation")
