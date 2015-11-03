@@ -710,7 +710,8 @@ class ANOVA(Logging):
         self.settings = ANOVASettings()
 
         # alias to all column names to store results (unordered)
-        self.column_names = ANOVAResults().mapping.keys()
+        # cast to list because of  python3 error.
+        self.column_names = list(ANOVAResults().mapping.keys())
 
         # skip assoc_id for now
         self._odof_dict = dict([(name, None)
