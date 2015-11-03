@@ -58,7 +58,7 @@ setup(
     description = metainfo['description'],
     license          = metainfo['license'],
     platforms        = metainfo['platforms'],
-    url              = metainfo['url'],      
+    url              = metainfo['url'],
     download_url     = metainfo['download_url'],
     classifiers      = metainfo['classifiers'],
 
@@ -77,7 +77,7 @@ setup(
     # easydev 0.9.1 required to play with multicore+keyboard interruption
 
     # jinja2 and mpl3d are for the volcano plots.
-    install_requires = ['numpy', 'matplotlib>=1.4.3', 
+    install_requires = ['numpy', 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.3', 'scipy', "colormap>=0.9.6",
         "beautifulsoup4", 'mpld3', 'jinja2'],
 

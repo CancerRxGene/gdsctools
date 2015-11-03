@@ -163,7 +163,7 @@ class BoxPlots(Logging):
                 # HERE in the original code, equal_var is False. why ?
                 res = scipy.stats.ttest_ind(neg, pos, equal_var=False)
 
-                print res[1], self.odof.ttest
+                #print res[1], self.odof.ttest
                 # this should be computed outside ??
                 significance[category] = res[1] # p-values
                 data.append(neg.values)
