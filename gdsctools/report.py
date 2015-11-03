@@ -233,7 +233,7 @@ class Report(object):
 
     def show(self):
         """Opens a tab in a browser to see the document"""
-        from browse import browse as bs
+        from easydev.browser import browse as bs
         bs(self.abspath)
 
     def close_body(self):

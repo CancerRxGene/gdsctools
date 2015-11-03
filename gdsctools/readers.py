@@ -107,6 +107,10 @@ class CosmicRows(object):
         tokeep = [x for x in self.cosmicIds if x not in cosmics]
         self.cosmicIds = tokeep
 
+    def browse(self, cosmic):
+        from easydev.browser import browse as bs
+        url = 'http://cancer.sanger.ac.uk/cell_lines/sample/overview'
+        bs(url + '?id={0}'.format(cosmic))
 
 
 class IC50(Reader, CosmicRows):

@@ -78,8 +78,8 @@ setup(
 
     # jinja2 and mpl3d are for the volcano plots.
     install_requires = ['numpy', 'matplotlib>=1.4.3', 
-        'pandas>=0.16.2', 'easydev>=0.9.2', 'scipy', "colormap>=0.9.6",
-        "beautifulsoup4", 'mpld3', 'jinja2', 'browse'],
+        'pandas>=0.16.2', 'easydev>=0.9.3', 'scipy', "colormap>=0.9.6",
+        "beautifulsoup4", 'mpld3', 'jinja2'],
 
     entry_points = {
         'console_scripts': [
