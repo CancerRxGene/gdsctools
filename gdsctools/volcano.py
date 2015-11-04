@@ -299,8 +299,8 @@ class VolcanoANOVA(Savefig):
         # Takes about 0.36 s per call and half the time
         # is spent in the scatter() call
 
+        pylab.close(1)
         fig = pylab.figure(num=1)
-        fig.clf()
         ax = pylab.axes(axisbg='#EEEEEE')
         ax = fig.gca()
         X = [easydev.precision(x, digit=2) for x in signed_effects]
@@ -393,7 +393,14 @@ class VolcanoANOVA(Savefig):
             # .to_html() is unicode; so make leading 'u' go away with str()
             labels.append(str(label.to_html(header=False)))
 
-        tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels)
+        css = """
+        table{  font-size:0.8em;  }
+        th {  color: #ffffff;  background-color: #aaaaaa;  }
+        td { color: blue; background-color: #cccccc; }
+        """
+
+        tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
+                css=css)
         mpld3.plugins.connect(fig, tooltip)
 
         #mpld3.display()

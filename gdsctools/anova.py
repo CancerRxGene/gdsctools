@@ -1752,12 +1752,13 @@ class HTML_main(Report):
         # A summary table
         diag = self.results.diagnostics()
         table = HTMLTable(diag, 'summary')
-        txt = ''
+        txt = '<div class="summary">'
         for index, row in diag.iterrows():
             if len(row.text) == 0 and len(row.value) == 0:
                 txt += '----<br/>'
             else:
                 txt += row.text + ": " +  str(row.value) + "<br/>"
+        txt += "</div>"
         self.add_section(txt, 'Summary')
 
         print('Create summary plots')
@@ -1856,6 +1857,8 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         table = HTMLTable(df, 'features')
         table.add_href('FEATURE')
+        table.add_bgcolor('hits', mode='max', 
+                cmap=cmap_builder('white', 'orange', 'red'))
         html = table.to_html(escape=False, header=True, index=False)
         self.add_section(html, 'Feature wise associations browse')
 

@@ -23,7 +23,7 @@ body {
 div.document {
     margin-top:     20px;
     margin-bottom:   3em;
-    margin-left:   250px;
+    margin-left:   10%;
 /*    margin-right:    5em;*/
     margin-right:    10%;
 }
@@ -156,6 +156,22 @@ span.eqno {
 
 /*
  * ┌──────────────────────────────────────────────────────────────────────────┐
+ * │                                                                  summary │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ */
+
+div.summary
+{
+
+font-size:0.8em;
+border: 1px solid;
+
+padding: 5px;
+left-margin:5px;
+}    
+
+/*
+ * ┌──────────────────────────────────────────────────────────────────────────┐
  * │                                                                    Table │
  * └──────────────────────────────────────────────────────────────────────────┘
  */
@@ -171,7 +187,7 @@ table.dataframe
 table.dataframe td
 {
     border: 1px solid black;
-    max-width:150px;
+    max-width:400px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis
