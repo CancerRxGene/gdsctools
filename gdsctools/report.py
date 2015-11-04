@@ -22,6 +22,9 @@ import easydev
 import pandas as pd
 import bs4
 
+# note that the sorttable javascript is from
+# `http://www.kryogenix.org/code/browser/sorttable/
+# with an X11 license
 
 __all__ = ['HTMLTable', 'Report']
 
@@ -52,7 +55,7 @@ class HTMLTable(object):
     .. note:: Could be moved to biokit or easydev package.
 
     """
-    def __init__(self, df, name, **kargs):
+    def __init__(self, df, name='undefined', **kargs):
         self.df = df.copy() # because we will change its contents possibly
         self.name = name
         self.pd_options = {
@@ -76,8 +79,11 @@ class HTMLTable(object):
             # set with user value
             pd.set_option(k, v)
 
+        # class sortable is to use the sorttable javascript
+        # note that the class has one t and the javascript library has 2
+        # as in the original version of sorttable.js 
         table = self.df.to_html(escape=escape, header=header, index=index,
-                                **kargs)
+                classes='dataframe sortable', **kargs)
 
         # get back to default options
         for k, v in _buffer.items():
@@ -146,12 +152,33 @@ class HTMLTable(object):
         self.df[colname] = [html_formatter.format(x,y)
                 for x,y in zip(hexcolors, data)]
 
-    def add_href(self, colname, urls=None):
-        if urls is not None:
-            raise NotImplementedError
+    def add_href(self, colname, url=None, newtab=False):
+        """
+
+        default behaviour: takes column content and put into::
+
+            <a href={content}.html>content</a>
+
+        This is used to link to local files. If url is provided, you typically
+        want to link to an external url where the content is an identifier::
+
+            <a href={content}.html>content</a>
+
+        """
+        if url is not None:
+            if newtab is False:
+                formatter = '<a  href="{0}{1}">{1}</a>'
+            else:
+                formatter = '<a target="_blank"  href="{0}{1}">{1}</a>'
+            self.df[colname] = self.df[colname].apply(lambda x: 
+                    formatter.format(url, x))
         else:
+            if newtab is False:
+                formatter = '<a href="{0}.html">{1}</a>'
+            else:
+                formatter = '<a target="_blank" href="{0}.html">{1}</a>'
             self.df[colname] = self.df[colname].apply(lambda x:
-              '<a href="{0}.html">{1}</a>'.format(x,x))
+                formatter.format(x,x))
 
 
 class Report(object):
@@ -260,11 +287,12 @@ class Report(object):
         except Exception:
             pass
         finally:
-            target = self.directory + os.sep + "gdsc.css"
-            if os.path.isfile(target) is False:
-                filename = easydev.get_share_file("gdsctools", "data",
-                    "gdsc.css")
-                shutil.copy(filename, self.directory)
+            for filename in ['gdsc.css', 'sorttable.js']:
+                target = self.directory + os.sep + filename
+                if os.path.isfile(target) is False:
+                    filename = easydev.get_share_file("gdsctools", "data",
+                        filename)
+                    shutil.copy(filename, self.directory)
 
     def get_header(self):
         """a possible common header ? """
@@ -277,6 +305,7 @@ class Report(object):
      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
      <title>GDSCtools report</title>
      <link rel="stylesheet" href="gdsc.css" type="text/css" />
+     <script src="sorttable.js"></script>
  </head>
 
  <body>
