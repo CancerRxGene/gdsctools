@@ -214,7 +214,7 @@ class ANOVAReport(Savefig):
         df = self._df_append(df, [msg, self.settings.analysis_type])
 
         msg = "Total number of possible drug/feature associations"
-        df = self._df_append(df, [msg, N])
+        df = self._df_append(df, [msg, int(N)])
         msg = "Total number of ANOVA tests performed"
         df = self._df_append(df, [msg, self.n_tests])
         msg = "Percentage of tests performed"
@@ -255,10 +255,10 @@ class ANOVAReport(Savefig):
         df = self._df_append(df, [msg, value])
 
         f1, f2 = self._get_fdr_range()
-        f1 = easydev.precision(f1, 3)
-        f2 = easydev.precision(f2, 3)
+        #f1 = easydev.precision(f1, 3)
+        #f2 = easydev.precision(f2, 3)
         msg = "Range of significant % FDRs"
-        value = '[{} {}]'.format(f1,f2)
+        value = '[{:.4} {:.4}]'.format(f1,f2)
         df = self._df_append(df, [msg, value])
         return df
 
@@ -663,7 +663,6 @@ class ANOVA(Logging):
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
-        import scipy # placed here to speed up initialisation of gdsctools
         super(ANOVA, self).__init__(level=verbose)
         # Reads IC50
         self.logging.info('Reading data and building data structures')
@@ -1002,6 +1001,7 @@ class ANOVA(Logging):
         # results. The ANOVA_results.txt obtained from SFTP
         # have different values meaning that the equal.var param
         # was set to False. Note that pvalue is stored at index 1
+        import scipy
         dd.ttest = scipy.stats.ttest_ind(dd.negatives, dd.positives,
                 equal_var=self.settings.equal_var_ttest)[1]
 
@@ -1754,7 +1754,10 @@ class HTML_main(Report):
         table = HTMLTable(diag, 'summary')
         txt = ''
         for index, row in diag.iterrows():
-            txt += row.text + "---- " +  str(row.value) + "<br/>"
+            if len(row.text) == 0 and len(row.value) == 0:
+                txt += '----<br/>'
+            else:
+                txt += row.text + ": " +  str(row.value) + "<br/>"
         self.add_section(txt, 'Summary')
 
         print('Create summary plots')
@@ -1819,24 +1822,13 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         # Create table with links to all drugs
         groups = self.results.df.groupby('DRUG_ID')
         try:
-            try:
-                df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort_values()
-            except:
-                df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort()
-            df = df.reset_index() # get back the Drug id in the dataframe columns
-            # add another set of drug_id but sorted in alpha numerical order
-            drugs = list(df['DRUG_ID'].values)
-            alphanum = lambda x: int(x.split("_")[1])
-            drugs.sort(key=alphanum)
-            df['DRUG_ID (alpha order)'] = drugs
-            table = HTMLTable(df, 'drugs')
-            table.add_href('DRUG ID')
-            table.add_href('DRUG_ID (alpha order)')
+            df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort_values()
         except:
-            # FIXME
-            table = HTMLTable(self.results.df, 'drugs')
-            table.add_href('DRUG_ID')
-        # rename one columns
+            df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort()
+        df = df.reset_index() # get back the Drug id in the dframe columns
+        # add another set of drug_id but sorted in alpha numerical order
+        table = HTMLTable(df, 'drugs')
+        table.add_href('DRUG_ID')
         table.df.columns = [x.replace('ANOVA_FEATURE_FDR',
             'mean ANOVA FEATURE FDR') for x in table.df.columns]
 
@@ -1866,6 +1858,18 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         table.add_href('FEATURE')
         html = table.to_html(escape=False, header=True, index=False)
         self.add_section(html, 'Feature wise associations browse')
+
+        # Section to provide info about cell lines. It may be large
+        # could be in a separated page ?
+        df = self.results.gdsc.features.df[['Sample Name', 
+            'Tissue Factor Value', 'MS-instability Factor Value']]
+        df = df.reset_index()
+        table = HTMLTable(df)
+        url ="http://cancer.sanger.ac.uk/cell_lines/sample/overview?id="
+        table.add_href('COSMIC ID', url=url, newtab=True)
+        html = table.to_html()
+        self.add_section(html, 'Cell line information')
+
 
         # Save the settings
         self.add_section(self.settings.to_html(), 'Settings')
