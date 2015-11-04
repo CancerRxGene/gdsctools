@@ -88,9 +88,36 @@ class Reader(object):
                     msg ='Found identical named columns (%s)' % this
                     raise ValueError(msg)
 
+class COSMIC(object):
+    """
+
+    ::
+    
+        >>> c = COSMIC(905940)
+        >>> c.on_web()
+
+
+    .. seealso:: http://www.cancerrxgene.org/translation/CellLine
+    """
+    def __init__(self, identifier):
+        self.identifier = identifier
+
+    def _get_url(self, cosmic_id=None):
+        if cosmic_id is None:
+            cosmic_id = self.identifier
+        url = 'http://cancer.sanger.ac.uk/cell_lines/sample/overview'
+        url = url + "?id={0}".format(cosmic_id)
+        return url
+
+    def on_web(self):
+        from easydev.browser import browse
+        url = self._get_url(self.identifier)
+        browser(url)
+
 
 class CosmicRows(object):
     """Parent class to IC50 and GenomicFeatures to handle cosmic identifiers"""
+
     def _get_cosmic(self):
         return list(self.df.index)
     def _set_cosmic(self, cosmics):
@@ -107,10 +134,6 @@ class CosmicRows(object):
         tokeep = [x for x in self.cosmicIds if x not in cosmics]
         self.cosmicIds = tokeep
 
-    def browse(self, cosmic):
-        from easydev.browser import browse as bs
-        url = 'http://cancer.sanger.ac.uk/cell_lines/sample/overview'
-        bs(url + '?id={0}'.format(cosmic))
 
 
 class IC50(Reader, CosmicRows):
