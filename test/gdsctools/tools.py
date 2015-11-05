@@ -1,13 +1,6 @@
-from gdsctools.readers import IC50
-import easydev
-
+from gdsctools import IC50, ic50_test
 
 def get_data(filename=None):
-    if filename is None:
-        filename = easydev.get_share_file('gdsctools', 'data', 
-                'IC50_10drugs.tsv')
-    import os
-    r = IC50(filename)
-    return r
+    return IC50(ic50_test.filename)
 
 

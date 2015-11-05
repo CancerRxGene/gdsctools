@@ -12,7 +12,7 @@ def test_anova_one_drug_one_feature():
     # test 1 drug
     drug_id = 'Drug_999_IC50'
     df = an.anova_one_drug_one_feature(
-        drug_name=drug_id,
+        drug_id=drug_id,
         feature_name='ABCB1_mut', show=True)
 
     control = {'DRUG_ID': {1: drug_id},
