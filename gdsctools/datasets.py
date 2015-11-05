@@ -23,8 +23,8 @@ __all__ = ['dataset', 'ic50_test', 'genomic_features', 'drug_test']
 
 class Data(object):
     """A class to hold information about a dataset
-    
-    
+
+
     Can be used as input to :class:`ANOVA` instance.
     """
     def __init__(self):
@@ -42,13 +42,13 @@ class Data(object):
         return txt
 
 
-registered = ['ic50_test', 'genomic_features', 'drug_test', 
+registered = ['ic50_test', 'genomic_features', 'drug_test',
     'cancer_cell_line']
 
 
 def dataset(dataname):
     """Retrieve information about a dataset including location
-    
+
     :param dataname: a data set's name (e.g., ic50_test)
     :return: a :class:`Data` holder
 
@@ -59,7 +59,7 @@ def dataset(dataname):
         print(i50_test)
         # Get its location
         ic50_test.filename
-    
+
     """
     easydev.check_param_in_list(dataname, registered)
 
@@ -68,16 +68,16 @@ def dataset(dataname):
         d.filename = easydev.get_share_file('gdsctools', 'data', 'IC50_10drugs.tsv')
         d.description = 'IC50s for 10 public drugs across cell lines'
     elif dataname == 'genomic_features':
-        d.filename = easydev.get_share_file('gdsctools', 
+        d.filename = easydev.get_share_file('gdsctools',
                 'data', 'genomic_features.tsv')
         d.descritption = 'Set of genomic features + tissue + sample name + msi'
     elif dataname == 'drug_test':
-        d.filename = easydev.get_share_file('gdsctools', 
-                'data', 'DRUG_DECODE.txt')
+        d.filename = easydev.get_share_file('gdsctools',
+                'data', 'DRUG_DECODE.csv')
         d.description = "Mapping between drug identifiers, drug " +\
                          "name and drug target"
     elif dataname == 'cancer_cell_lines':
-        d.filename = easydev.get_share_file('gdsctools', 
+        d.filename = easydev.get_share_file('gdsctools',
                 'data', 'cancer_cell_lines.csv')
         d.description = "List of cosmic identifiers with the corresponding "+\
             "name, tissue and sub tissue types"
