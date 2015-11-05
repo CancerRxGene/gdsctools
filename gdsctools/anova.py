@@ -23,36 +23,22 @@ import scipy
 import pylab
 import numpy as np
 
-#import statsmodels.api as sm
-#from statsmodels.formula.api import ols
 from statsmodels.formula.api import OLS
-from gdsctools.stats import MultipleTesting
 
 from easydev import Progress, AttrDict, Logging
 import easydev
+from colormap import cmap_builder
+
+from gdsctools.stats import MultipleTesting
 from gdsctools import readers
 from gdsctools.boxplots import BoxPlots
-
-# See reader module to get the format. The file IC50_input.txt was provided
-# by Howard as a test case
-#data = reader.IC50()
-# Matrix with all IC50 values
-#ic50 = data.ic50
-# Structure containing the input features to be correlated with drug response
-#features = data.features
-
 from gdsctools.report import Report, HTMLTable
 from gdsctools.tools import Savefig
-from colormap import cmap_builder
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
 
-try:
-    from cno.misc.profiler import do_profile
-except:
-    pass
 
-__all__ = [ 'ANOVA', 'ANOVAReport']
+__all__ = ['ANOVA', 'ANOVAResults', 'ANOVAReport']
 
 
 class ANOVAResults(object):
@@ -119,7 +105,7 @@ class ANOVAReport(Savefig):
         r.report()
 
     """
-    def __init__(self, gdsc, results, sep="\t"):
+    def __init__(self, gdsc, results, sep="\t", drug_decoder=None):
         """.. rubric:: Constructor
 
 
@@ -129,19 +115,17 @@ class ANOVAReport(Savefig):
         """
         super(ANOVAReport, self).__init__()
 
-
-        data = results
         # data can be a file with all results as exported
         # by ANOVA analysis
-        if data is not None and isinstance(data, str):
+        if results is not None and isinstance(results, str):
             print("Reading the results from a file")
-            self.df = self.read_csv(data, sep=sep)
-        elif data is not None:
+            self.df = self.read_csv(results, sep=sep)
+        elif results is not None:
             try:
-                self.df = data.df.copy()
+                self.df = resuls.df.copy()
             except:
                 # or an instance of a dataframe
-                self.df = data.copy()
+                self.df = results.copy()
 
         self.settings = ANOVASettings()
         for k, v in gdsc.settings.items():
@@ -151,9 +135,18 @@ class ANOVAReport(Savefig):
         self.varname_pval = 'FEATURE_ANOVA_pval'
         self.varname_qval = 'ANOVA_FEATURE_FDR_%'
 
-        #self.ic50 = readers.IC50(gdsc.ic50)
-        #self.input_features = readers.GenomicFeatures(gdsc.features).df
+        # with this alias, we get the ic50 and genomic features
         self.gdsc = gdsc
+
+
+        # maybe there was not drug_decoder in the gdsc parameter,
+        # so a user may have provide a file, in which case, we need
+        # to update the content of the dur_decoder.
+        if len(gdsc.drug_decoder) == 0 and drug_decoder is None:
+            print('WARNING no drug name or target will be populated')
+            print('You can read one if you wish using read_drug_decoder')
+        else:
+            self.read_drug_decoder(drug_decoder)
 
 
         """if concentrations:
@@ -185,6 +178,10 @@ class ANOVAReport(Savefig):
         return len(self.gdsc.features.df.columns) - 3
     n_features = property(_get_nfeatures,
             doc="return number of features ignoring MSI, sample and tissue")
+
+    def read_drug_decoder(self, filename):
+        self.gdsc.read_drug_decoder(filename)
+        self.df = self.gdsc.drug_annotations(self.df)
 
     def _get_ntests(self):
         return len(self.df.index)
@@ -540,30 +537,35 @@ class ANOVAReport(Savefig):
             pb.animate(i+1)
 
     def create_html_drugs(self):
-        """Create an HTML page for each drug that has at least one significant association"""
-        # group by driugs
+        """Create an HTML page for each drug that has at
+        least one significant association
+
+        Actually, we are interested in each drug, could be a flag
+
+
+        """
+        # group by drugs
+        all_drugs = list(self.df['DRUG_ID'].unique())
+
         df = self.get_significant_set()
         groups = df.groupby('DRUG_ID')
         print("\n\nCreating individual HTML pages for each drug")
         N = len(groups.indices.keys())
+        N = len(all_drugs)
         pb = Progress(N)
-        for i, drug in enumerate(groups.indices.keys()):
-            #if drug not in ['Drug_330_IC50', 'Drug_1047_IC50']:
-            #    continue
+        #all_drugs = list(df.DRUG_ID) + ['Drug_1050_IC50']
+        for i, drug in enumerate(all_drugs):
+            # enumerate(groups.indices.keys()):
             # get the indices and therefore subgroup
-            subdf = groups.get_group(drug)
+            if drug in groups.groups.keys():
+                subdf = groups.get_group(drug)
+            else:
+                subdf = {}
             metadata = {}
             metadata['n_cell_lines'] = len(self.gdsc.ic50.df[drug].dropna())
-
-            # get concentration range
-            conc = subdf['log max.Conc.tested'].unique()[0]
-            if pd.isnull(conc) is False:
-                metadata['conc_min'] = conc / 4.**4
-                metadata['conc_max'] = conc
-            else:
-                metadata['conc_min'] = "?"
-                metadata['conc_max'] = "?"
-            metadata['drug'] = drug
+            metadata['DRUG_ID'] = drug
+            metadata['DRUG_NAME'] = self.gdsc.drug_decoder.get_name(drug)
+            metadata['DRUG_TARGET'] = self.gdsc.drug_decoder.get_target(drug)
 
             html = HTMLOneDrug(self.df, subdf, metadata,
                     directory=self.settings.directory)
@@ -588,7 +590,6 @@ class ANOVAReport(Savefig):
         df = self.get_significant_set()
         html = HTMLManova(df, directory=self.settings.directory)
         html.report(onweb=False)
-
 
     def create_html_pages(self, onweb=False):
         """Create all HTML pages"""
@@ -689,7 +690,7 @@ class ANOVA(Logging):
             self.features = readers.GenomicFeatures(features)
 
         #: a CSV with 3 columns used in the report
-        self.read_drug_decode(drug_decoder)
+        self.read_drug_decoder(drug_decoder)
 
         #: a concentrations for each IC50; not used for now but could be
         self.concentrations = readers.IC50(concentrations)
@@ -958,7 +959,7 @@ class ANOVA(Logging):
         dd.Npos = len(dd.positives)
         dd.Nneg = len(dd.negatives)
 
-        # FIXME is False does not give the same results as == False 
+        # FIXME is False does not give the same results as == False
         # in the test test_anova.py !!
         if (A == False) and (B == False):
             dd.status = False
@@ -1001,7 +1002,7 @@ class ANOVA(Logging):
         # additional information
         dd.feature_name = feature_name
         dd.drug_name = drug_name
-        
+
         # Note that equal_var is a user parameter and affects
         # results. The ANOVA_results.txt obtained from SFTP
         # have different values meaning that the equal.var param
@@ -1012,22 +1013,28 @@ class ANOVA(Logging):
 
         return dd
 
-    def read_drug_decode(self, filename=None):
+    def read_drug_decoder(self, filename=None):
+        # Read the DRUG decoder file into a DrugDecoder/Reader instance
         self.drug_decoder = readers.DrugDecoder(filename)
 
     def drug_annotations(self, df):
         if len(self.drug_decoder.df) == 0:
             print("Nothing done. DrugDecoder file not provided.")
 
-        self.drugs = df['DRUG_ID'].values
-        mapping = self.drug_decoder.df.ix[drugs]
+        # aliases
+        decoder = self.drug_decoder.df
+        drugs = df.DRUG_ID.values
 
-        mapping.fillna("?")
-        df['DRUG_NAME'] = mapping['DRUG_NAME']
-        df['DRUG_TARGET'] = mapping['DRUG_TARGET']
+        drug_names = [decoder.ix[x].DRUG_NAME if x in decoder.index else None
+                 for x in drugs]
+        drug_target = [decoder.ix[x].DRUG_TARGET if x in decoder.index
+                else None for x in drugs]
+
+        # this is not clean. It works but could be simpler surely.
+        df['DRUG_NAME'] = drug_names
+        df['DRUG_TARGET'] =  drug_target
         return df
 
-    @do_profile()
     def anova_one_drug_one_feature(self, drug_id,
             feature_name, show=False,
             production=False, savefig=False, directory='.'):
@@ -1049,12 +1056,8 @@ class ANOVA(Logging):
         # This is now pretty fast accounting for 45 seconds
         # for 265 drugs and 988 features
         odof = self._get_one_drug_one_feature_data(drug_id, feature_name)
-        if drug_id in self.drug_decoder.df.index:
-            drug_name = self.drug_decoder.df.ix[drug_id]['DRUG_NAME']
-            drug_target = self.drug_decoder.df.ix[drug_id]['DRUG_TARGET']
-        else:
-            drug_name = "?"
-            drug_target = "?"
+        drug_name = self.drug_decoder.get_name(drug_id)
+        drug_target = self.drug_decoder.get_target(drug_id)
 
         # if the status is False, it means the number of data points
         # in a category (e.g., positive feature) is too low.
@@ -1198,8 +1201,10 @@ class ANOVA(Logging):
         except:
             FEATURE_PVAL = None
 
+
+
         if show is True:
-            boxplot = BoxPlots(odof, savefig=self.settings.savefig, 
+            boxplot = BoxPlots(odof, savefig=self.settings.savefig,
                     directory=self.settings.directory)
             boxplot.boxplot_association(fignum=1)
 
@@ -1376,6 +1381,8 @@ class ANOVA(Logging):
         df = df.T
 
         df = ANOVAResults().astype(df)
+        if len(self.drug_decoder)>0:
+            df = self.drug_annotations(df)
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
         return df
 
@@ -1573,7 +1580,9 @@ class OneDrugOneFeature(Report):
             directory='gdsc', fdr='?', assoc_id='?'):
         # FIXME here we lose the setttings since we create a new instance
         self.factory = factory
+        # Does that changes the main settings ??
         self.factory.settings.directory = directory
+        self.factory.settings.savefig = True
         self.assoc_id = assoc_id
 
         self.drug = drug
@@ -1609,12 +1618,26 @@ class OneDrugOneFeature(Report):
         html_table = self.to_html(df, precision=2)
         self.add_section(html_table, 'Individual association analysis')
 
+
         section = ""
-        for prefix in ['ODOF_all', 'ODOF_msi', 'ODOF_tissue']:
+        # Main boxplot always included
+        prefix = 'ODOF_all'
+        tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
+        section += '<img alt="association {0}" src="{0}">\n'.format(tag)
+
+        if self.factory.settings.includeMSI_factor:
+            prefix = 'ODOF_msi'
             tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
             section += '<img alt="association {0}" src="{0}">\n'.format(tag)
+        if self.factory.settings.analysis_type == 'PANCAN':
+            prefix = 'ODOF_tissue'
+            tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
+            section += '<img alt="association {0}" src="{0}">\n'.format(tag)
+
+
         self.add_section(section, "Boxplots")
 
+        
         if self.add_settings is True:
             table = ANOVASettings(**self.factory.settings)
             self.add_section(table.to_html(), 'Settings')
@@ -1630,6 +1653,7 @@ class HTMLOneFeature(Report):
         filename = "{0}.html".format(self.feature)
         super(HTMLOneFeature, self).__init__(directory=directory,
                 filename=filename)
+        self.title = 'Single Feature analysis (%s)' % self.feature
 
     def run(self, N=20):
         v = VolcanoANOVA(self.df)
@@ -1643,6 +1667,14 @@ class HTMLOneFeature(Report):
         pylab.close(1)
         v.volcano_plot_one_feature(self.feature)
         v.savefig('volcano_{}.png'.format(self.feature))
+        try:
+            import mpld3
+            htmljs = mpld3.fig_to_html(v.current_fig)
+        except:
+            htmljs = ""
+        fh = open(self.directory + os.sep + 
+                "volcano_{}.html".format(self.feature),"w")
+        fh.write(htmljs)
 
     def to_html(self, df, precision=6):
         sign = SignificantHits(df, 'features')
@@ -1657,7 +1689,7 @@ class HTMLOneFeature(Report):
         summary = """
         Binary feature equal to %(binary)s for samples harboring mutations in MLL2
         Number of cell lines positive for this feature: %(n_cell_lines)s
-        <br>
+        <br\>
         """
         self.metadata['binary'] = '?'
 
@@ -1678,6 +1710,9 @@ class HTMLOneFeature(Report):
 
         # image section
         section = '<img alt="volcano plot {0}" src="volcano_{0}.png">\n'.format(self.feature)
+        section += """<br/>
+            Possibly, a javascript version is available
+            <a href="volcano_{}.html">here</a>""".format(self.feature)
 
         self.add_section(section, "All-tests volcano plot")
 
@@ -1697,11 +1732,12 @@ class HTMLOneDrug(Report):
         """
         self.df = data
         self.subdf = subdata
-        self.drug = metadata['drug']
+        self.drug = metadata['DRUG_ID']
         self.metadata = metadata
         filename = "{0}.html".format(self.drug)
         super(HTMLOneDrug, self).__init__(directory=directory,
                 filename=filename)
+        self.title = 'Single Drug analysis (%s)' % self.drug
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df)
@@ -1710,6 +1746,15 @@ class HTMLOneDrug(Report):
         v.settings.directory = self.directory
         v.volcano_plot_one_drug(self.drug)
         v.savefig('volcano_{}.png'.format(self.drug))
+        try:
+            import mpld3
+            htmljs = mpld3.fig_to_html(v.current_fig)
+        except:
+            htmljs = ""
+        fh = open(self.directory + os.sep + 
+                "volcano_{}.html".format(self.drug),"w")
+        fh.write(htmljs)
+        fh.close()
 
     def to_html(self, df, precision=6):
         # why ?
@@ -1728,29 +1773,28 @@ class HTMLOneDrug(Report):
         self.create_pictures()
         # could be a table with no border ?
         summary = """
-        Drug Name: %(drug_name)s<br>
-        Drug ID: %(drug_id)s<br>
-        Synonyms: %(synonyms)s<br>
-        Brand name: %(brand_name)s<br>
-        Target: %(target)s<br>
-<br>
-        Number of cell lines screeened: %(n_cell_lines)s<br>
-        Screening concentration range(2): %(conc_min)s to %(conc_max)s uM<br>
+        Drug Name: %(drug_name)s<br/>
+        Drug ID: %(drug_id)s<br/>
+        Synonyms: %(synonyms)s<br/>
+        Brand name: %(brand_name)s<br/>
+        Target: %(target)s<br/>
+        <br/>
+        Number of cell lines screeened: %(n_cell_lines)s<br/>
+        Screening concentration range (2): %(conc_min)s to %(conc_max)s uM<br/>
         """
 
         N = len(self.subdf)
         if N >= 0:
             # add the table
-            self.metadata['drug_name'] = self.subdf['DRUG_NAME'].unique()[0]
-            self.metadata['drug_id'] = self.subdf['DRUG_ID'].unique()[0]
+            self.metadata['drug_name'] = self.metadata['DRUG_NAME']
+            self.metadata['drug_id'] = self.metadata['DRUG_ID']
             self.metadata['synonyms'] = ''
             self.metadata['brand_name'] = ''
-            self.metadata['target'] = self.subdf['DRUG_TARGET'].unique()[0]
+            self.metadata['target'] = self.metadata['DRUG_TARGET']
         else:
             pass
-
-        # Just a paragraph to give the drug name
-        self.add_pretoc("<p><br>DRUG ID :<br> {0}</p>".format(self.drug))
+        self.metadata['conc_min'] = '?'
+        self.metadata['conc_max'] = '?'
 
         # Intro section
         section = summary % self.metadata
@@ -1764,6 +1808,9 @@ class HTMLOneDrug(Report):
 
         # image section
         section = '<img alt="volcano plot" src="volcano_{0}.png">\n'.format(self.drug)
+        section += """<br/>
+            Possibly, a javascript version is available
+            <a href="volcano_{}.html">here</a>""".format(self.drug)
 
         self.add_section(section, "All-tests volcano plot")
 
@@ -1802,9 +1849,9 @@ class HTML_main(Report):
         # volcano plot
         html = """
 <h3></h3>
-<img alt="volcanot plot for all associations" src="volcano_all.png">
+<img alt="volcano plot for all associations" src="volcano_all.png">
 
-<br>
+<br/>
 Possibly, a javascript version is available
 <a href="volcano_all_js.html">here</a>
 
@@ -1822,8 +1869,8 @@ Possibly, a javascript version is available
 
         # MANOVA link
         N = len(self.results.get_significant_set())
-        self.add_section('There were %s significant associations found. ' % N 
-            + 'All significant associations have been gatherered ' + 
+        self.add_section('There were %s significant associations found. ' % N
+            + 'All significant associations have been gatherered ' +
             'in the following link: <a href="manova.html">manova results</a>',
             "Explore all significant results")
 
@@ -1858,8 +1905,15 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         except:
             df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort()
         df = df.reset_index() # get back the Drug id in the dframe columns
+
         # let us add also the drug name
-         
+        print(type(self.results))
+        df = self.results.gdsc.drug_annotations(df)
+
+        # let us also add number of associations computed
+        counts = [len(groups.groups[k]) for k in df.DRUG_ID]
+        df['Number of associations computed'] = counts
+
         # add another set of drug_id but sorted in alpha numerical order
         table = HTMLTable(df, 'drugs')
         table.add_href('DRUG_ID')
@@ -1889,14 +1943,14 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         table = HTMLTable(df, 'features')
         table.add_href('FEATURE')
-        table.add_bgcolor('hits', mode='max', 
+        table.add_bgcolor('hits', mode='max',
                 cmap=cmap_builder('white', 'orange', 'red'))
         html = table.to_html(escape=False, header=True, index=False)
         self.add_section(html, 'Feature wise associations browse')
 
         # Section to provide info about cell lines. It may be large
         # could be in a separated page ?
-        df = self.results.gdsc.features.df[['Sample Name', 
+        df = self.results.gdsc.features.df[['Sample Name',
             'Tissue Factor Value', 'MS-instability Factor Value']]
         df = df.reset_index()
         table = HTMLTable(df)
@@ -1914,14 +1968,14 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         # perform the analysis
         gdsc = ANOVA(input_filename)
-        results = gdsc.anova_all()  
+        results = gdsc.anova_all()
 
         # create a report
         report = ANOVAReport(gdsc, results)
         report.create_html_pages()
         </code>
         </pre>
-        
+
         <p>With the following settings</>"""
 
         html += self.settings.to_html()
@@ -1949,7 +2003,7 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
             filename = os.path.split(filename)[1]
             html += 'No Genomic Features file was provided. '
             html += 'The <a href="INPUT/%s">default version</a> was most probably used.<br/>' % filename
-        
+
         # the drug decode file
         filename = self.results.gdsc.drug_decoder._filename
         if filename is not None:

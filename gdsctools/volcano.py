@@ -211,7 +211,6 @@ class VolcanoANOVA(Savefig):
 
         # replaced by groups created in the constructor
         #subdf = self.df[self.df[mode] == target]
-
         deltas = subdf['FEATURE_deltaMEAN_IC50']
         effects = subdf['FEATURE_IC50_effect_size']
         signed_effects = list(np.sign(deltas) * effects)
@@ -227,7 +226,10 @@ class VolcanoANOVA(Savefig):
         data['Feature'] = list(subdf['FEATURE'])
         data['Drug'] = list(subdf['DRUG_ID'])
         data['text'] = texts.values
-        data['FDR'] = subdf['ANOVA_FEATURE_FDR_%']
+        ## !! here, we need to use .values since the pandas dataframe
+        # index goes from 1 to N but the origignal indices in subdf
+        # may not be from 1 to N but random between 1 and M>>N
+        data['FDR'] = subdf['ANOVA_FEATURE_FDR_%'].values
         annotations = []
 
         # just an alias

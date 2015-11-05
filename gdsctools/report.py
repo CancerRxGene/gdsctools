@@ -231,6 +231,8 @@ class Report(object):
         #: flag to add text before TOC
         self.pretoc = None
 
+        self.title = 'ANOVA analysis summary'
+
         #: flag to add a "back to main" link
         if filename != 'index.html':
             self.goback_link = True
@@ -311,7 +313,8 @@ class Report(object):
     def get_header(self):
         """a possible common header ? """
         params = {"analysis": self.analysis,
-                   "version": self.version}
+                   "version": self.version,
+                   "title": self.title}
         str_ =  """
  <!DOCTYPE html>
  <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
@@ -330,13 +333,13 @@ class Report(object):
  <body>
   <div class="document" id="unset">
 
-     <h1 class="title">ANOVA analysis summary</h1>
+     <h1 class="title">%(title)s</h1>
      <h2 class="subtitle">Report created with gdsctools (version %(version)s)</h2>
      <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCtools github page</a> for downloads and documentation.</p>
-     <br>
+     <br/>
      """ % params
         if self.goback_link is True:
-            str_ += 'Go back to <a href="index.html">main page</a>.<br>'
+            str_ += 'Go back to <a href="index.html">main page</a>.<br/>'
         return str_
 
     def get_time_now(self):

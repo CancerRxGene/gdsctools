@@ -576,6 +576,7 @@ class DrugDecoder(Reader):
         """.. rubric:: Constructor"""
         self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET']
         super(DrugDecoder, self).__init__(filename, sep=sep)
+        #self.df.drop_duplicates(inplace=True)
 
     def _reader(self, filename=None):
         # trying with a comma
@@ -591,10 +592,33 @@ class DrugDecoder(Reader):
             msg += " Got %s" % list(self.df.columns)
             raise ValueError(msg)
 
+    def _get_names(self):
+        return list(self.df.DRUG_NAME.values)
+    drug_names = property(_get_names)
+
+    def _get_target(self):
+        return list(self.df.DRUG_TARGET.values)
+    drug_targets = property(_get_target)
+
     def _get_drug_ids(self):
         return list(self.df.index)
     drugIds = property(_get_drug_ids,
             doc="return list of drug identifiers")
+
+    def get_name(self, drug_id):
+        if drug_id in self.drugIds:
+            return self.df.ix[drug_id].DRUG_NAME
+        else:
+            return None
+
+    def get_target(self, drug_id):
+        if drug_id in self.drugIds:
+            return self.df.ix[drug_id].DRUG_TARGET
+        else:
+            return None
+
+
+
 
     def check(self):
         for x in self.drugIds:
