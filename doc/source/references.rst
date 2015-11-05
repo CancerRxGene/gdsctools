@@ -12,11 +12,7 @@ ANOVA related
 
 Statistical Tools
 -------------------
-.. automodule:: gdsctools.glass
-    :members:
-    :undoc-members:
-
-.. automodule:: gdsctools.cohens
+.. automodule:: gdsctools.stats
     :members:
     :undoc-members:
 
