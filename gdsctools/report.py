@@ -284,15 +284,29 @@ class Report(object):
             if os.path.isdir(self.directory) is False:
                 print("Created directory {}".format(self.directory))
                 os.mkdir(self.directory)
+
+
         except Exception:
             pass
         finally:
-            for filename in ['gdsc.css', 'sorttable.js']:
+            for filename in ['gdsc.css', 'sorttable.js', 'highlight.pack.js',
+                    'github-gist.css']:
                 target = self.directory + os.sep + filename
                 if os.path.isfile(target) is False:
                     filename = easydev.get_share_file("gdsctools", "data",
                         filename)
                     shutil.copy(filename, self.directory)
+
+            input_dir = self.directory + os.sep + 'INPUT'
+            output_dir = self.directory + os.sep + 'OUTPUT'
+            try:
+                os.mkdir(input_dir)
+            except:
+                pass # already created 
+            try:
+                os.mkdir(output_dir)
+            except:
+                pass # already created 
 
     def get_header(self):
         """a possible common header ? """
@@ -306,6 +320,11 @@ class Report(object):
      <title>GDSCtools report</title>
      <link rel="stylesheet" href="gdsc.css" type="text/css" />
      <script src="sorttable.js"></script>
+
+     <!-- Include required JS files -->
+     <link rel="stylesheet" href="github-gist.css">
+     <script src="highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
  </head>
 
  <body>
