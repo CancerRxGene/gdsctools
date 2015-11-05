@@ -17,6 +17,7 @@
 """Code related to the ANOVA analysis to find associations between drug IC50s
 and genomic features"""
 import os
+import shutil
 import pandas as pd
 import scipy
 import pylab
@@ -32,7 +33,6 @@ import easydev
 from gdsctools import readers
 from gdsctools.boxplots import BoxPlots
 
-#from gdsctools import cohens, glass
 # See reader module to get the format. The file IC50_input.txt was provided
 # by Howard as a test case
 #data = reader.IC50()
@@ -47,6 +47,10 @@ from colormap import cmap_builder
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
 
+try:
+    from cno.misc.profiler import do_profile
+except:
+    pass
 
 __all__ = [ 'ANOVA', 'ANOVAReport']
 
@@ -115,22 +119,16 @@ class ANOVAReport(Savefig):
         r.report()
 
     """
-    def __init__(self, gdsc, results, concentrations=None, drugmap=None,
-            sep="\t"):
+    def __init__(self, gdsc, results, sep="\t"):
         """.. rubric:: Constructor
 
 
         :param gdsc: the instance with which you created the results to report
         :param results: the results returned by :meth:`ANOVA.anova_all`
-        :param concentrations: todo
 
         """
         super(ANOVAReport, self).__init__()
 
-        if drugmap is not None:
-            self.drugmap = readers.DrugDecoder(drugmap)
-        else:
-            self.drugmap = None
 
         data = results
         # data can be a file with all results as exported
@@ -158,7 +156,7 @@ class ANOVAReport(Savefig):
         self.gdsc = gdsc
 
 
-        if concentrations:
+        """if concentrations:
             # input may not have the concentrations columns right now.
             # This should be fixed in input data set
             if "log max.Conc.tested" in self.df.columns:
@@ -173,6 +171,7 @@ class ANOVAReport(Savefig):
             df = self.df.join(self.conc, on=drugid, how='left')
             self.df = df
             del self.conc
+        """
 
         # create some data
         self._set_sensible_df()
@@ -590,6 +589,7 @@ class ANOVAReport(Savefig):
         html = HTMLManova(df, directory=self.settings.directory)
         html.report(onweb=False)
 
+
     def create_html_pages(self, onweb=False):
         """Create all HTML pages"""
         self._set_sensible_df()
@@ -648,7 +648,8 @@ class ANOVA(Logging):
 
 
     """
-    def __init__(self, ic50, features=None, verbose='INFO'):
+    def __init__(self, ic50, features=None, concentrations=None,
+            drug_decoder=None, verbose='INFO'):
         """.. rubric:: Constructor
 
         :param DataFrame IC50: a dataframe with the IC50. Rows should be
@@ -668,6 +669,7 @@ class ANOVA(Logging):
         self.logging.info('Reading data and building data structures')
 
         # We first need to read the IC50 using a dedicated reader
+        self.ic50_raw = readers.IC50(ic50)
         self.ic50 = readers.IC50(ic50)
 
         # Create a dictionary version of the data
@@ -685,6 +687,12 @@ class ANOVA(Logging):
             self.features = readers.GenomicFeatures()
         else:
             self.features = readers.GenomicFeatures(features)
+
+        #: a CSV with 3 columns used in the report
+        self.read_drug_decode(drug_decoder)
+
+        #: a concentrations for each IC50; not used for now but could be
+        self.concentrations = readers.IC50(concentrations)
 
         # create the multiple testing factory used in anova_all()
         self.multiple_testing = MultipleTesting()
@@ -942,19 +950,16 @@ class ANOVA(Logging):
             dd.negative_feature >= self.settings.featFactorPopulationTh
 
         # We could of course use the mean() and std() functions from pandas or
-        # numpy. We could also use the glass and cohens modules but the
-        # following code is now optimised to speed up this function
-        # call by 5/10 times.
-        #dd.positives = dd.Y.values[dd.masked_features.values==1]
-        #dd.negatives = dd.Y.values[dd.masked_features.values==0]
-
-        dd.positives = dd.Y[dd.masked_features.values==1]
-        dd.negatives = dd.Y[dd.masked_features.values==0]
+        # numpy. We could also use the glass and cohens functions from the
+        # stats module but the following code is much faster because it
+        # factorises the computations of mean and variance
+        dd.positives = dd.Y[dd.masked_features.values ==1]
+        dd.negatives = dd.Y[dd.masked_features.values ==0]
         dd.Npos = len(dd.positives)
         dd.Nneg = len(dd.negatives)
 
-        dd.A = A
-        dd.B = B
+        # FIXME is False does not give the same results as == False 
+        # in the test test_anova.py !!
         if (A == False) and (B == False):
             dd.status = False
             return dd
@@ -1007,7 +1012,23 @@ class ANOVA(Logging):
 
         return dd
 
-    def anova_one_drug_one_feature(self, drug_name,
+    def read_drug_decode(self, filename=None):
+        self.drug_decoder = readers.DrugDecoder(filename)
+
+    def drug_annotations(self, df):
+        if len(self.drug_decoder.df) == 0:
+            print("Nothing done. DrugDecoder file not provided.")
+
+        self.drugs = df['DRUG_ID'].values
+        mapping = self.drug_decoder.df.ix[drugs]
+
+        mapping.fillna("?")
+        df['DRUG_NAME'] = mapping['DRUG_NAME']
+        df['DRUG_TARGET'] = mapping['DRUG_TARGET']
+        return df
+
+    @do_profile()
+    def anova_one_drug_one_feature(self, drug_id,
             feature_name, show=False,
             production=False, savefig=False, directory='.'):
         """Compute ANOVA and various tests on one drug and one feature
@@ -1016,17 +1037,24 @@ class ANOVA(Logging):
             a dictionary. This is to speed up analysis when scanning
             the drug across all features.
         """
-        if drug_name not in self.drugIds:
+        if drug_id not in self.drugIds:
             raise ValueError('Unknown drug name %s. Use e.g., %s'
-                    % (drug_name, self.drugIds[0]))
+                    % (drug_id, self.drugIds[0]))
         if feature_name not in self.feature_names:
+            # we start index at 3 to skip tissue/name/msi
             raise ValueError('Unknown feature name %s. Use e.g., %s'
-                    % (feature_name, self.feature_names[0]))
+                    % (feature_name, self.feature_names[3]))
 
         # This extract the relevant data and some simple metrics
         # This is now pretty fast accounting for 45 seconds
         # for 265 drugs and 988 features
-        odof = self._get_one_drug_one_feature_data(drug_name, feature_name)
+        odof = self._get_one_drug_one_feature_data(drug_id, feature_name)
+        if drug_id in self.drug_decoder.df.index:
+            drug_name = self.drug_decoder.df.ix[drug_id]['DRUG_NAME']
+            drug_target = self.drug_decoder.df.ix[drug_id]['DRUG_TARGET']
+        else:
+            drug_name = "?"
+            drug_target = "?"
 
         # if the status is False, it means the number of data points
         # in a category (e.g., positive feature) is too low.
@@ -1034,9 +1062,9 @@ class ANOVA(Logging):
         if odof.status is False:
             results = self._odof_dict.copy()
             results['FEATURE'] = feature_name
-            results['DRUG_ID'] = drug_name
+            results['DRUG_ID'] = drug_id
             results['DRUG_NAME'] = drug_name
-            results['DRUG_TARGET'] = drug_name
+            results['DRUG_TARGET'] = drug_target
             results['N_FEATURE_pos'] = odof.Npos
             results['N_FEATURE_neg'] = odof.Nneg
             if production is True:
@@ -1183,9 +1211,9 @@ class ANOVA(Logging):
                 boxplot.boxplot_pancan(fignum=3, mode='msi')
 
         results = {'FEATURE': feature_name,
-                'DRUG_ID': drug_name,
+                'DRUG_ID': drug_id,
                 'DRUG_NAME': drug_name,
-                'DRUG_TARGET': drug_name,
+                'DRUG_TARGET': drug_target,
                 'N_FEATURE_pos': odof.Npos,
                 'N_FEATURE_neg': odof.Nneg,
                 'log max.Conc.tested': None,
@@ -1792,6 +1820,13 @@ Possibly, a javascript version is available
 
         self.add_section(html, 'Volcano plot')
 
+        # MANOVA link
+        N = len(self.results.get_significant_set())
+        self.add_section('There were %s significant associations found. ' % N 
+            + 'All significant associations have been gatherered ' + 
+            'in the following link: <a href="manova.html">manova results</a>',
+            "Explore all significant results")
+
         # feature summary
         df_features = self.results.feature_summary()
         filename = 'features_summary.tsv'
@@ -1804,13 +1839,9 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 """.format(filename)
         self.add_section(html, 'Feature summary')
 
-        # MANOVA link
-        self.add_section('Explore all significant associations following this link <a href="manova.html">manova</a>',
-            "Explore all significant results")
-
         # drug summary
         df_drugs = self.results.drug_summary()
-        filename = 'drugs_summary.tsv'
+        filename = 'OUTPUT' + os.sep + 'drugs_summary.tsv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep='\t')
         html = """
 <h3>Drug whose response is frequently associated with afeature</h3>
@@ -1820,25 +1851,26 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         self.add_section(html, 'Drug summary')
 
-        # Create table with links to all drugs
+        # --------------------------- Create table with links to all drugs
         groups = self.results.df.groupby('DRUG_ID')
         try:
             df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort_values()
         except:
             df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort()
         df = df.reset_index() # get back the Drug id in the dframe columns
+        # let us add also the drug name
+         
         # add another set of drug_id but sorted in alpha numerical order
         table = HTMLTable(df, 'drugs')
         table.add_href('DRUG_ID')
         table.df.columns = [x.replace('ANOVA_FEATURE_FDR',
             'mean ANOVA FEATURE FDR') for x in table.df.columns]
 
-
         html = "The following table provides links to dedicated pages for each drug (sorted by ascending FDR)"
         html += table.to_html(escape=False, header=True, index=False)
         self.add_section(html, 'Drug wise associations browse')
 
-        # Create full table with links to all features
+        # ---------------------- Create full table with links to all features
         df = pd.DataFrame({'FEATURE': self.results.df['FEATURE'].unique()})
         try:
             df.sort_values(by='FEATURE', inplace=True)
@@ -1875,7 +1907,60 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
 
         # Save the settings
-        self.add_section(self.settings.to_html(), 'Settings')
+        html = """
+        <p>This page and the results were created with a code equivalent to :</p>
+        <pre><code class="python">
+        from gdsctools import ANOVA, ANOVAReport
+
+        # perform the analysis
+        gdsc = ANOVA(input_filename)
+        results = gdsc.anova_all()  
+
+        # create a report
+        report = ANOVAReport(gdsc, results)
+        report.create_html_pages()
+        </code>
+        </pre>
+        
+        <p>With the following settings</>"""
+
+        html += self.settings.to_html()
+
+
+        # Copy the GF, IC50, drug decode if any
+        input_dir = self.directory + os.sep + 'INPUT'
+        filename = self.results.gdsc.ic50._filename
+        if filename is not None:
+            shutil.copy(filename, input_dir)
+            filename = os.path.split(filename)[1]
+            html += 'Get <a href="INPUT/%s">IC50</a>file.<br/>' % filename
+
+        # the genomic features, which may be the default version.
+        filename = self.results.gdsc.features._filename
+        if filename is not None:
+            shutil.copy(filename, input_dir)
+            filename = os.path.split(filename)[1]
+            html += 'Get <a href="INPUT/%s">Genomic Features</a> file<br/>' % filename
+        else:
+            # the default one ??
+            from gdsctools import datasets
+            filename = datasets.genomic_features.filename
+            shutil.copy(filename, input_dir)
+            filename = os.path.split(filename)[1]
+            html += 'No Genomic Features file was provided. '
+            html += 'The <a href="INPUT/%s">default version</a> was most probably used.<br/>' % filename
+        
+        # the drug decode file
+        filename = self.results.gdsc.drug_decoder._filename
+        if filename is not None:
+            shutil.copy(filename, input_dir)
+            filename = os.path.split(filename)[1]
+            html += 'Get <a href="INPUT/%s">Drug DECODE file</a>' % filename
+        else:
+            html += 'No Drug DECODE file was provided<br/>'
+
+
+        self.add_section(html, 'Settings and input files')
 
 
 class SignificantHits(object):

@@ -21,7 +21,7 @@ import numpy as np
 import easydev
 
 
-__all__ = ['IC50', 'GenomicFeatures', 'CosmicRows', 'Reader', 
+__all__ = ['IC50', 'GenomicFeatures', 'CosmicRows', 'Reader',
     'DrugDecoder']
 
 
@@ -34,9 +34,13 @@ class Reader(object):
 
         """
         self._sep = sep
-        
+
         # Input data can be a filename to be read
-        if isinstance(data, str):
+        if data is None:
+            # create an empty dataframe
+            self.df = pd.DataFrame()
+            self._filename = None
+        elif isinstance(data, str):
             self._reader(data)
             self._filename = data
         elif hasattr(data, 'filename'):
@@ -45,11 +49,20 @@ class Reader(object):
             self._filename = data.filename
         elif hasattr(data, 'df'): # an IC50 or genomic features ?
             self.df = data.df.copy()
+            self._filename = data._filename
         elif isinstance(data, pd.DataFrame):
             self.df = data.copy()
+            self._filename = None
         else:
             raise TypeError("Input must be a filename, a IC50 instance, or " +
                             "a dataframe.")
+        self.header = []
+
+    def _valid_header(self, df):
+        for name in self.header:
+            if name not in list(df.columns):
+                return False
+        return True
 
     def read_matrix_from_r(self, name):
         print("Reading matrix %s " % (name))
@@ -69,6 +82,9 @@ class Reader(object):
         self.df.info()
         return ""
 
+    def __len__(self):
+        return self.df.shape[0] * self.df.shape[1]
+
     def to_csv(self, filename, sep=None):
         """Save data into a CSV file (actually, TSV) """
         if sep is None:
@@ -84,15 +100,19 @@ class Reader(object):
         if len(self.df.columns.unique()) != len(self.df.columns):
             columns = list(self.df.columns)
             for this in columns:
-                if columns.count(this)>1:
+                if columns.count(this) > 1:
                     msg ='Found identical named columns (%s)' % this
                     raise ValueError(msg)
+
+    def __eq__(self, other):
+        return all(self.df.fillna(0) == other.df.fillna(0))
+
 
 class COSMIC(object):
     """
 
     ::
-    
+
         >>> c = COSMIC(905940)
         >>> c.on_web()
 
@@ -112,7 +132,7 @@ class COSMIC(object):
     def on_web(self):
         from easydev.browser import browse
         url = self._get_url(self.identifier)
-        browser(url)
+        browse(url)
 
 
 class CosmicRows(object):
@@ -273,8 +293,10 @@ class IC50(Reader, CosmicRows):
         txt += "Number of cell lines: %s\n" % len(self.df)
         N = len(self.drugIds) * len(self.df)
         Nna = self.df.isnull().sum().sum()
-        txt += "Percentage of NA {0}\n".format(Nna / float(N))
+        if N != 0:
+            txt += "Percentage of NA {0}\n".format(Nna / float(N))
         return txt
+
 
 
 class GenomicFeatures(Reader, CosmicRows):
@@ -313,7 +335,7 @@ class GenomicFeatures(Reader, CosmicRows):
     def __init__(self, filename=None, sep="\t"):
         """.. rubric:: Constructor
 
-        If not file is provided, using the edfault file provided in the 
+        If not file is provided, using the edfault file provided in the
         package that is made of 1001 cell lines times 680 features.
 
         """
@@ -321,7 +343,10 @@ class GenomicFeatures(Reader, CosmicRows):
         if filename is None:
             from gdsctools.datasets import genomic_features
             filename = genomic_features
-        super(GenomicFeatures, self).__init__(filename)
+        # used in the header so should be ser before call to super()
+        self._col_cosmic = 'COSMIC ID'
+
+        super(GenomicFeatures, self).__init__(filename, sep=sep)
 
         # Remove columns related to Drug, which should be in the IC50 matrix
         self.df = self.df[[x for x in self.df.columns
@@ -336,14 +361,15 @@ class GenomicFeatures(Reader, CosmicRows):
 
         names = [self._col_tissue, self._col_sample, self._col_msi]
         for name in names:
-            assert name in self.df.columns , 'Could not find column %s' % name
+            assert name in self.df.columns, 'Could not find column %s' % name
         self.check()
 
     def _reader(self, filename):
         self.df = pd.read_csv(filename, sep=self._sep)
-        assert 'COSMIC ID' in self.df.columns, \
-            "the features input file must contains a column named COSMIC ID"
-        self.df.set_index('COSMIC ID', inplace=True)
+        error_msg = "the features input file must contains a column " +\
+            " named %s" % self._col_cosmic 
+        assert self._col_cosmic in self.df.columns, error_msg
+        self.df.set_index(self._col_cosmic, inplace=True)
 
     def _get_features(self):
         return list(self.df.columns)
@@ -360,7 +386,7 @@ class GenomicFeatures(Reader, CosmicRows):
     def _get_tissues(self):
         return list(self.df[self._col_tissue])
     tissues = property(_get_tissues, doc='return list of tissues')
-    
+
     def _get_unique_tissues(self):
         return list(self.df[self._col_tissue].unique())
     unique_tissues = property(_get_unique_tissues, doc='return set of tissues')
@@ -458,7 +484,7 @@ class GenomicFeatures(Reader, CosmicRows):
         view = self.df[[x for x in self.df.columns if x not in to_ignore]]
 
         todrop = list(view.columns[view.sum() <= required_features])
-                
+
         self.df.drop(todrop, axis=1, inplace=True)
 
 
@@ -537,32 +563,37 @@ class Extra(Reader):
 class DrugDecoder(Reader):
     """Reads a "drug decode" file
 
-    The format should a a 3-column tabular-separated file.
+    The format must be 3-columns comma-separated file.
     ::
 
-        DRUG_ID     DRUG_NAME   PUTATIVE_TARGET
-        999         Erlotinib   EGFR
-        1039        SL 0101-1   RSK, AURKB, PIM3    
+        DRUG_ID     ,DRUG_NAME   ,DRUG_TARGET
+        999         ,Erlotinib   ,EGFR
+        1039        ,SL 0101-1   ,"RSK, AURKB, PIM3"
 
 
     """
-    def __init__(self, filename, sep='\t'):
+    def __init__(self, filename, sep=','):
         """.. rubric:: Constructor"""
-        super(DrugDecoder, self).__init__(filename)
+        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET']
+        super(DrugDecoder, self).__init__(filename, sep=sep)
 
     def _reader(self, filename=None):
-        header = ['DRUG_ID', 'DRUG_NAME', 'PUTATIVE_TARGET']
+        # trying with a comma
+        self.df = pd.read_csv(filename, sep=',')
 
-        self.df = pd.read_csv(filename, sep=self._sep)
-        for name in header:
-            if name not in self.df.columns:
-                msg = "%s column must be in the header of the"
-                raise ValueError(msg % name)
-        self.df.set_index('DRUG_ID', inplace=True)
+        if self._valid_header(self.df) is True:
+            self.df.set_index('DRUG_ID', inplace=True)
+        else: 
+            msg = "Could not read the file with expected format. "
+            msg += "It should be a comma separated file."
+            msg += " It should be made of 3 columns with this header"
+            msg += "%s" % self.header
+            msg += " Got %s" % list(self.df.columns)
+            raise ValueError(msg)
 
     def _get_drug_ids(self):
         return list(self.df.index)
-    drugIds = property(_get_drug_ids, 
+    drugIds = property(_get_drug_ids,
             doc="return list of drug identifiers")
 
     def check(self):
