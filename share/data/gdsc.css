@@ -47,11 +47,11 @@ h2 {
     margin-top:    1em;
     margin-bottom: 1em;
     color: #326598;
-    padding-left:  2em;
-    margin-left:  -2em;
+    padding-left:  1em;
+    margin-left:  -1em;
     margin-right: 25%;
     padding-bottom: .5em;
-    padding-top:   2em;
+    padding-top:   1em;
     border-bottom: 2px solid #326598;
 }
 
@@ -66,6 +66,8 @@ h3 {
 h1.title {
     margin-bottom:  0.0em;
     padding-bottom: 0.0em;
+    margin-top:  0.2em;
+    padding-top: 0.2em;
 }
 h2.subtitle {
     font-size:     1.0em;
@@ -73,6 +75,8 @@ h2.subtitle {
     margin-top:    0.0em;
     color:         #999;
     border-bottom: none;
+    margin-top:  0.2em;
+    padding-top: 0.2em;
 }
 
 p {
