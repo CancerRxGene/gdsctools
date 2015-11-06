@@ -652,7 +652,7 @@ class ANOVA(Logging):
 
 
     """
-    def __init__(self, ic50, features=None, concentrations=None,
+    def __init__(self, ic50, genomic_features=None, concentrations=None,
             drug_decoder=None, verbose='INFO'):
         """.. rubric:: Constructor
 
@@ -686,11 +686,11 @@ class ANOVA(Logging):
             'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
 
         # Reads features if provided, otherwise use a default data set
-        if features is None:
+        if genomic_features is None:
             # Reads default version provided with the package
             self.features = readers.GenomicFeatures()
         else:
-            self.features = readers.GenomicFeatures(features)
+            self.features = readers.GenomicFeatures(genomic_features)
 
         #: a CSV with 3 columns used in the report
         self.read_drug_decoder(drug_decoder)

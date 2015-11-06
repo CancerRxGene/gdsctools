@@ -214,7 +214,6 @@ class IC50(Reader, CosmicRows):
         r.drugsIds = ['Drug_1_IC50', 'Drug_1000_IC50']
 
 
-
     """
     def __init__(self, filename='ANOVA_input.txt', sep="\t"):
         """.. rubric:: Constructor
@@ -258,16 +257,14 @@ class IC50(Reader, CosmicRows):
         else:
             return False
 
-    #ef __iter__(self):
-
-
-    def plot_ic50_count(self):
+    def plot_ic50_count(self, **kargs):
         """Plots the fraction of valid/measured IC50 per drug
 
+        :param kargs: any valid parameters accepted by pylab.plot function.
         :return: the fraction of valid/measured IC50 per drug"""
         data = self.df.count()/len(self.df)
         pylab.clf()
-        pylab.plot(data.values)
+        pylab.plot(data.values, **kargs)
         pylab.grid()
         pylab.xlim([0, len(self.drugIds)+1])
         pylab.xlabel('Drug index')
