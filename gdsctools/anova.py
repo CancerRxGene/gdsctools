@@ -505,11 +505,7 @@ class ANOVAReport(Savefig):
         N = len(drugs)
         pb = Progress(N)
         html = OneDrugOneFeature(self.gdsc,
-                drug='dummy', feature='dummy', fdr='dummy',
-                directory=self.settings.directory)
-        html.settings = self.settings
-        html.factory.settings.includeMSI_factor = self.settings.includeMSI_factor
-        html.factory.settings.analysis_type = self.settings.analysis_type
+                drug='dummy', feature='dummy', fdr='dummy')
 
         self.html = html
         for i in range(N):
@@ -538,8 +534,7 @@ class ANOVAReport(Savefig):
             metadata['n_cell_lines'] = self.gdsc.features.df[feature].sum()
             # get concentration range
             metadata['feature'] = feature
-            html = HTMLOneFeature(self.df, subdf, metadata,
-                    directory=self.settings.directory)
+            html = HTMLOneFeature(self.gdsc, self.df, subdf, metadata)
             html.settings = self.settings
             self.subdf = subdf
             html.report(onweb=False)
@@ -576,8 +571,7 @@ class ANOVAReport(Savefig):
             metadata['DRUG_NAME'] = self.gdsc.drug_decoder.get_name(drug)
             metadata['DRUG_TARGET'] = self.gdsc.drug_decoder.get_target(drug)
 
-            html = HTMLOneDrug(self.df, subdf, metadata,
-                    directory=self.settings.directory)
+            html = HTMLOneDrug(self.gdsc, self.df, subdf, metadata)
             html.settings = self.settings
             html.report(onweb=False)
             pb.animate(i+1)
@@ -597,7 +591,7 @@ class ANOVAReport(Savefig):
     def create_html_manova(self):
         """Create summary table with all significant hits"""
         df = self.get_significant_set()
-        html = HTMLManova(df, directory=self.settings.directory)
+        html = HTMLManova(self.gdsc, df)
         html.report(onweb=False)
 
     def create_html_pages(self, onweb=False):
@@ -1564,7 +1558,7 @@ class HTMLManova(Report):
         h.report()
 
     """
-    def __init__(self, df, directory='gdsc'):
+    def __init__(self, gdsc, df):
         """
 
         :param : a dataframe as output by :meth:`ANOVA.anova_all`
@@ -1575,8 +1569,9 @@ class HTMLManova(Report):
         """
         self.df = df
         self._filename = 'manova.html'
-        super(HTMLManova, self).__init__(directory=directory,
+        super(HTMLManova, self).__init__(directory=gdsc.settings.directory,
                 filename=self.filename)
+        self.analysis_type = gdsc.settings.analysis_type
 
     def _create_report(self):
         hits = SignificantHits(self.df, 'all hits')
@@ -1585,12 +1580,11 @@ class HTMLManova(Report):
 
 
 class OneDrugOneFeature(Report):
-    def __init__(self, factory, drug=None, feature=None,
-            directory='gdsc', fdr='?', assoc_id='?'):
+    def __init__(self, gdsc, drug=None, feature=None,
+            fdr='?', assoc_id='?'):
         # FIXME here we lose the setttings since we create a new instance
-        self.factory = factory
+        self.factory = gdsc
         # Does that changes the main settings ??
-        self.factory.settings.directory = directory
         self.factory.settings.savefig = True
         self.assoc_id = assoc_id
 
@@ -1601,8 +1595,10 @@ class OneDrugOneFeature(Report):
         filename = "{0}____{1}.html".format(self.drug,
                 self.feature.replace(" ", "_"))
 
-        super(OneDrugOneFeature, self).__init__(directory=directory,
+        super(OneDrugOneFeature, self).__init__(
+                directory=gdsc.settings.directory,
                 filename=filename)
+        self.analysis_type = gdsc.settings.analysis_type
 
     def run(self):
         df = self.factory.anova_one_drug_one_feature(self.drug,
@@ -1643,26 +1639,24 @@ class OneDrugOneFeature(Report):
             tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
             section += '<img alt="association {0}" src="{0}">\n'.format(tag)
 
-
         self.add_section(section, "Boxplots")
-
-        
         if self.add_settings is True:
             table = ANOVASettings(**self.factory.settings)
             self.add_section(table.to_html(), 'Settings')
 
 
-
 class HTMLOneFeature(Report):
-    def __init__(self, data, subdata, metadata, directory='gdsc'):
+    def __init__(self, gdsc, data, subdata, metadata):
         self.df = data
         self.subdf = subdata
         self.feature = metadata['feature']
         self.metadata = metadata
         filename = "{0}.html".format(self.feature)
-        super(HTMLOneFeature, self).__init__(directory=directory,
+        super(HTMLOneFeature, self).__init__(
+                directory=gdsc.settings.directory,
                 filename=filename)
         self.title = 'Single Feature analysis (%s)' % self.feature
+        self.analysis_type = gdsc.settings.analysis_type
 
     def run(self, N=20):
         v = VolcanoANOVA(self.df)
@@ -1728,8 +1722,7 @@ class HTMLOneFeature(Report):
 
 
 class HTMLOneDrug(Report):
-    def __init__(self, data, subdata, metadata,
-            directory='gdsc'):
+    def __init__(self, gdsc, data, subdata, metadata):
         """
         data is a dataframe with all results from anova_all
         subdata is a dataframe with significant associations. Can be empty
@@ -1739,14 +1732,16 @@ class HTMLOneDrug(Report):
             max_conc
             drug
         """
+
         self.df = data
         self.subdf = subdata
         self.drug = metadata['DRUG_ID']
         self.metadata = metadata
         filename = "{0}.html".format(self.drug)
-        super(HTMLOneDrug, self).__init__(directory=directory,
+        super(HTMLOneDrug, self).__init__(directory=gdsc.settings.directory,
                 filename=filename)
         self.title = 'Single Drug analysis (%s)' % self.drug
+        self.analysis_type = gdsc.settings.analysis_type
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df)
@@ -1831,6 +1826,7 @@ class HTML_main(Report):
         self.results = results
         self.add_dependencies = True
         self.settings = self.results.settings
+        self.analysis_type = self.settings.analysis_type
 
     def _create_report(self, onweb=True):
         # A summary table
@@ -1885,7 +1881,7 @@ Possibly, a javascript version is available
 
         # feature summary
         df_features = self.results.feature_summary()
-        filename = 'features_summary.tsv'
+        filename = 'OUTPUT' + os.sep + 'features_summary.tsv'
         df_features.to_csv(self.directory + os.sep + filename, sep='\t')
         html = """
 <h3>Features most frequently associated with a drug response</h3>
@@ -1897,8 +1893,9 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         # drug summary
         df_drugs = self.results.drug_summary()
+        get_name = self.results.gdsc.drug_decoder.get_name
         if len(self.results.gdsc.drug_decoder.df) >0:
-            df_drugs.index = [x+"-"+self.results.gdsc.drug_decoder.get_name(x) for x in df.index]
+            df_drugs.index = [x + "-" + get_name(x) for x in df_drugs.index]
 
         filename = 'OUTPUT' + os.sep + 'drugs_summary.tsv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep='\t')

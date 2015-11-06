@@ -232,6 +232,7 @@ class Report(object):
         self.pretoc = None
 
         self.title = 'ANOVA analysis summary'
+        self.analysis_type = "PANCAN"
 
         #: flag to add a "back to main" link
         if filename != 'index.html':
@@ -314,7 +315,9 @@ class Report(object):
         """a possible common header ? """
         params = {"analysis": self.analysis,
                    "version": self.version,
-                   "title": self.title}
+                   "title": self.title,
+                   "analysis_domain": self.analysis_type
+                   }
         str_ =  """
  <!DOCTYPE html>
  <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
@@ -336,6 +339,7 @@ class Report(object):
      <h1 class="title">%(title)s</h1>
      <h2 class="subtitle">Report created with gdsctools (version %(version)s)</h2>
      <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCTools github page</a> for downloads and documentation.</p>
+     <p>Analysis Domain: <b>%(analysis_domain)s</b> tissues/cancer cell type</p>
      <br/>
      """ % params
         if self.goback_link is True:
