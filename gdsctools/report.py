@@ -320,7 +320,7 @@ class Report(object):
  <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
      <head>
      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-     <title>GDSCtools report</title>
+     <title>GDSCTools report</title>
      <link rel="stylesheet" href="gdsc.css" type="text/css" />
      <script src="sorttable.js"></script>
 
@@ -335,7 +335,7 @@ class Report(object):
 
      <h1 class="title">%(title)s</h1>
      <h2 class="subtitle">Report created with gdsctools (version %(version)s)</h2>
-     <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCtools github page</a> for downloads and documentation.</p>
+     <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCTools github page</a> for downloads and documentation.</p>
      <br/>
      """ % params
         if self.goback_link is True:
