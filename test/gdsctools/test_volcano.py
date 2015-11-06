@@ -7,7 +7,7 @@ def test_volcano_plot():
 
     an = ANOVA(tools.get_data())
     an.features.df = an.features.df[an.features.df.columns[0:10]]
-    an = ANOVA(tools.get_data(), features=an.features.df)
+    an = ANOVA(tools.get_data(), genomic_features=an.features.df)
 
     results = an.anova_all()
 
