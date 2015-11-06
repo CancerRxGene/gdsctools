@@ -50,6 +50,7 @@ class ANOVAResults(object):
         self.feature = 'FEATURE'
 
         self.mapping = {
+
              self.drug_target: np.dtype('O'),
              self.drug_id: np.dtype('O'),
              self.drug_name: np.dtype('O'),
@@ -79,7 +80,9 @@ class ANOVAResults(object):
             # we newer pandas version.
             df = df.apply(lambda x: pd.to_numeric(x, errors='ignore'))
         except:
-            pass
+            for col in df.columns:
+                if col in self.mapping.keys():
+                    df[col] = df[col].astype(self.mapping[col])
         return df
 
 
@@ -1912,7 +1915,8 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         try:
             df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort_values()
         except:
-            df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort()
+            # note double brackets for pythonn3.3
+            df = groups.mean()[['ANOVA_FEATURE_FDR_%']].sort()
         df = df.reset_index() # get back the Drug id in the dframe columns
 
         # let us add also the drug name

@@ -276,7 +276,14 @@ class Report(object):
 
     def get_footer(self):
         """Return  HTML closing tag"""
-        return self.close_body() + "\n" + self.close_html()
+
+        html = """<div class="footer">
+        <img src= ./images/sanger-logo.png  title=sanger-logo align="center"/> 
+        <img src= ./images/logo-nki.png  title=sanger-logo align="center"/> 
+        <img src= ./images/EBI_logo.png  title=sanger-logo   align="center"/>
+        """ + self.get_time_now() + """</div>"""
+        html += self.close_body() + "\n" + self.close_html()
+        return html
 
     def _init_report(self):
         """create the report directory and return the directory name"""
@@ -465,8 +472,8 @@ class Report(object):
             self.add_section(self.pretoc, "", position=0)
 
         if self.add_dependencies:
-            self.add_section(self.get_table_dependencies().to_html(),
-                'Dependencies')
+            self.add_section(self.get_table_dependencies().to_html()
+                    +'<br/>',    'Dependencies')
 
         for i, section in enumerate(self.sections):
             if i == 0 or self.section_names[i] == 'Contents':
@@ -474,7 +481,7 @@ class Report(object):
             else:
                 contents += section.replace("<h2>", "<h2> %s - " %i, 1)
 
-        contents += "<hr>" + self.get_time_now()
+        contents += "<hr>" #+ self.get_time_now()
         contents += self.get_footer()
 
         contents = bs4.BeautifulSoup(contents, 'html.parser').prettify()
