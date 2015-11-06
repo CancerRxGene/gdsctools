@@ -352,9 +352,9 @@ class ANOVAReport(Savefig):
         self._set_sensible_df()
 
         # group by drug
-        drugid = self._colname_drug_id
-        df_count_sensible = self.sensible_df.groupby(drugid).count()
-        df_count_resistant = self.resistant_df.groupby(drugid).count()
+        colname = self._colname_drug_id
+        df_count_sensible = self.sensible_df.groupby(colname).count()
+        df_count_resistant = self.resistant_df.groupby(colname).count()
 
         df_count = self._get_data(df_count_sensible, df_count_resistant)
 
@@ -389,6 +389,15 @@ class ANOVAReport(Savefig):
 
         df = df_count.ix[0:top][[u'sens assoc', u'res assoc']]
         labels = list(df.index)
+        # add drug name
+        if len(self.gdsc.drug_decoder)>0:
+            for i, label in enumerate(labels):
+                name = self.gdsc.drug_decoder.get_name(label)
+                if name is not None:
+                    labels[i] = labels[i] + " - " + name
+                else:
+                    pass
+
         labels = [x.replace('_', '\_') for x in labels]
         ind = range(0, len(labels))
         # reverse does not exist with python3
@@ -1888,6 +1897,9 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         # drug summary
         df_drugs = self.results.drug_summary()
+        if len(self.results.gdsc.drug_decoder.df) >0:
+            df_drugs.index = [x+"-"+self.results.gdsc.drug_decoder.get_name(x) for x in df.index]
+
         filename = 'OUTPUT' + os.sep + 'drugs_summary.tsv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep='\t')
         html = """
