@@ -617,9 +617,6 @@ class DrugDecoder(Reader):
         else:
             return None
 
-
-
-
     def check(self):
         for x in self.drugIds:
             try:
@@ -632,3 +629,6 @@ class DrugDecoder(Reader):
         #if  self.df.isnull().sum().sum()>0:
         #   print(d.df.isnull().sum())
         #    raise ValueError("all values must be non-na. check tabulation")
+
+    def __len__(self):
+        return len(self.df)
