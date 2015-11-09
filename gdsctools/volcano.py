@@ -32,7 +32,7 @@ from gdsctools.tools import Savefig
 __all__ = ['VolcanoANOVA']
 
 
-class VolcanoANOVA(Savefig):
+class VolcanoANOVA(object):
     """Utilities related to volcano plots
 
     This class is used in :mod:`gdsctools.anova` but can also
@@ -107,8 +107,6 @@ class VolcanoANOVA(Savefig):
         bottom  area of the plot with little information.
 
         """
-        super(VolcanoANOVA, self).__init__()
-
         try:
             # an ANOVAResults contains a df attribute
             self.df = data.df.copy()
@@ -122,6 +120,9 @@ class VolcanoANOVA(Savefig):
             self.settings = ANOVASettings()
         else:
             self.settings = AttrDict(**settings)
+        
+        self.figtools = Savefig()
+        self.figtools.directory = self.settings.directory
 
         #: name of column that contains the drug identifier
         self._colname_drugid = 'DRUG_ID'
@@ -181,8 +182,7 @@ class VolcanoANOVA(Savefig):
         pylab.ioff()
         for i, drug in enumerate(drugs):
             self.volcano_plot_one_drug(drug)
-            if self.settings.savefig is True:
-                self.savefig("volcano_%s.png" % drug)
+            self.figtools.savefig("volcano_%s.png" % drug)
             pb.animate(i+1)
         pylab.ion()
 
@@ -196,8 +196,7 @@ class VolcanoANOVA(Savefig):
         pb = Progress(len(features), 1)
         for i, feature in enumerate(features):
             self.volcano_plot_one_feature(feature)
-            if self.settings.savefig is True:
-                self.savefig("volcano_%s.png" % feature)
+            self.figtools.savefig("volcano_%s.png" % feature)
             pb.animate(i+1)
 
     def volcano_plot_all(self):
@@ -211,8 +210,7 @@ class VolcanoANOVA(Savefig):
         data['annotation'] = ['' for x in range(len(data))]
 
         self._volcano_plot(data, title='all drugs')
-        if self.settings.savefig is True:
-            self.savefig("volcano_all.png")
+        self.figtools.savefig("volcano_all.png")
 
     def _get_fdr_from_pvalue_interp(self, pvalue):
         """Here, FDR are computed using an interpolation
