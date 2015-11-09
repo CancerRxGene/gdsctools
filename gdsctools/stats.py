@@ -19,23 +19,61 @@ and genomic features"""
 from statsmodels.stats import multitest
 import easydev
 import numpy as np
+from gdsctools.qvalue import QValue
+
 
 __all__ = ['MultipleTesting', 'cohens']
 
 
 class MultipleTesting(object):
-    """
+    """This class eases the computation of multiple testing corrections
 
+    The method implemented so far are based on statsmodels or a local
+    implementation of **qvalue** method.
+
+    ================    =============================================
+    method name         Description
+    ================    =============================================
+    bonferroni          one-step correction
+    sidak               one-step correction
+    holm-sidak          step down method using Sidak adjustments
+    holm                step down method using Bonferroni adjustments
+    simes-hochberg      step up method (independent)
+    hommel              close method based on Simes tests (non 
+                        negative)
+    fdr_bh              FDR Benjamini-Hochberg (non-negative)
+    fdr_by              FDR Benjamini-Yekutieli (negative)
+    fdr_tsbky           FDR 2-stage Benjamini-Krieger-Yekutieli
+                        non negative
+    frd_tsbh            FDR 2-stage Benjamini-Hochberg'
+                        non-negative
+    fdr                 same as fdr_bh
+    qvalue              see :class:`~gdsctools.qvalue.QValue` class
+    ================    =============================================
+
+
+    .. seealso:: :mod:`gdsctools.qvalue`.
+
+    .. seealso:: http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2907892/
 
     """
     def __init__(self, method=None):
-        self.valid_methods = ['bonferroni', 'sidak',
-            'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh',
-            'fdr_tsbh', 'fdr_tsbky', 'fdr']
+        """.. rubric:: Constructor
 
-        self._method = 'fdr_bh'
+        :param method: default to **fdr** that is the FDR Benjamini-Hochberg
+            correction.
+        """
+
+        #: set of valid methods 
+        self.valid_methods = ['bonferroni', 'sidak', 'fdr_by',
+            'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh',
+            'fdr_tsbh', 'fdr_tsbky', 'fdr', 'qvalue']
+
+        self._method = 'fdr'
         if method is not None:
             self.method = method
+        # parameter of the multiple test (e.g. used if method is bonferroni
+        self.alpha = 0.1
 
     def _get_method(self):
         return self._method
@@ -44,25 +82,58 @@ class MultipleTesting(object):
         if method == 'fdr':
             method = 'fdr_bh'
         self._method = method
-    method = property(_get_method, _set_method, doc="")
+    method = property(_get_method, _set_method, doc="get/set method")
 
     def get_corrected_pvalues(self, pvalues, method=None):
+        """Return corrected pvalues
+
+        :param list pvalues: list or array of pvalues to correct.
+        :param method: use the one defined in the constructor by default
+            but can be overwritten here
+        """
         if method is not None:
             self.method = method
-        corrections = multitest.multipletests(pvalues,
-                method=self.method)
-        return corrections
 
-    def plot_comparison(self, pvalues):
+        pvalues = np.array(pvalues)
+
+        if self.method == 'qvalue':
+            qv = QValue(pvalues)
+            corrections = qv.qvalue()
+            return corrections
+        else:
+            corrections = multitest.multipletests(pvalues,
+               alpha=self.alpha, method=self.method)[1]
+            return corrections
+
+    def plot_comparison(self, pvalues, methods=None):
+        """Simple plot to compare the pvalues correction methods
+
+        .. plot::
+            :include-source:
+            :width: 80%
+
+            from gdsctools.stats import MultipleTesting
+            mt = MultipleTesting()
+            pvalues = [1e-10, 9.5e-2, 2.2e-1, 3.6e-1, 5e-1, 6e-1,8e-1,9.6e-1]
+            mt.plot_comparison(pvalues, 
+                methods=['fdr_bh', 'qvalue', 'bonferroni', 'fdr_tsbh'])
+
+        .. note:: in that example, the qvalue and FDR are identical, but 
+            this is not true in general.
+
+        
+        """
+        if methods is None:
+            methods = self.valid_methods
 
         import pylab
         pylab.clf()
-        for method in self.valid_methods:
-            print(method)
-            pv = self.get_corrected_pvalues(pvalues, method=method)[1]
+        for method in methods:
+            pv = self.get_corrected_pvalues(pvalues, method=method)
             pylab.plot(pvalues, pv, 'o-', label=method.replace("_","\_"))
-        pylab.legend()
-
+        pylab.legend(loc='best')
+        pylab.ylabel('corrected pvalues')
+        pylab.grid()
 
 def cohens(x, y):
     r"""Effect size metric through Cohen's *d* metric
