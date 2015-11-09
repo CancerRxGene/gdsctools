@@ -14,23 +14,84 @@
 #  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
-"""IO functionalities"""
+"""IO functionalities
+
+
+Provides readers to read 
+
+- Matrix of IC50 data set :class:`IC50`
+- Matrix of Genomic features with :class:`GenomicFeatures`
+- Drug Decoder table with :class:`DrugDecoder`
+
+"""
 import pandas as pd
 import pylab
 import numpy as np
 import easydev
 
 
-__all__ = ['IC50', 'GenomicFeatures', 'CosmicRows', 'Reader',
-    'DrugDecoder']
+__all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecoder']
 
 
 class Reader(object):
-    """Base class to read csv file"""
+    """Convenience base class to read CSV or TSV files"""
     def __init__(self, data, sep="\t"):
-        """.. rubric:: Constructor
+        r""".. rubric:: Constructor
 
-        :param input: could be a filename
+        This class takes only one input parameter and possibly an optional
+        parameter called **sep** (see below) but it reads a large
+        variety of formats used within GDSCTools.
+
+        :param data: The input parameter, which can be a filename, or
+            a dataframe, or an instance of :class:`Reader`. See below for more
+            details
+
+        :param sep: if input is a file, then we may read the file with
+            pandas.read_csv, and we will use the separator provided
+            here (default to tab)
+
+
+        The input can be a filename either CSV (comma separated values) or
+        TSV (tabular separated values).
+
+        ::
+
+            >>> from gdsctools import Reader, ic50_test
+            >>> r = Reader(ic50_test.filename, sep="\t")
+            >>> len(r.df)   # number of rows
+            988
+            >>> len(r)      # number of elements
+            11856
+
+        Note that :class:`Reader` is a base class and more sophisticated
+        readers are available. for example, the :class:`IC50` would be 
+        better to read this IC50 data set.
+
+        The data has been stored in a data frame in the :attr:`df` attribute.
+
+        The dataframe of the object itself can be used as an input to create
+        an new instance::
+
+            >>> from gdsctools import Reader, ic50_test
+            >>> r = Reader(ic50_test.filename, sep="\t")
+            >>> r2 = Reader(r) # here r.df is simply copied into r2
+            >>> r == r2
+            True
+
+        It is sometimes convenient to create an empty Reader that will be
+        populated later on::
+
+            >>> r = Reader()
+            >>> len(r)
+            0
+
+        More advanced readers (e.g. :class:`IC50`) can also be used as input
+        as long as they have a :attr:`df` attribute::
+
+            >>> from gdsctools import Reader, ic50_test
+            >>> ic = IC50(ic50_test)
+            >>> r = Reader(ic)
+
 
         """
         self._sep = sep
@@ -41,7 +102,11 @@ class Reader(object):
             self.df = pd.DataFrame()
             self._filename = None
         elif isinstance(data, str):
-            self._reader(data)
+            try:
+                self._reader(data)
+            except:
+                # try naively assuming this is comma separated
+                self.df = pd.read_csv(data, sep=self._sep)
             self._filename = data
         elif hasattr(data, 'filename'):
             # could be a data sets from gdsctools.datasets.Data
@@ -56,6 +121,8 @@ class Reader(object):
         else:
             raise TypeError("Input must be a filename, a IC50 instance, or " +
                             "a dataframe.")
+
+        #: if populated, can be used to check validity of a header
         self.header = []
 
     def _valid_header(self, df):
@@ -65,6 +132,7 @@ class Reader(object):
         return True
 
     def read_matrix_from_r(self, name):
+        """Required biokit. Will be removed"""
         print("Reading matrix %s " % (name))
         self.session.run("rnames = rownames(%s)" % name)
         self.session.run("cnames = colnames(%s)" % name)
@@ -85,7 +153,7 @@ class Reader(object):
     def __len__(self):
         return self.df.shape[0] * self.df.shape[1]
 
-    def to_csv(self, filename, sep=None):
+    def to_csv(self, filename, sep=None, index=True):
         """Save data into a CSV file (actually, TSV) """
         if sep is None:
             sep = self._sep
@@ -107,32 +175,6 @@ class Reader(object):
     def __eq__(self, other):
         return all(self.df.fillna(0) == other.df.fillna(0))
 
-
-class COSMIC(object):
-    """
-
-    ::
-
-        >>> c = COSMIC(905940)
-        >>> c.on_web()
-
-
-    .. seealso:: http://www.cancerrxgene.org/translation/CellLine
-    """
-    def __init__(self, identifier):
-        self.identifier = identifier
-
-    def _get_url(self, cosmic_id=None):
-        if cosmic_id is None:
-            cosmic_id = self.identifier
-        url = 'http://cancer.sanger.ac.uk/cell_lines/sample/overview'
-        url = url + "?id={0}".format(cosmic_id)
-        return url
-
-    def on_web(self):
-        from easydev.browser import browse
-        url = self._get_url(self.identifier)
-        browse(url)
 
 
 class CosmicRows(object):
@@ -220,7 +262,8 @@ class IC50(Reader, CosmicRows):
 
         :param filename: input filename of IC50s. May also be an instance
             of :class:`IC50` or a valid dataframe. The data is stored as a
-            dataframe in the attribute called :attr:`df`.
+            dataframe in the attribute called :attr:`df`. Input file may be
+            gzipped
         :param sep: separator between columns (default to tabulation)
 
         """
@@ -261,7 +304,9 @@ class IC50(Reader, CosmicRows):
         """Plots the fraction of valid/measured IC50 per drug
 
         :param kargs: any valid parameters accepted by pylab.plot function.
-        :return: the fraction of valid/measured IC50 per drug"""
+        :return: the fraction of valid/measured IC50 per drug
+        
+        """
         data = self.df.count()/len(self.df)
         pylab.clf()
         pylab.plot(data.values, **kargs)
@@ -277,13 +322,25 @@ class IC50(Reader, CosmicRows):
 
         :param bins: binning of the histogram
         :param kargs: any argument accepted by pylab.hist function.
-        :return: all measured IC50"""
-        data = [x for x in self.df.values.flatten() if not np.isnan(x)]
+        :return: all measured IC50
+        
+        .. plot:: 
+            :include-source:
+            :width: 80%
+
+            from gdsctools import IC50, ic50_test
+            r = IC50(ic50_test)
+            r.hist()
+
+        """
         pylab.clf()
-        pylab.hist(data, bins=bins, **kargs)
+        pylab.hist(self.get_ic50(), bins=bins, **kargs)
         pylab.grid()
         pylab.xlabel('log IC50')
-        return data
+
+    def get_ic50(self):
+        """Return all ic50 as a list"""
+        return [x for x in self.df.values.flatten() if not np.isnan(x)]
 
     def __str__(self):
         txt = "Number of drugs: %s\n" % len(self.drugIds)
@@ -364,7 +421,7 @@ class GenomicFeatures(Reader, CosmicRows):
     def _reader(self, filename):
         self.df = pd.read_csv(filename, sep=self._sep)
         error_msg = "the features input file must contains a column " +\
-            " named %s" % self._col_cosmic 
+            " named %s" % self._col_cosmic
         assert self._col_cosmic in self.df.columns, error_msg
         self.df.set_index(self._col_cosmic, inplace=True)
 
@@ -502,6 +559,9 @@ class PANCAN(Reader):
         self.session.run('load("%s")' %self._filename)
         self.df = self.read_matrix_from_r('MoBEM')
 
+    def _reader(self, name=""):
+        pass
+
 
 class Extra(Reader):
     def __init__(self, filename="djvIC50v17v002-nowWithRMSE.rdata"):
@@ -555,6 +615,8 @@ class Extra(Reader):
         pylab.grid(True)
         pylab.xlabel('AUC')
         pylab.ylabel(r'\#')
+    def _reader(self, name=""):
+        pass
 
 
 class DrugDecoder(Reader):
@@ -581,7 +643,7 @@ class DrugDecoder(Reader):
 
         if self._valid_header(self.df) is True:
             self.df.set_index('DRUG_ID', inplace=True)
-        else: 
+        else:
             msg = "Could not read the file with expected format. "
             msg += "It should be a comma separated file."
             msg += " It should be made of 3 columns with this header"
