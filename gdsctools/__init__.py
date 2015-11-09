@@ -7,6 +7,11 @@ except:
     # setup changes
     version = "0.3"
 
+try:
+    license = open('../LICENSE', 'r').read()
+except:
+    license = '3-clause ("Simplified" or "New") BSD'
+
 
 from gdsctools.report import HTMLTable, Report
 from gdsctools.readers import IC50, GenomicFeatures, DrugDecoder
@@ -14,5 +19,3 @@ from gdsctools.anova import ANOVA, ANOVAReport
 from gdsctools.settings import ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
-
-
