@@ -68,7 +68,8 @@ setup(
     include_package_data = True,
 
     package_data = {
-        'share' : ['*.txt', '*.csv', '*tsv', 'README.rst'],
+        'share' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 'README.rst'],
+        'share.data' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 'README.rst'],
         '' : ['README.rst'],
         },
 
