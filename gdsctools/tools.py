@@ -14,6 +14,7 @@
 #  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
+"""Sets of miscellaneous tools"""
 import numpy as np
 import pylab
 import os
@@ -24,22 +25,47 @@ class Savefig(object):
 
     .. note:: For developers only
     """
-    def __init__(self):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
+        self._directory = None
         #: directory where to save figures
         self.directory = '.'
 
-    def savefig(self, name, **kargs):
+    def _get_directory(self):
+        return self._directory
+    def _set_directory(self, directory):
+        self._directory = directory
+        try:
+            if os.path.isdir(directory) is False:
+                os.mkdir(self.directory)
+                if self.verbose:
+                    print("Created directory {}".format(directory))
+        except Exception:
+            if self.verbose:
+                print("Could not create the directory")
+    directory = property(_get_directory, _set_directory, doc="")
+
+    def savefig(self, name, size_inches=None,**kargs):
         """Save a matplotlib figure
 
         :param str filename: where to save the figure.
         :param **kargs: accepts all parameters known by pylab.savefig
         """
+        # if not provided, don't do anything.
+        if name is None:
+            return
+
         try:
             directory = self.settings.directory
         except:
             directory = self.directory
 
         filename = directory + os.sep + name
+        fig = pylab.gcf()
+        if size_inches is not None:
+            fig.set_size_inches(size_inches)
+        if self.verbose:
+            print("saving file in %s" % filename)
         pylab.savefig(filename, **kargs)
 
 
