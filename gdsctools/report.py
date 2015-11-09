@@ -294,8 +294,6 @@ class Report(object):
             if os.path.isdir(self.directory) is False:
                 print("Created directory {}".format(self.directory))
                 os.mkdir(self.directory)
-
-
         except Exception:
             pass
         finally:
