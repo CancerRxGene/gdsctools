@@ -14,7 +14,12 @@
 #  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
-"""Volcano plot utilities"""
+"""Volcano plot utilities
+
+The :class:`VolcanoANOVA` is used in the creation of the report but
+may be used by a usr in a Python shell.
+
+"""
 import pandas as pd
 import pylab
 import numpy as np
@@ -30,6 +35,8 @@ __all__ = ['VolcanoANOVA']
 class VolcanoANOVA(Savefig):
     """Utilities related to volcano plots
 
+    This class is used in :mod:`gdsctools.anova` but can also
+    be used independently as in the example below.
 
     .. plot::
         :include-source:
@@ -38,63 +45,126 @@ class VolcanoANOVA(Savefig):
         from gdsctools import ANOVA, ic50_test, VolcanoANOVA
         an = ANOVA(ic50_test)
 
-        an = anova.ANOVA(ic50_test)
-        an.set_cancer_type('breast')
-        df = an.anova_all()
-        v = VolcanoANOVA(df)
+        # retrisct analysis to a tissue to speed up computation
+        an.set_cancer_type('lung_NSCLC')
+        
+        # Perform the entire analysis
+        results = an.anova_all()
 
+        # Plot volcano plot of pvalues versus signed effect size 
+        v = VolcanoANOVA(results)
+        v.volcano_plot_all()
 
-    .. note:: **for developers**: there is experimental code to
-        connect the volcano plot using mpld3 package and javascript.
+    .. note:: Within an IPython shell, you should be able to click 
+        on a circle and the title will be updated
+        with the name of the drug/feature and FDR value.
+
+    .. note:: (**for developers**) A javascript version is also 
+        created on the fly using mpld3 library. It is used in the 
+        creation of the HTML report but one can use it as well in an
+        ipython notebook::
+
+            # The **v** instance is as created in the example above
+            # Then, type the following code to create an HTML with the
+            # javascript plot embedded.
+            import mpld3
+            htmljs = mpld3.fig_to_html(v.current_fig)
+            fh = open('volcano_doc.html', 'w')
+            fh.write(htmljs)
+            fh.close()
+
+    There are 5 methods to plot volcano plots depending on what you want to see
+
+    - :meth:`volcano_plot_all` as above plots all associations
+    - :meth:`volcano_plot_all_drugs` creates a volcano plot for each drug and
+      save it into a PNG file. This method calls :meth:`volcano_plot_one_drug`.
+    - :meth:`volcano_plot_all_features` creates a volcano plot for each feature
+      and save it into a PNG file. This method calls 
+      :meth:`volcano_plot_one_feature`.
+
     """
     def __init__(self, data, sep="\t", settings=None):
         """.. rubric:: Constructor
 
-        :param data: a dataframe are returned by e.g., :meth:`ANOVA.anova_all`
-        :param settings: an instance of :class:`ANOVASettings`
+        :param data: an :class:`~gdsctools.anova.ANOVAResults` instance 
+            or a dataframe with the proper columns names (see below)
+        :param settings: an instance of
+            :class:`~gdsctools.settings.ANOVASettings`
+
+        Expected column names to be found if a filename is provided::
+
+            FEATURE_ANOVA_pval
+            ANOVA_FEATURE_FDR_%
+            FEATURE_deltaMEAN_IC50
+            FEATURE_IC50_effect_size
+            N_FEATURE_pos
+            N_FEATURE_pos
+            FEATURE
+            DRUG_ID
+
+        If the plotting is too slow, you can use the :meth:`selector` to prune
+        the results (most of the data are noise and overlap on the middle 
+        bottom  area of the plot with little information.
 
         """
         super(VolcanoANOVA, self).__init__()
 
-        if isinstance(data, str):
-            self.df = pd.read_csv(data, sep=sep)
-        else:
+        try:
+            # an ANOVAResults contains a df attribute
+            self.df = data.df.copy()
+        except:
+            # probably a dataframe
             self.df = data.copy()
 
-        # this is redundant coul reuse the input ??
+        # this is redundant could reuse the input ??
         if settings is None:
             from gdsctools.settings import ANOVASettings
             self.settings = ANOVASettings()
         else:
             self.settings = AttrDict(**settings)
-        self.colname_drugid = 'DRUG_ID'
 
-        self.drugs = set(self.df[self.colname_drugid]) # set on values
+        #: name of column that contains the drug identifier
+        self._colname_drugid = 'DRUG_ID'
+        self._colname_feature = 'FEATURE'
+
+        self.drugs = set(self.df[self._colname_drugid])
+        self.features = set(self.df[self._colname_feature])
+
         self.varname_pvalue = 'FEATURE_ANOVA_pval'
         self.varname_qvalue = 'ANOVA_FEATURE_FDR_%'
 
         # intensive calls made once for all
-        self.groups_by_drugs = self.df.groupby(self.colname_drugid).groups
-        self.groups_by_features = self.df.groupby('FEATURE').groups
+        self.groups_by_drugs = self.df.groupby(self._colname_drugid).groups
+        self.groups_by_features = self.df.groupby(self._colname_feature).groups
 
     def selector(self, df, Nbest=1000, Nrandom=1000, inplace=False):
-        """Select first N best rows and N random ones
+        """Select only the first N best rows and N random ones 
 
-        Used to select a representative set of rows and the best rows (in
-        a sorted dataframe). This is used to create the volcano plots quickly.
+        Sometimes, there are tens of thousands of associations and future 
+        analysis will include more features and drugs. Plotting volcano plots 
+        should therefore be fast and scalable. Here, we provide a naive
+        way of speeding up the plotting by selecting only a subset of the data
+        made of Nbest+Nrandom associations. 
+
+        :param df: the input dataframe with ANOVAResults
+        :param int Nbest: how many of the most significant association 
+            should be kept
+        :param int Nrandom: on top of the Nbest significant association, 
+            set how many other randomly chosen associations are to be kept.
+        :return: pruned dataframe
 
         """
-        if len(df)<Nbest:
+        if len(df) < Nbest:
             return df
-        Nmax =  Nbest + Nrandom
-        N  = len(df)
+        Nmax = Nbest + Nrandom
+        N = len(df)
         if N > Nbest:
             x = range(Nbest, N)
             pylab.shuffle(x)
             n2pick = min(N, Nmax) - Nbest
             indices = range(0, Nbest) + x[0:n2pick]
         else:
-            indices = range(0,Nbest)
+            indices = range(0, Nbest)
         df = df.ix[indices]
         if inplace is True:
             self.df = df
@@ -102,11 +172,11 @@ class VolcanoANOVA(Savefig):
             return df
 
     def volcano_plot_all_drugs(self):
-        """Volcano plot for each drug and savefig
+        """Create a volcano plot for each drug and save in PNG files
 
-        :param df: output of :meth:`anova_all`
+        Each filename is set to **volcano_<drug identifier>.png**
         """
-        drugs = list(self.df[self.colname_drugid].unique())
+        drugs = list(self.df[self._colname_drugid].unique())
         pb = Progress(len(drugs), 1)
         pylab.ioff()
         for i, drug in enumerate(drugs):
@@ -117,13 +187,11 @@ class VolcanoANOVA(Savefig):
         pylab.ion()
 
     def volcano_plot_all_features(self):
-        """Volcano plot for each feature
+        """Create a volcano plot for each feature and save in PNG files
 
-        :param df: output of :meth:`anova_all`
-
-        Takes about 10 minutes for 265 drugs and 677 features
+        Each filename is set to **volcano_<feature name>.png**
         """
-        features = list(self.df['FEATURE'].unique())
+        features = list(self.df[self._colname_feature].unique())
         print('Creating image for each feature (using all drugs)')
         pb = Progress(len(features), 1)
         for i, feature in enumerate(features):
@@ -133,16 +201,24 @@ class VolcanoANOVA(Savefig):
             pb.animate(i+1)
 
     def volcano_plot_all(self):
+        """Create an overall volcano plot for all associations
+
+        This method saves the picture in a PNG file named **volcano_all.png**.
+        """
         # no annotations for all features.
         # this is slow, we can drop non relevant data
         data = self._get_volcano_sub_data('ALL')
         data['annotation'] = ['' for x in range(len(data))]
 
-        self.volcano_plot(data, title='all drugs')
+        self._volcano_plot(data, title='all drugs')
         if self.settings.savefig is True:
             self.savefig("volcano_all.png")
 
     def _get_fdr_from_pvalue_interp(self, pvalue):
+        """Here, FDR are computed using an interpolation
+
+
+        """
         pvalue += 1e-15
         qvals = self.df[self.varname_qvalue]
         pvals = self.df[self.varname_pvalue]
@@ -156,6 +232,13 @@ class VolcanoANOVA(Savefig):
         return yc
 
     def _get_pvalue_from_fdr(self, fdr):
+        """Get pvalue for a given FDR threshold
+
+        This is equivalent to v17 of the R version but is not very precise
+        we should use _get_pvalue_from_fdr_interp instead but needs to be
+        tested.
+
+        """
         qvals = self.df[self.varname_qvalue]
         pvals = self.df[self.varname_pvalue]
         if isinstance(fdr, list):
@@ -187,27 +270,25 @@ class VolcanoANOVA(Savefig):
         return {'minN': minN, 'maxN': maxN,
                 'pvalues': (self.settings.FDR_threshold, pvalues)}
 
-    def volcano_plot_one_feature(self, feature):
-        """Volcano plot for one feature (all drugs)"""
-        data = self._get_volcano_sub_data('FEATURE', feature)
-        self.volcano_plot(data, title=feature)
 
     def _get_volcano_sub_data(self, mode, target=None):
-        # using data related to the given drug
+        # Return data needed for each plot
+        # TODO could be simplified but works for now 
 
         # groups created in the constructor once for all
-        if mode == 'DRUG_ID':
+        if mode == self._colname_drugid:
             subdf = self.df.ix[self.groups_by_drugs[target]]
-            texts = subdf['FEATURE']
+            texts = subdf[self._colname_feature]
         elif mode == 'FEATURE':
             subdf = self.df.ix[self.groups_by_features[target]]
-            texts = subdf['DRUG_ID']
+            texts = subdf[self._colname_drugid]
         elif mode == 'ALL':
             # nothing to do, get all data
             subdf = self.df
-            texts = subdf['FEATURE'] # TODO + drug
+            texts = subdf[self._colname_feature] # TODO + drug
         else:
-            raise ValueError("mode parameter must be in [FEATURE, DRUG_ID, ALL]")
+            raise ValueError("mode parameter must be in [FEATURE, %s, ALL]" %
+                    (self._colname_drugid))
 
         # replaced by groups created in the constructor
         #subdf = self.df[self.df[mode] == target]
@@ -223,8 +304,8 @@ class VolcanoANOVA(Savefig):
         data = pd.DataFrame(index=range(len(qvals)))
         data['pvalue'] = pvals
         data['signed_effect'] = signed_effects
-        data['Feature'] = list(subdf['FEATURE'])
-        data['Drug'] = list(subdf['DRUG_ID'])
+        data['Feature'] = list(subdf[self._colname_feature])
+        data['Drug'] = list(subdf[self._colname_drugid])
         data['text'] = texts.values
         ## !! here, we need to use .values since the pandas dataframe
         # index goes from 1 to N but the origignal indices in subdf
@@ -272,24 +353,28 @@ class VolcanoANOVA(Savefig):
         data['markersize'] = markersize
         return data
 
+    def volcano_plot_one_feature(self, feature):
+        """Volcano plot for one feature (all drugs)
+
+        :param feature: a valid feature name to be found in the results
+        """
+        assert feature in self.features, 'unknown feature name'
+        # FEATURE is is the mode name, not a column's name
+        data = self._get_volcano_sub_data('FEATURE', feature)
+        self._volcano_plot(data, title=feature)
+
     def volcano_plot_one_drug(self, drug_id):
-        """Volcano plot for one drug and all genomic features
+        """Volcano plot for one drug (all genomic features)
 
-        :param df: output of :meth:`anova_all`
-
+        :param drug_id: a valid drug identifier to be found in the results
         """
         assert drug_id in self.drugs, 'unknown drug name'
-        # needs to run :meth:`anova_all` first
-        # using all data, get the FDR limits
-        data = self._get_volcano_sub_data(self.colname_drugid, drug_id)
-        self.volcano_plot(data, title=drug_id)
+        data = self._get_volcano_sub_data(self._colname_drugid, drug_id)
+        self._volcano_plot(data, title=drug_id)
 
-    def volcano_plot(self, data, title=''):
-        """Plots signed effects versus pvalues
-
-        THis is for internal usage but maybe useful elsewhere.
-
-        """
+    def _volcano_plot(self, data, title=''):
+        """Main volcano plot function called by other methods
+        such as volcano_plot_all"""
         colors = list(data['color'].values)
         pvalues = data['pvalue'].values
         signed_effects = data['signed_effect'].values
@@ -369,21 +454,24 @@ class VolcanoANOVA(Savefig):
         #self.axx.set_ylabel('FDR \%', fontsize=self.settings.fontsize)
 
         # For the static version
-        pylab.title("%s" % title.replace("_","\_"))
+        title_handler = pylab.title("%s" % title.replace("_","  "))
         labels = []
-        """for index, row in data.iterrows():
-            text = data[['feature', 'drug',
-                    'signed_effect','pvalue']].ix[0].to_frame()
-            if row.annotation == True:
-                x, y= row.signed_effect, row.pvalue
-                ax.text(x, -pylab.log10(y), row.text.replace("_","\_"))
-            labels.append(text)
+ 
+        # This code allows the ipython user to click on the matplotlib figure
+        # to get informatio about the durg and feature of a given circles.
         def onpick(event):
-            ind = event.ind
-            print('on pick scatter:', ind, np.take(X, ind)[0],
-                    np.take(Y, ind)[0])
-        #fig.canvas.mpl_connect('pick_event', onpick)
-        """
+            self.event = event
+            ind = event.ind[0]
+            try:
+                title = data.ix[ind]['Drug'] + " / " + data.ix[ind].Feature
+                title += "\nFDR=" + str(data.ix[ind]['FDR'])
+                title_handler.set_text(title.replace("_","  "))
+            except:
+                print('Failed to create new title on click')
+            print(data.ix[ind].T)
+            fig.canvas.draw()
+        fig.canvas.mpl_connect('pick_event', onpick)
+        #fig.canvas.mpl_connect('motion_notify_event', onpick)
 
         # for the JS version
         # TODO: for the first 1 to 2000 entries ?
