@@ -39,7 +39,7 @@ release = version
 author = "Thomas Cokelaer,"
 title = "GDSCtools"
 copyright = author + ", 2015"
-project = pkg_name
+project = 'GDSCTools'
 
 
 
