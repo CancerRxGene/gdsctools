@@ -26,8 +26,8 @@ __all__ = ['ANOVASettings']
 
 
 class ANOVASettings(AttrDict):
-    """Class to store and manipulate settings of the analysis
-
+    """All settings used in :class:`gdsctools.anova.ANOVA`
+    
     This class behaves as a dictionary but values for a given
     key (setting) can be accessed and changed easily like an 
     attribute:
@@ -41,9 +41,11 @@ class ANOVASettings(AttrDict):
         >>> s.FDR_threshold = 20
 
     When you change a value, you can check its validity by calling the 
-    :meth:`check`  method.
+    :meth:`check`  method. This is not very thorough right now but should
+    help.
 
-    Finally, the method :meth:`to_html` creates an HTML text.
+    Finally, the method :meth:`to_html` creates an HTML table that can
+    be added to HTML report.
 
     .. note:: **for developers** a key can be changed or accessed to as if
        it was an attribute. This prevents some functionalities (such as copy()
@@ -53,9 +55,9 @@ class ANOVASettings(AttrDict):
        
     Here are the current values used:
 
-    ======================= ========= =================================
+    ======================= ========= =========================================
     Name                    Default   Description
-    ======================= ========= =================================
+    ======================= ========= =========================================
     includeMSI_factor       True      Include MSI in the regression
     featFactorPopulationTh  3         Discard association where a 
                                       genomic feature has less than 3
@@ -71,20 +73,30 @@ class ANOVASettings(AttrDict):
                                       be found in the Genomic Feature
                                       data set.
     pval_correction_method  fdr       Type of p-values correction 
-                                      method used. Only 'fdr' 
-                                      implemented
+                                      method used. Could be *fdr*, 
+                                      *qvalue*  or one accepted
+                                      by
+                                      :class:`~gdsctools.stats.MultipleTesting`
     equal_var_ttest         True      Assume equal variance in the 
                                       t-test
     minimum_nonna_ic50      6         Minimum number of IC50 required
-                                      to perform an analysis.
+                                      to perform an analysis for a 
+                                      given drug.
     fontsize                20        Used in some plots for labels
     FDR_threshold           25        FDR threshold used in volcano 
                                       plot and significant hits
     pvalue_threshold        np.inf    Used to select significant hits
-    directory               gdsc
-    savefig                 False     Save the figure in PNG format
-    effect_threshold        0         Used in the volcano plot
-    ======================= ========= =================================
+                                      see 
+                                      :class:`~gdsctools.anova.ANOVAReport`
+    directory               html_gdsc Directory where images and HTML documents
+                                      are saved.
+    savefig                 False     Save the figure or not (PNG format)
+    effect_threshold        0         Used in the volcano plot. See
+                                      :class:`~gdsctools.volcano.VolcanoPlot`
+
+    low_memory              False     Faster (20%) if set to false but 
+                                      uses about 1Gb per run
+    ======================= ========= =========================================
 
     """
     def __init__(self, **kargs):
@@ -101,6 +113,8 @@ class ANOVASettings(AttrDict):
         self.pval_correction_method = 'fdr'   # or qvalue
         self.equal_var_ttest = True
         self.minimum_nonna_ic50 = 6
+
+        self.low_memory = False # False means this will be 10-20 faster
 
         # Visualisation and HTML related ---------------------
         self.fontsize = 20
