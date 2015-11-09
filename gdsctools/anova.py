@@ -1,6 +1,6 @@
 # -*- python -*-
 # -*- coding utf-8 -*-
-
+#
 #  This file is part of GDSCTools software
 #
 #  Copyright (c) 2015 - Wellcome Trust Sanger Institute
@@ -25,6 +25,7 @@ import numpy as np
 
 from statsmodels.formula.api import OLS
 
+
 from easydev import Progress, AttrDict, Logging
 import easydev
 from colormap import cmap_builder
@@ -37,20 +38,34 @@ from gdsctools.tools import Savefig
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
 
+#from cno.misc.profiler import do_profile
 
 __all__ = ['ANOVA', 'ANOVAResults', 'ANOVAReport']
 
 
 class ANOVAResults(object):
+    """Class to handle results of the ANOVA analysis
 
-    def __init__(self):
+    Used to wrap the results returned by the
+    :meth:`gdsctools.anova.ANOVA.anova_all` method.
+
+
+    """
+    def __init__(self, filename=None):
+        """.. rubric:: Constructor
+
+        :param str filename: possibly, read a file.
+        """
+        if filename is not None:
+            self.read_csv(filename)
+
         self.drug_target = 'DRUG_TARGET'
         self.drug_id = 'DRUG_ID'
         self.drug_name = 'DRUG_NAME'
         self.feature = 'FEATURE'
 
+        #: dictionary with the relevant column names and their types
         self.mapping = {
-
              self.drug_target: np.dtype('O'),
              self.drug_id: np.dtype('O'),
              self.drug_name: np.dtype('O'),
@@ -85,10 +100,31 @@ class ANOVAResults(object):
                     df[col] = df[col].astype(self.mapping[col])
         return df
 
+    def _get_df(self):
+        return self._df
+    def _set_df(self, df):
+        # TODO check that all columns are found and with correct type.
+        self._df = df
+    df = property(_get_df, _set_df, doc="dataframe with all results")
 
-class ANOVAReport(Savefig):
-    """Class used to create final HTML reports on an :class:`ANOVA` analysis
+    def to_csv(self, filename):
+        """Save dataframe into a file using comma separated values"""
+        self.df.to_csv(filename, sep=',', index=False)
 
+    def read_csv(self, filename):
+        """Read a CSV file
+
+        .. todo:: check validity of the header
+        """
+        self.reader = readers.Reader(filename, sep=",",
+                comment='#')
+        self._df = self.reader.df
+
+
+class ANOVAReport(object):
+    """Class used to interpret the results and create final HTML report
+
+    Results is a data structure returned by :meth:`ANOVA.anova_all`.
 
     ::
 
@@ -98,25 +134,32 @@ class ANOVAReport(Savefig):
         an = ANOVA(ic50_test)
         results = an.anova_all()
 
-        # now, we can create the report. Note that we must currently provide
-        # a file that contains the concentrations used for each drug
-        r = ANOVAReport(gdsc=an, results=results,
-            concentrations='concentrations.csv')
+        # now, we can create the report.
+        r = ANOVAReport(gdsc=an, results=results)
+
+        # we can tune some settings
         r.settings.pvalue_threshold = 0.001
         r.settings.FDR_threshold = 28
         r.settings.directory = 'testing'
-        r.report()
+        r.create_html_pages()
+
+    :Significant association: a significant association is either
+        **resistant** or **sensitive**. Those conditions have to be fulfilled:
+         - The field *ANOVA_FEATURE_FDR_%* must be < FDR_threshold
+         - The field *FEATURE_ANOVA_pval* must be < pvalue_threshold
+         - The field *FEATURE_deltaMEAN_IC50* must be < 0 (sensible) or
+           >= 0 (resistant)
 
     """
     def __init__(self, gdsc, results, sep="\t", drug_decoder=None):
         """.. rubric:: Constructor
 
-
         :param gdsc: the instance with which you created the results to report
         :param results: the results returned by :meth:`ANOVA.anova_all`
 
         """
-        super(ANOVAReport, self).__init__()
+        self.figtools = Savefig()
+        self.figtools.directory = gdsc.settings.directory
 
         # data can be a file with all results as exported
         # by ANOVA analysis
@@ -125,7 +168,7 @@ class ANOVAReport(Savefig):
             self.df = self.read_csv(results, sep=sep)
         elif results is not None:
             try:
-                self.df = resuls.df.copy()
+                self.df = results.df.copy()
             except:
                 # or an instance of a dataframe
                 self.df = results.copy()
@@ -141,7 +184,6 @@ class ANOVAReport(Savefig):
         # with this alias, we get the ic50 and genomic features
         self.gdsc = gdsc
 
-
         # maybe there was not drug_decoder in the gdsc parameter,
         # so a user may have provide a file, in which case, we need
         # to update the content of the dur_decoder.
@@ -150,7 +192,6 @@ class ANOVAReport(Savefig):
             print('You can read one if you wish using read_drug_decoder')
         else:
             self.read_drug_decoder(drug_decoder)
-
 
         """if concentrations:
             # input may not have the concentrations columns right now.
@@ -168,9 +209,10 @@ class ANOVAReport(Savefig):
             self.df = df
             del self.conc
         """
-
         # create some data
         self._set_sensible_df()
+        # just to create the directory
+        report = Report(directory=self.settings.directory)
 
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
@@ -288,12 +330,6 @@ class ANOVAReport(Savefig):
         pvalue = pvals[qvals < self.settings.FDR_threshold].max()
         return pvalue
 
-    def read_csv(self, filename, sep="\t"):
-        """Reads a result file and store it in :attr:`df`"""
-        self.df = pd.read_csv(filename, sep=sep,
-                comment="#")
-        return self.df
-
     def _set_sensible_df(self):
         # just an alias
         logand = np.logical_and
@@ -309,7 +345,7 @@ class ANOVAReport(Savefig):
         self.resistant_df = self.df[logand(logand(mask1, mask2), mask3)]
 
     def get_significant_set(self):
-        """Return signiificant hits (resistant and sensible)"""
+        """Return significant hits (resistant and sensible)"""
         # a property that is long to compute
         # and may change if FDR changes.
         self._set_sensible_df()
@@ -349,8 +385,13 @@ class ANOVAReport(Savefig):
         df_count.drop('name', axis=1, inplace=True)
         return df_count
 
-    def drug_summary(self,  top=50, fontsize=10):
-        """Return dataframe with significant drugs"""
+    def drug_summary(self,  top=50, fontsize=10, filename=None):
+        """Return dataframe with significant drugs
+
+        :param fontsize:
+        :param top: max number of significant associations to show
+        :param filename: if provided, save the file in the directory
+        """
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -362,14 +403,20 @@ class ANOVAReport(Savefig):
         df_count = self._get_data(df_count_sensible, df_count_resistant)
 
         if len(df_count):
-            self._plot(df_count, 'drug', top)
-            if self.settings.savefig is True:
-                self.savefig('drug_summary.png')
+            self._plot(df_count, 'drug', top, fontsize=fontsize)
+            fig = pylab.gcf()
+            fig.set_size_inches(12, 14)
+            self.figtools.savefig(filename, bbox_inches='tight')
 
         return df_count
 
-    def feature_summary(self, top=50, fontsize=10):
-        """Return dataframe with significant features"""
+    def feature_summary(self, filename=None, top=50, fontsize=10):
+        """Return dataframe with significant features
+
+        :param fontsize:
+        :param top: max number of significant associations to show
+        :param filename: if provided, save the file in the directory
+        """
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -380,8 +427,9 @@ class ANOVAReport(Savefig):
 
         if len(df_count)>0:
             self._plot(df_count, 'feature', top, fontsize=fontsize)
-            if self.settings.savefig is True:
-                self.savefig('feature_summary.png')
+            fig = pylab.gcf()
+            fig.set_size_inches(12,14)
+            self.figtools.savefig(filename, bbox_inches='tight')
         return df_count
 
     def _plot(self, df_count, title_tag, top, fontsize=10):
@@ -401,7 +449,7 @@ class ANOVAReport(Savefig):
                 else:
                     pass
 
-        labels = [x.replace('_', '\_') for x in labels]
+        labels = [x.replace('_', ' ') for x in labels]
         ind = range(0, len(labels))
         # reverse does not exist with python3
         try:
@@ -430,12 +478,12 @@ class ANOVAReport(Savefig):
         pylab.legend(loc='lower right')
         pylab.tight_layout()
 
-    def get_significant_hits(self, concentrations='concentrations.tsv',
-            show=True):
+    def get_significant_hits(self,  show=True):
         """Return a summary of significant hits
 
         :param show: show a plot with the distribution of significant hits
 
+        .. todo:: to finalise
         """
         fdrs = range(5, 50+1, 5)
 
@@ -498,19 +546,26 @@ class ANOVAReport(Savefig):
         return ""
 
     def create_html_associations(self):
-        """Create an HTML page for each significant association"""
+        """Create an HTML page for each significant association
+
+        The name of the output HTML file is **<association id>.html**
+        where association id is stored in :attr:`df`.
+
+        """
         print("\n\nCreating individual HTML pages for each association")
         df = self.get_significant_set()
+
         drugs = df['DRUG_ID'].values
         features = df['FEATURE'].values
         assocs = df['assoc_ID'].values
         fdrs = df['ANOVA_FEATURE_FDR_%'].values
-        N = len(drugs)
+
+        N = len(df)
         pb = Progress(N)
+
         html = OneDrugOneFeature(self.gdsc,
                 drug='dummy', feature='dummy', fdr='dummy')
 
-        self.html = html
         for i in range(N):
             html.drug = drugs[i]
             html.feature = features[i]
@@ -583,13 +638,13 @@ class ANOVAReport(Savefig):
         """Create HTML main document (summary)"""
         print("\n\nCreating main HTML page in directory %s" %
                 (self.settings.directory))
-        buffer = self.settings.savefig
+        buffer_ = self.settings.savefig
         self.settings.savefig = True
         html = HTML_main(self, 'index.html', directory=self.settings.directory)
         html._init_report() # created the directory
         html.settings = self.settings
         html.report(onweb=onweb)
-        self.settings.savefig = buffer
+        self.settings.savefig = buffer_
 
     def create_html_manova(self):
         """Create summary table with all significant hits"""
@@ -607,7 +662,7 @@ class ANOVAReport(Savefig):
         self.create_html_manova()
 
 
-class ANOVA(Logging):
+class ANOVA(object): #Logging):
     """ANOVA analysis of the IC50 vs Feature matrices
 
     This class is the core of the analysis. It can be used to
@@ -624,9 +679,6 @@ class ANOVA(Logging):
     file is provided with this package that contains 677 genomic
     features for 1001 cell lines. If your IC50 contains unknown cell lines,
     you can provide your own file.
-
-    .. see also:: data format
-    .. todo:: data format
 
     .. plot::
         :include-source:
@@ -647,7 +699,8 @@ class ANOVA(Logging):
         takes into account the following factors: tissue, MSI and features.
         The order matters. If there is only one tissue, this factor is
         dropped. If the number of MSI values is less than a pre-defined
-        parameter (see :class:`ANOVASettings`), it is dropped. The other
+        parameter (see :class:`~gdsctools.settings.ANOVASettings`), it is 
+        dropped. The other
         methods :meth:`anova_one_drug` and :meth:`anova_all` are wrappers
         around :meth:`anova_one_drug_one_feature` to loop over all drugs, and
         loop over all drugs and all features, respectively.
@@ -655,6 +708,7 @@ class ANOVA(Logging):
 
 
     """
+    #@profile
     def __init__(self, ic50, genomic_features=None, concentrations=None,
             drug_decoder=None, verbose='INFO'):
         """.. rubric:: Constructor
@@ -671,9 +725,9 @@ class ANOVA(Logging):
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
-        super(ANOVA, self).__init__(level=verbose)
+        #super(ANOVA, self).__init__(level=verbose)
         # Reads IC50
-        self.logging.info('Reading data and building data structures')
+        #self.logging.info('Reading data and building data structures')
 
         # We first need to read the IC50 using a dedicated reader
         self.ic50_raw = readers.IC50(ic50)
@@ -737,6 +791,7 @@ class ANOVA(Logging):
         # must be called if ic50 or features are changed.
         self._init()
 
+
     def _autoset_msi(self):
         # if the number of pos. (or neg.) factors is not large enough then
         # the MSI factor is not used
@@ -788,6 +843,7 @@ class ANOVA(Logging):
         self.ic50.df = self.ic50.df.ix[self.features.df.index]
         self._init()
 
+    #@profile
     def _init(self):
         # Some preprocessing to speed up data access
         ic50_parse = self.ic50.df.copy().unstack().dropna()
@@ -810,7 +866,15 @@ class ANOVA(Logging):
         # fill the dictionaries for each drug once for all
         for drug_name in self.ic50.drugIds:
             indices = self.ic50_dict[drug_name]['indices']
-            self.features_dict[drug_name] = self.features.df.ix[indices]
+            # if we were to store all drugs /features, this takes
+            # 1Gb of memory for 265 drugs and 680 features. This is
+            # therefore not scalable, especially for multiprocessing.
+            if self.settings.low_memory is True:
+                pass
+            else:
+                self.features_dict[drug_name] = self.features.df.ix[indices]
+
+            # MSI and tissue can be store
             self.msi_dict[drug_name] = self.msi_factor.ix[indices]
             self.tissue_dict[drug_name] = self.tissue_factor.ix[indices]
 
@@ -872,7 +936,6 @@ class ANOVA(Logging):
     def diagnostics(self):
         """Return dataframe with information about the analysis
 
-        173390 feasible tests in v17 (96.65)
         """
         n_drugs = len(self.ic50.drugIds)
         n_features = len(self.features.features) - 3
@@ -896,6 +959,7 @@ class ANOVA(Logging):
                 'percentage_feasible_tests': float(feasible)/n_combos*100}
         return results
 
+    #@do_profile()
     def _get_one_drug_one_feature_data(self, drug_name, feature_name,
             diagnostic_only=False):
         """
@@ -931,12 +995,16 @@ class ANOVA(Logging):
         # dictionary once for all and dropping the NA as well.
         # Now, the next line takes no time
         dd.Y = self.ic50_dict[drug_name]['Y']
+
         # an alias to the indices
         indices = self.ic50_dict[drug_name]['indices']
-        self.indices = indices
+
         # select only relevant tissues/msi/features
-        # This line takes 50% of the time
-        dd.masked_features = self.features_dict[drug_name][feature_name]
+        if self.settings.low_memory is True:
+            # This line takes 50% of the time
+            dd.masked_features = self.features.df.loc[indices, feature_name]
+        else:
+            dd.masked_features = self.features_dict[drug_name][feature_name]
         dd.masked_tissue = self.tissue_dict[drug_name]
         dd.masked_msi = self.msi_dict[drug_name]
 
@@ -960,8 +1028,8 @@ class ANOVA(Logging):
         # numpy. We could also use the glass and cohens functions from the
         # stats module but the following code is much faster because it
         # factorises the computations of mean and variance
-        dd.positives = dd.Y[dd.masked_features.values ==1]
-        dd.negatives = dd.Y[dd.masked_features.values ==0]
+        dd.positives = dd.Y[dd.masked_features.values == 1]
+        dd.negatives = dd.Y[dd.masked_features.values == 0]
         dd.Npos = len(dd.positives)
         dd.Nneg = len(dd.negatives)
 
@@ -1013,11 +1081,14 @@ class ANOVA(Logging):
         # results. The ANOVA_results.txt obtained from SFTP
         # have different values meaning that the equal.var param
         # was set to False. Note that pvalue is stored at index 1
-        import scipy
-        dd.ttest = scipy.stats.ttest_ind(dd.negatives, dd.positives,
-                equal_var=self.settings.equal_var_ttest)[1]
-
+        dd.ttest = self._get_ttest(dd.negatives, dd.positives)
         return dd
+
+    def _get_ttest(self, sample1, sample2):
+        # this computes the ttest.
+        import scipy
+        return scipy.stats.ttest_ind(sample1, sample2,
+                equal_var=self.settings.equal_var_ttest)[1]
 
     def read_drug_decoder(self, filename=None):
         # Read the DRUG decoder file into a DrugDecoder/Reader instance
@@ -1144,8 +1215,8 @@ class ANOVA(Logging):
 
             # The regression and anvoa summary are done here
             self.data_lm = OLS(odof.Y, df.values).fit()
-            self.anova_pvalues = self._get_anova_summary(self.data_lm,
-                Ntissue, output='dict')
+            #self.anova_pvalues = self._get_anova_summary(self.data_lm,
+            #    Ntissue, output='dict')
 
             # example of computing null model ?
             """# Example of computing pvalues ourself
@@ -1324,7 +1395,7 @@ class ANOVA(Logging):
         # ssr = sum(np.square((f.predict(an.dff).T - an.Y.mean())))
         pass
 
-    def test(self):
+    def _test(self):
         # for drug1047 and featuer ABCB1_mut
         print("""
         Analysis of Variance Table
@@ -1453,8 +1524,12 @@ class ANOVA(Logging):
 
         # order the column names as defined in the __init__ method
         df = df[self.column_names]
-        df.reset_index(inplace=True)
-        return df
+        df.reset_index(inplace=True, drop=True)
+
+        results = ANOVAResults()
+        results.df = df
+
+        return results
 
     def add_pvalues_correction(self, df):
         """Add the corrected pvalues column in a dataframe based on pvalues
@@ -1469,7 +1544,7 @@ class ANOVA(Logging):
 
         # set the method and compute new pvalues
         self.multiple_testing.method = self.settings.pval_correction_method
-        new_pvalues = self.multiple_testing.get_corrected_pvalues(data)[1]
+        new_pvalues = self.multiple_testing.get_corrected_pvalues(data)
         new_pvalues *= 100
         # insert new columns.
         colname = 'ANOVA_FEATURE_FDR_%'
@@ -1514,21 +1589,19 @@ def multicore(ic50, maxcpu=4):
     :param ic50: a filename or :class:`IC50` instance.
 
     """
-
+    print("experimental code to run the analysis with several cores")
+    print("May takes lots or resources and slow down your system")
     import time
     t1 = time.time()
     master = ANOVA(ic50)
+    master.settings.low_memory = True
 
     drugs = master.ic50.drugIds
 
     from easydev import MultiProcessing
     t = MultiProcessing(maxcpu=maxcpu)
     # add all jobs (one per drug)
-    for i, drug in enumerate(drugs[0:4]):
-        from dill import dill
-        dill.pickles(analyse_one_drug)
-        dill.pickles(master)
-        dill.pickles(drug)
+    for i, drug in enumerate(drugs):
         t.add_job(analyse_one_drug, master, drug)
     t.run()
 
@@ -1538,9 +1611,9 @@ def multicore(ic50, maxcpu=4):
         result = this[1]
         master.individual_anova[drug] = result
 
-    print("\nTook " + str(time.time() - t1) +  "seconds.")
-
+    print("\nTook " + str(time.time() - t1) + "seconds.")
     return master
+
 
 def analyse_one_drug(master, drug):
     res = master.anova_one_drug(drug_id=drug, animate=False)
@@ -1672,13 +1745,13 @@ class HTMLOneFeature(Report):
         # so far is to close the figure.
         pylab.close(1)
         v.volcano_plot_one_feature(self.feature)
-        v.savefig('volcano_{}.png'.format(self.feature))
+        v.figtools.savefig('volcano_{}.png'.format(self.feature))
         try:
             import mpld3
             htmljs = mpld3.fig_to_html(v.current_fig)
         except:
             htmljs = ""
-        fh = open(self.directory + os.sep + 
+        fh = open(self.directory + os.sep +
                 "volcano_{}.html".format(self.feature),"w")
         fh.write(htmljs)
 
@@ -1752,13 +1825,13 @@ class HTMLOneDrug(Report):
         v.settings.savefig = True
         v.settings.directory = self.directory
         v.volcano_plot_one_drug(self.drug)
-        v.savefig('volcano_{}.png'.format(self.drug))
+        v.figtools.savefig('volcano_{}.png'.format(self.drug))
         try:
             import mpld3
             htmljs = mpld3.fig_to_html(v.current_fig)
         except:
             htmljs = ""
-        fh = open(self.directory + os.sep + 
+        fh = open(self.directory + os.sep +
                 "volcano_{}.html".format(self.drug),"w")
         fh.write(htmljs)
         fh.close()
@@ -1848,7 +1921,7 @@ class HTML_main(Report):
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
         v = VolcanoANOVA(self.results.df)
-        v.selector(v.df, 1000,1000, inplace=True)
+        v.selector(v.df, 1000, 1000, inplace=True)
 
         v.settings = self.settings # get fdr, pval
         v.settings.savefig = True
@@ -1883,7 +1956,7 @@ Possibly, a javascript version is available
             "Explore all significant results")
 
         # feature summary
-        df_features = self.results.feature_summary()
+        df_features = self.results.feature_summary("feature_summary.png")
         filename = 'OUTPUT' + os.sep + 'features_summary.tsv'
         df_features.to_csv(self.directory + os.sep + filename, sep='\t')
         html = """
@@ -1895,7 +1968,7 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         self.add_section(html, 'Feature summary')
 
         # drug summary
-        df_drugs = self.results.drug_summary()
+        df_drugs = self.results.drug_summary(filename="drug_summary.png")
         get_name = self.results.gdsc.drug_decoder.get_name
         if len(self.results.gdsc.drug_decoder.df) >0:
             df_drugs.index = [x + "-" + get_name(x) for x in df_drugs.index]
@@ -2075,3 +2148,7 @@ class SignificantHits(object):
         html.df.columns = [x.replace("_", " ") for x in html.df.columns]
         return html.to_html(escape=escape, header=header, index=index,
                 justify='center')
+
+
+
+
