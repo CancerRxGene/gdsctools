@@ -52,10 +52,28 @@ def anova_pipeline(args=None):
 
     user_options = ANOVAOptions(prog="gdsctools_anova")
 
-    if len(args) == 1:
-        user_options.parse_args(["prog", "--help"])
+
+    if len(args) == 1 or '--help' in args or '--test' in args:
+        if '--test' in args:
+            options = user_options.parse_args(args[1:])
+        else:
+            options = user_options.parse_args(args)
     else:
         options = user_options.parse_args(args[1:])
+
+    if options.testing is True:
+        print('Testing mode:')
+        from gdsctools import ANOVA, ic50_test
+        an = ANOVA(ic50_test)
+        df = an.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+
+        assert df.loc[1,'N_FEATURE_pos'] == 554, \
+            "N_feature_pos must be equal to 554"
+
+        print(df.T)
+        print(darkgreen("\nGDSCTools seems to be installed properly"))
+        return 
+
 
     if options.summary is True:
         from gdsctools import anova
@@ -235,7 +253,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
                                         'General options (compulsary or not)')
 
         group.add_argument("-I", "--input-ic50", dest='input_ic50',
-                           default=None, type=str, required=True,
+                           default=None, type=str,
                            help="""A file in TSV format with IC50s.
                            First column should be the COSMIC identifiers
                            Following columns contain the IC50s for a set of
@@ -294,6 +312,11 @@ http://github.com/CancerRxGene/gdsctools/issues """
 
         group.add_argument('--include-features-in', dest='features',
                            nargs="+", default=[],
+                           help="todo"
+                           )
+
+        group.add_argument('--test', dest='testing',
+                           action="store_true",
                            help="todo"
                            )
 
