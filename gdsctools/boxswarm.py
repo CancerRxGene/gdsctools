@@ -24,11 +24,14 @@ __all__ = ['boxswarm', 'BoxSwarm']
 def boxswarm(data, names=None, vert=True, widths=0.5, **kwargs):
     """Plot boxplot with all points as circles.
 
-    :param data:
+    This function is a wrapper of :class:`BoxSwarm`
+
+    :param data: a dataframe. Each column is a data set from which a boxplot
+        is created.
     :param names:
-    :param vert:
-    :param widths:
-    :param kargs:
+    :param vert: orientation of the boxplots
+    :param widths: widths of the boxes
+    :param kargs: any argument accepted by :class:`BoxSwarm`
 
     See :class:`BoxSwarm` documentation for details
 
@@ -106,19 +109,26 @@ class BoxSwarm(object):
         self.markersize = 15
 
     def beeswarm(self, data, position, ratio=2.):
-        """Naiva plotting of the data 
+        r"""Naive plotting of the data points 
 
-        assume gaussian distribution that is lots of data centered, and
-        few data in the tails. Use::
+        We assume gaussian distribution so we expect fewers dots
+        far from the mean/median. We'd like those dots to be close to the
+        axes. conversely, we expect lots of dots centered around the mean, in 
+        which case, we'd like them to be spread in the box. We uniformly
+        distribute position using 
 
-            data = data + (U()-0.5)/ ratio * factor
+        .. math::
 
-        where ::
+            X = X + \dfrac{ U()-0.5 }{ratio} \times factor
 
-            factor = 1 - arctan( (data-m)/ ( pi/2))
+        but the factor is based on an arctan function:
 
-        The farther the point is from the mean, the higher change it has
-        to lie on the axes that goes through the boxplot.
+        .. math::
+
+            factor = 1 - \arctan( \dfrac{X - \mu }{\pi/2})
+
+        The farther the data is from the mean :math:`\mu`, 
+        the closest it is to the axes that goes through the box.
         
         """
         N = len(data)

@@ -30,8 +30,46 @@ __all__ = ['BoxPlots']
 
 
 class BoxPlots(Logging):
-    """ANOVA analysis of the IC50 vs Feature matrices
+    """Box plot for a given association of drug versus genomic feature
 
+
+    .. plot::
+        :include-source:
+        :width: 80%
+
+        from gdsctools import ANOVA, ic50_test
+        from gdsctools.boxplots import BoxPlots
+
+        gdsc = ANOVA(ic50_test)
+
+        # Perform the entire analysis
+        odof = gdsc._get_one_drug_one_feature_data('Drug_1047_IC50', 
+            'TP53_mut')
+
+        # Plot volcano plot of pvalues versus signed effect size 
+        bx = BoxPlots(odof)
+        bx.boxplot_association()
+
+
+    If the **gdsc** analysis has the MSI factor and tissue factor on, then
+    additional plots can  be created using :meth:`boxplot_pancan`.
+
+
+    Note that :attr:`odof` in the example above is a dictionary 
+    with the following keys:
+
+    - drug_name
+    - feature_name
+    - masked_tissue: a dataframe with cosmic ids as index and 1 column of 
+      tissues names.
+    - Y: list with the IC50s 
+    - masked_features: a dataframe with cosmic ids as index and 1 column of 
+      masked feature  (1/0)
+    - masked_msi: same as masked_features
+    - negatives: subset of the IC50s corresponding to positive feature
+    - positives: subst of the IC50s corresponding to negative feature
+
+    .. seealso:: :class:`gdsctools.boxswarm.BoxSwarm`
 
     """
     def __init__(self, odof, fontsize=20, savefig=False, directory='.',
@@ -40,14 +78,30 @@ class BoxPlots(Logging):
 
         """
         super(BoxPlots, self).__init__(level=verbose)
+        #: dictionary as returned by ANOVA._get_one_drug_one_feature_data
         self.odof = odof
+
+        #: fontsize for the plots
         self.fontsize = fontsize
+        
+        #: boolean to save figure
         self.savefig = savefig
+
+        #: directory where to save the figure.
         self.directory = directory
 
+        #: linewidth used in the plots
+        self.lw = 3
+
     def boxplot_pancan(self, mode, fignum=1, title_prefix=''):
+        """Create boxplot related to the MSI factor or Tissue factor
+
+
+        :param mode: either set to **msi** or **tissue**
+
+        """
         assert mode in ['tissue', 'msi']
-        drug_name = self.odof.drug_name.replace("_", "\_")
+        drug_name = self.odof.drug_name.replace("_", " ")
         #feature_name = odof.feature_name.replace("_", "\_")
 
         results = self._get_boxplot_data(mode)
@@ -84,28 +138,31 @@ class BoxPlots(Logging):
             #pylab.savefig(filename + '.svg', bbox_inches='tight')
 
     def boxplot_association(self, fignum=1):
-        data = self.odof
+        """Boxplot of the associtiona (negative versus positive)
+        
+        :param fignum: number of the figure 
+        """
         pylab.figure(fignum)
         pylab.clf()
         # aliases
-        drug_name = data.drug_name.replace("_", "\_")
-        feature_name = data.feature_name.replace("_", "\_")
-        fontsize = self.fontsize
+        drug_name = self.odof.drug_name.replace("_", "\_")
+        feature_name = self.odof.feature_name.replace("_", "\_")
 
         # the plot itself
-        boxswarm.boxswarm({'pos': data.positives, 'neg': data.negatives},
-                lw=3, fontsize=self.fontsize)
+        boxswarm.boxswarm(
+                {'pos': self.odof.positives, 'neg': self.odof.negatives},
+                lw=self.lw, fontsize=self.fontsize)
 
         pylab.title('Individual association\n {0} versus {1}'.format(drug_name,
-            feature_name), fontsize=fontsize)
+            feature_name), fontsize=self.fontsize)
         pylab.ylabel("{0} logIC50".format(drug_name),
-                fontsize=fontsize)
+                fontsize=self.fontsize)
 
         pylab.tight_layout()
         if self.savefig is True:
             filename = self.directory + os.sep
-            filename += 'ODOF_all_{}____{}'.format(data.drug_name,
-                    data.feature_name)
+            filename += 'ODOF_all_{}____{}'.format(self.odof.drug_name,
+                    self.odof.feature_name)
             pylab.savefig(filename + '.png', bbox_inches='tight')
 
     def _get_boxplot_data(self, mode='tissue'):
@@ -184,4 +241,3 @@ class BoxPlots(Logging):
             return (data, names, significance)
         else:
             return None
-
