@@ -1,12 +1,9 @@
-from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecoder, COSMIC
+from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecoder 
 from easydev import TempFile
 from gdsctools import ic50_test, drug_test
 import pandas as pd
 
 
-def test_cosmic():
-    r = COSMIC(924100)
-    r.on_web()
 
 
 def test_read_ic50():

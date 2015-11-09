@@ -14,3 +14,4 @@ def test_data():
     datasets.genomic_features
     datasets.drug_test
     datasets.cancer_cell_lines 
+    datasets.cosmic_builder_test

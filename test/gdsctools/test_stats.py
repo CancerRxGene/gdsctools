@@ -22,3 +22,15 @@ def test_glass():
     g1, g2 = glass(x, x)
 
     assert g1 == g2 == 0
+
+
+def test_mt():
+    from gdsctools.stats import MultipleTesting
+    mt = MultipleTesting(method='fdr')
+    pvalues = [1e-10, 9.5e-2, 2.2e-1, 3.6e-1, 5e-1,
+                6e-1,8e-1,9.6e-1]
+    mt.plot_comparison(pvalues)
+    mt.plot_comparison(pvalues, 
+            methods=['fdr_bh', 'qvalue', 'bonferroni', 'fdr_tsbh'])
+    
+

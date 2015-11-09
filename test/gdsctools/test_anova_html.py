@@ -19,6 +19,6 @@ def test_html():
         raise err
     finally:
         import shutil
-        #shutil.rmtree('html_gdsc_anova')
+        shutil.rmtree('html_gdsc_anova')
 
 

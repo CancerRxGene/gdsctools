@@ -54,10 +54,8 @@ def test_anova_all():
     features = features[features.columns[0:13]]
 
     an = ANOVA(tools.get_data(), features)
-    df = an.anova_all()
-
-
-    assert_almost_equal( df['ANOVA_FEATURE_FDR_%'].sum(), 
+    results = an.anova_all()
+    assert_almost_equal( results.df['ANOVA_FEATURE_FDR_%'].sum(), 
             10312.23061065521, 6)
 
 
