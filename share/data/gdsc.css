@@ -372,7 +372,7 @@ div.footer {
     bottom: 0;
     background-color: #EEE;
     width: 100%;
-    border-top: 1px solid;
+    border-top: 3px solid #aaaaaa;
 }
 div.footer table {
     width: 98%;
@@ -407,3 +407,10 @@ div.footer td.right {
     text-align: right;
     width: 25%;
 }
+
+div.footer img{
+    margin:5px;
+width:150px;
+height:60px;
+}
+
