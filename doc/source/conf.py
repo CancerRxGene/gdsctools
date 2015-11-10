@@ -31,12 +31,20 @@ pkg_name = "gdsctools"
 #    print "Install %s or set your PYTHONPATH properly" % pkg_name
 #    raise Exception
 
-#try:
-#    import easydev
-#    from easydev import get_path_sphinx_themes
-#except Exception, e:
-#    print "Install easydev or set your PYTHONPATH properly"
-#    raise Exception
+try:
+    import easydev
+    from easydev import get_path_sphinx_themes
+except Exception, e:
+    from mock import Mock
+    mock = Mock()
+    modules.update({'easydev': mock})
+
+try:
+    import gdsctools
+except Exception, e:
+    from mock import Mock
+    mock = Mock()
+    modules.update({'gdsctools': mock})
 
 
 import pkg_resources
