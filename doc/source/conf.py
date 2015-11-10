@@ -23,31 +23,17 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-"""from mock import Mock as MagicMock
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-            return Mock()
-
-MOCK_MODULES = ['numpy', 'matplotlib', 'scipy', 'pandas', 'easydev']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
-"""
-
-
 
 import pkg_resources
 version = pkg_resources.require(pkg_name)[0].version
 release = version
-author = "Thomas Cokelaer,"
+author = "Thomas Cokelaer"
 title = "GDSCtools"
 copyright = author + ", 2015"
 project = 'GDSCTools'
 
 import easydev
 from easydev import get_path_sphinx_themes
-
-
 
 
 # -- General configuration -----------------------------------------------------
@@ -69,7 +55,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-   # 'easydev.copybutton',
+    'easydev.copybutton',
     'matplotlib.sphinxext.plot_directive',
     'matplotlib.sphinxext.only_directives',
     'sphinx.ext.pngmath',
