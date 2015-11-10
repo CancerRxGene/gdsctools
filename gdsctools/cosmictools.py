@@ -1,4 +1,12 @@
-import urllib2
+
+# fixing compatiblity python 2 and 3 related to merging or urllib and urllib2 i
+# n python 3
+try:     #python 3
+    from urllib.request import urlopen
+except:
+    from urllib2  import urlopen
+
+
 import pandas as pd
 import easydev
 
@@ -65,7 +73,7 @@ class COSMICFetcher(object):
             print('Downloading data. This may take a while')
             print('Consider saving the *data* attribute in a file ' +
                 'for next time')
-            self.data = urllib2.urlopen(self.url).read()
+            self.data = urlopen(self.url).read()
             self._scandata()
 
     def _scandata(self):
