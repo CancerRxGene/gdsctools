@@ -27,9 +27,9 @@ Dependencies (e.g., Pandas, matplotlib) should be taken care of automatically.
 You don't know Python  or have compilation issues ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are not familiar with Python, or have issues with compilation, or do not have root access, we would recommend to use the `Anaconda <https://www.continuum.io/downloads>`_ solution. It will install binary packages required to install **GDSCTools** itself.
+If you are not familiar with Python, or have issues with compilation, or do not have root access, we would recommend to use the `Anaconda <https://www.continuum.io/downloads>`_ solution. It will install binary packages required to install **GDSCTools** itself; since it does not require root access, it should not interfere with your system.
 
-Please, Visit the link above and install Anaconda following the
+Please, visit the link above and install Anaconda following the
 instructions.
 
 Once you have installed Anaconda, open a new shell.
