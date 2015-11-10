@@ -20,23 +20,23 @@ import sys, os
 pkg_name = "gdsctools"
 
 # For read the docs
-import mock
-MOCK_MODULES = ['gdsctools', 'easydev']
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
+#import mock
+#MOCK_MODULES = ['gdsctools', 'easydev']
+#for mod_name in MOCK_MODULES:
+#    sys.modules[mod_name] = mock.Mock()
 
-try:
-    exec("import %s" % pkg_name)
-except Exception, e:
-    print "Install %s or set your PYTHONPATH properly" % pkg_name
-    raise Exception
+#try:
+#    exec("import %s" % pkg_name)
+#except Exception, e:
+#    print "Install %s or set your PYTHONPATH properly" % pkg_name
+#    raise Exception
 
-try:
-    import easydev
-    from easydev import get_path_sphinx_themes
-except Exception, e:
-    print "Install easydev or set your PYTHONPATH properly"
-    raise Exception
+#try:
+#    import easydev
+#    from easydev import get_path_sphinx_themes
+#except Exception, e:
+#    print "Install easydev or set your PYTHONPATH properly"
+#    raise Exception
 
 
 import pkg_resources
@@ -69,7 +69,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'easydev.copybutton',
+   # 'easydev.copybutton',
     'matplotlib.sphinxext.plot_directive',
     'matplotlib.sphinxext.only_directives',
     'sphinx.ext.pngmath',
@@ -158,7 +158,8 @@ html_theme = 'standard'
 #html_theme_options = {'homepage': init_sphinx.url}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [get_path_sphinx_themes()]
+#html_theme_path = [get_path_sphinx_themes()]
+html_theme_path = []
 
 
 
