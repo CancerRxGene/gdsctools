@@ -19,35 +19,21 @@ import sys, os
 
 pkg_name = "gdsctools"
 
-# For read the docs
-import mock
-MOCK_MODULES = ['gdsctools', 'easydev']
-for mod_name in MOCK_MODULES:
-    sys.modules[mod_name] = mock.Mock()
+import matplotlib
+matplotlib.use('Agg')
 
-try:
-    exec("import %s" % pkg_name)
-except Exception, e:
-    print "Install %s or set your PYTHONPATH properly" % pkg_name
-    raise Exception
-
-try:
-    import easydev
-    from easydev import get_path_sphinx_themes
-except Exception, e:
-    print "Install easydev or set your PYTHONPATH properly"
-    raise Exception
 
 
 import pkg_resources
 version = pkg_resources.require(pkg_name)[0].version
 release = version
-author = "Thomas Cokelaer,"
+author = "Thomas Cokelaer"
 title = "GDSCtools"
 copyright = author + ", 2015"
 project = 'GDSCTools'
 
-
+import easydev
+from easydev import get_path_sphinx_themes
 
 
 # -- General configuration -----------------------------------------------------
@@ -150,6 +136,9 @@ modindex_common_prefix = ["gdsctools."]
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
 html_theme = 'standard'
+import sphinx_rtd_theme
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -158,7 +147,7 @@ html_theme = 'standard'
 #html_theme_options = {'homepage': init_sphinx.url}
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [get_path_sphinx_themes()]
+#html_theme_path = [get_path_sphinx_themes()]
 
 
 

@@ -93,6 +93,8 @@ Contributions
 Please join https://github.com/CancerRxGene/gdsctools
 
 .. toctree::
-    :hidden::
+    :hidden:
 
     glossary
+
+

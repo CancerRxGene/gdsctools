@@ -1,0 +1,2 @@
+easydev
+beautifulsoup4
