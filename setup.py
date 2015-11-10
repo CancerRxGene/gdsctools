@@ -8,7 +8,7 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 3
+_MINOR               = 9
 _MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
@@ -45,7 +45,6 @@ with open('README.rst') as f:
 
 from distutils.core import setup, Extension
 
-
 setup(
     name             = 'gdsctools',
     version          = version,
@@ -64,11 +63,11 @@ setup(
 
     zip_safe=False,
     packages = find_packages(),
-
     include_package_data = True,
 
+    package_dir={'share.data': 'share/data'},
+
     package_data = {
-        'share' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 'README.rst'],
         'share.data' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 'README.rst'],
         '' : ['README.rst'],
         },
