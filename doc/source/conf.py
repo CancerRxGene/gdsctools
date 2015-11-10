@@ -19,6 +19,8 @@ import sys, os
 
 pkg_name = "gdsctools"
 
+import matplotlib
+matplotlib.use('Agg')
 # For read the docs
 #import mock
 #MOCK_MODULES = ['gdsctools', 'easydev']
