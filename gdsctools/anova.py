@@ -86,7 +86,7 @@ class ANOVAResults(object):
              'TISSUE_ANOVA_pval': np.dtype('O'),
              'log max.Conc.tested': np.dtype('O'),
              'log max.Conc.tested2': np.dtype('O'),
-             'assoc_ID': np.dtype('int64'),
+             'ASSOC_ID': np.dtype('int64'),
              'ANOVA_FEATURE_FDR_%': np.dtype('float64')}
 
     def astype(self, df):
@@ -225,6 +225,10 @@ class ANOVAReport(object):
             doc="return number of features ignoring MSI, sample and tissue")
 
     def read_drug_decoder(self, filename):
+        """Read file with the DRUG information
+        
+        .. seealso:: :class:`gdsctools.readers.DrugDecoder`
+        """
         self.gdsc.read_drug_decoder(filename)
         self.df = self.gdsc.drug_annotations(self.df)
 
@@ -699,7 +703,7 @@ class ANOVA(object): #Logging):
         takes into account the following factors: tissue, MSI and features.
         The order matters. If there is only one tissue, this factor is
         dropped. If the number of MSI values is less than a pre-defined
-        parameter (see :class:`~gdsctools.settings.ANOVASettings`), it is 
+        parameter (see :class:`~gdsctools.settings.ANOVASettings`), it is
         dropped. The other
         methods :meth:`anova_one_drug` and :meth:`anova_all` are wrappers
         around :meth:`anova_one_drug_one_feature` to loop over all drugs, and
@@ -774,7 +778,7 @@ class ANOVA(object): #Logging):
                 "genomic features matrix")
         self.features.cosmicIds  = self.ic50.cosmicIds
 
-        # settings
+        #: an instance of :class:`~gdsctools.settings.ANOVASettings`
         self.settings = ANOVASettings()
 
         # alias to all column names to store results (unordered)
@@ -826,7 +830,7 @@ class ANOVA(object): #Logging):
         Input IC50 may be PANCAN (several cancer tissues).
         This  function can be used to select a subset of tissues.
         This function changes the :attr:`ic50` dataframe and possibly
-        the feature as well is some are not relevant anymore (sum of the
+        the feature as well if some are not relevant anymore (sum of the
         column is zero for instance).
 
         """
@@ -913,14 +917,16 @@ class ANOVA(object): #Logging):
     def _set_drug_names(self, drugs):
         self.ic50.drugIds = drugs
         self._init()
-    drugIds = property(_get_drug_names, _set_drug_names)
+    drugIds = property(_get_drug_names, _set_drug_names, 
+            doc="Get/Set drug identifers")
 
     def _get_feature_names(self):
         return self.features.features
     def _set_features_names(self, features):
         self.features.features = features
         self._init()
-    feature_names = property(_get_feature_names, _set_features_names)
+    feature_names = property(_get_feature_names, _set_features_names,
+            doc="Get/Set feature names")
 
     def _get_analysis_mode(self):
         modes = []
@@ -1091,10 +1097,19 @@ class ANOVA(object): #Logging):
                 equal_var=self.settings.equal_var_ttest)[1]
 
     def read_drug_decoder(self, filename=None):
+        """Read file with the DRUG information
+        
+        .. seealso:: :class:`gdsctools.readers.DrugDecoder`
+        """
         # Read the DRUG decoder file into a DrugDecoder/Reader instance
         self.drug_decoder = readers.DrugDecoder(filename)
 
     def drug_annotations(self, df):
+        """Populate the drug_name and drug_target field if possible
+
+        :param df: input dataframe as given by e.g., :meth:`anova_one_drug`
+        :return df: same as input but with the FDR column populated
+        """
         if len(self.drug_decoder.df) == 0:
             print("Nothing done. DrugDecoder file not provided.")
 
@@ -1117,9 +1132,22 @@ class ANOVA(object): #Logging):
             production=False, savefig=False, directory='.'):
         """Compute ANOVA and various tests on one drug and one feature
 
+        :param drug_id: a valid drug identifier
+        :param feature_name: a valid feature name
+        :param bool show: show some plots
+        :param bool savefig: save figures
+        :param str directory: where to save the figure.
         :param bool production: if False, returns a dataframe otherwise
             a dictionary. This is to speed up analysis when scanning
             the drug across all features.
+
+        .. note:: **for developer** this is the core of tha analysis
+            and should be kept as fast as possible. 95% of the time is spent
+            here.
+
+        .. note:: **for developer** Data used in this function comes from
+            _get_one_drug_one_feature_data method, which should also be kept
+            as fast as possible.
         """
         if drug_id not in self.drugIds:
             raise ValueError('Unknown drug name %s. Use e.g., %s'
@@ -1262,7 +1290,8 @@ class ANOVA(object): #Logging):
         self.anova_pvalues = self._get_anova_summary(self.data_lm,
                 Ntissue, output='dict')
 
-        # try/except faster than if/else
+        # Store the pvalues. Note that some may be missing so we use try
+        # except, which is faster than if/else
         try:
             tissue_PVAL = self.anova_pvalues['tissue']
         except:
@@ -1277,8 +1306,6 @@ class ANOVA(object): #Logging):
             FEATURE_PVAL = self.anova_pvalues['feature']
         except:
             FEATURE_PVAL = None
-
-
 
         if show is True:
             boxplot = BoxPlots(odof, savefig=self.settings.savefig,
@@ -1467,17 +1494,20 @@ class ANOVA(object): #Logging):
         """Run all ANOVA tests for all drugs and all features.
 
         :param drugs: you may select a subset of drugs
+        :param animate: shows the progress bar
+        :return: an :class:`ANOVAResults` instance with the dataframe
+            stored in an attribute called **df**
 
         Loops over all drugs calling :meth:`anova_one_drug` for each
         drug and concatenating all results together. Note that once all
         data are gathered, an extra column containing the FDR corrections
         is added to the dataframe using :meth:`add_pvalues_correction`
-        method.
+        method. An extra column  named "ASSOC_ID" is also added with
+        a unique identifer sorted by ascending FDR.
 
-        .. note:: comparison with version contained in this package
-            gives same results. FDR (~1e-6) and FEATURE_IC50_T_pval differs
-            slighlty (1e-14) especially for FDR variable with large FDR
-            close to 1 but nothing to worry about.
+        .. note:: A thorough comparison with version v17 give the same FDR
+            results (difference ~1e-6); Note however that the qvalue results
+            differ by about 0.3% due to different smoothing in R and Python.
         """
         # drop DRUG where number of IC50 (non-null) is below 5
         # axis=0 is default but we emphasize that sum is over
@@ -1520,7 +1550,7 @@ class ANOVA(object): #Logging):
         df = self.add_pvalues_correction(df)
 
         # insert a unique identifier as first column
-        df.insert(0, 'assoc_ID', range(1, len(df) + 1))
+        df.insert(0, 'ASSOC_ID', range(1, len(df) + 1))
 
         # order the column names as defined in the __init__ method
         df = df[self.column_names]
@@ -1534,7 +1564,12 @@ class ANOVA(object): #Logging):
     def add_pvalues_correction(self, df):
         """Add the corrected pvalues column in a dataframe based on pvalues
 
-        .. seealso:: :meth:`anova_all`
+        The default method (FDR correction) is stored in
+        :attr:`settings.pval_correction_method` and can be changed to other
+        methods (e.g., *qvalue*)
+
+        .. seealso:: :meth:`anova_all`,
+            :class:`~gdsctools.stats.MultipleTesting`
         """
         if len(df) == 0:
             return
@@ -1561,25 +1596,6 @@ class ANOVA(object): #Logging):
         txt += "\n" + self.features.__str__()
         return txt
 
-    def run(self, verbose=True, buffer=True):
-        debug = self.debugLevel
-        self.debugLevel = verbose
-        if buffer is False:
-            self.individual_anova = {}
-        try:
-            self.info('Running analysis for all drugs and features. ' +
-                'May take a while. Please wait. If this is instatenous, ' +
-                'buffering is used. set parameter buffer=False when calling'+
-                'run()')
-            info = self.__str__()
-            self.info(info)
-            self.info('Using these parameters:'+ self.settings.__str__())
-            df = self.anova_all()
-        except Exception as err:
-            raise(err)
-        finally:
-            self.debugLevel = debug
-        return df
 
 
 def multicore(ic50, maxcpu=4):
@@ -1588,6 +1604,7 @@ def multicore(ic50, maxcpu=4):
 
     :param ic50: a filename or :class:`IC50` instance.
 
+    .. warning:: experimental. Seems to work but sometimes hangs forever.
     """
     print("experimental code to run the analysis with several cores")
     print("May takes lots or resources and slow down your system")
@@ -1681,7 +1698,7 @@ class OneDrugOneFeature(Report):
                 self.feature, savefig=True, show=True,
                 directory=self.directory)
         # FIXME assoc id
-        df['assoc_ID'] = self.assoc_id
+        df['ASSOC_ID'] = self.assoc_id
         df['ANOVA_FEATURE_FDR_%'] = self.fdr
         return df
 

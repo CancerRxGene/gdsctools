@@ -32,8 +32,9 @@ __all__ = ['HTMLTable', 'Report']
 class HTMLTable(object):
     """Handler to export dataframe into HTML table.
 
-    Features:
-
+    Dataframe in Pandas already have a to_html method to export the dataframe
+    into a HTML formatted table. However, we provide here a few handy features:
+    
         * Takes each cell in a given column and creates an HTML
           reference in each cell. See :meth:`add_href` method.
         * add an HTML background into cells (numeric content) of
@@ -47,15 +48,23 @@ class HTMLTable(object):
         from gdsctools import HTMLTable
         html = HTMLTable(df)
 
-
-
-    .. note:: similar project : prettytable but could not do
+    .. note:: similar project exists such as prettytable but could not do
         exactly what we wanted at the time gdsctools was developed.
 
     .. note:: Could be moved to biokit or easydev package.
 
     """
-    def __init__(self, df, name='undefined', **kargs):
+    def __init__(self, df, name=None, **kargs):
+        """.. rubric:: Constructor
+
+
+        :param dataframe df: a pandas dataframe to transform into a table
+        :param str name: not used yet
+
+        There is an :attr:`pd_options` attribute to reduce the max column
+        width or the precision of the numerical values.
+
+        """
         self.df = df.copy() # because we will change its contents possibly
         self.name = name
         self.pd_options = {
@@ -64,6 +73,8 @@ class HTMLTable(object):
 
     def to_html(self, index=False, escape=False, header=True, **kargs):
         """Return HTML version of the table
+
+        This is a wrapper of the to_html method of the pandas dataframe.
 
         :param bool index: do not include the index
         :param bool escape: do not escape special characters
@@ -162,7 +173,14 @@ class HTMLTable(object):
         This is used to link to local files. If url is provided, you typically
         want to link to an external url where the content is an identifier::
 
-            <a href={content}.html>content</a>
+            <a href={url}{content}>content</a>
+
+        Note that in the first case, *.html* is appended but not in the second
+        case, which means cell's content should already have the .html 
+        Also in the second case, a new tab is open whereas in the first case
+        the url is open in the current tab.
+
+        .. note:: this api may change in the future.
 
         """
         if url is not None:
@@ -187,27 +205,35 @@ class Report(object):
     This :class:`Report` class holds the CSS and HTML layout and will ease
     the creation of new reports and HTML pages. For instance, it will add
     a footer and header automatically, save files in the proper directory,
-    create that directory if it is missing.
-
+    create the directory if it is missing, copy CSS and JS files in the
+    directory automatically.
 
     ::
 
         from gdsctools import Report
         r = Report()
         r.add_section('Example with some text', 'Example' )
-        r.report()
+        r.report(onweb=True)
+
+    .. note:: **For developers** the original CSS and JS files are stored in 
+        the share/data directory.
+
+    The idea is that you create sections (text +  title) that you add little by
+    little in your HTML documents. Then, you create the report. The report will
+    add a footer, header, table of contents before the sections. The 
+    **text** of a section can contain any HTML document.
 
     """
     def __init__(self, filename='index.html', directory='report',
                  overwrite=True, verbose=True, dependencies=True):
         """.. rubric:: Constructor
 
-        :param filename:
-        :param directory:
+        :param filename: default to **index.html**
+        :param directory: defaults to **report**
         :param overwrite: default to True
         :param verbose: default to True
         :param dependencies: add the dependencies table at the end of the
-            document
+            document if True.
 
         """
         #: name of the analysis added in the title
