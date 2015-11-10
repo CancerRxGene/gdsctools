@@ -21,32 +21,19 @@ pkg_name = "gdsctools"
 
 import matplotlib
 matplotlib.use('Agg')
-# For read the docs
-#import mock
-#MOCK_MODULES = ['gdsctools', 'easydev']
-#for mod_name in MOCK_MODULES:
-#    sys.modules[mod_name] = mock.Mock()
 
-#try:
-#    exec("import %s" % pkg_name)
-#except Exception, e:
-#    print "Install %s or set your PYTHONPATH properly" % pkg_name
-#    raise Exception
 
-try:
-    import easydev
-    from easydev import get_path_sphinx_themes
-except Exception, e:
-    from mock import Mock
-    mock = Mock()
-    modules.update({'easydev': mock})
+"""from mock import Mock as MagicMock
 
-try:
-    import gdsctools
-except Exception, e:
-    from mock import Mock
-    mock = Mock()
-    modules.update({'gdsctools': mock})
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+            return Mock()
+
+MOCK_MODULES = ['numpy', 'matplotlib', 'scipy', 'pandas', 'easydev']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+"""
+
 
 
 import pkg_resources
@@ -56,6 +43,9 @@ author = "Thomas Cokelaer,"
 title = "GDSCtools"
 copyright = author + ", 2015"
 project = 'GDSCTools'
+
+import easydev
+from easydev import get_path_sphinx_themes
 
 
 
@@ -159,15 +149,15 @@ modindex_common_prefix = ["gdsctools."]
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-# html_theme = 'default'
+html_theme = 'standard'
 # on_rtd is whether we are on readthedocs.org
-import os
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+#import os
+#on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-if not on_rtd:  # only import and set the theme if we're building docs locally
-    import sphinx_rtd_theme
-    html_theme = 'sphinx_rtd_theme'
-    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+#if not on_rtd:  # only import and set the theme if we're building docs locally
+#    import sphinx_rtd_theme
+#html_theme = 'sphinx_rtd_theme'
+#    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # otherwise, readthedocs.org uses their theme by default, so no
 # need to specify it
@@ -180,8 +170,7 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 #html_theme_options = {'homepage': init_sphinx.url}
 
 # Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = [get_path_sphinx_themes()]
-html_theme_path = []
+html_theme_path = [get_path_sphinx_themes()]
 
 
 
