@@ -19,6 +19,12 @@ import sys, os
 
 pkg_name = "gdsctools"
 
+# For read the docs
+import mock
+MOCK_MODULES = ['gdsctools', 'easydev']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+
 try:
     exec("import %s" % pkg_name)
 except Exception, e:
