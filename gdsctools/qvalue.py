@@ -164,7 +164,7 @@ class QValue(object):
         qv = self.pi0 * self.m/len(pv) * pv
         qv[-1] = min(qv[-1],1.0)
 
-        for i in xrange(len(pv)-2, -1, -1):
+        for i in range(len(pv)-2, -1, -1):
             qv[i] = min(self.pi0*self.m*pv[i]/(i+1.0), qv[i+1])
         # reorder qvalues
         qv_temp = qv.copy()
