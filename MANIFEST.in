@@ -1,0 +1,3 @@
+include README.rst MANIFEST
+recursive-include share/data *.css  *tsv *csv *js *txt *rst
+
