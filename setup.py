@@ -74,9 +74,9 @@ setup(
 
     # comment the requirements otherwise RTD fails
     # but we then need a requirements.txt file !
-    #install_requires = ['numpy', 'matplotlib>=1.4.3',
-    #    'pandas>=0.16.2', 'easydev>=0.9.3', 'scipy', "colormap>=0.9.6",
-    #    "beautifulsoup4", 'mpld3', 'jinja2'],
+    install_requires = ['numpy', 'matplotlib>=1.4.3',
+        'pandas>=0.16.2', 'easydev>=0.9.3', 'scipy', "colormap>=0.9.6",
+        "beautifulsoup4", 'mpld3', 'jinja2'],
 
     entry_points = {
         'console_scripts': [
