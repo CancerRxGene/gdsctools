@@ -355,16 +355,16 @@ class ANOVAReport(object):
         self._set_sensible_df()
         df = pd.concat([self.sensible_df, self.resistant_df])
         try:
-            df.sort_values('assoc_ID', inplace=True)
+            df.sort_values('ASSOC_ID', inplace=True)
         except:
-            df.sort('assoc_ID', inplace=True)
+            df.sort('ASSOC_ID', inplace=True)
         return df
 
     def _get_data(self, df_count_sensible, df_count_resistant):
         # we can drop all columns except one, which is renamed as count
-        df1 = df_count_sensible['assoc_ID']
+        df1 = df_count_sensible['ASSOC_ID']
         df1.name = 'sens assoc'
-        df2 = df_count_resistant['assoc_ID']
+        df2 = df_count_resistant['ASSOC_ID']
         df2.name = 'res assoc'
 
         # Now, we join the two TimeSeries (note that above, we selected only
@@ -561,7 +561,7 @@ class ANOVAReport(object):
 
         drugs = df['DRUG_ID'].values
         features = df['FEATURE'].values
-        assocs = df['assoc_ID'].values
+        assocs = df['ASSOC_ID'].values
         fdrs = df['ANOVA_FEATURE_FDR_%'].values
 
         N = len(df)
@@ -714,7 +714,7 @@ class ANOVA(object): #Logging):
     """
     #@profile
     def __init__(self, ic50, genomic_features=None, concentrations=None,
-            drug_decoder=None, verbose='INFO'):
+            drug_decoder=None, verbose='INFO', low_memory=False):
         """.. rubric:: Constructor
 
         :param DataFrame IC50: a dataframe with the IC50. Rows should be
@@ -780,6 +780,7 @@ class ANOVA(object): #Logging):
 
         #: an instance of :class:`~gdsctools.settings.ANOVASettings`
         self.settings = ANOVASettings()
+        self.settings.low_memory = low_memory
 
         # alias to all column names to store results (unordered)
         # cast to list because of  python3 error.
@@ -1598,7 +1599,7 @@ class ANOVA(object): #Logging):
 
 
 
-def multicore(ic50, maxcpu=4):
+def multicore(ic50, maxcpu=2):
     """Using 4 cores, the entire analysis took 15 minutes using
     4 CPUs (16 Oct 2015).
 
@@ -1610,8 +1611,7 @@ def multicore(ic50, maxcpu=4):
     print("May takes lots or resources and slow down your system")
     import time
     t1 = time.time()
-    master = ANOVA(ic50)
-    master.settings.low_memory = True
+    master = ANOVA(ic50, low_memory=True)
 
     drugs = master.ic50.drugIds
 
@@ -2128,7 +2128,7 @@ class SignificantHits(object):
         self.name = name
         self.clip_threshold = 2
 
-        columns = [u'assoc_ID', 'FEATURE',
+        columns = [u'ASSOC_ID', 'FEATURE',
             'DRUG_ID', u'DRUG_NAME', 'DRUG_TARGET',
             'N_FEATURE_neg', 'N_FEATURE_pos',
             'FEATUREpos_logIC50_MEAN',
@@ -2150,7 +2150,7 @@ class SignificantHits(object):
         self.df.loc[self.df[colname] <0.01, colname] = '<0.01'
         html = HTMLTable(self.df, self.name)
         # Those columns should be links
-        for this in ['FEATURE', 'DRUG_ID', 'assoc_ID']:
+        for this in ['FEATURE', 'DRUG_ID', 'ASSOC_ID']:
             html.add_href(this)
 
         for this in ['FEATURE_IC50_effect_size', 'FEATUREneg_Glass_delta',
@@ -2165,7 +2165,3 @@ class SignificantHits(object):
         html.df.columns = [x.replace("_", " ") for x in html.df.columns]
         return html.to_html(escape=escape, header=header, index=index,
                 justify='center')
-
-
-
-

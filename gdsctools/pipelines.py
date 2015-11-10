@@ -135,7 +135,7 @@ def anova_one_drug(options):
     df = an.add_corrected_pvalues(df)
 
     N = len(df)
-    df.insert(0, 'assoc_ID', range(1, N+1))
+    df.insert(0, 'ASSOC_ID', range(1, N+1))
 
 
 
