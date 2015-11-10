@@ -45,6 +45,18 @@ with open('README.rst') as f:
 
 from distutils.core import setup, Extension
 
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+if on_rtd is True:  # only import and set the theme if we're building docs
+    install_required = []
+else:
+    install_requires = ['numpy', 'matplotlib>=1.4.3',
+        'pandas>=0.16.2', 'easydev>=0.9.3', 'scipy', "colormap>=0.9.6",
+        "beautifulsoup4", 'mpld3', 'jinja2'],
+
+
+
 setup(
     name             = 'gdsctools',
     version          = version,
@@ -74,10 +86,7 @@ setup(
 
     # comment the requirements otherwise RTD fails
     # but we then need a requirements.txt file !
-    install_requires = ['numpy', 'matplotlib>=1.4.3',
-        'pandas>=0.16.2', 'easydev>=0.9.3', 'scipy', "colormap>=0.9.6",
-        "beautifulsoup4", 'mpld3', 'jinja2'],
-
+    install_requires = install_requires,
     entry_points = {
         'console_scripts': [
         'gdsctools_anova=gdsctools.pipelines:anova_pipeline',]
