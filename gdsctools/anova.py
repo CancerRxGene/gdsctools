@@ -1604,6 +1604,17 @@ def multicore(ic50, maxcpu=2):
     4 CPUs (16 Oct 2015).
 
     :param ic50: a filename or :class:`IC50` instance.
+    :return: the anova instance itself (not the results); see example below.
+
+    ::
+
+        from gdsctools.anova import multicore
+        master = multicore(dataset, maxcpu=2)
+        results = master.anova_all()
+
+        from gdsctools import ANOVAReport()
+        report = ANOVAReport(master, results)
+        report.create_html_pages(0
 
     .. warning:: experimental. Seems to work but sometimes hangs forever.
     """
