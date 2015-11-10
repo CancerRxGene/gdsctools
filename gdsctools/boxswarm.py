@@ -164,11 +164,17 @@ class BoxSwarm(object):
                 markeredgewidth=0, alpha=0.5)
 
         #show means but not outliers
-        d = pylab.boxplot(ordered_data, widths=self.widths,
+        try:
+            d = pylab.boxplot(ordered_data, widths=self.widths,
                vert=vert, patch_artist=True,
                 positions=range(1, len(ordered_data)+1),
             showmeans=True, showfliers=False)
-        # meanline=True to have a line instead of a dot
+        except:
+            # ReadTheDocs uses matplotlib 1.3.1 for now, so 
+            # need this without showmeans parameter
+            d = pylab.boxplot(ordered_data, widths=self.widths,
+               vert=vert, patch_artist=True,
+                positions=range(1, len(ordered_data)+1))
 
         # for further tuning if needed.
         self.tuning = d

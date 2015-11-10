@@ -1,3 +1,2 @@
 easydev
 beautifulsoup4
-matplotlib==1.4.3
