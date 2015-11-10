@@ -32,7 +32,9 @@ Installation
 
   pip install gdsctools
   
-  
+For beginners, please visit the main documentation.
+
+
 QuickStart
 -------------
 
