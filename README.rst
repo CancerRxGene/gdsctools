@@ -14,10 +14,15 @@ GDSCtools
 .. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=issues&title=issues
    :target: https://waffle.io/gdsctools/gdsctools
 
+.. image:: https://readthedocs.org/projects/gdsctools/badge/?version=latest
+    :target: http://gdsctools.readthedocs.org/en/latest/?badge=latest
+    :alt: Documentation Status
+
 :Note: tested for Python 2.7, 3.3, 3.4
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
 
 :Online documentation: `On pypi website <http://pythonhosted.org/gdsctools/>`_
+    and `On ReadTheDocs <http://gdsctools.readthedocs.org/en/latest>`_
 
 :Issues and bug reports: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
 
