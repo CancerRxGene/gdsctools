@@ -34,7 +34,7 @@ class HTMLTable(object):
 
     Dataframe in Pandas already have a to_html method to export the dataframe
     into a HTML formatted table. However, we provide here a few handy features:
-    
+
         * Takes each cell in a given column and creates an HTML
           reference in each cell. See :meth:`add_href` method.
         * add an HTML background into cells (numeric content) of
@@ -92,7 +92,7 @@ class HTMLTable(object):
 
         # class sortable is to use the sorttable javascript
         # note that the class has one t and the javascript library has 2
-        # as in the original version of sorttable.js 
+        # as in the original version of sorttable.js
         table = self.df.to_html(escape=escape, header=header, index=index,
                 classes='dataframe sortable', **kargs)
 
@@ -106,20 +106,20 @@ class HTMLTable(object):
         """Change column content into HTML paragraph with background color
 
         :param colname:
-        :param cmap: a colormap (matplotlib) or created using 
+        :param cmap: a colormap (matplotlib) or created using
             colormap package (from pypi).
-        :param mode: type of normalisation in 'absmax', 'max', 'clip' 
+        :param mode: type of normalisation in 'absmax', 'max', 'clip'
             (see details below)
         :param threshold: used if mode is set to 'clip'
-       
+
         Colormap have values between 0 and 1 so we need to normalised the data
         between 0 and 1. There are 3 mode to normalise the data so far.
 
         If mode is set to 'absmax', negatives and positives values are
-        expected to be found in a range from -inf to inf. Values are 
+        expected to be found in a range from -inf to inf. Values are
         scaled in between [0,1] X' = (X / M +1) /2. where m is the absolute
-        maximum. Ideally a colormap should be made of 3 colors, the first 
-        color used for negative values, the second for zeros and third color 
+        maximum. Ideally a colormap should be made of 3 colors, the first
+        color used for negative values, the second for zeros and third color
         for positive values.
 
         If mode is set to 'clip', values are clipped to a max value (parameter
@@ -176,7 +176,7 @@ class HTMLTable(object):
             <a href={url}{content}>content</a>
 
         Note that in the first case, *.html* is appended but not in the second
-        case, which means cell's content should already have the .html 
+        case, which means cell's content should already have the .html
         Also in the second case, a new tab is open whereas in the first case
         the url is open in the current tab.
 
@@ -188,7 +188,7 @@ class HTMLTable(object):
                 formatter = '<a  href="{0}{1}">{1}</a>'
             else:
                 formatter = '<a target="_blank"  href="{0}{1}">{1}</a>'
-            self.df[colname] = self.df[colname].apply(lambda x: 
+            self.df[colname] = self.df[colname].apply(lambda x:
                     formatter.format(url, x))
         else:
             if newtab is False:
@@ -215,12 +215,12 @@ class Report(object):
         r.add_section('Example with some text', 'Example' )
         r.report(onweb=True)
 
-    .. note:: **For developers** the original CSS and JS files are stored in 
+    .. note:: **For developers** the original CSS and JS files are stored in
         the share/data directory.
 
     The idea is that you create sections (text +  title) that you add little by
     little in your HTML documents. Then, you create the report. The report will
-    add a footer, header, table of contents before the sections. The 
+    add a footer, header, table of contents before the sections. The
     **text** of a section can contain any HTML document.
 
     """
@@ -292,23 +292,29 @@ class Report(object):
         from easydev.browser import browse as bs
         bs(self.abspath)
 
-    def close_body(self):
-        """returns BODY closing tag"""
-        return "</body>"
-
-    def close_html(self):
-        """returns HTML closing tag"""
-        return "</html>"
+    def close(self):
+        """close HTML document properyl with div/body/html closing tags"""
+        return "\n</div> <!-- end of div document --> \n</body>\n</html>"
 
     def get_footer(self):
         """Return  HTML closing tag"""
 
         html = """<div class="footer">
-        <img src= ./images/sanger-logo.png  title=sanger-logo align="center"/> 
-        <img src= ./images/logo-nki.png  title=sanger-logo align="center"/> 
-        <img src= ./images/EBI_logo.png  title=sanger-logo   align="center"/>
-        """ + self.get_time_now() + """</div>"""
-        html += self.close_body() + "\n" + self.close_html()
+        <div class="logo">
+        <img src= ./images/sanger-logo.png  title=sanger-logo alt="sanger"/>
+        <img src= ./images/logo-nki.png  title=sanger-logo alt="nki"/>
+        <img src= ./images/EBI_logo.png  title=sanger-logo alt="EBI"/>
+        </div>"""
+
+        html += '<div class="copyright">' +  self.get_time_now()
+        html += """Please visit <a
+        href="http://gdsctools.readthedocs.org">online</a> documentation for
+        details. </div>
+        
+        
+        """
+        html += "</div>"
+        html += self.close()
         return html
 
     def _init_report(self):
@@ -348,11 +354,11 @@ class Report(object):
             try:
                 os.mkdir(input_dir)
             except:
-                pass # already created 
+                pass # already created
             try:
                 os.mkdir(output_dir)
             except:
-                pass # already created 
+                pass # already created
 
     def get_header(self):
         """a possible common header ? """
@@ -381,9 +387,13 @@ class Report(object):
 
      <h1 class="title">%(title)s</h1>
      <h2 class="subtitle">Report created with gdsctools (version %(version)s)</h2>
-     <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCTools github page</a> for downloads and documentation.</p>
+     <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCTools
+     github page</a> for downloads and the <a
+
+     href="http://gdsctools.readthedocs.org">online documentation</a> for details.</p>
+     <hr>
      <p>Analysis Domain: <b>%(analysis_domain)s</b> tissues/cancer cell type</p>
-     <br/>
+
      """ % params
         if self.goback_link is True:
             str_ += 'Go back to <a href="index.html">main page</a>.<br/>'
@@ -395,7 +405,9 @@ class Report(object):
         import getpass
         username = getpass.getuser()
         # this is not working on some systems: os.environ["USERNAME"]
-        msg = '<div class="date">Created on ' + str(datetime.datetime.now())
+        timenow = str(datetime.datetime.now())
+        timenow = timenow.split('.')[0]
+        msg = '<div class="date">Created on ' + timenow
         msg +=  " by " + username +'</div>'
         return msg
 
@@ -431,10 +443,6 @@ class Report(object):
         before using this method"""
         self.pretoc = content
 
-    def add_rawhtml(self, content):
-        """Add some HTML code in the document"""
-        self.sections.append(content)
-
     def add_section(self, content, title, references=[], position=None):
         """Adds an H2 section in the document
 
@@ -444,14 +452,13 @@ class Report(object):
         :param position: sections are added sequentially but position may
             be set to insert a section at a given place.
         """
-        reftxt = self._create_references(references)
         section = """<div class="section" id="%(id)s">
         <h2> <a class="toc-backref" href="#id%(index)s">%(title)s</a></h2>
 
-        %(references)s\n
+
         %(content)s
     </div>
-        """ % {'title': title, 'references': reftxt, 'content': content,
+        """ % {'title': title, 'content': content,
                'id': title.replace(" ", "_"), 'index': len(self.sections)+1}
         # check that it is correct
         if position is not None:
@@ -473,24 +480,6 @@ class Report(object):
 </li>""" % {'i':i+1, 'name':name, 'href':"#"+name.replace(" ", "_"), 'id':'id%s' % str(i+1)}
         toc += """</ul>\n</div>"""
         return toc
-
-    def _create_references(self, references):
-        if len(references) == 0:
-            return ""
-
-        txt = """
-        <div class="admonition-documentation admonition">
-            <p class="first admonition-title">Documentation</p>
-            <ul class="last simple">
-            <li>"""
-
-        for ref in references:
-            txt += """      <a class="reference external" href=%(url)s>%(title)s</a>""" %  {'url':ref[0],'title':ref[1]}
-        txt += """
-            </li>
-            </ul>
-        </div>"""
-        return txt
 
     def write(self):
         """Creates the entire HTML document based on previous command calls
@@ -520,7 +509,7 @@ class Report(object):
         contents += "<hr>" #+ self.get_time_now()
         contents += self.get_footer()
 
-        contents = bs4.BeautifulSoup(contents, 'html.parser').prettify()
+        #contents = bs4.BeautifulSoup(contents, 'html.parser').prettify()
         fh.write(contents)
         fh.close()
 
