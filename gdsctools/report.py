@@ -320,9 +320,13 @@ class Report(object):
             if os.path.isdir(self.directory) is False:
                 print("Created directory {}".format(self.directory))
                 os.mkdir(self.directory)
+            os.mkdir(self.directory + os.sep + 'images')
         except Exception:
             pass
         finally:
+            # TODO something more robust and automatic
+            # e.g. scan the directory and copy the contents
+            # instead of providing the filenames
             for filename in ['gdsc.css', 'sorttable.js', 'highlight.pack.js',
                     'github-gist.css']:
                 target = self.directory + os.sep + filename
@@ -330,6 +334,14 @@ class Report(object):
                     filename = easydev.get_share_file("gdsctools", "data",
                         filename)
                     shutil.copy(filename, self.directory)
+            for filename in ['EBI_logo.png', 'logo-nki.png', 'sanger-logo.png']:
+
+                target = self.directory + os.sep + filename
+                if os.path.isfile(target) is False:
+                    dire = 'data' + os.sep + 'images'
+                    filename = easydev.get_share_file("gdsctools", dire,
+                        filename)
+                    shutil.copy(filename, self.directory+ os.sep+'images')
 
             input_dir = self.directory + os.sep + 'INPUT'
             output_dir = self.directory + os.sep + 'OUTPUT'
