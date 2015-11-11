@@ -102,8 +102,12 @@ a:hover {
 }
 
 hr {
-    margin-top: 1em;
-    border: 1px;
+    /*margin-top: 1em;
+    border: 3px solid;
+    color:grey;*/
+    height:12px;
+    border:0;
+    box-shadow: inset 0 12px 12px -12px rgba(0,0,0,0.5);
 }
 
 
@@ -186,6 +190,12 @@ table.dataframe
     border: 4px solid black;
     line-height:0.9em ; /* reduces spaecs between lines*/
     font-size: 12pt;
+}
+
+table.dataframe th
+{
+    border: 1px solid black;
+
 }
 
 table.dataframe td
@@ -365,52 +375,37 @@ div.header {
 div.footer {
     font-family: "futura", "lucida grande", "lucida sans unicode",
                  verdana, arial, helvetica, sans-serif;
-    font-size: 75%;
-    line-height: 1.5em;
+    font-size: .8em;
+    line-height: 1.1em;
     position: fixed;
     left: 0;
     bottom: 0;
     background-color: #EEE;
     width: 100%;
     border-top: 3px solid #aaaaaa;
-}
-div.footer table {
-    width: 98%;
-    margin: auto;
-}
-div.footer table td a {
-    color: #777;
-    text-decoration: none;
-}
-div.footer td.left {
-    text-align: left;
-    width: 25%;
-}
-div.footer td.center {
-    text-align: center;
-    width: 50%;
-}
-div.footer .current {
-    background: black;
-    color:white;
-    margin: 0;
-    padding-right: .25em;
-    padding-left:  .25em;
-}
-
-div.footer td.center a {
-    padding-right: .25em;
-    padding-left:  .25em;
-}
-
-div.footer td.right {
-    text-align: right;
-    width: 25%;
+    max-height:20%;
 }
 
 div.footer img{
-    margin:5px;
-width:150px;
-height:60px;
+    margin:3px;
+    width:150px;
+    height:60px;
+    max-height:20%;
+    max-width:30%;
+}
+
+
+div.logo{
+    margin:0px;
+    float: right;
+    max-width:55%;
+}
+
+div.copyright{
+    margin:0px;
+    font-size:75%;
+    float: left;
+    padding-left:3px;
+    max-width:40%;
 }
 
