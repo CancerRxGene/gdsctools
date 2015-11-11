@@ -2,4 +2,4 @@ Notebooks are provided to help users/developers to start playing with GDSCTools 
 
 There are complementary to the official online documentation at http://gdsctools.readthedocs.org
 
-They can be browsed and copied from this directory or through the http://nbviewer.ipython.org/github/CancerRxGene/gdsctools/tree/master/
+They can be browsed and copied from this directory or through the http://nbviewer.ipython.org/github/CancerRxGene/gdsctools/tree/master/notebooks/
