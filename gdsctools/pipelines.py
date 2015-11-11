@@ -19,7 +19,7 @@ import argparse
 import sys
 from easydev.console import red, purple, darkgreen
 from easydev import underline
-from gdsctools import version
+from gdsctools import version as gdsc_version
 
 __all__ = ['anova_pipeline', 'ANOVAOptions']
 
@@ -54,6 +54,10 @@ def anova_pipeline(args=None):
     try:
         options = user_options.parse_args(args[1:])
     except SystemExit:
+        return
+
+    if options.version is True:
+        print "This is version %s of gdsctools_anova" % gdsc_version
         return
 
     if options.testing is True:
@@ -243,7 +247,7 @@ class ANOVAOptions(argparse.ArgumentParser):
 
     """
     description = "tests"
-    def __init__(self, version=version, prog=None):
+    def __init__(self, prog=None):
 
         usage = """
 
@@ -280,9 +284,8 @@ http://github.com/CancerRxGene/gdsctools/issues """
 
         description = """General Description:"""
         # FIXME : not robust but will work for now
-        super(ANOVAOptions, self).__init__(usage=usage, version=version,
-                prog=prog,
-                epilog=epilog, description=description,
+        super(ANOVAOptions, self).__init__(usage=usage,
+                prog=prog, epilog=epilog, description=description,
                 formatter_class=argparse.RawDescriptionHelpFormatter)
         self.add_input_options()
 
@@ -396,6 +399,10 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            action="store_true",
                            help="""If set, no images or HTML are created. For
                            testing only""")
+        group.add_argument('--version', dest='version',
+                           action="store_true",
+                           help="print current version of this application")
+
 
 
 
