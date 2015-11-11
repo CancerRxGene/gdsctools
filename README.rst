@@ -21,8 +21,7 @@ GDSCtools
 :Note: tested for Python 2.7, 3.3, 3.4
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
 
-:Online documentation: `On pypi website <http://pythonhosted.org/gdsctools/>`_
-    and `On ReadTheDocs <http://gdsctools.readthedocs.org/en/latest>`_
+:Online documentation: `On ReadTheDocs <http://gdsctools.readthedocs.org/en/latest>`_
 
 :Issues and bug reports: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
 

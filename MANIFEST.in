@@ -1,3 +1,4 @@
 include README.rst MANIFEST.in 
 recursive-include share/data *.css  *tsv *csv *js *txt *rst
+recursive-include share/data/images *.png
 
