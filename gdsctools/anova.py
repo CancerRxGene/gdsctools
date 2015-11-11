@@ -188,7 +188,7 @@ class ANOVAReport(object):
         # so a user may have provide a file, in which case, we need
         # to update the content of the dur_decoder.
         if len(gdsc.drug_decoder) == 0 and drug_decoder is None:
-            print('WARNING no drug name or target will be populated')
+            print('\nWARNING no drug name or target will be populated')
             print('You can read one if you wish using read_drug_decoder')
         else:
             self.read_drug_decoder(drug_decoder)
@@ -300,8 +300,6 @@ class ANOVAReport(object):
         df = self._df_append(df, [msg, value])
 
         f1, f2 = self._get_fdr_range()
-        #f1 = easydev.precision(f1, 3)
-        #f2 = easydev.precision(f2, 3)
         msg = "Range of significant % FDRs"
         value = '[{:.4} {:.4}]'.format(f1,f2)
         df = self._df_append(df, [msg, value])
@@ -313,7 +311,7 @@ class ANOVAReport(object):
         nres = len(self.resistant_df)
         N = nsens + nres
         if N == 0:
-            return 0, 0
+            return 0., 0.
         name = self.varname_pval
         data = self.df[name].ix[0:N-1]
         m, M = data.min(), data.max()
@@ -324,7 +322,7 @@ class ANOVAReport(object):
         name = self.varname_qval
         data = self.df[name][(self.df[name]< self.settings.FDR_threshold)]
         if len(data) == 0:
-            return 0, 0
+            return 0., 0.
         m, M = data.min(), data.max()
         return m,M
 
