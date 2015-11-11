@@ -82,6 +82,7 @@ setup(
     package_data = {
         'share.data' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 'README.rst'],
         '' : ['README.rst'],
+        'share.data.images' : ['*png'],
         },
 
     # comment the requirements otherwise RTD fails
