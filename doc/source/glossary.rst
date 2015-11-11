@@ -36,4 +36,10 @@ Glossary
         Markers indicating presence or absence of a MSI shift, allele
         homozygosity/heterozygosity, and loss of heterozygosity (LOH) observed
         in the tumor sample for each participant
-        
+
+    FDR
+        TODO
+
+
+    TCGA
+        TODO

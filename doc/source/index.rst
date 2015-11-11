@@ -1,94 +1,66 @@
-############################################################################
-GDSCtools
-############################################################################
-
-.. contents::
-
-Overview
----------
-
-**GDSCTools** contains utilities used to find significant associations between
-drug response and genomic features.
+GDSCTools documentation
+===========================
 
 
 
-Installation
----------------
+**GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant association between drugs and genomic features (e.g., gene mutation), however, it should be of interest to a wider community.
 
-You know Python and/or **pip** utility ?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Releases of **GDSCTools** are available on `Pypi <https://pypi.python.org/pypi/gdsctools/0.2.0>`_. Therefore **GDSCTools**
-can be installed in a shell using **pip**::
+**GDSCTools** is written in Python. If you are a developer and knows about
+Python ecosystem already, then just type this command to install the library::
 
     pip install gdsctools
 
-Dependencies (e.g., Pandas, matplotlib) should be taken care of automatically.
+If you are not familiar with this command, please see the :ref:`Installation` section for further details.
 
-You don't know Python  or have compilation issues ?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Here is a quick example on how to use **GDSCTools** to investigate the association between the IC50 of a given drug and a genomic feature (TP53 mutation) across 52 breast cancer cell lines.
 
-If you are not familiar with Python, or have issues with compilation, or do not have root access, we would recommend to use the `Anaconda <https://www.continuum.io/downloads>`_ solution. It will install binary packages required to install **GDSCTools** itself; since it does not require root access, it should not interfere with your system.
 
-Please, visit the link above and install Anaconda following the
-instructions.
-
-Once you have installed Anaconda, open a new shell.
-
-As a **developer**, you can get the latest source code from github and install GDSCTools from source as follows (in a shell) ::
-
-    # go in a working directory and type:
-    git clone https://github.com/CancerRxGene/gdsctools
-    cd gdsctools
-    python setup.py install
-
-As an **end-user**, open a shell and type. This will install the latest official release of **GDSCTools**::
-
-    pip install gdsctools
-
-Testing your installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-You should now be ready to use **GDSCTools**. A good test is to check
-that the following executable is available. In a shell, type::
-
-    gdsctools_anova --test
-
-or ::
-
-    gdsctools_anova --help
-
-or for developers, starts an IPython shell, and type e.g.::
+.. plot::
+    :include-source:
+    :width: 80%
 
     from gdsctools import *
-    an = ANOVA(ic50_test)
+    gdsc = ANOVA(ic50_test)
+    gdsc.set_cancer_type('breast')
+    df = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 
+        'TP53_mut', show=True)
 
-Please, see the quickstart session for the usage.
+The code above needs to be typed within an IPython shell or a notebook. We also
+provide a standalone application called **gdsctools_anova**, which can be used
+within a shell::
+
+    gdsctools_anova 
+        --I <ic50 filename> 
+        --drug Drug_1047_IC50 
+        --feature TP53_mut --onweb
 
 
-User Guide
-------------
+See :ref:`standalone` for more details.
+
+
+Contents
+============
+
 
 .. toctree::
+    :numbered:
     :maxdepth: 1
 
+    installation.rst
     userguide.rst
-
-Developers Guide
-------------------
-
-.. toctree::
-    :maxdepth: 1
-
+    data.rst
+    standalone.rst
     references.rst
     developers.rst
     ChangeLog.rst
 
 Issues
------------
+===========
 
 Please fill bug report in https://github.com/CancerRxGene/gdsctools/issues
 
 Contributions
-----------------
+================
 
 Please join https://github.com/CancerRxGene/gdsctools
 

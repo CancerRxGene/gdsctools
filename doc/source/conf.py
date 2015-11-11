@@ -88,7 +88,9 @@ copyright = copyright
 # built documents.
 #
 # The short X.Y version.
-version = version
+version = 'Current version: ' + str(version) + \
+        """<br><a href="https://github.com/CancerRxGene/gdsctools"
+        style="color:red">Get source code on github</a>"""
 # The full version, including alpha/beta/rc tags.
 release = release
 
