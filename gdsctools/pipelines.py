@@ -86,7 +86,13 @@ def anova_pipeline(args=None):
     if options.print_tissues is True:
         from gdsctools import anova
         an = anova.ANOVA(options.input_ic50, options.input_features)
-        for name in an.tissue_factor.sort_values().unique():
+
+        tissues = an.tissue_factor
+        try:
+            tissues = tissues.sort_values('Tissue Factor').unique()
+        except:
+            tissues = tissues.sort(inplace=False).unique()
+        for name in tissues:
             print(name)
         return
 

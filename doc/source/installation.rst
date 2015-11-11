@@ -7,7 +7,6 @@ Installation
 
 **GDSCTools** is written in Python and depends on a set of established scientific libraries such as `Matplotlib <http://matplotlib.org/>`_ (visualisation) and `Pandas <http://pandas.pydata.org/>`_ (data manipulation) to cite just a few. **GDSCTools** also makes use of the Python ecosystem to provide a robust software. We hope that the installation will work out of the box. Would you have any trouble, please see the :ref:`faqs` or fill an `issue/ticket <https://github.com/CancerRxGene/gdsctools/issues>`_ on github.
 
-.. todo:: add url to pandas, matplotlib, FAQs + issue url
 
 You know Python and/or **pip** utility ?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
