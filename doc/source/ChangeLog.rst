@@ -1,6 +1,21 @@
 ChangeLog
 ==============
 
+version 0.9.2 Nov 2015
+--------------------------
+
+- Finalise a first version of the standalone application
+
+version 0.9.1
+--------------------------
+
+- ReadTheDocs documentaiton is now available on line
+
+version 0.9.0
+---------------------------
+
+GDSCTools has now all features of the original R version
+
 Version 0.3 27 Oct 2015
 ------------------------
 
