@@ -82,14 +82,17 @@ The ANOVA class
 ----------------
 Given an IC50 data set, we can now analyse it using the main class 
 called :class:`~gdsctools.anova.ANOVA`. A default set of 680 genomic features 
-is provided and we do not need to worry about it right now.::
+is provided and we do not need to worry about it right now.
+
+Before starting, just a few words about the underlying stastistical analysis. In a given analysis, there are :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a measured IC50. A set of genomic features is provided and the corresponding :math:`$N_c$` cell lines used to get :math:`N_f` features. Then, for each drug, we compute the association (a regression analysis) between a drug and a feature leading to a p-value. This calculation is possibly repeated across all features and even all drugs. Consequently, a multiple testing correction (FDR) is applied and reported in the analysis. See :ref:`details` section for more details.
+
+One can choose to analyse all the data, or only one drug (across all features), or only one drug for a given feature. Let us now read an IC50 file that we wish to analyse::
 
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
 
 As you can see here, we did not create an IC50 instance, but just provide the
-ic50_test name. The ANOVA class is flexible enough. The following statements
-are all equivalent::
+ic50_test name. The ANOVA class is flexible enough and for instance the following statements are all equivalent::
 
     from gdsctools import ANOVA, ic50_test, IC50
     gdsc = ANOVA(ic50_test)
@@ -97,8 +100,7 @@ are all equivalent::
     gdsc = ANOVA(IC50(ic50_test))
     gdsc = ANOVA("localfile.csv")
 
-
-You can perform 3 types of analysis:
+As briefly mentionned earlier, you can perform 3 types of analysis:
 
 .. index:: ODOF, ODAF, ADAF
 
@@ -121,6 +123,11 @@ a given genomic feature using the
     gdsc.anova_one_drug_one_feature('Drug_999_IC50', 'TP53_mut', 
         show=True)
 
+
+.. todo:: explain the analysis and the plots
+
+
+
 One Drug All Features (ODAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -142,6 +149,9 @@ In a similar way, you may look at all features for a given drug:
 .. note:: When you call the ODAF method, you are actually calling
    the ODOF method for each feature. This method takes 4-10 seconds 
    per drug depending on the number of features.
+
+
+.. todo:: explain the analysis and the plots
 
 All Drug All Features (ADAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,12 +178,8 @@ number of drugs and features (30 minutes for 250 drugs and 1000 features):
     (e.g., 10 minutes, 30 minutes) depending on the number of drugs
     and features.
 
-More about the analysis and the plots
-=======================================
-
-.. todo:: explain the analysis and the plots ?
-
-
+.. todo:: explain the analysis and the plots
+.. todo:: FDR threshold to show some green/red dots
 
 HTML report
 ==============

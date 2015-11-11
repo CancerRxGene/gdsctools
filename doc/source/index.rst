@@ -49,6 +49,7 @@ Contents
     installation.rst
     userguide.rst
     data.rst
+    notebooks.rst
     standalone.rst
     references.rst
     developers.rst

@@ -5,41 +5,84 @@
 Standalone applications
 ==========================
 
-The standalone application is called **gdsctools_anova**. You can obtain the
-help typing::
+Although we would encourage you to use the Python shell to have as much
+flexibility as possible, we also provide a standalone application called **gdsctools_anova**. This standalone application should be installed with **GDSCTools** and covers lots of the functionalities available including the HTML reports 
+
+
+You can obtain the help by typing::
 
     gdsctools_anova --help
 
 
-The main goal is to provide an interface to the python library. One should be
-able to redo the analysis shwon in the quickstart.
+The main goal is to provide an interface to the python library and consequently, one be able to redo the analysis as shown in the quickstart::
 
 
-* ODOF with figure(s)
-* ODAF with figure
-* ADAF with figure
-* All analysis with HTML report
+* One drug One Feature with figure(s) and HTMLs
+* One Drug All Feature with figure and HTMLs
+* All Drug All Feature with figures and HTMLs
 
-We supposer the input data file is called IC50.tsv
+We suppose the input data file is called IC50_10drugs.tsv
 
 ODOF
 -----------
 
 ::
 
-    gdsctools_anova --input-ic50 ../share/data/IC50_10drugs.tsv --drug
-    Drug_999_IC50 --feature TP53_mut --onweb
+    gdsctools_anova --input-ic50 IC50_10drugs.tsv --drug
+        Drug_999_IC50 --feature TP53_mut --onweb
 
 
 ODAF
 ----------
+::
+
+    gdsctools_anova --input-ic50 IC50_10drugs.tsv --drug
+        Drug_999_IC50 --onweb
+
 
 
 ADAF
 ---------
 
+::
+
+    gdsctools_anova --input-ic50 IC50_10drugs.tsv --onweb
 
 
 
-other settings
-------------------
+Some other settings
+----------------------
+
+
+Again, you can use the --help to get up-to-date information about the available
+arguments. However, let us give a couple of interesting ones.
+
+You can restrict the analysis to a set of drugs::
+
+    --include-drugs-in Drug_10_IC50, Drug_11_IC50
+
+To know the names of the drugs, use::
+
+    --print-drug-names
+
+Similarly, you can restrict the analysis to a set of features    
+    
+    --include-features-in TP53_mut, BRAF_mut
+
+To know the names of the drugs, use::
+
+    --print-feature-names
+
+Similarly, you can restrict the analysis to a set of tissues    
+    
+    --tissues breast, cervix 
+
+To know the names of the drugs, use::
+
+    --print-tissue-names
+
+
+
+
+
+
