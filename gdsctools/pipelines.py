@@ -57,7 +57,7 @@ def anova_pipeline(args=None):
         return
 
     if options.version is True:
-        print "This is version %s of gdsctools_anova" % gdsc_version
+        print("This is version %s of gdsctools_anova" % gdsc_version)
         return
 
     if options.testing is True:
