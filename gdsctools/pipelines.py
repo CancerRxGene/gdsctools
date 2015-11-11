@@ -51,15 +51,10 @@ def anova_pipeline(args=None):
         args = sys.argv[:]
 
     user_options = ANOVAOptions(prog="gdsctools_anova")
-
-
-    if len(args) == 1 or '--help' in args or '--test' in args:
-        if '--test' in args:
-            options = user_options.parse_args(args[1:])
-        else:
-            options = user_options.parse_args(args)
-    else:
+    try:
         options = user_options.parse_args(args[1:])
+    except SystemExit:
+        return
 
     if options.testing is True:
         print('Testing mode:')
@@ -84,10 +79,40 @@ def anova_pipeline(args=None):
         print(an)
         return
 
+    if options.print_tissues is True:
+        from gdsctools import anova
+        an = anova.ANOVA(options.input_ic50, options.input_features)
+        for name in an.tissue_factor.sort_values().unique():
+            print(name)
+        return
+
+    if options.print_drugs is True:
+        from gdsctools import anova
+        an = anova.ANOVA(options.input_ic50, options.input_features)
+        for name in an.drugIds:
+            print(name)
+        return 
+
+    if options.print_features is True:
+        from gdsctools import anova
+        an = anova.ANOVA(options.input_ic50, options.input_features)
+        for name in an.feature_names:
+            print(name)
+        return 
+
+    # Users may select a subset of the features but this is not
+    # relevant is options.feature is given
+    if options.feature is not None:
+        # This is not used, let us reset it to be sure
+        if len(options.features):
+            print(red('--include-features-in is not used if you provide --feature' ))
+        options.features = []
+
     # users may select a subset of drugs:
-    if options.drugs is not None and options.drug is not None:
-        print('Note that --include-drugs has not effect since you provided --drug')
-    if options.drugs: # clean it up
+    if len(options.drugs) and options.drug is not None:
+        print(red('--include-drugs has not effect since you provided --drug'))
+
+    if len(options.drugs)>0: # clean it up
         options.drugs = [x.strip(",") for x in options.drugs]
         options.drugs = [x for x in options.drugs if len(x)]
 
@@ -95,29 +120,16 @@ def anova_pipeline(args=None):
 
     # or a subset of features
 
-    try:
-        if options.drug is not None and options.feature is not None:
-            anova_one_drug_one_feature(options)
-        elif options.drug is not None:
-            anova_one_drug(options)
-        else: # analyse everything
-            anova_all(options)
-        if options.onweb is False:
-            msg = "\nNote that a directory {} was created and files saved into it"
-            print(purple(msg.format(options.directory)))
+    if options.drug is not None and options.feature is not None:
+        anova_one_drug_one_feature(options)
+    elif options.drug is not None:
+        anova_one_drug(options)
+    else: # analyse everything
+        anova_all(options)
+    if options.onweb is False and options.no_html is False:
+        msg = "\nNote that a directory {} was created and files saved into it"
+        print(purple(msg.format(options.directory)))
 
-    except Exception as err:
-        msg = """An error was caught while using gdsctools_anova.
-This may be due to your input or a mis-spelled parameter (e.g. unknown feature),
-or most probably a bug or lack of documentation on our side.
-
-If you believe this is a bug, please send the error message that follows
-together with your command line and input file
-
-"""
-
-        print(err)
-        raise err
 
 
 def anova_one_drug(options):
@@ -126,7 +138,10 @@ def anova_one_drug(options):
             low_memory=not options.fast)
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi
+    an.settings.FDR_threshold = options.FDR_threshold
     an.set_cancer_type(options.tissue)
+    if options.features:
+        an.feature_names = options.features
 
     an.settings.check()
 
@@ -141,6 +156,8 @@ def anova_one_drug(options):
     N = len(df)
     df.insert(0, 'ASSOC_ID', range(1, N+1))
 
+    if options.no_html is True:
+        return
 
     r = anova.ANOVAReport(an, results=df)
     print(darkgreen("\nCreating all figure and html documents in %s" %
@@ -149,23 +166,33 @@ def anova_one_drug(options):
 
 
 def anova_all(options):
+    """Analyse the entire data set"""
     from gdsctools import anova 
     an = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
 
-    if options.drugs is not None:
+    if len(options.drugs)>0:
         an.drugIds = options.drugs
         # need to reinit, which is done when set_cancer_type is called
         # here below
 
-    if options.features:
+    if len(options.features)>0:
         an.feature_names = options.features
 
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi
+    an.settings.FDR_threshold = options.FDR_threshold
     an.set_cancer_type(options.tissue)
     an.settings.check()
+    print(an)
+
+    # The analysis
+    print(darkgreen("Starting the analysis"))
     df = an.anova_all()
+    
+    # HTML report
+    if options.no_html is True:
+        return
     r = anova.ANOVAReport(an, results=df)
     print("Creating all figure and html documents in %s" %
             r.settings.directory)
@@ -173,6 +200,7 @@ def anova_all(options):
 
 
 def anova_one_drug_one_feature(options):
+    """Analyse the entire data set"""
     from gdsctools import anova
     gdsc = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
@@ -183,6 +211,8 @@ def anova_one_drug_one_feature(options):
             feature=options.feature)
     #an.factory.settings.directory = options.directory
     odof.factory.settings.includeMSI_factor = options.include_msi
+    odof.factory.settings.FDR_threshold = options.FDR_threshold
+    
     odof.factory.set_cancer_type(options.tissue)
     odof.factory.settings.check()
     odof.goback_link = False
@@ -200,8 +230,11 @@ def anova_one_drug_one_feature(options):
 
         print(red(msg % (options.drug, options.feature)))
     else:
+        print(df.T)
+        # HTML report
+        if options.no_html is True:
+            return
         odof.report(onweb=options.onweb)
-    print(df.T)
 
 
 class ANOVAOptions(argparse.ArgumentParser):
@@ -299,43 +332,70 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            help="""The name of a valid feature to be found in
                           the Genomic Feature matrix""")
 
-        # selector tissue
+        group.add_argument("--print-drug-names", dest="print_drugs",
+                           action="store_true",
+                           help="Print the drug names")
+        group.add_argument("--print-feature-names", dest="print_features",
+                           action="store_true",
+                           help="Print the features names")
+        group.add_argument("--print-tissue-names", dest="print_tissues",
+                           action="store_true",
+                           help="Print the unique tissue names")
+
+        # Various filters
         group.add_argument("-t", "--tissue", dest="tissue", type=str,
                            help="""The name of a specific cancer type
                           i.e., tissue to restrict the analysis
                           to """)
-        group.add_argument("--exclude-msi", dest="include_msi",
-                           action="store_false",
-                           help="Include msi factor in the analysis")
-        group.add_argument("--summary", dest="summary",
-                            action="store_true",
-                           help="Print summary about the data (e.g., tissue)")
-
         group.add_argument('--include-drugs-in', dest='drugs',
                            nargs="+", default=[],
                            help="todo"
                            )
-
         group.add_argument('--include-features-in', dest='features',
                            nargs="+", default=[],
-                           help="todo"
+                           help="""There are many genomic features included by
+                           default. You may want to select a subset of them. 
+                           No effect if --feature is provided"""
                            )
 
+        group.add_argument('--fdr-threshold', dest="FDR_threshold",
+                            default=25, type=float,
+                            help="""FDR (False discovery Rate) used in the
+                            multitesting analysis to correct the pvalues""")
+
+        # analysis itself
+        group.add_argument("--exclude-msi", dest="include_msi",
+                           action="store_false",
+                           help="Include msi factor in the analysis")
+
+
+        # others
+        group.add_argument("--summary", dest="summary",
+                            action="store_true",
+                           help="Print summary about the data (e.g., tissue)")
+        
         group.add_argument('--test', dest='testing',
                            action="store_true",
-                           help="todo"
+                           help="""Use a small IC50 data set and run the
+                           one-drug-one-feature analyse with a couple of unit
+                           tests."""
                            )
+        
         group.add_argument('--license', dest='license',
                            action="store_true",
-                           help="todo"
+                           help="Print the current license"
                            )
+        
         group.add_argument('--fast', dest='fast',
                            action="store_true",
-                           help=r"""If provided, the code will use more 
+                           help="""If provided, the code will use more 
                            memory and should be 10-30%% faster. (1.2G for 
                            265 drugs and 680 features)"""
                            )
-
+        group.add_argument('--no-html', dest='no_html',
+                           action="store_true",
+                           help="""If set, no images or HTML are created. For
+                           testing only""")
 
 
 
