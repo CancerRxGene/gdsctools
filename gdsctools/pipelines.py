@@ -19,7 +19,7 @@ import argparse
 import sys
 from easydev.console import red, purple, darkgreen
 from easydev import underline
-
+from gdsctools import version
 
 __all__ = ['anova_pipeline', 'ANOVAOptions']
 
@@ -69,11 +69,14 @@ def anova_pipeline(args=None):
 
         assert df.loc[1,'N_FEATURE_pos'] == 554, \
             "N_feature_pos must be equal to 554"
-
         print(df.T)
         print(darkgreen("\nGDSCTools seems to be installed properly"))
         return 
 
+    if options.license is True:
+        import gdsctools
+        print(gdsctools.license)
+        return
 
     if options.summary is True:
         from gdsctools import anova
@@ -119,7 +122,8 @@ together with your command line and input file
 
 def anova_one_drug(options):
     from gdsctools import anova
-    an = anova.ANOVA(options.input_ic50, options.input_features)
+    an = anova.ANOVA(options.input_ic50, options.input_features,
+            low_memory=not options.fast)
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi
     an.set_cancer_type(options.tissue)
@@ -132,11 +136,10 @@ def anova_one_drug(options):
         print(red("\nNo valid associations tested. Please try another drug"))
         return
 
-    df = an.add_corrected_pvalues(df)
+    df = an.add_pvalues_correction(df)
 
     N = len(df)
     df.insert(0, 'ASSOC_ID', range(1, N+1))
-
 
 
     r = anova.ANOVAReport(an, results=df)
@@ -147,7 +150,8 @@ def anova_one_drug(options):
 
 def anova_all(options):
     from gdsctools import anova 
-    an = anova.ANOVA(options.input_ic50, options.input_features)
+    an = anova.ANOVA(options.input_ic50, options.input_features,
+            low_memory=not options.fast)
 
     if options.drugs is not None:
         an.drugIds = options.drugs
@@ -170,16 +174,18 @@ def anova_all(options):
 
 def anova_one_drug_one_feature(options):
     from gdsctools import anova
-    gdsc = anova.ANOVA(options.input_ic50, options.input_features)
+    gdsc = anova.ANOVA(options.input_ic50, options.input_features,
+            low_memory=not options.fast)
+    gdsc.settings.directory = options.directory
 
     odof = anova.OneDrugOneFeature(gdsc,
             drug=options.drug,
-            feature=options.feature,
-            directory=options.directory)
+            feature=options.feature)
     #an.factory.settings.directory = options.directory
     odof.factory.settings.includeMSI_factor = options.include_msi
     odof.factory.set_cancer_type(options.tissue)
     odof.factory.settings.check()
+    odof.goback_link = False
 
     # for the HTML
     odof.add_dependencies = True
@@ -194,7 +200,7 @@ def anova_one_drug_one_feature(options):
 
         print(red(msg % (options.drug, options.feature)))
     else:
-        an.report(onweb=options.onweb)
+        odof.report(onweb=options.onweb)
     print(df.T)
 
 
@@ -204,7 +210,7 @@ class ANOVAOptions(argparse.ArgumentParser):
 
     """
     description = "tests"
-    def __init__(self, version="1.0", prog=None):
+    def __init__(self, version=version, prog=None):
 
         usage = """
 
@@ -319,6 +325,17 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            action="store_true",
                            help="todo"
                            )
+        group.add_argument('--license', dest='license',
+                           action="store_true",
+                           help="todo"
+                           )
+        group.add_argument('--fast', dest='fast',
+                           action="store_true",
+                           help=r"""If provided, the code will use more 
+                           memory and should be 10-30%% faster. (1.2G for 
+                           265 drugs and 680 features)"""
+                           )
+
 
 
 
