@@ -43,3 +43,6 @@ Glossary
 
     TCGA
         TODO
+
+    COSMIC
+        TODO

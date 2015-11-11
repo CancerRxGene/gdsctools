@@ -14,8 +14,8 @@ GDSCtools
 .. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=issues&title=issues
    :target: https://waffle.io/gdsctools/gdsctools
 
-.. image:: https://readthedocs.org/projects/gdsctools/badge/?version=latest
-    :target: http://gdsctools.readthedocs.org/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
+    :target: http://gdsctools.readthedocs.org/en/latest/?badge=master
     :alt: Documentation Status
 
 :Note: tested for Python 2.7, 3.3, 3.4
