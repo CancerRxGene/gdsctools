@@ -66,6 +66,10 @@ class Data(object):
         txt += 'authors: %s\n' % self.authors
         return txt
 
+    def _get_location(self):
+        return self.filename
+    location = property(_get_location)
+
     def __repr__(self):
         return self.__str__()
 
@@ -114,7 +118,6 @@ ic50_test = dataset('ic50_test')
 #: Dataset with genomic features for 1001 cell lines and 680 features
 genomic_features = dataset('genomic_features')
 
-
 #: Dataset with cancer cell lines name / cosmic id/ tissue type and sub type
 cancer_cell_lines = dataset('cancer_cell_lines')
 
@@ -131,17 +134,26 @@ def _build_testing():
     d.description = 'drug_decode in TSV format'
     testing.drug_test_tsv = d
 
+    d = Data()
     d.filename = _gsf('gdsctools', 'data', 'test_drug_decode.csv')
     d.description = 'drug_decode in CSV format'
     testing.drug_test_csv = d
 
+    d = Data()
     d.filename = _gsf('gdsctools', 'data', 'test_ic50_11_50.csv')
     d.description = 'A 10drug/50 cell lines IC50 test file in CSV format'
     testing.ic50_test_csv = d
 
+    d = Data()
     d.filename = _gsf('gdsctools', 'data', 'test_genomic_features.csv')
     d.description = 'A 50 cell lines by 20 features GenomicFeature in CSV format'
     testing.genomic_features_csv = d
+
+    d = Data()
+    d.filename = _gsf('gdsctools', 'data', 'IC50_test.csv')
+    d.description = 'A 10drug/1000 cell lines IC50 test file in CSV format'
+    testing.ic50_test = d
+
     return testing
 
 testing = _build_testing()
