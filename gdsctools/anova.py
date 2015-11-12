@@ -732,7 +732,6 @@ class ANOVA(object): #Logging):
         #self.logging.info('Reading data and building data structures')
 
         # We first need to read the IC50 using a dedicated reader
-        self.ic50_raw = readers.IC50(ic50)
         self.ic50 = readers.IC50(ic50)
 
         # Create a dictionary version of the data
@@ -755,7 +754,7 @@ class ANOVA(object): #Logging):
         self.read_drug_decoder(drug_decoder)
 
         #: a concentrations for each IC50; not used for now but could be
-        self.concentrations = readers.IC50(concentrations)
+        #self.concentrations = readers.IC50(concentrations)
 
         # create the multiple testing factory used in anova_all()
         self.multiple_testing = MultipleTesting()
@@ -2019,7 +2018,6 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
         df = df.reset_index() # get back the Drug id in the dframe columns
 
         # let us add also the drug name
-        print(type(self.results))
         df = self.results.gdsc.drug_annotations(df)
 
         # let us also add number of associations computed
