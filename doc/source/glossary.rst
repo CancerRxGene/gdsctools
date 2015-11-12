@@ -42,3 +42,13 @@ Glossary
 
     COSMIC
         .. todo:: link to website and module
+
+    ODOF
+        acronym for One Drug One Feature mode
+    
+    ODAF
+        acronym for One Drug All Feature mode
+    
+    ADAF
+        acronym for All Drug All Feature mode
+    

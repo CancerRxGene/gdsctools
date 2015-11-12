@@ -17,12 +17,14 @@ can be installed in a shell using the **pip** command::
 
 Dependencies (e.g., Pandas, Matplotlib) should be taken care of automatically.
 
-If you are new to Python and IPython notebok
+If you are new to Python and IPython notebook
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are not familiar with Python, or have issues with compilation, or do not have root access, we would recommend to use the `Anaconda <https://www.continuum.io/downloads>`_ solution. Anaconda will install Python and a bunch of Python libraries in binary format. This should allow you to quickly try **GDSCTools** without worrying about compilation issues. Besides, since it does not require root access, it should not interfere with your system.
+If you are not familiar with Python, or have issues with compilation, or do not have root access, we would recommend to use the `Anaconda <https://www.continuum.io/downloads>`_ solution. 
 
-Please, first visit the `Anaconda <https://www.continuum.io/downloads>`_ webiste and follow the instructions.
+Anaconda is a free Python distribution. It includes most popular Python packages for science and data analysis. Anaconda will install the software required by  **GDSCTools**. Since it does not require root access, it should not interfere with your system.
+
+Please, visit the `Anaconda <https://www.continuum.io/downloads>`_ webiste and follow the instructions. You may need to choose between 2 versions of Python (2.X or 3.X). We do not recommend any specific version but note that **GDSCTools** is tested under Python 2.7, 3.3 and 3.4 (not 3.5 for now) and is mainly developed under Python 2.7.
 
 
 
