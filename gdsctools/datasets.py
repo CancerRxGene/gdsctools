@@ -30,10 +30,12 @@ or used in analysis:
 
 - :attr:`genomic_features`
 """
+# use underscore to hide from API
 import easydev
+from easydev import get_share_file as _gsf
 
 
-__all__ = ['Data', 'dataset', 'ic50_test', 'genomic_features', 'drug_test',
+__all__ = ['Data', 'dataset', 'ic50_test', 'genomic_features',
            "cosmic_builder_test", "cancer_cell_lines"]
 
 
@@ -64,6 +66,9 @@ class Data(object):
         txt += 'authors: %s\n' % self.authors
         return txt
 
+    def __repr__(self):
+        return self.__str__()
+
 
 def dataset(dataname):
     """Retrieve information about a dataset including location
@@ -80,31 +85,23 @@ def dataset(dataname):
         ic50_test.filename
 
     """
-    registered = ['ic50_test', 'genomic_features', 'drug_test',
+    registered = ['ic50_test', 'genomic_features',
         'cancer_cell_lines', 'cosmic_builder_test']
     easydev.check_param_in_list(dataname, registered)
 
     d = Data()
     if dataname == 'ic50_test':
-        d.filename = easydev.get_share_file('gdsctools', 'data', 'IC50_10drugs.tsv')
+        d.filename = _gsf('gdsctools', 'data', 'IC50_10drugs.tsv')
         d.description = 'IC50s for 10 public drugs across cell lines'
     elif dataname == 'genomic_features':
-        d.filename = easydev.get_share_file('gdsctools',
-                'data', 'genomic_features.tsv')
+        d.filename = _gsf('gdsctools', 'data', 'genomic_features.tsv.gz')
         d.descritption = 'Set of genomic features + tissue + sample name + msi'
-    elif dataname == 'drug_test':
-        d.filename = easydev.get_share_file('gdsctools',
-                'data', 'DRUG_DECODE.csv')
-        d.description = "Mapping between drug identifiers, drug " +\
-                         "name and drug target"
     elif dataname == 'cancer_cell_lines':
-        d.filename = easydev.get_share_file('gdsctools',
-                'data', 'cancer_cell_lines.csv')
+        d.filename = _gsf('gdsctools', 'data', 'cancer_cell_lines.csv')
         d.description = "List of cosmic identifiers with the corresponding "+\
             "name, tissue and sub tissue types"
     elif dataname == 'cosmic_builder_test':
-        d.filename = easydev.get_share_file('gdsctools',
-                'data', 'cosmic_builder_test.txt')
+        d.filename = _gsf('gdsctools', 'data', 'cosmic_builder_test.txt')
         d.description = "An example of flat file to be read by COSMICFetcher"
 
     return d
@@ -117,8 +114,6 @@ ic50_test = dataset('ic50_test')
 #: Dataset with genomic features for 1001 cell lines and 680 features
 genomic_features = dataset('genomic_features')
 
-#: Dataset with drug name and targets (for testing)
-drug_test = dataset('drug_test')
 
 #: Dataset with cancer cell lines name / cosmic id/ tissue type and sub type
 cancer_cell_lines = dataset('cancer_cell_lines')
@@ -128,4 +123,25 @@ cosmic_builder_test = dataset("cosmic_builder_test")
 
 
 
+# Build a dedicate data set for testing purposes
+def _build_testing():
+    testing = easydev.AttrDict()
+    d = Data()
+    d.filename = _gsf('gdsctools', 'data', 'test_drug_decode.tsv')
+    d.description = 'drug_decode in TSV format'
+    testing.drug_test_tsv = d
 
+    d.filename = _gsf('gdsctools', 'data', 'test_drug_decode.csv')
+    d.description = 'drug_decode in CSV format'
+    testing.drug_test_csv = d
+
+    d.filename = _gsf('gdsctools', 'data', 'test_ic50_11_50.csv')
+    d.description = 'A 10drug/50 cell lines IC50 test file in CSV format'
+    testing.ic50_test_csv = d
+
+    d.filename = _gsf('gdsctools', 'data', 'test_genomic_features.csv')
+    d.description = 'A 50 cell lines by 20 features GenomicFeature in CSV format'
+    testing.genomic_features_csv = d
+    return testing
+
+testing = _build_testing()
