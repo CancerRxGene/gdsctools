@@ -1,7 +1,12 @@
-Some of those files can be downloaded
-from the gdsc.datasets module 
 
-Here is a short explanation for each
+
+
+
+Nov 2015: Most of those files are part of the gdsctools.datasets where explanation about the data should be provided.
+
+.. note:: extension .csv or .tsv matters !
+
+Here is a short explanation for some of them
 
 * cancer_cell_lines.csv: list of cosmid id + name retrieved from
   http://www.cancerrxgene.org/translation/CellLine nov 2015
@@ -16,6 +21,3 @@ Here is a short explanation for each
 
 
 github-gist.css and highlight.pack.js were found at https://highlightjs.org/
-
-
-Note that extension .csv or .tsv matters !
