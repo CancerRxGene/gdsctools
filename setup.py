@@ -80,7 +80,8 @@ setup(
     package_dir={'share.data': 'share/data'},
 
     package_data = {
-        'share.data' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 'README.rst'],
+        'share.data' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 
+            '*gz', 'README.rst'],
         '' : ['README.rst'],
         'share.data.images' : ['*png'],
         },
