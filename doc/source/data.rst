@@ -27,9 +27,9 @@ The format used for all input and output files is the comma-separated values (CS
 .. autosummary::
 
     gdsctools.readers
-    gdsctools.IC50
-    gdsctools.DrugDecoder
-    gdsctools.GenomicFeatures
+    gdsctools.readers.IC50
+    gdsctools.readers.DrugDecoder
+    gdsctools.readers.GenomicFeatures
 
 
 

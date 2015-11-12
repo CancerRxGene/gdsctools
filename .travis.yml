@@ -23,15 +23,13 @@ before_install:
     # This help testing code with pylab
     - "export DISPLAY=:99.0"
     - "sh -e /etc/init.d/xvfb start"
-    # some useful libraries to compile numpy/scipy
-    # - "sudo apt-get install -q libatlas3gf-base libatlas-dev liblapack-dev gfortran"
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose pandas coverage statsmodels
   # coverage packages are elsewhere
   #- conda install --yes -c python-coveralls nose-cov
-  - pip install nose easydev
+  - pip install nose easydev --upgrade
   - pip install coveralls
 # # command to run tests, e.g. python setup.py test
 script:
