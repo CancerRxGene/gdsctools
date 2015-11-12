@@ -1682,7 +1682,7 @@ class HTMLManova(Report):
 
 class OneDrugOneFeature(Report):
     def __init__(self, gdsc, drug=None, feature=None,
-            fdr='?', assoc_id='?'):
+            fdr=-1, assoc_id=-1):
         # FIXME here we lose the setttings since we create a new instance
         self.factory = gdsc
         # Does that changes the main settings ??
