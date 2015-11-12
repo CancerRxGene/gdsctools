@@ -14,18 +14,23 @@
 #  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
-"""Main standalone application dreamtools"""
+"""Main standalone application called gdsctools_anova"""
 import argparse
 import sys
 from easydev.console import red, purple, darkgreen
-from easydev import underline
-from gdsctools import version as gdsc_version
+import easydev
+import gdsctools
+
+import warnings
+# ignore pandas warning
+warnings.simplefilter(action="ignore", category=FutureWarning)
+# ignore mpld3 warning
+warnings.simplefilter(action="ignore", category=UserWarning)
 
 __all__ = ['anova_pipeline', 'ANOVAOptions']
 
 
-def print_color(txt, func_color, underline=False):
-    import easydev
+def print_color(txt, func_color=darkgreen, underline=False):
     try:
         if underline:
             print(easydev.underline(func_color(txt)))
@@ -39,16 +44,21 @@ def anova_pipeline(args=None):
     """This function is used by the standalone application called
     **gdsctools_anova**
 
-    ::
+    Type::
 
         gdsctools_anova --help
 
+    to get some help.
     """
     msg = "Welcome to GDSCTools standalone"
-    print(purple(underline(msg)))
+    print_color(msg, purple, underline=True)
 
+    # Keep the argument args as None by default to
+    # allow testing e.g., in nosetests
     if args is None:
         args = sys.argv[:]
+    elif len(args) == 1:
+        args += ['--help']
 
     user_options = ANOVAOptions(prog="gdsctools_anova")
     try:
@@ -57,7 +67,7 @@ def anova_pipeline(args=None):
         return
 
     if options.version is True:
-        print("This is version %s of gdsctools_anova" % gdsc_version)
+        print("This is version %s of gdsctools_anova" % gdsctools.version)
         return
 
     if options.testing is True:
@@ -70,10 +80,9 @@ def anova_pipeline(args=None):
             "N_feature_pos must be equal to 554"
         print(df.T)
         print(darkgreen("\nGDSCTools seems to be installed properly"))
-        return 
+        return
 
     if options.license is True:
-        import gdsctools
         print(gdsctools.license)
         return
 
@@ -101,48 +110,36 @@ def anova_pipeline(args=None):
         an = anova.ANOVA(options.input_ic50, options.input_features)
         for name in an.drugIds:
             print(name)
-        return 
+        return
 
     if options.print_features is True:
         from gdsctools import anova
         an = anova.ANOVA(options.input_ic50, options.input_features)
         for name in an.feature_names:
             print(name)
-        return 
+        return
 
-    # Users may select a subset of the features but this is not
-    # relevant is options.feature is given
-    if options.feature is not None:
-        # This is not used, let us reset it to be sure
-        if len(options.features):
-            print(red('--include-features-in is not used if you provide --feature' ))
-        options.features = []
-
-    # users may select a subset of drugs:
-    if len(options.drugs) and options.drug is not None:
-        print(red('--include-drugs has not effect since you provided --drug'))
-
-    if len(options.drugs)>0: # clean it up
-        options.drugs = [x.strip(",") for x in options.drugs]
-        options.drugs = [x for x in options.drugs if len(x)]
-
-
-
-    # or a subset of features
-
+    # dispatcher to the functions according to the user parameters
     if options.drug is not None and options.feature is not None:
+        print_color("ODOF mode", purple)
         anova_one_drug_one_feature(options)
     elif options.drug is not None:
+        print_color("ODAF mode", purple)
         anova_one_drug(options)
     else: # analyse everything
+        if options.feature is not None:
+            print_color("ADAF mode", purple)
+        else:
+            print_color("ADOF mode", purple)
         anova_all(options)
     if options.onweb is False and options.no_html is False:
         msg = "\nNote that a directory {} was created and files saved into it"
         print(purple(msg.format(options.directory)))
 
-
+    return
 
 def anova_one_drug(options):
+    """Analyse one specific drug"""
     from gdsctools import anova
     an = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
@@ -150,7 +147,7 @@ def anova_one_drug(options):
     an.settings.includeMSI_factor = options.include_msi
     an.settings.FDR_threshold = options.FDR_threshold
     an.set_cancer_type(options.tissue)
-    if options.features:
+    if options.feature:
         an.feature_names = options.features
 
     an.settings.check()
@@ -176,18 +173,13 @@ def anova_one_drug(options):
 
 
 def anova_all(options):
-    """Analyse the entire data set"""
-    from gdsctools import anova 
+    """Analyse the entire data set. May be restricted to one feature"""
+    from gdsctools import anova
     an = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
 
-    if len(options.drugs)>0:
-        an.drugIds = options.drugs
-        # need to reinit, which is done when set_cancer_type is called
-        # here below
-
-    if len(options.features)>0:
-        an.feature_names = options.features
+    if options.feature:
+        an.feature_names = [options.feature]
 
     an.settings.directory = options.directory
     an.settings.includeMSI_factor = options.include_msi
@@ -199,7 +191,7 @@ def anova_all(options):
     # The analysis
     print(darkgreen("Starting the analysis"))
     df = an.anova_all()
-    
+
     # HTML report
     if options.no_html is True:
         return
@@ -222,7 +214,7 @@ def anova_one_drug_one_feature(options):
     #an.factory.settings.directory = options.directory
     odof.factory.settings.includeMSI_factor = options.include_msi
     odof.factory.settings.FDR_threshold = options.FDR_threshold
-    
+
     odof.factory.set_cancer_type(options.tissue)
     odof.factory.settings.check()
     odof.goback_link = False
@@ -250,9 +242,12 @@ def anova_one_drug_one_feature(options):
 class ANOVAOptions(argparse.ArgumentParser):
     """Define user interface for the gdsctools_anova standalone application
 
+    Type::
 
+        gdsctools_anova --help
+
+    in a shell to get detailled help about the parameters and usage.
     """
-    description = "tests"
     def __init__(self, prog=None):
 
         usage = """
@@ -297,7 +292,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
 
     def add_input_options(self):
         """The input options to gdsctools_anova are defined here"""
-        group = self.add_argument_group("General", 
+        group = self.add_argument_group("General",
                                         'General options (compulsary or not)')
 
         group.add_argument("-I", "--input-ic50", dest='input_ic50',
@@ -307,6 +302,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            Following columns contain the IC50s for a set of
                            drugs. The header must
                            be COSMIC ID, Drug_1_IC50, Drug_2_IC50, ... """)
+
         group.add_argument("-F", "--input-features", dest='input_features',
                            default=None, type=str,
                            help="""A matrix of genomic features. First column
@@ -323,12 +319,15 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            dest='directory',
                            help="""directory where to save images and HTML
                            files.""")
+
         group.add_argument( "--verbose", dest='verbose',
                            action="store_true",
                            help="verbose option.")
+
         group.add_argument("--on-web", dest='onweb',
                            action="store_true",
                            help="TODO")
+
         group.add_argument("--onweb", dest='onweb',
                            action="store_true",
                            help="same as -on-web")
@@ -337,10 +336,12 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("-d", "--drug", dest="drug",
                            help="""The name of a valid drug identifier to be
                            found in the header of the IC50 matrix""")
+
         group.add_argument("-f", "--feature", dest="feature",
                            help="""The name of a valid feature to be found in
                           the Genomic Feature matrix""")
 
+        # information
         group.add_argument("--print-drug-names", dest="print_drugs",
                            action="store_true",
                            help="Print the drug names")
@@ -356,16 +357,6 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            help="""The name of a specific cancer type
                           i.e., tissue to restrict the analysis
                           to """)
-        group.add_argument('--include-drugs-in', dest='drugs',
-                           nargs="+", default=[],
-                           help="todo"
-                           )
-        group.add_argument('--include-features-in', dest='features',
-                           nargs="+", default=[],
-                           help="""There are many genomic features included by
-                           default. You may want to select a subset of them. 
-                           No effect if --feature is provided"""
-                           )
 
         group.add_argument('--fdr-threshold', dest="FDR_threshold",
                             default=25, type=float,
@@ -382,23 +373,23 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("--summary", dest="summary",
                             action="store_true",
                            help="Print summary about the data (e.g., tissue)")
-        
+
         group.add_argument('--test', dest='testing',
                            action="store_true",
                            help="""Use a small IC50 data set and run the
                            one-drug-one-feature analyse with a couple of unit
                            tests."""
                            )
-        
+
         group.add_argument('--license', dest='license',
                            action="store_true",
                            help="Print the current license"
                            )
-        
+
         group.add_argument('--fast', dest='fast',
                            action="store_true",
-                           help="""If provided, the code will use more 
-                           memory and should be 10-30%% faster. (1.2G for 
+                           help="""If provided, the code will use more
+                           memory and should be 10-30%% faster. (1.2G for
                            265 drugs and 680 features)"""
                            )
         group.add_argument('--no-html', dest='no_html',
