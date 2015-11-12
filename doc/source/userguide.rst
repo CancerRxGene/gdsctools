@@ -10,7 +10,7 @@ Before starting
 
 Before starting, we first need to get a data file to play with. 
 For now, we do not need to enter into the details of the expected data
-structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../share/data/IC50_test.csv>` file.
+structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../share/data/test_IC50.csv>` file.
 
 .. seealso:: more details about the data format can be found in the :ref:`data` section as well as links to retrieve IC50 data sets.
 
@@ -49,12 +49,12 @@ Although all functionalities could be imported using::
 
     from gdsctools import *
 
-we will be explicit in the following examples and use for instance::
+we will be try to be as explicit as possible in the following examples. So we will rather use (for instance)::
 
     from gdsctools import IC50
 
-Not only this is better coding practice, but also has the advantage of telling
-you what kind of functions are being used. 
+This is better coding practice and has also the advantage of telling beginners
+which functions are going to be used. 
 
 Here above, we imported the :class:`~gdsctools.readers.IC50` class, that allows one to read a data set such as the downloadable file at the top of this page. We will explain in details the different data sets and their formats in the :ref:`data` section. However, for now it is enough to know that it should be a CSV formatted file that contains IC50s; one value for each combination of drug and cell line. 
 

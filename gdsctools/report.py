@@ -151,6 +151,7 @@ class HTMLTable(object):
 
         # the expected RGB values for a given data point
         rgbcolors = [cmap(x)[0:3] for x in data]
+        print(rgbcolors)
         hexcolors = [rgb2hex(*x, normalised=True) for x in rgbcolors]
 
         # need to read original data again
@@ -160,8 +161,8 @@ class HTMLTable(object):
         data = [easydev.precision(x, self.pd_options['precision'])
                 for x in data]
         html_formatter = '<p style="background-color:{0}">{1}</p>'
-        self.df[colname] = [html_formatter.format(x,y)
-                for x,y in zip(hexcolors, data)]
+        self.df[colname] = [html_formatter.format(x, y)
+                for x, y in zip(hexcolors, data)]
 
     def add_href(self, colname, url=None, newtab=False):
         """
