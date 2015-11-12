@@ -92,6 +92,11 @@ def anova_pipeline(args=None):
         print(an)
         return
 
+    if options.help_web is True:
+        from gdsctools import gdsctools_help
+        gdsctools_help()
+        return
+
     if options.print_tissues is True:
         from gdsctools import anova
         an = anova.ANOVA(options.input_ic50, options.input_features)
@@ -323,6 +328,10 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument( "--verbose", dest='verbose',
                            action="store_true",
                            help="verbose option.")
+        
+        group.add_argument( "--help-onweb", dest='help_web',
+                           action="store_true",
+                           help="Open on-line documentation in a browser.")
 
         group.add_argument("--on-web", dest='onweb',
                            action="store_true",

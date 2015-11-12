@@ -17,27 +17,37 @@ can be installed in a shell using the **pip** command::
 
 Dependencies (e.g., Pandas, Matplotlib) should be taken care of automatically.
 
-If you are new to Python and IPython notebook
+If you are new to Python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you are not familiar with Python, or have issues with compilation, or do not have root access, we would recommend to use the `Anaconda <https://www.continuum.io/downloads>`_ solution. 
 
 Anaconda is a free Python distribution. It includes most popular Python packages for science and data analysis. Anaconda will install the software required by  **GDSCTools**. Since it does not require root access, it should not interfere with your system.
 
-Please, visit the `Anaconda <https://www.continuum.io/downloads>`_ webiste and follow the instructions. You may need to choose between 2 versions of Python (2.X or 3.X). We do not recommend any specific version but note that **GDSCTools** is tested under Python 2.7, 3.3 and 3.4 (not 3.5 for now) and is mainly developed under Python 2.7.
+Please, visit the `Anaconda <https://www.continuum.io/downloads>`_ webiste and follow the instructions. You may need to choose between 2 versions of Python (2.X or 3.X). We do not recommend any specific version but note that **GDSCTools** is developed under Python 2.7 and tested under Python 2.7, 3.3 and 3.4 (not 3.5 for now).
 
-
-
-You have now two options. You can either (as an **end-user**) type the following command that will install the latest release of **GDSCTools**::
+Once anaconda is installed, open a new shell and type::
 
     pip install gdsctools
 
-or you can (as **developer**) get the latest source code from github and install **GDSCTools** from source as follows (in a shell) ::
+alternatively, if you prefer to get the source code, type::
 
     # go in a working directory and type:
     git clone https://github.com/CancerRxGene/gdsctools
     cd gdsctools
     python setup.py install
+
+Install IPython
+~~~~~~~~~~~~~~~~~~~~~
+
+This is not strictly speaking required to use GDSCTools, but we strongly
+recommend to install iPython. If you have install Anaconda, type::
+
+    conda install ipython
+
+or::
+
+    pip install ipython
 
 
 Testing your installation

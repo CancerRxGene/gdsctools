@@ -1,3 +1,18 @@
+"""GDSCTools
+
+::
+
+    from gdsctools import ANOVA, ic50_test, ANOVAReport
+    gdsc = ANOVA(ic50_test)
+    results = gdsc.anova_all()
+
+    report = ANOVAReport(gdsc, results)
+    report.create_html_pages()
+
+
+Please See documentation on gdsctools.readthedocs.org
+
+"""
 import pkg_resources
 try:
     version = pkg_resources.require("gdsctools")[0].version
@@ -19,3 +34,7 @@ from gdsctools.anova import ANOVA, ANOVAReport
 from gdsctools.settings import ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
+
+from easydev import browser
+def gdsctools_help():
+    browser.browse('http://gdsctools.readthedocs.org')
