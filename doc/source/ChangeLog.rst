@@ -3,6 +3,12 @@ ChangeLog
 
 version 0.9 Nov 2015
 --------------------------
+v0.9.3
+~~~~~~~~~~~
+- IC50 and GenomicFeatures, DrugDecode now accepts both TSV and CSV format
+  (gziped or not)
+- add more datasets for testing purposes
+
 
 v0.9.2
 ~~~~~~~~~~~~~~~~

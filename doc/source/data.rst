@@ -24,6 +24,15 @@ Note that all data format described here can be read with one of the
 will show here below.
 
 
+.. autosummary::
+
+    gdsctools.readers
+    gdsctools.IC50
+    gdsctools.DrugDecoder
+    gdsctools.GenomicFeatures
+
+
+
 IC50
 ------
 
