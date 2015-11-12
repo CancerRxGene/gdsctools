@@ -36,7 +36,8 @@ Installation
 
   pip install gdsctools
   
-For beginners, please visit the main documentation.
+For beginners, please visit the main documentation `Installation
+<http://gdsctools.readthedocs.org/master/installation.html>`_ section.
 
 
 QuickStart
