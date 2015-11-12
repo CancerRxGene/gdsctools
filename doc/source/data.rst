@@ -2,7 +2,7 @@
 
 .. _data:
 
-Data format and readers
+Data Format and Readers
 ============================
 
 You will need several type of files to perform the analysis. 
