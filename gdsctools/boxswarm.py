@@ -237,7 +237,7 @@ class BoxSwarm(object):
             pylab.xticks(pylab.xticks()[0], fontsize=self.fontsize)
             pylab.xlim([m-R,M+R])
 
-        pylab.title(self.title, fontsize=self.fontsize)
+        pylab.title(self.title, fontsize=self.fontsize*1.25)
         pylab.grid()
         pylab.tight_layout()
 

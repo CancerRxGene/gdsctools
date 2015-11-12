@@ -109,11 +109,19 @@ class BoxPlots(Logging):
             self.logging.info("INFO: no tissue with at least 2 pos and 2 neg found. " + "No image created.")
             return
 
-        pylab.figure(fignum)
+        fig = pylab.figure(fignum)
+        fig.set_size_inches(12,14)
+
         pylab.clf()  # or close ?
         data, names, significance = results
+        N = len(names)
+        if N<=2: # msi or 2 tissues
+            fontsize = self.fontsize 
+        else:
+            fontsize = max(4, int(self.fontsize - (N-2.)/(self.fontsize-4.)))
 
-        bb = boxswarm.BoxSwarm(data, names)
+        bb = boxswarm.BoxSwarm(data, names, fontsize=fontsize)
+
         bb.xlabel = r'%s log(IC50)' % drug_name
         if mode == 'tissue':
             bb.title = 'FEATURE/Cancer-type interactions'
@@ -127,7 +135,7 @@ class BoxPlots(Logging):
         self.ax = ax.twinx()
         self.ax.set_ylim(common_ylim)
         self.ax.set_yticks(common_ticks)
-        self.ax.set_yticklabels([len(this) for this in data])
+        self.ax.set_yticklabels([len(this) for this in data], fontsize=fontsize)
 
         #pylab.tight_layout()
         if self.savefig is True:
