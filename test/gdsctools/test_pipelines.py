@@ -1,5 +1,7 @@
 from gdsctools import pipelines, ic50_test
 
+from nose.plugins.attrib import attr
+
 
 
 class TestPipeline(object):
@@ -55,7 +57,8 @@ class TestPipeline(object):
     def test_adof(self):
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
             '--no-html', '--feature', 'TP53_mut'])
-    
+   
+    @attr('skip')
     def test_adaf(self):
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
             '--no-html'])
