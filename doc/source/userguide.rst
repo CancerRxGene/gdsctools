@@ -10,26 +10,23 @@ Before starting
 
 Before starting, we first need to get a data file to play with. 
 For now, we do not need to enter into the details of the expected data
-structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../share/data/IC50_10drugs.tsv>` file.
+structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../share/data/IC50_test.csv>` file.
 
-More details about the data format can be found in the :ref:`data` section.
+.. seealso:: more details about the data format can be found in the :ref:`data` section as well as links to retrieve IC50 data sets.
 
 There are currently several ways to use **GDSCTools**:
 
-#. Typing python code in an IPYthon shell re-using snippets from this
-   documentation
-#. Re-using and sharing existing IPython notebooks 
-#. Using the **gdsctools_anova** executable
+#. Typing python code in an IPython shell. This documentation provides lots of
+   examples that canbe copied and pasted.
+#. Re-using and sharing existing IPython notebooks. 
+#. Using the **gdsctools_anova** executable.
 
 In this section we will focus on the first approach, which would allow you to
-use the second approach easily as shown in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` sections and would allow you to reproduce the examples shown in this section.
+use the second approach is very familiar and introduced in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section. The standalone application can be used to reproduce the following examples and produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with HTML report (see :ref:`data_packages` section).
 
 
-We assume now that you have **gdsctools** installed. If you have not 
-yet done so, please install the **ipython** shell, with the following command
-in a terminal::
-
-    pip install ipython
+We assume now that you have **gdsctools** installed together with **IPython**.
+If not, please go back to the :ref:`installation` section.
 
 
 .. note:: snippets here below are typed within a IPython shell. 
@@ -52,13 +49,16 @@ Although all functionalities could be imported using::
 
     from gdsctools import *
 
-we will be explicit in the following example and use for instance::
+we will be explicit in the following examples and use for instance::
 
-    from gdsctools import IC50, ANOVA
+    from gdsctools import IC50
 
-to import specific tools in the Python namespace. The 
-:class:`~gdsctools.readers.IC50` class allows one to read a data set such 
-as the downloadable file at the top of this page. Note that the location 
+Not only this is better coding practice, but also has the advantage of telling
+you what kind of functions are being used. 
+
+Here above, we imported the :class:`~gdsctools.readers.IC50` class, that allows one to read a data set such as the downloadable file at the top of this page. We will explain in details the different data sets and their formats in the :ref:`data` section. However, for now it is enough to know that it should be a CSV formatted file that contains IC50s; one value for each combination of drug and cell line. 
+
+Note that the location 
 of that file can be easily obtained using::
 
     from gdsctools import ic50_test

@@ -38,7 +38,7 @@ called **gdsctools_anova**, which can be used within a shell::
 
 
 If you want to have a go, please download this 
-:download:`IC50 example <../../share/data/IC50_10drugs.tsv>`. 
+:download:`IC50 example <../../share/data/IC50_test.csv>`. 
 
 See :ref:`standalone` for more details about the standalone application.
 
@@ -56,6 +56,7 @@ Contents
     data.rst
     notebooks.rst
     standalone.rst
+    data_packages.rst
     references.rst
     developers.rst
 
