@@ -150,7 +150,7 @@ def _build_testing():
     testing.genomic_features_csv = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'IC50_test.csv')
+    d.filename = _gsf('gdsctools', 'data', 'test_IC50.csv')
     d.description = 'A 10drug/1000 cell lines IC50 test file in CSV format'
     testing.ic50_test = d
 
