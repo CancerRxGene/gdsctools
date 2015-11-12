@@ -66,7 +66,7 @@ of that file can be easily obtained using::
 
 This structure **ic50_test** does not contain any data per
 se but the location of the file itself, which can then be read with a 
-dedicated class:`~gdsctools.readers.IC50` class::
+dedicated :class:`~gdsctools.readers.IC50` class::
 
     >>> from gdsctools import IC50, ic50_test
     >>> ic = IC50(ic50_test)
@@ -76,7 +76,7 @@ dedicated class:`~gdsctools.readers.IC50` class::
     Percentage of NA 0.206569746043
 
 As you can see you can get some information about the IC50 content (e.g., 
-number of drugs). See :class:`gdsctools.readers.IC50` for more details.
+number of drugs, percentage of NaNs). See :class:`gdsctools.readers.IC50` for more details.
 
 The ANOVA class
 ----------------
@@ -84,15 +84,14 @@ Given an IC50 data set, we can now analyse it using the main class
 called :class:`~gdsctools.anova.ANOVA`. A default set of 680 genomic features 
 is provided and we do not need to worry about it right now.
 
-Before starting, just a few words about the underlying stastistical analysis. In a given analysis, there are :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a measured IC50. A set of genomic features is provided and the corresponding :math:`$N_c$` cell lines used to get :math:`N_f` features. Then, for each drug, we compute the association (a regression analysis) between a drug and a feature leading to a p-value. This calculation is possibly repeated across all features and even all drugs. Consequently, a multiple testing correction (FDR) is applied and reported in the analysis. See :ref:`details` section for more details.
+Before starting, just a few words about the underlying stastistical analysis. In a given analysis, there are :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a measured IC50. A set of genomic features is provided and the corresponding :math:`$N_c$` cell lines used to get :math:`N_f` features. Then, for each drug, we compute the association (a regression analysis) between a drug and a feature leading to a p-value. This calculation is possibly repeated across all features and even all drugs. Consequently, a multiple testing correction is applied and reported in the analysis. For more information, please see the :ref:`details` section.
 
-One can choose to analyse all the data, or only one drug (across all features), or only one drug for a given feature. Let us now read an IC50 file that we wish to analyse::
+Let us now create a structure for the ANOVA analysis (the only input is the IC50)::
 
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
 
-As you can see here, we did not create an IC50 instance, but just provide the
-ic50_test name. The ANOVA class is flexible enough and for instance the following statements are all equivalent::
+As you can see here, we just provide the ic50_test name but one can provide the filename of a TSV or CSV file. Actually, you could provide a variety of input (dataframes, IC50 instance). The following statements are equivalent::
 
     from gdsctools import ANOVA, ic50_test, IC50
     gdsc = ANOVA(ic50_test)
@@ -126,7 +125,7 @@ a given genomic feature using the
 
 .. todo:: explain the analysis and the plots
 
-
+.. seealso:: a link to more explanation
 
 One Drug All Features (ODAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -152,6 +151,7 @@ In a similar way, you may look at all features for a given drug:
 
 
 .. todo:: explain the analysis and the plots
+.. seealso:: a link to more explanation
 
 All Drug All Features (ADAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -180,6 +180,7 @@ number of drugs and features (30 minutes for 250 drugs and 1000 features):
 
 .. todo:: explain the analysis and the plots
 .. todo:: FDR threshold to show some green/red dots
+.. seealso:: a link to more explanation
 
 HTML report
 ==============

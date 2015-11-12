@@ -7,22 +7,22 @@ Data Format and Readers
 
 You will need several type of files to perform the analysis. 
 
-- **IC50**: 
-- **Genomic Features**
-- **DRUG_DECODER**
+- :class:`~gdsctools.readers.IC50` 
+- :class:`~gdsctools.readers.GenomicFeatures`
+- :class:`~gdsctools.readers.DrugDecoder`
 - **Concentrations**
 
 The first one is compulsary, the second and third ones are optional. 
 The last one is not used yet.
 
-The may format used is a comma-separated values (CSV) or tabular-separeted values (TSV). It may not be optimal but it is human readable and the file-size being small enough, this is manageable. 
+The format used for all input and output files is the comma-separated values (CSV). Tabular-separeted values (TSV) may be understood as an input file. The format choice may not be optimal but has the advantage of being human readable. Note that you may compress the file using gzip.
 
-The choise between CSV and TSV has not been made yet. So, we accept both format. However, the output format will always be comma separated. If a header name is ambiguous (contains already a comma), then it be be enclosed within double quotes::
+.. note:: the interpreter with look for the .csv or .tsv extension to 
+    interpret the file format so you must keep the extension in the 
+    compressed files (e.g., data.csv.gz or data.tsv.gz)
 
-Note that all data format described here can be read with one of the
-**GDSCTools** function or class from the :mod:`gdsctools.readers` module as we
-will show here below.
 
+.. note:: if the header's names are ambiguous (contains already a comma), then it should be enclosed enclosed within double quotes.
 
 .. autosummary::
 
@@ -36,6 +36,7 @@ will show here below.
 IC50
 ------
 
+.. autosummary:: gdsctools.readers.IC50
 
 The input matrix may be a tab-separated value file (TSV) but we would encourage
 to use comma separated value. The matrix must have at least 2 columns and 2 rows. The first row is the header describing the columns’ contents. One column must be named "COSMIC ID" or "COSMIC_ID". Other columns must be named after the drug. There is no restriction about the naming of the drug but it should be an identifier (string or integer). The order of the column does not matter.
