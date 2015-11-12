@@ -1,13 +1,12 @@
 from gdsctools.volcano import VolcanoANOVA
-from . import tools
-from  gdsctools.anova import ANOVA
+from gdsctools import ANOVA, ic50_test
 
 
 def test_volcano_plot():
 
-    an = ANOVA(tools.get_data())
+    an = ANOVA(ic50_test)
     an.features.df = an.features.df[an.features.df.columns[0:10]]
-    an = ANOVA(tools.get_data(), genomic_features=an.features.df)
+    an = ANOVA(ic50_test, genomic_features=an.features.df)
 
     results = an.anova_all()
 

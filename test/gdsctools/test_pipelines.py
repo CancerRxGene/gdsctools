@@ -21,12 +21,12 @@ class TestPipeline(object):
     def teardown(self):
         """This method is run once after _each_ test method is executed"""
 
-
     def test_version(self):
-        pipelines.anova_pipeline(['dd', '--version'])
+        pipelines.anova_pipeline([self.prog, '--version'])
 
     def test_help(self):
-        pass
+        pipelines.anova_pipeline([self.prog, '--help'])
+        pipelines.anova_pipeline([self.prog])
 
     def test_print_drug_names(self):
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
@@ -48,6 +48,22 @@ class TestPipeline(object):
 
     def test_odof(self):
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
-            '--drug', 'Drug_1047_IC50', '--no-html', '--feature' 'TP53_mut'])
+            '--drug', 'Drug_1047_IC50', '--no-html', '--feature', 'TP53_mut'])
+        pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
+            '--drug', 'Drug_1047_IC50', '--feature', 'TP53_mut'])
+    
+    def test_adof(self):
+        pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
+            '--no-html', '--feature', 'TP53_mut'])
+    
+    def test_adaf(self):
+        pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
+            '--no-html'])
 
 
+    def test_license(self):
+        pipelines.anova_pipeline([self.prog, '--license'])
+    def test_summary(self):
+        pipelines.anova_pipeline([self.prog, '--summary'])
+    def test_summary(self):
+        pipelines.anova_pipeline([self.prog, '--testing'])

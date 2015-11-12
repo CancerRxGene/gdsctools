@@ -1,9 +1,25 @@
-from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecoder 
+from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecoder
+from gdsctools.readers import Reader
 from easydev import TempFile
-from gdsctools import ic50_test, drug_test
+from gdsctools import ic50_test
 import pandas as pd
+    
+from gdsctools.datasets import testing
 
 
+def test_readers():
+    a = Reader()
+
+    try:
+        a = Reader('stupido')
+        assert False
+    except:
+        assert True
+    try:
+        a = Reader(1)
+        assert False
+    except:
+        assert True
 
 
 def test_read_ic50():
@@ -51,11 +67,24 @@ def test_read_gf():
     assert len(r.features) == 382
     assert len(r.unique_tissues) == 2
 
+    gf1 = GenomicFeatures()
+    gf1.drop_cosmic(gf1.cosmicIds[50:])
+    gf1.features = gf1.features[0:20]
+
+    gf2 = GenomicFeatures(testing.genomic_features_csv)
+
+    assert gf2 == gf1
+
+
+
 def _test_pancan_reader_rdata():
     r = PANCAN()
     len(r.df)
 
 
 def test_drugs():
-    r = DrugDecoder(drug_test)
-    r.drugIds
+    r1 = DrugDecoder(testing.drug_test_csv)
+    r1.drugIds
+    r2 = DrugDecoder(testing.drug_test_tsv)
+    r2.drugIds
+    assert r1 == r2
