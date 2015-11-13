@@ -70,4 +70,4 @@ More examples are provided in the documentation. You can for example select a sp
 
 .. |License| image:: https://img.shields.io/badge/license-BSD-blue.svg
    :alt: BSD License
-   :target: https://github.com/CancerRxGene/gdsctools/master/LICENSE
+   :target: https://github.com/CancerRxGene/gdsctools/blob/master/LICENSE
