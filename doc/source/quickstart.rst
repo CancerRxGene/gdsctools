@@ -59,7 +59,7 @@ required data file is one that contains :term:`IC50`.
 For now, we do not need to enter into the details of the expected data
 structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../share/data/test_IC50.csv>` file.
 
-.. seealso:: more details about the data format can be found in the :ref:`data` section as well as links to retrieve IC50 data sets.
+.. seealso:: More details about the data format can be found in the :ref:`data` section as well as links to retrieve IC50 data sets.
 
 
 Although all functionalities could be imported using::
@@ -92,45 +92,48 @@ The :class:`~gdsctools.readers.IC50` class is flexible enough that you can provi
 As you can see you can get some information about the IC50 content (e.g., 
 number of drugs, percentage of NaNs) using the :ref:`print` function. See :class:`gdsctools.readers.IC50` for more details.
 
-.. note:: At any time, you can get help about a **GDSCTools** 
-    functionality by typing e.g., ::
+Getting help
+---------------
+
+At any time, you can get help about a **GDSCTools** functionality or a python function by adding question tag after a function's name::
 
     IC50?
 
-    or 
+With **GDSCTools**, we also provide a convenience function called :func:`~gdsctools.gsdctools_help`::
 
-    ?IC50
+    gdsctools_help(IC50)
+
+that should open a new tab in a browser redirecting you to the HTML help version (on `ReadTheDoc website <gdsctools.readthedocs.org>`_) of a function or class (here the :class:`IC50` class).
+
 
     
 
 The ANOVA class
 ----------------
 Given an IC50 data set, we can now analyse it using the main class 
-called :class:`~gdsctools.anova.ANOVA`. A default set of 680 genomic features 
-is provided and we do not need to worry about it right now.
+called :class:`~gdsctools.anova.ANOVA`. 
 
-Before starting, just a few words about the underlying stastistical analysis. In a given analysis, there are :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a measured IC50. A set of genomic features is provided and the corresponding :math:`$N_c$` cell lines used to get :math:`N_f` features. Then, for each drug, we compute the association (a regression analysis) between a drug and a feature leading to a p-value. This calculation is possibly repeated across all features and even all drugs. Consequently, a multiple testing correction is applied and reported in the analysis. For more information, please see the :ref:`userguide` section.
 
-Let us now create a structure for the ANOVA analysis (the only input is the IC50)::
+Before starting, just a few words about the underlying stastistical analysis. On one hand, we have an IC50 file. It contains IC50s measured for :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a unique measured IC50. On the other hand, one should also provide a data file with genomic features with the same set of :math:`$N_c$` cell lines. The other dimension being the :math:`N_f` genomic features (e.g. mutation). A default set of 680 genomic features is used so we will not give more information about that data file for now. 
+
+.. seealso:: More details about the genomic features data format can be found in the :ref:`data` section.
+
+For each drug, the ANOVA class computes the association (a regression analysis) between a drug and a feature leading to a p-value. This calculation is repeated across all features and all drugs. Consequently, a multiple testing correction is applied and reported in the analysis. For more information, please see the :ref:`userguide` section.
+
+Let us now proceed to the analysis using the IC50 test example::
 
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
 
-As you can see here, we just provide the ic50_test name but one can provide the filename of a TSV or CSV file. Actually, you could provide a variety of input (dataframes, IC50 instance). The following statements are equivalent::
-
-    from gdsctools import ANOVA, ic50_test, IC50
-    gdsc = ANOVA(ic50_test)
-    gdsc = ANOVA(ic50_test.filename)
-    gdsc = ANOVA(IC50(ic50_test))
-    gdsc = ANOVA("localfile.csv")
-
-As briefly mentionned earlier, you can perform 3 types of analysis:
+You may provide a variety of input file here (in CSV or TSV format). 
+You can now analysis the entire IC50 data across all drugs and all features but
+you can actually perform three different kind of analysis::
 
 .. index:: ODOF, ODAF, ADAF
 
-#. compute one association between a drug and feature (ODOF)
-#. compute the associations between one drug and all the features (ODAF)
 #. compute all associations for all drugs and all features. (ADAF)
+#. compute the associations between one drug and all the features (ODAF)
+#. compute one association between a drug and feature (ODOF)
 
 
 One Drug One Feature (ODOF)
