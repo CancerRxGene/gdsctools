@@ -41,7 +41,7 @@ Install IPython
 ~~~~~~~~~~~~~~~~~~~~~
 
 This is not strictly speaking required to use GDSCTools, but we strongly
-recommend to install iPython. If you have install Anaconda, type::
+recommend to install iPython. If you have installed Anaconda, just type::
 
     conda install ipython
 

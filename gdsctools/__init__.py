@@ -36,5 +36,18 @@ from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
 
 from easydev import browser
-def gdsctools_help():
-    browser.browse('http://gdsctools.readthedocs.org')
+
+
+
+def gdsctools_help(name=None):
+    if name is None:
+        browser.browse('http://gdsctools.readthedocs.org')
+    else:
+        url = "http://gdsctools.readthedocs.org/en/master/references.html"
+        #url += "#" + name.__module__ + "."+ name
+        try:
+            url += '#module-' + name.__module__
+        except:
+            print("Not a known gdsctools class or function")
+        browser.browse(url)
+

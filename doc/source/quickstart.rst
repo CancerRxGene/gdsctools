@@ -7,20 +7,40 @@ Quick Start
 
 There are currently 3 ways to use **GDSCTools**:
 
-#. From a **Python shell**. That method is for **developers and users** who want to have high flexibility and use the **GDSCTools** to the best advantage. This documentation provides lots of examples to get you started; the :ref:`references` should also be very informative.
-#. Using **Python Notebooks** available within the source code. 
-#. From a shell, using a standalone application called **gdsctools_anova**,
+#. Typing commands in a **Python shell**. That method is for **developers and users** who want to have high flexibility and use the **GDSCTools** to the best advantage. This documentation provides lots of examples to get you started; the :ref:`references` should also be very informative.
+#. Re-using **IPython Notebooks** available within the source code.
+#. Using a **standalone application** called **gdsctools_anova**,
    which is the recommended version for **end-users**.
 
-In this section we will focus on the first approach, which would allow you to
-use the second approach is very familiar and introduced in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section. The standalone application can be used to reproduce the following examples and produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with HTML report (see :ref:`data_packages` section).
+In this section we will focus on the first approach. This will also allow you to use IPython notebooks as explained in :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section. The standalone application can be used to reproduce the following examples and will be used to produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with an HTML report (see :ref:`data_packages` section).
 
 
 We assume now that you have **gdsctools** installed together with **IPython**.
 If not, please go back to the :ref:`installation` section.
 
+.. note:: Instead of Python, we will use IPython, which is more flexible 
+    and interactive that the original version. To start IPython, type this
+    command in a terminal/shell::
 
-.. note:: snippets here below are typed within a IPython shell. 
+        ipython
+
+    You should now see something like::
+
+        Python 2.7.5 (default, Nov  3 2014, 14:33:39) 
+        Type "copyright", "credits" or "license" for more information.
+
+        IPython 4.0.0 -- An enhanced Interactive Python.
+        ?         -> Introduction and overview of IPython's features.
+        %quickref -> Quick reference.
+        help      -> Python's own help system.
+        object?   -> Details about 'object', use 'object??' for extra details.
+
+        In [1]: 
+
+
+
+
+.. note:: All snippets in this documentation are typed within IPython shell. 
     You may see >>> signs. They indicate a python statement typed in 
     a shell. Lines without those signs indicate the output of the previous
     statement. For instance::
@@ -31,12 +51,11 @@ If not, please go back to the :ref:`installation` section.
 
     means the code **2 + a** should print the value 5
 
+The IC50 input data 
+-------------------------------
 
-
-IC50 reader
--------------------
-
-Before starting, we first need to get a data file to play with. 
+Before starting, we first need to get a data file to play with. The only
+required data file is one that contains :term:`IC50`.  
 For now, we do not need to enter into the details of the expected data
 structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../share/data/test_IC50.csv>` file.
 
@@ -47,24 +66,21 @@ Although all functionalities could be imported using::
 
     from gdsctools import *
 
-we will be try to be as explicit as possible in the following examples. So we will rather use (for instance)::
+we will be as explicit as possible in the following examples; we would rather use (for instance)::
 
     from gdsctools import IC50
 
 This is better coding practice and has also the advantage of telling beginners
 which functions are going to be used. 
 
-Here above, we imported the :class:`~gdsctools.readers.IC50` class, that allows one to read a data set such as the downloadable file at the top of this page. We will explain in details the different data sets and their formats in the :ref:`data` section. However, for now it is enough to know that it should be a CSV formatted file that contains IC50s; one value for each combination of drug and cell line. 
+Here above, we imported the :class:`~gdsctools.readers.IC50` class, that allows one to read the IC50 example file aforementioned. We will explain in details the different data sets and their formats in the :ref:`data` section. However, for now it is enough to know that it should be a CSV formatted file that contains IC50s; one value for each combination of drug and cell line. 
 
-Note that the location 
-of that file can be easily obtained using::
+Note that the IC50 example is also installed with **GDSCTools** and its location obtained using::
 
     from gdsctools import ic50_test
     print(ic50_test.filename)
 
-This structure **ic50_test** does not contain any data per
-se but the location of the file itself, which can then be read with a 
-dedicated :class:`~gdsctools.readers.IC50` class::
+The :class:`~gdsctools.readers.IC50` class is flexible enough that you can provide the filename location or just the name **ic50_test** as in the example below:: 
 
     >>> from gdsctools import IC50, ic50_test
     >>> ic = IC50(ic50_test)
@@ -74,7 +90,18 @@ dedicated :class:`~gdsctools.readers.IC50` class::
     Percentage of NA 0.206569746043
 
 As you can see you can get some information about the IC50 content (e.g., 
-number of drugs, percentage of NaNs). See :class:`gdsctools.readers.IC50` for more details.
+number of drugs, percentage of NaNs) using the :ref:`print` function. See :class:`gdsctools.readers.IC50` for more details.
+
+.. note:: At any time, you can get help about a **GDSCTools** 
+    functionality by typing e.g., ::
+
+    IC50?
+
+    or 
+
+    ?IC50
+
+    
 
 The ANOVA class
 ----------------

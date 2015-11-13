@@ -745,3 +745,7 @@ class DrugDecoder(Reader):
 
     def __len__(self):
         return len(self.df)
+    
+    def __str__(self):
+        txt = "Number of drugs: %s\n" % len(self.df)
+        return txt

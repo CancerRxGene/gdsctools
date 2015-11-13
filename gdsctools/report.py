@@ -151,7 +151,6 @@ class HTMLTable(object):
 
         # the expected RGB values for a given data point
         rgbcolors = [cmap(x)[0:3] for x in data]
-        print(rgbcolors)
         hexcolors = [rgb2hex(*x, normalised=True) for x in rgbcolors]
 
         # need to read original data again
