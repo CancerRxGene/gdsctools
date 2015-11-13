@@ -1,4 +1,4 @@
-GDSCtools 
+GDSCTools 
 ============
 
 
@@ -17,6 +17,8 @@ GDSCtools
 .. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
     :target: http://gdsctools.readthedocs.org/en/latest/?badge=master
     :alt: Documentation Status
+
+|License|
 
 :Note: tested for Python 2.7, 3.3, 3.4
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
@@ -64,3 +66,8 @@ More examples are provided in the documentation. You can for example select a sp
 
 
 .. note:: Version 1 (linear regression and ANOVA) was created based on https://github.com/francescojm/FI.GDSC.ANOVA
+
+
+.. |License| image:: https://img.shields.io/badge/license-BSD-blue.svg
+   :alt: BSD License
+   :target: https://github.com/CancerRxGene/gdsctools/blob/master/LICENSE
