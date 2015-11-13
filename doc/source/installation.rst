@@ -24,7 +24,7 @@ If you are not familiar with Python, or have issues with compilation, or do not 
 
 Anaconda is a free Python distribution. It includes most popular Python packages for science and data analysis. Anaconda will install the software required by  **GDSCTools**. Since it does not require root access, it should not interfere with your system.
 
-Please, visit the `Anaconda <https://www.continuum.io/downloads>`_ webiste and follow the instructions. You may need to choose between 2 versions of Python (2.X or 3.X). We do not recommend any specific version but note that **GDSCTools** is developed under Python 2.7 and tested under Python 2.7, 3.3 and 3.4 (not 3.5 for now).
+Please, visit the `Anaconda <https://www.continuum.io/downloads>`_ webste and follow the instructions. You may need to choose between 2 versions of Python (2.X or 3.5). We do not recommend any specific version since **GDSCTools** is developed under Python 2.7 and tested under Python 2.7 and 3.5 (as well as 3.3 and 3.4).
 
 Once anaconda is installed, open a new shell and type::
 

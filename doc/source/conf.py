@@ -19,6 +19,7 @@ import sys, os
 
 pkg_name = "gdsctools"
 
+# This is for ReadTheDoc
 import matplotlib
 matplotlib.use('Agg')
 
@@ -88,9 +89,7 @@ copyright = copyright
 # built documents.
 #
 # The short X.Y version.
-version = 'Current version: ' + str(version) + \
-        """<br><a href="https://github.com/CancerRxGene/gdsctools"
-        style="color:red">Get source code on github</a>"""
+version = 'Current version: ' + str(version) 
 # The full version, including alpha/beta/rc tags.
 release = release
 
@@ -137,9 +136,11 @@ modindex_common_prefix = ["gdsctools."]
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
 html_theme = 'standard'
-import sphinx_rtd_theme
-html_theme = 'sphinx_rtd_theme'
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+on_rtd = os.environ.get("READTHEDOCS", None) == True
+if not on_rtd:
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -157,22 +158,21 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 #html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+html_short_title = "gdsctools"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = "../../share/data/images/crx_logo.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-#html_favicon = None
+html_favicon = "../../share/data/images/crx_logo.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 
-# the copybutton.js must be copied there: 
 html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
@@ -197,8 +197,8 @@ html_sidebars = {
 
 
 # If false, no module index is generated.
-html_use_modindex = True
-
+#html_use_modindex = True
+html_domain_indices = True
 # If false, no index is generated.
 html_use_index = True
 
@@ -206,11 +206,11 @@ html_use_index = True
 html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
-#html_copy_source = False
+html_show_sourcelink = True
+html_copy_source = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-#html_show_sphinx = True
+html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 #html_show_copyright = True
