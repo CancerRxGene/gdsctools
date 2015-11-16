@@ -26,10 +26,10 @@ __all__ = ['ANOVASettings']
 
 
 class ANOVASettings(AttrDict):
-    """All settings used in :class:`gdsctools.anova.ANOVA`
-    
+    """All settings used in :class:`gdsctools.anova.ANOVA` analysis
+
     This class behaves as a dictionary but values for a given
-    key (setting) can be accessed and changed easily like an 
+    key (setting) can be accessed and changed easily like an
     attribute:
 
     ::
@@ -37,10 +37,10 @@ class ANOVASettings(AttrDict):
         >>> from gdsctools import ANOVASettings
         >>> s = ANOVASettings()
         >>> s.FDR_threshold
-        25 
+        25
         >>> s.FDR_threshold = 20
 
-    When you change a value, you can check its validity by calling the 
+    When you change a value, you can check its validity by calling the
     :meth:`check`  method. This is not very thorough right now but should
     help.
 
@@ -52,41 +52,41 @@ class ANOVASettings(AttrDict):
        or property) to be used effectively normaly hence the creation of the
        :meth:`check` method to check validity of the values rather than
        using properties.
-       
+
     Here are the current values used:
 
     ======================= ========= =========================================
     Name                    Default   Description
     ======================= ========= =========================================
     includeMSI_factor       True      Include MSI in the regression
-    featFactorPopulationTh  3         Discard association where a 
+    featFactorPopulationTh  3         Discard association where a
                                       genomic feature has less than 3
-                                      positives or 3 negatives values 
+                                      positives or 3 negatives values
                                       (e.g., 0, 1 or 2)
     MSIfactorPopulationTh   2         Discard association where a MSI
                                       count has less than 2 positives
-                                      or 2 negatives values (e.g., 0, 
+                                      or 2 negatives values (e.g., 0,
                                       or 1).
-    analysis_type           PANCAN    Type of analysis. PANCAN means 
+    analysis_type           PANCAN    Type of analysis. PANCAN means
                                       use all data. Otherwise, you must
-                                      provide a valid tissue name to 
+                                      provide a valid tissue name to
                                       be found in the Genomic Feature
                                       data set.
-    pval_correction_method  fdr       Type of p-values correction 
-                                      method used. Could be *fdr*, 
+    pval_correction_method  fdr       Type of p-values correction
+                                      method used. Could be *fdr*,
                                       *qvalue*  or one accepted
                                       by
                                       :class:`~gdsctools.stats.MultipleTesting`
-    equal_var_ttest         True      Assume equal variance in the 
+    equal_var_ttest         True      Assume equal variance in the
                                       t-test
     minimum_nonna_ic50      6         Minimum number of IC50 required
-                                      to perform an analysis for a 
+                                      to perform an analysis for a
                                       given drug.
     fontsize                20        Used in some plots for labels
-    FDR_threshold           25        FDR threshold used in volcano 
+    FDR_threshold           25        FDR threshold used in volcano
                                       plot and significant hits
     pvalue_threshold        np.inf    Used to select significant hits
-                                      see 
+                                      see
                                       :class:`~gdsctools.anova.ANOVAReport`
     directory               html_gdsc Directory where images and HTML documents
                                       are saved.
@@ -94,7 +94,7 @@ class ANOVASettings(AttrDict):
     effect_threshold        0         Used in the volcano plot. See
                                       :class:`~gdsctools.volcano.VolcanoPlot`
 
-    low_memory              False     Faster (20%) if set to false but 
+    low_memory              False     Faster (20%) if set to false but
                                       uses about 1Gb per run
     ======================= ========= =========================================
 
@@ -135,7 +135,7 @@ class ANOVASettings(AttrDict):
 
         # all those methods are from statsmodels.stats.multitest.multipletests
         inlist(self.pval_correction_method, ['bonferroni', 'sidak',
-            'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh', 
+            'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh',
             'fdr_tsbj', 'fdr_tskby', 'fdr'],
             'pvalue correction method')
         inlist(self.equal_var_ttest, [True, False], 'equal_var_ttest')
