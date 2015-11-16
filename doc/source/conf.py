@@ -187,17 +187,17 @@ html_last_updated_fmt = '%b %d, %Y'
 html_index = 'index.html'
 
 #Custom sidebar templates, maps page names to templates.
-html_sidebars = {
-                    'index': [ 'indexsidebar.html'], 
-                    'contents':'indexsidebar.html',
-}
+#html_sidebars = {
+#                    'index': [ 'indexsidebar.html'], 
+#                    'contents':'indexsidebar.html',
+#}
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
 #html_additional_pages = {   'index': 'index.html'}
 
 
 # If false, no module index is generated.
-#html_use_modindex = True
+html_use_modindex = True
 html_domain_indices = True
 # If false, no index is generated.
 html_use_index = True
