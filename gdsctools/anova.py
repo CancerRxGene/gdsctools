@@ -159,7 +159,6 @@ class ANOVAReport(object):
 
         """
         self.figtools = Savefig()
-        self.figtools.directory = gdsc.settings.directory
 
         # data can be a file with all results as exported
         # by ANOVA analysis
@@ -408,6 +407,7 @@ class ANOVAReport(object):
             self._plot(df_count, 'drug', top, fontsize=fontsize)
             fig = pylab.gcf()
             fig.set_size_inches(12, 14)
+            self.figtools.directory = self.settings.directory
             self.figtools.savefig(filename, bbox_inches='tight')
 
         return df_count
@@ -431,6 +431,7 @@ class ANOVAReport(object):
             self._plot(df_count, 'feature', top, fontsize=fontsize)
             fig = pylab.gcf()
             fig.set_size_inches(12,14)
+            self.figtools.directory = self.settings.directory
             self.figtools.savefig(filename, bbox_inches='tight')
         return df_count
 
@@ -642,9 +643,9 @@ class ANOVAReport(object):
                 (self.settings.directory))
         buffer_ = self.settings.savefig
         self.settings.savefig = True
-        html = HTML_main(self, 'index.html', directory=self.settings.directory)
+        html = HTML_main(self, 'index.html')
         html._init_report() # created the directory
-        html.settings = self.settings
+        #html.settings = self.settings
         html.report(onweb=onweb)
         self.settings.savefig = buffer_
 
@@ -1115,6 +1116,7 @@ class ANOVA(object): #Logging):
         decoder = self.drug_decoder.df
         drugs = df.DRUG_ID.values
 
+
         drug_names = [decoder.ix[x].DRUG_NAME if x in decoder.index else None
                  for x in drugs]
         drug_target = [decoder.ix[x].DRUG_TARGET if x in decoder.index
@@ -1239,20 +1241,24 @@ class ANOVA(object): #Logging):
             df['C(msi)[T.1]'] = odof.masked_msi.values
             df['feature'] = odof.masked_features.values
 
+            self.Y = odof.Y
+            self.EV = df.values
             # The regression and anvoa summary are done here
+            #self.data_lm = OLS(odof.Y, df.values).fit_regularized()
             self.data_lm = OLS(odof.Y, df.values).fit()
             #self.anova_pvalues = self._get_anova_summary(self.data_lm,
             #    Ntissue, output='dict')
 
             # example of computing null model ?
-            """# Example of computing pvalues ourself
-            self.samples1 = []
+            # Example of computing pvalues ourself
+            """self.samples1 = []
             self.samples2 = []
             self.samples3 = []
             Y = odof.Y.copy()
-            pb = Progress(1000,20)
-            for i in range(0,1000):
+            pb = Progress(10000,20)
+            for i in range(0,10000):
                 #pylab.shuffle(Y)
+                #data_lm = OLS(Y, df.values).fit()
                 data_lm = OLS(Y+0.3*pylab.randn(len(Y)), df.values).fit()
                 anova_pvalues = self._get_anova_summary(data_lm,
                     Ntissue, output='dict')
@@ -1483,6 +1489,9 @@ class ANOVA(object): #Logging):
         df = df.T
 
         df = ANOVAResults().astype(df)
+        if len(df) == 0:
+            return df
+
         if len(self.drug_decoder)>0:
             df = self.drug_annotations(df)
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
@@ -1589,6 +1598,9 @@ class ANOVA(object): #Logging):
             df[colname] = new_pvalues
         return df
 
+    def reset_buffer(self):
+        self.individual_anova = {}
+
     def __str__(self):
         txt = self.ic50.__str__()
         txt += "\n" + self.features.__str__()
@@ -1640,6 +1652,8 @@ def multicore(ic50, maxcpu=2):
     return master
 
 
+
+
 def analyse_one_drug(master, drug):
     res = master.anova_one_drug(drug_id=drug, animate=False)
     return (drug, res)
@@ -1683,7 +1697,7 @@ class HTMLManova(Report):
 class OneDrugOneFeature(Report):
     def __init__(self, gdsc, drug=None, feature=None,
             fdr=-1, assoc_id=-1):
-        # FIXME here we lose the setttings since we create a new instance
+        # FIXME here we lose the settings since we create a new instance
         self.factory = gdsc
         # Does that changes the main settings ??
         self.factory.settings.savefig = True
@@ -1760,10 +1774,7 @@ class HTMLOneFeature(Report):
         self.analysis_type = gdsc.settings.analysis_type
 
     def run(self, N=20):
-        v = VolcanoANOVA(self.df)
-        v.settings = self.settings # get fdr, pval
-        v.settings.savefig = True
-        v.settings.directory = self.directory
+        v = VolcanoANOVA(self.df, settings=self.settings)
         # FIXME: insiced volvano_plot, we add tooltip
         # when we call volcano again, the tooltip form the
         # previous call are still there. The only solution
@@ -1845,10 +1856,7 @@ class HTMLOneDrug(Report):
         self.analysis_type = gdsc.settings.analysis_type
 
     def create_pictures(self):
-        v = VolcanoANOVA(self.df)
-        v.settings = self.settings # get fdr, pval
-        v.settings.savefig = True
-        v.settings.directory = self.directory
+        v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_drug(self.drug)
         v.figtools.savefig('volcano_{}.png'.format(self.drug))
         try:
@@ -1921,8 +1929,8 @@ class HTMLOneDrug(Report):
 
 
 class HTML_main(Report):
-    def __init__(self, results, filename='index.html', directory='gdsc'):
-        super(HTML_main, self).__init__(directory=directory,
+    def __init__(self, results, filename='index.html'):
+        super(HTML_main, self).__init__(directory=results.settings.directory,
                 filename=filename)
         self.results = results
         self.add_dependencies = True
@@ -1945,12 +1953,8 @@ class HTML_main(Report):
         print('Create summary plots')
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
-        v = VolcanoANOVA(self.results.df)
+        v = VolcanoANOVA(self.results.df, settings=self.settings)
         v.selector(v.df, 1000, 1000, inplace=True)
-
-        v.settings = self.settings # get fdr, pval
-        v.settings.savefig = True
-        v.settings.directory = self.directory
         v.volcano_plot_all()
         # volcano plot
         html = """
@@ -2060,8 +2064,11 @@ You can <a href="{}">download the significant-features table</a> in tsv format.
 
         # Section to provide info about cell lines. It may be large
         # could be in a separated page ?
+
+        # Sample Name column in the genomic features is not compulsary
         df = self.results.gdsc.features.df[['Sample Name',
-            'Tissue Factor Value', 'MS-instability Factor Value']]
+                'Tissue Factor Value', 'MS-instability Factor Value']]
+
         df = df.reset_index()
         table = HTMLTable(df)
         url ="http://cancer.sanger.ac.uk/cell_lines/sample/overview?id="
