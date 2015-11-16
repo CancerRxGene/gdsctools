@@ -146,7 +146,6 @@ class COSMICFetcher(object):
         return content
 
 
-
 class COSMIC(object):
     """A COSMIC object
 

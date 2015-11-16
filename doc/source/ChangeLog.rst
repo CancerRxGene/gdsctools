@@ -8,7 +8,7 @@ v0.9.3
 - IC50 and GenomicFeatures, DrugDecode now accepts both TSV and CSV format
   (gziped or not)
 - add more datasets for testing purposes
-
+- double checked results on BLCA tissue v17 and v18
 
 v0.9.2
 ~~~~~~~~~~~~~~~~
