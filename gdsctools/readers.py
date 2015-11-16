@@ -121,10 +121,14 @@ class Reader(object):
         self.header = []
 
     def read_data(self, filename):
+        # remove possible white spaces in the header's names
         if ".csv" in filename:
             rawdf = pd.read_csv(filename, sep=",")
-        elif ".tsv" in filename:
+            rawdf.rename(columns=lambda x: x.strip(), inplace=True)
+        elif ".tsv" in filename or '.txt' in filename: # txt not supported
+            # officialy but txt file from previous run were interepreted as tsv
             rawdf = pd.read_csv(filename, sep="\t")
+            rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         else:
             raise ValueError("Only file ending in .csv or .csv.gz or .tsv"+
                 " or .tsv.gz will be interpreted.")
@@ -395,12 +399,15 @@ class IC50(Reader, CosmicRows):
 class GenomicFeatures(Reader, CosmicRows):
     """Read Matrix with Genomic Features
 
-    There are compulsary column names required (note the spaces):
+    These are the compulsary column names required (note the spaces):
 
         - 'COSMIC ID'
         - 'Tissue Factor Value'
-        - 'Sample Name'
         - 'MS-instability Factor Value'
+        
+    This one is optional and may be used for the HTML report:
+
+        - 'Sample Name'
 
     and features can be also encoded with the following convention:
 
@@ -454,7 +461,8 @@ class GenomicFeatures(Reader, CosmicRows):
         # There are several types of features e.g., mutation, CNA,
         # methylation but all are stored within the same file
         # Besides, these 3 first columns are compulsary
-        self._required_names = [self.colnames.tissue, self.colnames.sample, 
+        self._required_names = [self.colnames.tissue, 
+                self.colnames.sample, 
                 self.colnames.msi]
         for name in self._required_names:
             assert name in self.df.columns, 'Could not find column %s' % name
@@ -682,18 +690,22 @@ class DrugDecoder(Reader):
         999         ,Erlotinib   ,EGFR
         1039        ,SL 0101-1   ,"RSK, AURKB, PIM3"
 
-    TSV file may also work out of the box.
+    TSV file may also work out of the box. If a column name called
+    'PUTATIVE_TARGET' is found, it is renamed 'DRUG_TARGET'.
 
     """
     def __init__(self, filename):
         """.. rubric:: Constructor"""
-        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET']
         super(DrugDecoder, self).__init__(filename)
+        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET']
         #self.df.drop_duplicates(inplace=True)
+        self._interpret()
 
-    def _reader(self, filename=None):
-        # trying with a comma
-        self.df = pd.read_csv(filename)
+    def _interpret(self, filename=None):
+        if len(self.df) == 0:
+            return
+
+        self.df.rename(columns={'PUTATIVE_TARGET': 'DRUG_TARGET'}, inplace=True)
 
         if self._valid_header(self.df) is True:
             self.df.set_index('DRUG_ID', inplace=True)
