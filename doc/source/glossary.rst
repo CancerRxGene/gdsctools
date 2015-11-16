@@ -29,8 +29,9 @@ Glossary
         response halfway between the baseline and maximum after a specified
         amount of time. It is used as a measure of drug's potency
 
-    MSI, Microsatellite Instability
-        Markers indicating presence or absence of a MSI shift, allele
+    MSI
+        Microsatellite Instability (MSI) are markers indicating the 
+        presence or absence of a MSI shift, allele
         homozygosity/heterozygosity, and loss of heterozygosity (LOH) observed
         in the tumor sample for each participant
 
@@ -51,4 +52,17 @@ Glossary
     
     ADAF
         acronym for All Drug All Feature mode
-    
+   
+    CSV
+        acronym for Comma Separated Values, a file format. Extension must
+        be `.csv`.
+
+    TSV
+        acronym for Tabular Separated Values, a file format. Extension must
+        be `.tsv`.
+
+    PANCAN
+        alias for set of cancer tissues (unlike cancer-specific tissue).
+
+
+        

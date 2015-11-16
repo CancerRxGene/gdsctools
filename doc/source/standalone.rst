@@ -57,27 +57,20 @@ Some other settings
 Again, you can use the --help to get up-to-date information about the available
 arguments. However, let us give a couple of interesting ones.
 
-You can restrict the analysis to a set of drugs::
-
-    --include-drugs-in Drug_10_IC50, Drug_11_IC50
-
-To know the names of the drugs, use::
+If you are interesting in a specific association of drug and feature, it is
+convenient to get the valid drug names::
 
     --print-drug-names
 
-Similarly, you can restrict the analysis to a set of features    
+or feature names::
     
-    --include-features-in TP53_mut, BRAF_mut
-
-To know the names of the drugs, use::
-
     --print-feature-names
 
-Similarly, you can restrict the analysis to a set of tissues    
+By default the analysis is :term:`PANCAN` (includes all tissues) but you can restrict the analysis to a set of tissues (or just one)::
     
     --tissues breast, cervix 
 
-To know the names of the drugs, use::
+To know the names of the tissues, use::
 
     --print-tissue-names
 

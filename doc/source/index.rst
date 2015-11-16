@@ -12,7 +12,7 @@ already about the Python ecosystem and the **pip** command, just type the follow
 
 If you are not familiar with this command, please see the :ref:`Installation` section for further details but note that we provide a standalone application, which does not require any programming skills (see example below). 
 
-Here is a quick example on how to use **GDSCTools** (from a programmer point of view). With this example we investigate the association between the IC50 of a given drug (across 52 breast cancer cell lines) and a genomic feature (e.g., TP53 mutation):
+Here is a quick example on how to use **GDSCTools** (from a programmer point of view). With this example we investigate the association between the :term:`IC50` of a given drug (across 52 breast cancer cell lines) and a genomic feature (e.g., TP53 mutation):
 
 
 .. plot::
@@ -54,9 +54,10 @@ Contents
     installation.rst
     quickstart.rst
     data.rst
+    html.rst
     notebooks.rst
     standalone.rst
-    userguide.rst
+    settings.rst
     data_packages.rst
     references.rst
     developers.rst
@@ -78,4 +79,9 @@ Please join https://github.com/CancerRxGene/gdsctools
     faqs
     glossary
 
+Indices and tables
+==================
 
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
