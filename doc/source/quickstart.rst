@@ -12,15 +12,15 @@ There are currently 3 ways to use **GDSCTools**:
 #. Using a **standalone application** called **gdsctools_anova**,
    which is the recommended version for **end-users**.
 
-In this section we will focus on the first approach. This will also allow you to use IPython notebooks as explained in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section. The standalone application can be used to reproduce the following examples and will be used to produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with an HTML report (see :ref:`data_packages` section).
+In this section we will focus on the first approach. This will also allow us to use IPython notebooks as explained in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section. The standalone application can be used to reproduce the following examples and should be used to produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with an HTML report (see :ref:`data_packages` section).
 
 
 We assume now that you have **gdsctools** installed together with **IPython**.
 If not, please go back to the :ref:`installation` section.
 
-.. note:: Instead of Python, we will use IPython, which is more flexible 
-    and interactive that the original version. To start IPython, type this
-    command in a terminal/shell::
+.. note:: Instead of Python, we will use IPython, which is a more flexible 
+    and interactive shell. To start IPython, just type this
+    command in a terminal::
 
         ipython
 
@@ -51,6 +51,9 @@ If not, please go back to the :ref:`installation` section.
 
     means the code **2 + a** should print the value 5
 
+
+.. index:: IC50 
+
 The IC50 input data 
 -------------------------------
 
@@ -80,7 +83,7 @@ Note that the IC50 example is also installed with **GDSCTools** and its location
     from gdsctools import ic50_test
     print(ic50_test.filename)
 
-The :class:`~gdsctools.readers.IC50` class is flexible enough that you can provide the filename location or just the name **ic50_test** as in the example below:: 
+The :class:`~gdsctools.readers.IC50` class is flexible enough that you can provide the filename location or just the name **ic50_test** as in the example below, and of course the filename of a local file would work as well:: 
 
     >>> from gdsctools import IC50, ic50_test
     >>> ic = IC50(ic50_test)
@@ -90,7 +93,9 @@ The :class:`~gdsctools.readers.IC50` class is flexible enough that you can provi
     Percentage of NA 0.206569746043
 
 As you can see you can get some information about the IC50 content (e.g., 
-number of drugs, percentage of NaNs) using the :ref:`print` function. See :class:`gdsctools.readers.IC50` for more details.
+number of drugs, percentage of NaNs) using the :ref:`print` function. See :class:`gdsctools.readers.IC50` and :ref:`data` for more details.
+
+.. index:: help
 
 Getting help
 ---------------
@@ -125,14 +130,14 @@ previous IC50 test example, we create an ANOVA instance as follows::
 There are now several possible analysis but the core of the analysis consists
 in taking one drug and one feature (ODOF hereafter) and to compute the
 association using a regression analysis. The IC50 across the cell lines being
-the dependent variable :math:`Y` and the explanatory variables denoted :math:`X` are made of tissues, :term:`MSI` and one genomic feature. following the regression analysis, we compute the ANOVA summary leading a p-value for the significance of the association between the drug's IC50s and the genomic feature considered. This calculation is performed with the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature`. 
+the dependent variable :math:`Y` and the explanatory variables denoted :math:`X` are made of tissues, :term:`MSI` and one genomic feature. following the regression analysis, we compute the ANOVA summary leading to a p-value for the significance of the association between the drug's IC50s and the genomic feature considered. This calculation is performed with the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. 
 
-One can then repeat the ODOF analysis for all features using the
-:meth:`~gdsctools.anova.ANOVA.anova_one_drug` (ODAF), and finally extend the analysis to all drugs (ADAF) using :meth:`~gdsctools.anova.ANOVA.anova_all`.
+One can then repeat the ODOF analysis for the given drug across all features using the :meth:`~gdsctools.anova.ANOVA.anova_one_drug` method. This is also named One Drug All Feature case (ODAF). Finally we can even extend the analysis to All Drugs All Features (ADAF) using :meth:`~gdsctools.anova.ANOVA.anova_all`.
 
 .. note:: P-values reported by the ODOF method need to be corrected with a
     multiple testing correction when combined in the ODAF or ADAF cases. 
-    For more information, please see the :ref:`multitesting` section.
+    For more information, please see the 
+    :meth:`gdsctools.stats.MulipleTesting` description.
 
 
 The following image illustrates how those 3 methods interweave together like
@@ -146,7 +151,7 @@ features. Let us now perform the analysis for the 3 different cases.
 One Drug One Feature (ODOF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let us start with the first case that is one drug one feature, which needs to be given by the user to the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. Here is an example:
+Let us start with the first case (ODOF). User needs to provide a drug and a feature and to call the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. Here is an example:
 
 .. plot::
     :include-source:
@@ -156,29 +161,25 @@ Let us start with the first case that is one drug one feature, which needs to be
     gdsc.anova_one_drug_one_feature('Drug_999_IC50', 
         'TP53_mut', show=True)
 
-Here a set of boxplots are produced; one for each explanatory
-feature considered (tissue, MSI, genomic feature). If there is only one tissue,
-the corresponding explanatory variable is not used (nor the corresponding
-boxplot). Similarly the MSI variable may be ignored.
+Setting the :attr:`show` parameter to True, we created a set of 3 boxplots that is one for each explanatory feature considered: tissue, :term:`MSI` and genomic feature. 
 
-In the first boxplot (feature variable), we see the IC50s being divided in two
-populations (negative and positive features). Here all tissues are mixed. 
+If there is only one tissue, this factor is included in the explanatory variable is not used (and the corresponding boxplot not produced). Similarly, the :term:`MSI` factor may be ignored if irrelevant.
+
+In the first boxplot, the feature factor is considered;  we see the IC50s being divided in two populations (negative and positive features) where all tissues are mixed. 
 
 In the second boxplot, the tissue variable is explored; this is a decomposition
 of the first boxplot across tissues.
 
-Finally, the third boxplot shows the impact of the MSI factor. Here again,
-tissues are mixed.
+Finally, the third boxplot shows the impact of the :term:`MSI` factor. Here again, all tissues are mixed.
 
-The output is a time series. It contains statistical information about the
-association found between the drug and the feature. See for :class:`gdsctools.anova.ANOVAResults` for more details.
+The output of an ODOF analysis is a time series that contains statistical information about the association found between the drug and the feature. See for :class:`gdsctools.anova.ANOVAResults` for more details.
 
 .. seealso:: :class:`gdsctools.anova` and :ref:`data_packages`.
 
 One Drug All Features (ODAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that we have analysed one drug for one feature, we could repeat the analysis for all features. However, we provide a method that does exactly that for us :
+Now that we have analysed one drug for one feature, we could repeat the analysis for all features. However, we provide a method that does exactly that for us  (:meth:`~gdsctools.ANOVA.anova_one_drug`):
 
 .. plot::
     :include-source:
@@ -199,10 +200,10 @@ Now that we have analysed one drug for one feature, we could repeat the analysis
 
 Here, we have a different plot called a volcano plot provided in
 the :mod:`gdsctools.volcano` module. To understand the x and y-axis, let us 
-come back briefly on the previous analysis. The output produced was made of a set of statistical metrics including a p-value (coming from the ANOVA analysis) and a signed effect size (see :ref:`data` for details).
+come back briefly on the previous analysis. The output produced was made of a set of statistical metrics including a p-value (coming from the ANOVA analysis) and a signed effect size (see below).
 
-Assuming that the population of IC50s has been separated in positive and
-negative sets (based on the genomic feature) denoted :math:`IC50_{pos}` and :math:`IC50_{neg}`, then the signed effect size :math:`\eta` is computed as follows:
+The regression analysis split the population of IC50s in positive and
+negative sets (based on the genomic feature). The two sets are denoted :math:`IC50_{pos}` and :math:`IC50_{neg}`. Then, the signed effect size :math:`\eta` is computed as follows:
 
 .. math::
 
@@ -217,8 +218,8 @@ where
 and  :math:`Es` is the effect size function based on the Cohens metric (see 
 :func:`gdsctools.stats.cohens`).
 
-In the volcano plot, the p-values reported in the individual p-values for a given drug and feature.  Due to the number of test performed, we have
-more chance to pick a significant hit by pure chance. Therefore, p-values are corrected using for instance a BH method. Significance of associations should therefore be based on the FDR rather than p-values. The horizontal dashed lines shows several FDR thresholds. 
+In the volcano plot, each reported p-value is an individual p-value for a given drug and feature.  Due to the number of possible tests, we have
+more chance to pick a significant hit by pure chance. Therefore, p-values are corrected using a multiple testing correction method (e.g., BH method), which uses :term:`FDR` metric. Significance of associations should therefore be based on the FDR rather than p-values. The horizontal dashed lines in the volcano plot show several FDR thresholds. 
 
 
 
@@ -226,10 +227,13 @@ more chance to pick a significant hit by pure chance. Therefore, p-values are co
 All Drug All Features (ADAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here we compute the associations across all drugs and features. In essence, it
-is the same analysis as the ODAF case but with more tests. In order to reduce
-the computational time, in the following example, we restrict the analysis to
-the breat tissue using :meth:`~gdsctools.anova.ANOVA.set_cancer_type` method.
+Here we compute the associations across all drugs and all features. 
+In essence, it is the same analysis as the ODAF case but with more tests. 
+In order to reduce the computational time, in the following example, 
+we restrict the analysis to the breat tissue 
+using :meth:`~gdsctools.anova.ANOVA.set_cancer_type` method. This would
+therefore be a **cancer-specific analysis**. If all cell lines are kept, this is
+a :term:`PANCAN` analysis.
 
 .. plot::
     :include-source:
@@ -246,9 +250,10 @@ the breat tissue using :meth:`~gdsctools.anova.ANOVA.set_cancer_type` method.
 .. warning:: :meth:`anova_all` may take a long time to run 
     (e.g., 10 minutes, 30 minutes) depending on the number of drugs
     and features. We have a buffering in place. If you stop the analysis in the
-    middle, you can start againa and previous ODAF analysis will be retrieved
-    starting the analysis where you previously stopped. If this is not what you
-    want, you need to call :meth:`reset_buffer`
+    middle, you can call again :meth:`anova_all` method and previous ODAF 
+    analysis will be retrieved starting the analysis where you previously 
+    stoped. If this is not what you want, you need to call 
+    :meth:`~gdsctools.anova.ANOVA.reset_buffer` method.
 
 The volcano plot here is the same as in the previous section but with more data
 points. The output is the same as in the previous section with more
@@ -259,16 +264,14 @@ associations.
 Learn more
 -----------
 
-.. todo:: section in progress
+If you want to learn more, please follow one of those links:
 
-Follow those links to learn more about:
-
-* Tune some of the :ref:`settings`.
+* Tune some of the :ref:`settings` of the analysis.
 * Creating HTML reports from the analysis: :ref:`html`.
-* Data :ref:`data` .
-* Standalone :ref:`standalone`.
-* Notebooks :ref:`notebooks`.
-* Data packages :ref:`data_packages`.
+* Learn more about the input :ref:`data` .
+* How to reproduce these analysis presented here above using the :ref:`standalone`.
+* Get more examples from IPython :ref:`notebooks`.
+* How to produce :ref:`data_packages` and learn about their contents.
 
 
 
