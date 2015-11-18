@@ -227,7 +227,6 @@ class LogisticMatchedFiltering(object):
         self.plot(results, coords, best, xmid_range, scale_range)
 
         res = self.optimise(coords)
-        print res
         pylab.figure(1)
         pylab.plot(res.x[0], res.x[1], 'go')
         
