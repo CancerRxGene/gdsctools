@@ -20,7 +20,9 @@ import shutil
 
 import easydev
 import pandas as pd
-import bs4
+from jinja2 import Template
+from jinja2.environment import Environment
+from jinja2 import FileSystemLoader
 
 # note that the sorttable javascript is from
 # `http://www.kryogenix.org/code/browser/sorttable/
@@ -94,12 +96,12 @@ class HTMLTable(object):
         # note that the class has one t and the javascript library has 2
         # as in the original version of sorttable.js
         table = self.df.to_html(escape=escape, header=header, index=index,
-                classes='dataframe sortable', **kargs)
+                classes='sortable', **kargs)
 
         # get back to default options
         for k, v in _buffer.items():
             pd.set_option(k, v)
-        return table
+        return '<div class="table_outer">' + table+"</div>"
 
     def add_bgcolor(self, colname, cmap='copper', mode='absmax',
             threshold=2):
@@ -197,6 +199,13 @@ class HTMLTable(object):
                 formatter = '<a target="_blank" href="{0}.html">{1}</a>'
             self.df[colname] = self.df[colname].apply(lambda x:
                 formatter.format(x,x))
+
+    def sort(self, name):
+        # for different pandas implementations
+        try:
+            self.df.sort_values(by=name, inplace=True)
+        except:
+            self.df.sort(columns=name, inplace=True)
 
 
 class Report(object):
@@ -302,7 +311,6 @@ class Report(object):
         html = """<div class="footer">
         <div class="logo">
         <img src= ./images/sanger-logo.png  title=sanger-logo alt="sanger"/>
-        <img src= ./images/logo-nki.png  title=sanger-logo alt="nki"/>
         <img src= ./images/EBI_logo.png  title=sanger-logo alt="EBI"/>
         </div>"""
 
@@ -310,8 +318,8 @@ class Report(object):
         html += """Please visit <a
         href="http://gdsctools.readthedocs.org">online</a> documentation for
         details. </div>
-        
-        
+
+
         """
         html += "</div>"
         html += self.close()
@@ -408,7 +416,7 @@ class Report(object):
         timenow = str(datetime.datetime.now())
         timenow = timenow.split('.')[0]
         msg = '<div class="date">Created on ' + timenow
-        msg +=  " by " + username +'</div>'
+        msg += " by " + username +'</div>'
         return msg
 
     def get_table_dependencies(self):
@@ -430,12 +438,9 @@ class Report(object):
             'package': ["""<a href="%s">%s</a>""" % (links[i], p)
                 for i, p in enumerate(names)],
             'version': versions})
-        try:
-            df.sort_values(by='package', inplace=True)
-        except:
-            df.sort(columns='package', inplace=True)
 
         table = HTMLTable(df, name="dependencies", escape=False)
+        table.sort('package')
         return table
 
     def add_pretoc(self, content):
@@ -509,7 +514,6 @@ class Report(object):
         contents += "<hr>" #+ self.get_time_now()
         contents += self.get_footer()
 
-        #contents = bs4.BeautifulSoup(contents, 'html.parser').prettify()
         fh.write(contents)
         fh.close()
 
@@ -522,3 +526,55 @@ class Report(object):
 
     def _create_report(self):
         pass
+
+
+class ReportMAIN(Report):
+    def __init__(self, filename='index.html', directory='report',
+                 template_filename='index.html'):
+        super(ReportMAIN, self).__init__(filename=filename,
+            directory=directory,  overwrite=True, verbose=True,
+            dependencies=True)
+
+        # For jinja2 inheritance, we need to use the environment
+        # to indicate where are the parents' templates
+        gdsctools_path = easydev.get_shared_directory_path('gdsctools')
+        template_directory = os.sep.join([gdsctools_path, 'data', 'templates'])
+
+        self.env = Environment()
+        self.env.loader = FileSystemLoader(template_directory)
+
+        # use template provided inside gdsctools
+        self.template = self.env.get_template(template_filename)
+
+        self.jinja = {
+                'time_now': self.get_time_now(),
+                "analysis": self.analysis,
+                "version": self.version,
+                "title": self.title,
+                "analysis_domain": self.analysis_type,
+                'dependencies': self.get_table_dependencies().to_html(),
+                }
+
+    def to_html(self):
+        self.jinja['time_now'] = self.get_time_now()
+        return self.template.render(self.jinja)
+
+    def write(self):
+        fh =  open(self.abspath, "w")
+        data = self.to_html()
+        fh.write(data)
+        fh.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
