@@ -9,7 +9,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 9
-_MICRO               = 4
+_MICRO               = 6
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -53,7 +53,7 @@ if on_rtd is True:  # only import and set the theme if we're building docs
 else:
     install_requires = ['numpy', 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.4', 'scipy', "colormap>=0.9.7",
-        "beautifulsoup4", 'mpld3', 'jinja2', 'statsmodels'],
+        'mpld3', 'jinja2', 'statsmodels'],
 
 
 
