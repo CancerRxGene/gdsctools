@@ -116,7 +116,7 @@ that should open a new tab in a browser redirecting you to the HTML help version
 The ANOVA class
 ----------------
 
-Before starting, just a few words about the underlying stastistical analysis. On one hand, we have an IC50 file. It contains IC50s measured for :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a unique measured IC50. On the other hand, one should also provide a data file with genomic features with the same set of :math:`$N_c$` cell lines. The other dimension being the :math:`N_f` genomic features (e.g. mutation). A default set of 680 genomic features is provided and automatically fetched in the following examples. 
+Before starting, just a few words about the underlying stastistical analysis. On one hand, we have an IC50 file. It contains IC50s measured for :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a unique measured IC50. On the other hand, one should also provide a data file with genomic features with the same set of :math:`$N_c$` cell lines. The other dimension being the :math:`N_f` genomic features (e.g. mutation). A default set of about 50 genomic features is provided and automatically fetched in the following examples. You may also provide your own data set as an input. Note that all examples here below use the default file provided within **GDSCTools** software. 
 
 .. seealso:: More details about the genomic features data format can be found in the :ref:`data` section.
 

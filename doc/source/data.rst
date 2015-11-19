@@ -84,7 +84,7 @@ It can be saved and read as follows:
     >>> gf
     GenomicFeatures <Nc=2, Nf=2, Nt=2>
 
-In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../share/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 700 genomic features. 
+In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../share/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). 
 
 By default, the creation of an ANOVA class we read that file automatically. Of
 course, you may provide your own. The :class:`~gdsctools.readers.GenomicFeatures` if created without input contains the default file mentionned here above::
@@ -95,10 +95,10 @@ course, you may provide your own. The :class:`~gdsctools.readers.GenomicFeatures
     >>> print(gf)
     Genomic features distribution
     Number of unique tissues 27
-    Number of unique features 677 with
-    - Mutation: 270
-    - CNA (gain): 116
-    - CNA (loss): 291
+    Number of unique features 47 with
+    - Mutation: 47
+    - CNA (gain): 0
+    - CNA (loss): 0
 
 Drug Decoder
 ----------------
@@ -117,8 +117,8 @@ An example can be read as follows:
     >>> from gdsctools import DrugDecoder, datasets
     >>> drug_filename = datasets.testing.drug_test_csv.location
     >>> dd = DrugDecoder(drug_filename)
-    >>> dd.get_name('Drug_999_IC50')
-    'Erlotinib'
+    >>> dd.get_name('Drug_1047_IC50')
+    'Nutlin-3a'
 
 
 
