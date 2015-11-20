@@ -153,6 +153,23 @@ def _build_testing():
     d.filename = _gsf('gdsctools', 'data', 'test_IC50.csv')
     d.description = 'A 10drug/1000 cell lines IC50 test file in CSV format'
     testing.ic50_test = d
+    
+    d = Data()
+    d.filename = _gsf('gdsctools', 'data', 'test_IC50_header2.csv')
+    d.description = 'An IC50 test (header with column without Drug_ prefix)'
+    testing.ic50_test_header_no_drug_prefix = d
+
+    d = Data()
+    d.filename = _gsf('gdsctools', 'data', 'test_IC50_header1.csv')
+    d.description = 'An IC50 test (header with column with Drug_ prefix only)'
+    testing.ic50_test_header_drug_prefix_only = d
+
+    d = Data()
+    d.filename = _gsf('gdsctools', 'data', 'test_IC50_header3.csv')
+    d.description = 'An IC50 test (header with mixed prefixes i.e. Drug_ or not)'
+    testing.ic50_test_header_mixed_drug_prefix = d
+
+
 
     return testing
 
