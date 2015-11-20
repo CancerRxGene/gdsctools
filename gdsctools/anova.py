@@ -25,7 +25,6 @@ import numpy as np
 
 from statsmodels.formula.api import OLS
 
-
 from easydev import Progress, AttrDict, Logging
 import easydev
 from colormap import cmap_builder
@@ -33,7 +32,7 @@ from colormap import cmap_builder
 from gdsctools.stats import MultipleTesting
 from gdsctools import readers
 from gdsctools.boxplots import BoxPlots
-from gdsctools.report import Report, HTMLTable, ReportMAIN
+from gdsctools.report import HTMLTable, ReportMAIN
 from gdsctools.tools import Savefig
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
@@ -47,25 +46,37 @@ __all__ = ['ANOVA', 'ANOVAResults', 'ANOVAReport']
 class ANOVAResults(object):
     """Class to handle results of the ANOVA analysis
 
-    Used to wrap the results returned by the
+     Used to wrap the results returned by the
     :meth:`gdsctools.anova.ANOVA.anova_all` method.
-
 
     """
     def __init__(self, filename=None):
         """.. rubric:: Constructor
 
-        :param str filename: possibly, read a file.
+        :param str filename: Another ANOVAResults instance of a saved dataframe
+            that can be read by this class, that is a CSV with the official header
+            This parameter can also be set to None (default) and populated later..
+
         """
-        if filename is not None:
+        if filename is not None and isinstance(filename, str):
             self.read_csv(filename)
+        elif filename is None:
+            self._df = pd.DataFrame()
+        else:
+            try:
+                self._df = filename.df.copy()
+            except:
+                self._df = filename.copy()
+            assert isinstance(self._df, pd.core.frame.DataFrame), "excepts a dataframe or filename"
+
+        # TODO: check the header of the dataframe
 
         self.drug_target = 'DRUG_TARGET'
         self.drug_id = 'DRUG_ID'
         self.drug_name = 'DRUG_NAME'
         self.feature = 'FEATURE'
 
-        #: dictionary with the relevant column names and their types
+        #: dictionary with the relevant column names and their expected types
         self.mapping = {
              self.drug_target: np.dtype('O'),
              self.drug_id: np.dtype('O'),
@@ -159,14 +170,9 @@ class ANOVAReport(object):
 
         """
         self.figtools = Savefig()
+        self.gdsc = gdsc
+        self.df = ANOVAResults(results).df # this does a copy and sanity check
 
-        # results can be a file with all results as exported
-        # by ANOVA analysis
-        try:
-            self.df = results.df.copy()
-        except:
-            # or an instance of a dataframe
-            self.df = results.copy()
 
         self.settings = ANOVASettings()
         for k, v in gdsc.settings.items():
@@ -208,8 +214,9 @@ class ANOVAReport(object):
         """
         # create some data
         self._set_sensible_df()
+
         # just to create the directory
-        report = Report(directory=self.settings.directory)
+        ReportMAIN(directory=self.settings.directory)
 
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
@@ -313,7 +320,7 @@ class ANOVAReport(object):
         name = self.varname_pval
         data = self.df[name].ix[0:N-1]
         m, M = data.min(), data.max()
-        return m,M
+        return m, M
 
     def _get_fdr_range(self):
         """Get FDR range of the significant hits"""
@@ -322,13 +329,13 @@ class ANOVAReport(object):
         if len(data) == 0:
             return 0., 0.
         m, M = data.min(), data.max()
-        return m,M
+        return m, M
 
-    def _get_pvalue_from_fdr(self):
-        qvals = df[self.varname_qval]
-        pvals = df[self.varname_pval]
-        pvalue = pvals[qvals < self.settings.FDR_threshold].max()
-        return pvalue
+    #def _get_pvalue_from_fdr(self):
+    #    qvals = df[self.varname_qval]
+    #    pvals = df[self.varname_pval]
+    #    pvalue = pvals[qvals < self.settings.FDR_threshold].max()
+    #    return pvalue
 
     def _set_sensible_df(self):
         # just an alias
@@ -377,10 +384,10 @@ class ANOVAReport(object):
         df_count['name'] = df_count.index
         try:
             df_count.sort_values(by=['total', 'name'], ascending=False,
-                inplace=True)
+                                 inplace=True)
         except:
             df_count.sort(columns=['total', 'name'], ascending=False,
-                inplace=True)
+                          inplace=True)
 
         df_count.drop('name', axis=1, inplace=True)
         return df_count
@@ -426,10 +433,10 @@ class ANOVAReport(object):
 
         df_count = self._get_data(df_count_sensible, df_count_resistant)
 
-        if len(df_count)>0:
+        if len(df_count) > 0:
             self._plot(df_count, 'feature', top, fontsize=fontsize)
             fig = pylab.gcf()
-            fig.set_size_inches(12,14)
+            fig.set_size_inches(12, 14)
             self.figtools.directory = self.settings.directory
             self.figtools.savefig(filename, bbox_inches='tight')
         return df_count
@@ -443,7 +450,7 @@ class ANOVAReport(object):
         df = df_count.ix[0:top][[u'sens assoc', u'res assoc']]
         labels = list(df.index)
         # add drug name
-        if len(self.gdsc.drug_decoder)>0:
+        if len(self.gdsc.drug_decoder) > 0:
             for i, label in enumerate(labels):
                 name = self.gdsc.drug_decoder.get_name(label)
                 if name is not None:
@@ -464,9 +471,9 @@ class ANOVAReport(object):
         pylab.figure(1)
         pylab.clf()
         p1 = pylab.barh(ind, data1, height=0.8, color='purple',
-            label='sensitivity')
+                        label='sensitivity')
         p2 = pylab.barh(ind, data2, height=0.8, color='orange',
-            left=data1, label='resistance')
+                        left=data1, label='resistance')
         ax = pylab.gca()
         self.labels = labels
         ax.set_yticks([x+0.5 for x in ind])
@@ -475,8 +482,8 @@ class ANOVAReport(object):
         pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
                     "\nassociated with drug  response", fontsize=15)
         pylab.xlabel(r'Number of significant associations (FDR %s %s %s) '
-                    % ("$>$", self.settings.FDR_threshold, "$\%$"),
-                    fontsize=15)
+                     % ("$>$", self.settings.FDR_threshold, "$\%$"),
+                     fontsize=15)
         pylab.legend(loc='lower right')
         pylab.tight_layout()
 
@@ -565,8 +572,8 @@ class ANOVAReport(object):
         N = len(df)
         pb = Progress(N)
 
-        html = OneDrugOneFeature(self.gdsc,
-                drug='dummy', feature='dummy', fdr='dummy')
+        html = Association(self.gdsc, drug='dummy', feature='dummy', 
+                fdr='dummy')
 
         for i in range(N):
             html.drug = drugs[i]
@@ -597,7 +604,6 @@ class ANOVAReport(object):
         least one significant association
 
         Actually, we are interested in each drug, could be a flag
-
 
         """
         # group by drugs
@@ -639,8 +645,7 @@ class ANOVAReport(object):
         page = HTMLPageMANOVA(self.gdsc, df)
         page.report(onweb)
 
-
-    def create_html_pages(self, onweb=False):
+    def create_html_pages(self, onweb=True):
         """Create all HTML pages"""
         self._set_sensible_df()
         self.create_html_main(onweb=onweb)
@@ -648,6 +653,10 @@ class ANOVAReport(object):
         self.create_html_features()
         self.create_html_associations()
         self.create_html_manova(onweb=False)
+
+    def onweb(self):
+        from easydev import onweb
+        onweb(self.settings.directory + os.sep + 'index.html')
 
 
 class ANOVA(object): #Logging):
@@ -1584,56 +1593,6 @@ class ANOVA(object): #Logging):
         return txt
 
 
-
-def multicore(ic50, maxcpu=2):
-    """Using 4 cores, the entire analysis took 15 minutes using
-    4 CPUs (16 Oct 2015).
-
-    :param ic50: a filename or :class:`IC50` instance.
-    :return: the anova instance itself (not the results); see example below.
-
-    ::
-
-        from gdsctools.anova import multicore
-        master = multicore(dataset, maxcpu=2)
-        results = master.anova_all()
-
-        from gdsctools import ANOVAReport()
-        report = ANOVAReport(master, results)
-        report.create_html_pages(0
-
-    .. warning:: experimental. Seems to work but sometimes hangs forever.
-    """
-    print("experimental code to run the analysis with several cores")
-    print("May takes lots or resources and slow down your system")
-    import time
-    t1 = time.time()
-    master = ANOVA(ic50, low_memory=True)
-
-    drugs = master.ic50.drugIds
-
-    from easydev import MultiProcessing
-    t = MultiProcessing(maxcpu=maxcpu)
-    # add all jobs (one per drug)
-    for i, drug in enumerate(drugs):
-        t.add_job(analyse_one_drug, master, drug)
-    t.run()
-
-    # populate the ANOVA instance with the results
-    for this in t.results:
-        drug = this[0]
-        result = this[1]
-        master.individual_anova[drug] = result
-
-    print("\nTook " + str(time.time() - t1) + "seconds.")
-    return master
-
-
-def analyse_one_drug(master, drug):
-    res = master.anova_one_drug(drug_id=drug, animate=False)
-    return (drug, res)
-
-
 class HTMLPageMANOVA(ReportMAIN):
     """Creates an HTML page dedicated to significant hits
 
@@ -1649,9 +1608,9 @@ class HTMLPageMANOVA(ReportMAIN):
 
     """
     def __init__(self, gdsc, df):
-        """
+        """.. rubric:: constructor
 
-        :param : a dataframe as output by :meth:`ANOVA.anova_all`
+        :param : an ANOVA instance.
         :param directory: where to save the file
 
         The HTML filename is stored in the :attr:`filename`, which can
@@ -1667,56 +1626,51 @@ class HTMLPageMANOVA(ReportMAIN):
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
 
 
-class OneDrugOneFeature(Report):
+###############################################################################
+#                                                                             #
+#                                                                             #
+#                     HTML REPORTS RELATED                                    #
+#                                                                             #
+#                                                                             #
+###############################################################################
+
+class Association(ReportMAIN):
     def __init__(self, gdsc, drug=None, feature=None,
             fdr=-1, assoc_id=-1):
-        # FIXME here we lose the settings since we create a new instance
         self.factory = gdsc
-        # Does that changes the main settings ??
+        # Does that changes the main settings ?? YES
         self.factory.settings.savefig = True
         self.assoc_id = assoc_id
 
         self.drug = drug
         self.feature = feature
         self.fdr = fdr
-        self.add_settings = False
         filename = "{0}____{1}.html".format(self.drug,
                 self.feature.replace(" ", "_"))
 
-        super(OneDrugOneFeature, self).__init__(
+        super(Association, self).__init__(
                 directory=gdsc.settings.directory,
-                filename=filename)
-        self.analysis_type = gdsc.settings.analysis_type
-
-    def run(self):
-        df = self.factory.anova_one_drug_one_feature(self.drug,
-                self.feature, savefig=True, show=True,
-                directory=self.directory)
-        # FIXME assoc id
-        df['ASSOC_ID'] = self.assoc_id
-        df['ANOVA_FEATURE_FDR_%'] = self.fdr
-        return df
-
-    def to_html(self, df, precision=6):
-        sign = SignificantHits(df, 'features')
-        html = sign.to_html(escape=False, header=True, index=False)
-        return html
+                filename=filename, template_filename='association.html')
+        self.jinja['analysis_type'] = gdsc.settings.analysis_type
 
     def _create_report(self, onweb=True):
         # generated pictures and results
         #print('Generating data, images and HTML')
-        df = self.run()
+        df = self.factory.anova_one_drug_one_feature(self.drug,
+                self.feature, savefig=True, show=True,
+                directory=self.directory)
+        df['ASSOC_ID'] = self.assoc_id
+        df['ANOVA_FEATURE_FDR_%'] = self.fdr
 
         # Create the table and add it
-        html_table = self.to_html(df, precision=2)
-        self.add_section(html_table, 'Individual association analysis')
+        sign = SignificantHits(df, 'features')
+        html_table = sign.to_html(escape=False, header=True, index=False)
+        self.jinja['association_table'] = html_table
 
-
-        section = ""
         # Main boxplot always included
         prefix = 'ODOF_all'
         tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
-        section += '<img alt="association {0}" src="{0}">\n'.format(tag)
+        section = '<img alt="association {0}" src="{0}">\n'.format(tag)
 
         if self.factory.settings.includeMSI_factor:
             prefix = 'ODOF_msi'
@@ -1726,11 +1680,7 @@ class OneDrugOneFeature(Report):
             prefix = 'ODOF_tissue'
             tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
             section += '<img alt="association {0}" src="{0}">\n'.format(tag)
-
-        self.add_section(section, "Boxplots")
-        if self.add_settings is True:
-            table = ANOVASettings(**self.factory.settings)
-            self.add_section(table.to_html(), 'Settings')
+        self.jinja['boxplots'] = section
 
 
 class HTMLOneFeature(ReportMAIN):
@@ -1752,11 +1702,6 @@ class HTMLOneFeature(ReportMAIN):
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
-        # FIXME: inside volvano_plot, we add tooltips.
-        # when we call volcano again, the tooltips formed in the
-        # previous call are still there. The only solution
-        # so far is to close the figure.
-        #pylab.close(1)
         v.volcano_plot_one_feature(self.feature)
         v.figtools.savefig('volcano_{}.png'.format(self.feature))
         try:
@@ -1765,17 +1710,16 @@ class HTMLOneFeature(ReportMAIN):
         except:
             htmljs = ""
         fh = open(self.directory + os.sep +
-                "volcano_{}.html".format(self.feature),"w")
+                "volcano_{}.html".format(self.feature), "w")
         fh.write(htmljs)
         fh.close()
 
     def _create_report(self, onweb=True):
         self.create_pictures()
 
-
         self.jinja['N_hits'] = len(self.subdf)
-        if len(self.subdf)>0:
-            sign = SignificantHits(self.subdf, 'drugs')
+        if len(self.subdf) > 0:
+            sign = SignificantHits(self.subdf, 'feature')
             html = sign.to_html(escape=False, header=True, index=False)
             self.jinja['association_table'] = html
 
@@ -1866,7 +1810,6 @@ class HTMLPageMain(ReportMAIN):
                 txt += row.text + ": " +  str(row.value) + "<br/>"
         self.jinja['summary'] = txt
 
-        #
         print('Creating volcano plots')
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
@@ -1955,6 +1898,7 @@ class HTMLPageMain(ReportMAIN):
         df['hits'] = count
 
         table = HTMLTable(df, 'features')
+        table.sort('hits', ascending=False)
         table.add_href('FEATURE')
         table.add_bgcolor('hits', mode='max',
                 cmap=cmap_builder('white', 'orange', 'red'))
@@ -2002,7 +1946,6 @@ class HTMLPageMain(ReportMAIN):
             html += 'Get <a href="INPUT/%s">Drug DECODE file</a>' % filename
         else:
             html += 'No Drug DECODE file was provided<br/>'
-
         self.jinja['settings'] = html
 
 

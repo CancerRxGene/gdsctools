@@ -101,7 +101,10 @@ class HTMLTable(object):
         # get back to default options
         for k, v in _buffer.items():
             pd.set_option(k, v)
-        return '<div class="table_outer">' + table+"</div>"
+        if len(self.df)>10:
+            return '<div class="table_outer">' + table+"</div>"
+        else:
+            return '<div class="table">' + table+"</div>"
 
     def add_bgcolor(self, colname, cmap='copper', mode='absmax',
             threshold=2):
@@ -200,15 +203,15 @@ class HTMLTable(object):
             self.df[colname] = self.df[colname].apply(lambda x:
                 formatter.format(x,x))
 
-    def sort(self, name):
+    def sort(self, name, ascending=True):
         # for different pandas implementations
         try:
-            self.df.sort_values(by=name, inplace=True)
+            self.df.sort_values(by=name, inplace=True, ascending=ascending)
         except:
-            self.df.sort(columns=name, inplace=True)
+            self.df.sort(columns=name, inplace=True, ascending=ascending)
 
 
-class Report(object):
+class ReportMAIN(object):
     """A base class to create HTML pages
 
     This :class:`Report` class holds the CSS and HTML layout and will ease
@@ -233,8 +236,10 @@ class Report(object):
     **text** of a section can contain any HTML document.
 
     """
+
     def __init__(self, filename='index.html', directory='report',
-                 overwrite=True, verbose=True, dependencies=True):
+                 overwrite=True, verbose=True,
+                template_filename='index.html'):
         """.. rubric:: Constructor
 
         :param filename: default to **index.html**
@@ -248,6 +253,7 @@ class Report(object):
         #: name of the analysis added in the title
         self.analysis = 'anova'
         self.pkgname = 'gdsctools'
+
         from gdsctools import version
         #: version added in the sub title
         self.version = version
@@ -263,17 +269,28 @@ class Report(object):
         #: flag to add dependencies
         self.add_dependencies = False
 
-        #: flag to add text before TOC
-        self.pretoc = None
-
         self.title = 'ANOVA analysis summary'
         self.analysis_type = "PANCAN"
 
-        #: flag to add a "back to main" link
-        if filename != 'index.html':
-            self.goback_link = True
-        else:
-            self.goback_link = False
+        # For jinja2 inheritance, we need to use the environment
+        # to indicate where are the parents' templates
+        gdsctools_path = easydev.get_shared_directory_path('gdsctools')
+        template_directory = os.sep.join([gdsctools_path, 'data', 'templates'])
+
+        self.env = Environment()
+        self.env.loader = FileSystemLoader(template_directory)
+
+        # use template provided inside gdsctools
+        self.template = self.env.get_template(template_filename)
+
+        self.jinja = {
+                'time_now': self.get_time_now(),
+                "analysis": self.analysis,
+                "version": self.version,
+                "title": self.title,
+                "analysis_domain": self.analysis_type,
+                'dependencies': self.get_table_dependencies().to_html(),
+                }
 
         self._init_report()
 
@@ -300,30 +317,6 @@ class Report(object):
         """Opens a tab in a browser to see the document"""
         from easydev.browser import browse as bs
         bs(self.abspath)
-
-    def close(self):
-        """close HTML document properyl with div/body/html closing tags"""
-        return "\n</div> <!-- end of div document --> \n</body>\n</html>"
-
-    def get_footer(self):
-        """Return  HTML closing tag"""
-
-        html = """<div class="footer">
-        <div class="logo">
-        <img src= ./images/sanger-logo.png  title=sanger-logo alt="sanger"/>
-        <img src= ./images/EBI_logo.png  title=sanger-logo alt="EBI"/>
-        </div>"""
-
-        html += '<div class="copyright">' +  self.get_time_now()
-        html += """Please visit <a
-        href="http://gdsctools.readthedocs.org">online</a> documentation for
-        details. </div>
-
-
-        """
-        html += "</div>"
-        html += self.close()
-        return html
 
     def _init_report(self):
         """create the report directory and return the directory name"""
@@ -368,44 +361,29 @@ class Report(object):
             except:
                 pass # already created
 
-    def get_header(self):
-        """a possible common header ? """
-        params = {"analysis": self.analysis,
-                   "version": self.version,
-                   "title": self.title,
-                   "analysis_domain": self.analysis_type
-                   }
-        str_ =  """
- <!DOCTYPE html>
- <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
-     <head>
-     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-     <title>GDSCTools report</title>
-     <link rel="stylesheet" href="gdsc.css" type="text/css" />
-     <script src="sorttable.js"></script>
+    def to_html(self):
+        self.jinja['time_now'] = self.get_time_now()
+        return self.template.render(self.jinja)
 
-     <!-- Include required JS files -->
-     <link rel="stylesheet" href="github-gist.css">
-     <script src="highlight.pack.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
- </head>
+    def write(self):
+        with open(self.abspath, "w") as fh:
+            data = self.to_html()
+            fh.write(data)
 
- <body>
-  <div class="document" id="unset">
+    def onweb(self):
+        """Open the HTML document in a browser"""
+        from easydev import onweb
+        onweb(self.abspath)
 
-     <h1 class="title">%(title)s</h1>
-     <h2 class="subtitle">Report created with gdsctools (version %(version)s)</h2>
-     <p>See <a href="https://www.github.com/CancerRxGene/gdsctools">GDSCTools
-     github page</a> for downloads and the <a
+    def _create_report(self):
+        pass
+        # this shoudl populate the self.params and create the figures.
 
-     href="http://gdsctools.readthedocs.org">online documentation</a> for details.</p>
-     <hr>
-     <p>Analysis Domain: <b>%(analysis_domain)s</b> tissues/cancer cell type</p>
-
-     """ % params
-        if self.goback_link is True:
-            str_ += 'Go back to <a href="index.html">main page</a>.<br/>'
-        return str_
+    def report(self, onweb=True):
+        self._create_report()
+        self.write()
+        if onweb is True:
+            self.onweb()
 
     def get_time_now(self):
         """Returns a time stamp"""
@@ -427,154 +405,15 @@ class Report(object):
 
         """
         dependencies = easydev.get_dependencies(self.pkgname)
-
         # TODO: Could re-use new method in HTMLTable for adding href
         # but needs some extra work in the add_href method.
         names = [x.project_name for x in dependencies]
         versions = [x.version for x in dependencies]
         links = ["""https://pypi.python.org/pypi/%s""" % p for p in names]
-
         df = pd.DataFrame({
             'package': ["""<a href="%s">%s</a>""" % (links[i], p)
                 for i, p in enumerate(names)],
             'version': versions})
-
         table = HTMLTable(df, name="dependencies", escape=False)
         table.sort('package')
         return table
-
-    def add_pretoc(self, content):
-        """A content is added in the HTML page but content may be added
-        before using this method"""
-        self.pretoc = content
-
-    def add_section(self, content, title, references=[], position=None):
-        """Adds an H2 section in the document
-
-        :param content: text to add in the section
-        :param title: with this title (h2 tag)
-        :param references: not currently used
-        :param position: sections are added sequentially but position may
-            be set to insert a section at a given place.
-        """
-        section = """<div class="section" id="%(id)s">
-        <h2> <a class="toc-backref" href="#id%(index)s">%(title)s</a></h2>
-
-
-        %(content)s
-    </div>
-        """ % {'title': title, 'content': content,
-               'id': title.replace(" ", "_"), 'index': len(self.sections)+1}
-        # check that it is correct
-        if position is not None:
-            self.sections.insert(position, section)
-            self.section_names.insert(position, title)
-        else:
-            self.sections.append(section)
-            self.section_names.append(title)
-
-    def get_toc(self):
-        """Returns a table of contents"""
-        toc = """<div class="contents local topic" id="contents">
-        <ul class="simple">"""
-        for i, name in enumerate(self.section_names):
-            if name is None:
-                continue
-            toc += """<li>
-%(i)s - <a class="reference internal" href="%(href)s" id="%(id)s">  %(name)s</a>
-</li>""" % {'i':i+1, 'name':name, 'href':"#"+name.replace(" ", "_"), 'id':'id%s' % str(i+1)}
-        toc += """</ul>\n</div>"""
-        return toc
-
-    def write(self):
-        """Creates the entire HTML document based on previous command calls
-
-        Save the HTML document into the :attr:`abspath`
-        """
-        fh =  open(self.abspath, "w")
-        contents = self.get_header()
-
-        # Get toc should be done here and no more sections should be added
-        self.add_section(self.get_toc(), "Contents", position=0)
-        # pretoc section must be created after the TOC, so that the position
-        # is 0 and it is not taken into account in the TOC.
-        if self.pretoc is not None:
-            self.add_section(self.pretoc, "", position=0)
-
-        if self.add_dependencies:
-            self.add_section(self.get_table_dependencies().to_html()
-                    +'<br/>',    'Dependencies')
-
-        for i, section in enumerate(self.sections):
-            if i == 0 or self.section_names[i] == 'Contents':
-                contents += section
-            else:
-                contents += section.replace("<h2>", "<h2> %s - " %i, 1)
-
-        contents += "<hr>" #+ self.get_time_now()
-        contents += self.get_footer()
-
-        fh.write(contents)
-        fh.close()
-
-    def report(self, onweb=True):
-        """Creates the report, save it, opens in a browser"""
-        self._create_report()
-        self.write()
-        if onweb:
-            self.show()
-
-    def _create_report(self):
-        pass
-
-
-class ReportMAIN(Report):
-    def __init__(self, filename='index.html', directory='report',
-                 template_filename='index.html'):
-        super(ReportMAIN, self).__init__(filename=filename,
-            directory=directory,  overwrite=True, verbose=True,
-            dependencies=True)
-
-        # For jinja2 inheritance, we need to use the environment
-        # to indicate where are the parents' templates
-        gdsctools_path = easydev.get_shared_directory_path('gdsctools')
-        template_directory = os.sep.join([gdsctools_path, 'data', 'templates'])
-
-        self.env = Environment()
-        self.env.loader = FileSystemLoader(template_directory)
-
-        # use template provided inside gdsctools
-        self.template = self.env.get_template(template_filename)
-
-        self.jinja = {
-                'time_now': self.get_time_now(),
-                "analysis": self.analysis,
-                "version": self.version,
-                "title": self.title,
-                "analysis_domain": self.analysis_type,
-                'dependencies': self.get_table_dependencies().to_html(),
-                }
-
-    def to_html(self):
-        self.jinja['time_now'] = self.get_time_now()
-        return self.template.render(self.jinja)
-
-    def write(self):
-        fh =  open(self.abspath, "w")
-        data = self.to_html()
-        fh.write(data)
-        fh.close()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
