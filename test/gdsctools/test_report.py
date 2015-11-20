@@ -1,5 +1,5 @@
 import pandas as pd
-from gdsctools import HTMLTable
+from gdsctools.report import HTMLTable
 
 
 def test_htmltable():
