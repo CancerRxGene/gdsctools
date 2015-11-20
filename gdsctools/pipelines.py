@@ -213,7 +213,7 @@ def anova_one_drug_one_feature(options):
             low_memory=not options.fast)
     gdsc.settings.directory = options.directory
 
-    odof = anova.OneDrugOneFeature(gdsc,
+    odof = anova.Association(gdsc,
             drug=options.drug,
             feature=options.feature)
     #an.factory.settings.directory = options.directory
@@ -227,7 +227,7 @@ def anova_one_drug_one_feature(options):
     # for the HTML
     odof.add_dependencies = True
     odof.add_settings = True
-    df = odof.run()
+    df = odof._create_report()
 
     if df.ix[1]['FEATURE_IC50_effect_size'] is None:
         msg = "association %s vs %s not valid for testing (not enough" +\
