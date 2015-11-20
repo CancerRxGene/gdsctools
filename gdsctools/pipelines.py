@@ -227,7 +227,7 @@ def anova_one_drug_one_feature(options):
     # for the HTML
     odof.add_dependencies = True
     odof.add_settings = True
-    df = odof._create_report()
+    df = odof.run()
 
     if df.ix[1]['FEATURE_IC50_effect_size'] is None:
         msg = "association %s vs %s not valid for testing (not enough" +\

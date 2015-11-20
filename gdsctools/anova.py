@@ -1626,13 +1626,13 @@ class HTMLPageMANOVA(ReportMAIN):
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
 
 
-###############################################################################
-#                                                                             #
-#                                                                             #
-#                     HTML REPORTS RELATED                                    #
-#                                                                             #
-#                                                                             #
-###############################################################################
+##############################################################################
+#                                                                            #
+#                                                                            #
+#                    HTML REPORTS RELATED                                    #
+#                                                                            #
+#                                                                            #
+##############################################################################
 
 class Association(ReportMAIN):
     def __init__(self, gdsc, drug=None, feature=None,
@@ -1653,14 +1653,18 @@ class Association(ReportMAIN):
                 filename=filename, template_filename='association.html')
         self.jinja['analysis_type'] = gdsc.settings.analysis_type
 
-    def _create_report(self, onweb=True):
-        # generated pictures and results
-        #print('Generating data, images and HTML')
+    def run(self):
+        # to keep . Used in the standalone version
         df = self.factory.anova_one_drug_one_feature(self.drug,
                 self.feature, savefig=True, show=True,
                 directory=self.directory)
         df['ASSOC_ID'] = self.assoc_id
         df['ANOVA_FEATURE_FDR_%'] = self.fdr
+        return df
+
+    def _create_report(self, onweb=True):
+        # generated pictures and results
+        df = self.run()
 
         # Create the table and add it
         sign = SignificantHits(df, 'features')
