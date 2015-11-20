@@ -117,8 +117,7 @@ class ANOVAResults(object):
 
         .. todo:: check validity of the header
         """
-        self.reader = readers.Reader(filename, sep=",",
-                comment='#')
+        self.reader = readers.Reader(filename)
         self._df = self.reader.df
 
 
@@ -161,17 +160,13 @@ class ANOVAReport(object):
         """
         self.figtools = Savefig()
 
-        # data can be a file with all results as exported
+        # results can be a file with all results as exported
         # by ANOVA analysis
-        if results is not None and isinstance(results, str):
-            print("Reading the results from a file")
-            self.df = self.read_csv(results, sep=sep)
-        elif results is not None:
-            try:
-                self.df = results.df.copy()
-            except:
-                # or an instance of a dataframe
-                self.df = results.copy()
+        try:
+            self.df = results.df.copy()
+        except:
+            # or an instance of a dataframe
+            self.df = results.copy()
 
         self.settings = ANOVASettings()
         for k, v in gdsc.settings.items():
@@ -190,8 +185,10 @@ class ANOVAReport(object):
         if len(gdsc.drug_decoder) == 0 and drug_decoder is None:
             print('\nWARNING no drug name or target will be populated')
             print('You can read one if you wish using read_drug_decoder')
-        else:
+        elif drug_decoder is not None:
             self.read_drug_decoder(drug_decoder)
+        else: # should be in gdsc.drug_decoder
+            pass
 
         """if concentrations:
             # input may not have the concentrations columns right now.
@@ -229,8 +226,9 @@ class ANOVAReport(object):
 
         .. seealso:: :class:`gdsctools.readers.DrugDecoder`
         """
-        self.gdsc.read_drug_decoder(filename)
-        self.df = self.gdsc.drug_annotations(self.df)
+        if filename is not None:
+            self.gdsc.read_drug_decoder(filename)
+            self.df = self.gdsc.drug_annotations(self.df)
 
     def _get_ntests(self):
         return len(self.df.index)
@@ -695,10 +693,7 @@ class ANOVA(object): #Logging):
         around :meth:`anova_one_drug_one_feature` to loop over all drugs, and
         loop over all drugs and all features, respectively.
 
-
-
     """
-    #@profile
     def __init__(self, ic50, genomic_features=None, 
             drug_decoder=None, verbose='INFO', low_memory=False):
         """.. rubric:: Constructor
@@ -711,12 +706,10 @@ class ANOVA(object): #Logging):
             specifically to hold tissues, MSI (see format).
         :param verbose: verbosity in "WARNING", "ERROR", "DEBUG", "INFO"
 
-
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
         #super(ANOVA, self).__init__(level=verbose)
-        # Reads IC50
         #self.logging.info('Reading data and building data structures')
 
         # We first need to read the IC50 using a dedicated reader
@@ -753,11 +746,13 @@ class ANOVA(object): #Logging):
         unknowns = set(self.ic50.cosmicIds).difference(
                 set(self.features.cosmicIds))
         if len(unknowns) > 0:
-            self.warning(
+            print("WARNING:"+
                 "%s cosmic identifiers in your IC50 " % len(unknowns) +
                 "could not be found in the genomic feature matrix. "+
-                "They have been dropped. Consider using a user-defined " +
+                "They will be dropped. Consider using a user-defined " +
                 "genomic features matrix")
+
+        self.ic50.drop_cosmic(list(unknowns))
         self.features.cosmicIds  = self.ic50.cosmicIds
 
         #: an instance of :class:`~gdsctools.settings.ANOVASettings`
@@ -1348,7 +1343,6 @@ class ANOVA(object): #Logging):
         # default is that the 3 features are used
         modes = self._get_analysis_mode()
         Ncolumns = data_lm.model.data.exog.shape[1]
-
         if 'tissue' in modes and 'msi' in modes:
             dof = [Ntissue, 1, 1]
             indices = ['tissue', 'msi', 'feature', 'Residuals']
@@ -1376,7 +1370,6 @@ class ANOVA(object): #Logging):
         mean_sq = sum_sq / np.array(dof)
         Fvalues = mean_sq / (data_lm.ssr / data_lm.df_resid)
         F_pvalues = scipy.stats.f.sf(Fvalues, dof, data_lm.df_resid)
-
         sum_sq = np.append(sum_sq, data_lm.ssr)
         mean_sq = np.append(mean_sq, data_lm.mse_resid)
         F_pvalues = np.append(F_pvalues, None)
