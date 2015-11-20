@@ -52,7 +52,7 @@ if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = []
 else:
     install_requires = ['numpy', 'matplotlib>=1.4.3',
-        'pandas>=0.16.2', 'easydev>=0.9.4', 'scipy', "colormap>=0.9.7",
+        'pandas>=0.16.2', 'easydev>=0.9.5', 'scipy', "colormap>=0.9.7",
         'mpld3', 'jinja2', 'statsmodels'],
 
 
@@ -84,6 +84,7 @@ setup(
             '*gz', 'README.rst'],
         '' : ['README.rst'],
         'share.data.images' : ['*png'],
+        'share.data.templates' : ['*html'],
         },
 
     # comment the requirements otherwise RTD fails
