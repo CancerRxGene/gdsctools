@@ -85,6 +85,7 @@ setup(
         '' : ['README.rst'],
         'share.data.images' : ['*png'],
         'share.data.templates' : ['*html'],
+        'share.data.js' : ['*js'],
         },
 
     # comment the requirements otherwise RTD fails
