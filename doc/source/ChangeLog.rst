@@ -1,27 +1,27 @@
 ChangeLog
 ==============
 
+
+
 version 0.9 Nov 2015
 --------------------------
-v0.9.3
-~~~~~~~~~~~
+
+- Fixes issue #72 to get the drug_decoder information from the ANOVA class.
+- Fixes issue #76  to drop IC50 cosmic Id not found in the genomic feature
+  matrix
+- Readers (e.g. IC50) can now read CSV files with commented lines (# character)
+  issue #78
+- Readers can now ignored columns that are not named (usually first column of
+  index exported by excel document)
+- IC reader figure out automatically if the prefix "Drug" has been used. It so, 
+  it drops other irrelevant columns. Useful if genomic features and IC50 are
+  mixed together.
 - IC50 and GenomicFeatures, DrugDecode now accepts both TSV and CSV format
   (gziped or not)
 - add more datasets for testing purposes
 - double checked results on BLCA tissue v17 and v18
-
-v0.9.2
-~~~~~~~~~~~~~~~~
 - Finalise a first version of the standalone application 
-
-v0.9.1
-~~~~~~~~~
-
 - ReadTheDocs documentation is now on line gdsctools.readthedocs.org
-
-v0.9.0
-~~~~~~~~~~~~~
-
 - GDSCTools has now all features of the original R version
 - With in addition:
   - a standalone application
