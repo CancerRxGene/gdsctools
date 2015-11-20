@@ -23,6 +23,7 @@ def test_readers():
 
 
 def test_read_ic50():
+    # -------------------------------- functionalities
     r = IC50(ic50_test)
     # we can also instanciate from a valid dataframe
     r = IC50(r)
@@ -46,6 +47,24 @@ def test_read_ic50():
     except:
         assert True
 
+    # ---------------------------------------- different IC50 formats
+    # test all files available
+    for key in testing.keys() :
+        filename = testing[key].location
+        if filename.startswith('ic50_test'):
+            ic = IC50(filename)
+    # some specific checks:
+    #ic = IC50(testing['ic50_test_header_drug_prefix_only'].location)
+    #assert ic.df.shape == (2,2)
+    #assert all(ic.df.columns == ['1','2'])
+    ic = IC50(testing['ic50_test_header_no_drug_prefix'].location)
+    assert ic.drugIds == ['1', '2']
+
+    ic = IC50(testing['ic50_test_header_drug_prefix_only'].location)
+    assert ic.drugIds == ['Drug_1_IC50', 'Drug_2_IC50']
+
+    ic = IC50(testing['ic50_test_header_mixed_drug_prefix'].location)
+    assert ic.drugIds == ['Drug_1_IC50', 'Drug_2_IC50']
 
 def test_read_gf():
     # Reads a default file
