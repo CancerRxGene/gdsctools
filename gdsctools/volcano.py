@@ -47,20 +47,20 @@ class VolcanoANOVA(object):
 
         # retrisct analysis to a tissue to speed up computation
         an.set_cancer_type('lung_NSCLC')
-        
+
         # Perform the entire analysis
         results = an.anova_all()
 
-        # Plot volcano plot of pvalues versus signed effect size 
+        # Plot volcano plot of pvalues versus signed effect size
         v = VolcanoANOVA(results)
         v.volcano_plot_all()
 
-    .. note:: Within an IPython shell, you should be able to click 
+    .. note:: Within an IPython shell, you should be able to click
         on a circle and the title will be updated
         with the name of the drug/feature and FDR value.
 
-    .. note:: (**for developers**) A javascript version is also 
-        created on the fly using mpld3 library. It is used in the 
+    .. note:: (**for developers**) A javascript version is also
+        created on the fly using mpld3 library. It is used in the
         creation of the HTML report but one can use it as well in an
         ipython notebook::
 
@@ -79,14 +79,14 @@ class VolcanoANOVA(object):
     - :meth:`volcano_plot_all_drugs` creates a volcano plot for each drug and
       save it into a PNG file. This method calls :meth:`volcano_plot_one_drug`.
     - :meth:`volcano_plot_all_features` creates a volcano plot for each feature
-      and save it into a PNG file. This method calls 
+      and save it into a PNG file. This method calls
       :meth:`volcano_plot_one_feature`.
 
     """
     def __init__(self, data, sep="\t", settings=None):
         """.. rubric:: Constructor
 
-        :param data: an :class:`~gdsctools.anova.ANOVAResults` instance 
+        :param data: an :class:`~gdsctools.anova.ANOVAResults` instance
             or a dataframe with the proper columns names (see below)
         :param settings: an instance of
             :class:`~gdsctools.settings.ANOVASettings`
@@ -103,7 +103,7 @@ class VolcanoANOVA(object):
             DRUG_ID
 
         If the plotting is too slow, you can use the :meth:`selector` to prune
-        the results (most of the data are noise and overlap on the middle 
+        the results (most of the data are noise and overlap on the middle
         bottom  area of the plot with little information.
 
         """
@@ -120,7 +120,7 @@ class VolcanoANOVA(object):
             self.settings = ANOVASettings()
         else:
             self.settings = AttrDict(**settings)
-        
+
         self.figtools = Savefig()
         self.figtools.directory = self.settings.directory
 
@@ -139,18 +139,18 @@ class VolcanoANOVA(object):
         self.groups_by_features = self.df.groupby(self._colname_feature).groups
 
     def selector(self, df, Nbest=1000, Nrandom=1000, inplace=False):
-        """Select only the first N best rows and N random ones 
+        """Select only the first N best rows and N random ones
 
-        Sometimes, there are tens of thousands of associations and future 
-        analysis will include more features and drugs. Plotting volcano plots 
+        Sometimes, there are tens of thousands of associations and future
+        analysis will include more features and drugs. Plotting volcano plots
         should therefore be fast and scalable. Here, we provide a naive
         way of speeding up the plotting by selecting only a subset of the data
-        made of Nbest+Nrandom associations. 
+        made of Nbest+Nrandom associations.
 
         :param df: the input dataframe with ANOVAResults
-        :param int Nbest: how many of the most significant association 
+        :param int Nbest: how many of the most significant association
             should be kept
-        :param int Nrandom: on top of the Nbest significant association, 
+        :param int Nrandom: on top of the Nbest significant association,
             set how many other randomly chosen associations are to be kept.
         :return: pruned dataframe
 
@@ -209,7 +209,7 @@ class VolcanoANOVA(object):
         data = self._get_volcano_sub_data('ALL')
         data['annotation'] = ['' for x in range(len(data))]
 
-        self._volcano_plot(data, title='all drugs')
+        self._volcano_plot(data, title='all drugs all features')
         self.figtools.savefig("volcano_all.png")
 
     def _get_fdr_from_pvalue_interp(self, pvalue):
@@ -271,7 +271,7 @@ class VolcanoANOVA(object):
 
     def _get_volcano_sub_data(self, mode, target=None):
         # Return data needed for each plot
-        # TODO could be simplified but works for now 
+        # TODO could be simplified but works for now
 
         # groups created in the constructor once for all
         if mode == self._colname_drugid:
@@ -390,12 +390,14 @@ class VolcanoANOVA(object):
         ax = fig.gca()
         X = [easydev.precision(x, digit=2) for x in signed_effects]
         Y = [easydev.precision(y, digit=2) for y in Y]
-
+        X +=[-1]
+        Y+=[70]
         # black markers will have the same size
         # and will not be labelled
         scatter = ax.scatter(X, Y, s=markersize,
                 alpha=0.3, c=colors,
                 linewidth=0, picker=True)
+        scatter.set_zorder(11)
         #pylab.plot(list(signed_effects), Y, markersize=5,
         #            alpha=0.4, c='grey',
         #            linewidth=0)
@@ -407,7 +409,6 @@ class VolcanoANOVA(object):
         l = max([m, M]) * 1.1
         pylab.xlim([-l, l])
         ax.grid(color='white', linestyle='solid')
-
         #self.stats = self._get_volcano_global_data()
 
         fdr = self.settings.FDR_threshold
@@ -437,7 +438,7 @@ class VolcanoANOVA(object):
 
         ax.axvline(0, color='gray', alpha=0.5)
         axl = pylab.legend(loc='upper left')
-        axl.set_zorder(-1) # in case there is a circle behind the legend.
+        axl.set_zorder(10) # in case there is a circle behind the legend.
 
         #self.ax = ax
         #self.axx = ax.twinx()
@@ -454,9 +455,9 @@ class VolcanoANOVA(object):
         # For the static version
         title_handler = pylab.title("%s" % title.replace("_","  "))
         labels = []
- 
+
         # This code allows the ipython user to click on the matplotlib figure
-        # to get informatio about the durg and feature of a given circles.
+        # to get information about the drug and feature of a given circles.
         def onpick(event):
             self.event = event
             ind = event.ind[0]
@@ -475,7 +476,7 @@ class VolcanoANOVA(object):
         # TODO: for the first 1 to 2000 entries ?
         import mpld3
         labels = []
-        for i, row in data[['Drug','Feature', 'FDR']].iterrows():
+        for i, row in data[['Drug', 'Feature', 'FDR']].iterrows():
             label = row.to_frame()
             label.columns = ['Row {0}'.format(i)]
             # .to_html() is unicode; so make leading 'u' go away with str()
@@ -486,14 +487,38 @@ class VolcanoANOVA(object):
         th {  color: #ffffff;  background-color: #aaaaaa;  }
         td { color: blue; background-color: #cccccc; }
         """
-
         tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
                 css=css)
         mpld3.plugins.connect(fig, tooltip)
 
-        #mpld3.display()
-
         self.scatter = scatter
         self.current_fig = fig
-        #fh = open('test.html', 'w'); mpld3.save_html(v.current_fig, fh);
-        #fh.close()
+
+    def mpld3_to_html(self):
+        """This require to call a plotting figure before hand"""
+        from gdsctools import gdsctools_data
+        js_path1 = gdsctools_data('d3.v3.min.js', where='js')
+        js_path2 = gdsctools_data('mpld3.v0.2.js', where='js')
+        try:
+            import mpld3
+            # mpld3 is great but there are a couple of issues
+            # 1 - legend zorder is not used so dots may be below the legend,
+            #     hence we set the framealpha =0.5
+            # 2 - % character even though there well interpreted in matploltib
+            #     using \%, they are not once parsed by mpld3. So, here
+            #     we remove the \ character
+            axl = pylab.legend(loc='upper left', framealpha=0.7, borderpad=1)
+            axl.set_zorder(10) # in case there is a circle behind the legend.
+            texts = [this.get_text() for this in axl.get_texts()]
+
+            for i, text in enumerate(texts):
+                text = text.replace("\\%", "%")
+                text+="  "
+                axl.get_texts()[i].set_text(text)
+
+            htmljs = mpld3.fig_to_html(self.current_fig,
+                            d3_url=js_path1,
+                            mpld3_url=js_path2)
+        except:
+            htmljs = ""
+        return htmljs

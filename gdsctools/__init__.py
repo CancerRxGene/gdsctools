@@ -14,6 +14,8 @@ Please See documentation on gdsctools.readthedocs.org
 
 """
 import pkg_resources
+import easydev
+
 try:
     version = pkg_resources.require("gdsctools")[0].version
     __version__ = version
@@ -34,13 +36,23 @@ from gdsctools.settings import ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
 
-from easydev import browser
 
+def gdsctools_data(filename, where=None):
+    """Simple utilities to retrieve data sets from gdsctools/share directory"""
+    import os
+    share = easydev.get_shared_directory_path('gdsctools') 
+    share = os.sep.join([share, 'data'])
+    # in the code one may use / or \ 
+    if where:
+        filename = os.sep.join([share, where, filename])
+    else:
+        filename = os.sep.join([share, filename])
+    return filename
 
 
 def gdsctools_help(name=None):
     if name is None:
-        browser.browse('http://gdsctools.readthedocs.org')
+        easydev.onweb('http://gdsctools.readthedocs.org')
     else:
         url = "http://gdsctools.readthedocs.org/en/master/references.html"
         #url += "#" + name.__module__ + "."+ name
@@ -48,5 +60,5 @@ def gdsctools_help(name=None):
             url += '#module-' + name.__module__
         except:
             print("Not a known gdsctools class or function")
-        browser.browse(url)
+        easydev.onweb(url)
 

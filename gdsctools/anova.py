@@ -1634,6 +1634,7 @@ class HTMLPageMANOVA(ReportMAIN):
 #                                                                            #
 ##############################################################################
 
+
 class Association(ReportMAIN):
     def __init__(self, gdsc, drug=None, feature=None,
             fdr=-1, assoc_id=-1):
@@ -1708,11 +1709,9 @@ class HTMLOneFeature(ReportMAIN):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_feature(self.feature)
         v.figtools.savefig('volcano_{}.png'.format(self.feature))
-        try:
-            import mpld3
-            htmljs = mpld3.fig_to_html(v.current_fig)
-        except:
-            htmljs = ""
+
+        htmljs = v.mpld3_to_html()
+
         fh = open(self.directory + os.sep +
                 "volcano_{}.html".format(self.feature), "w")
         fh.write(htmljs)
@@ -1762,11 +1761,7 @@ class HTMLOneDrug(ReportMAIN):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_drug(self.drug)
         v.figtools.savefig('volcano_{}.png'.format(self.drug))
-        try:
-            import mpld3
-            htmljs = mpld3.fig_to_html(v.current_fig)
-        except:
-            htmljs = ""
+        htmljs = v.mpld3_to_html()
         fh = open(self.directory + os.sep +
                 "volcano_{}.html".format(self.drug),"w")
         fh.write(htmljs)
@@ -1820,11 +1815,7 @@ class HTMLPageMain(ReportMAIN):
         v = VolcanoANOVA(self.results.df, settings=self.settings)
         v.selector(v.df, 1000, 1000, inplace=True)
         v.volcano_plot_all()
-        try:
-            import mpld3
-            htmljs = mpld3.fig_to_html(v.current_fig)
-        except:
-            htmljs = ""
+        htmljs = v.mpld3_to_html()
         fh = open(self.directory + os.sep + "volcano_all_js.html","w")
         fh.write(htmljs)
         fh.close()
