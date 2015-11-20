@@ -123,16 +123,22 @@ class Reader(object):
     def read_data(self, filename):
         # remove possible white spaces in the header's names
         if ".csv" in filename:
-            rawdf = pd.read_csv(filename, sep=",")
+            rawdf = pd.read_csv(filename, sep=",", comment="#")
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         elif ".tsv" in filename or '.txt' in filename: # txt not supported
             # officialy but txt file from previous run were interepreted as tsv
-            rawdf = pd.read_csv(filename, sep="\t")
+            rawdf = pd.read_csv(filename, sep="\t", comment="#")
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         else:
             raise ValueError("Only file ending in .csv or .csv.gz or .tsv"+
                 " or .tsv.gz will be interpreted.")
-        self.df = rawdf
+
+        # let us drop columns that are unnamed and print information
+        columns = [x for x in rawdf.columns if x.startswith('Unnamed')]
+        if len(columns) > 0:
+            print('%s  unnamed columns found and removed. ' % len(columns) + 
+                'Please fix your input file.')
+        self.df = rawdf.drop(columns, axis=1)
 
     def _interpret(self):
         pass
@@ -191,7 +197,6 @@ class Reader(object):
         return all(self.df.fillna(0) == other.df.fillna(0))
 
 
-
 class CosmicRows(object):
     """Parent class to IC50 and GenomicFeatures to handle cosmic identifiers"""
 
@@ -210,7 +215,6 @@ class CosmicRows(object):
         cosmics = easydev.to_list(cosmics)
         tokeep = [x for x in self.cosmicIds if x not in cosmics]
         self.cosmicIds = tokeep
-
 
 
 class IC50(Reader, CosmicRows):
@@ -273,7 +277,7 @@ class IC50(Reader, CosmicRows):
 
     """
     cosmic_name = 'COSMIC ID'
-    def __init__(self, filename='ANOVA_input.txt'):
+    def __init__(self, filename, drug_prefix=''):
         """.. rubric:: Constructor
 
         :param filename: input filename of IC50s. May also be an instance
@@ -288,19 +292,29 @@ class IC50(Reader, CosmicRows):
         self.check()
 
     def _interpret(self):
+        # if there is at least one column that starts with Drug or drug or 
+        # DRUG or variant then all other columns are dropped except "COSMIC ID"
         if len(self.df) == 0:
             return
+
+        columns = []
+        drug_prefix = ''
+        for col in self.df.columns:
+            if col.startswith('Drug_'):
+                drug_prefix = 'Drug'
 
         # If the data has not been interpreted, COSMIC column should be
         # found in the column and set as the index
         if self.cosmic_name in self.df.columns:
-            columns = [self.cosmic_name]
-            columns += [x for x in self.df.columns if x.startswith('Drug')]
-            self.df = self.df[columns]
             self.df.set_index(self.cosmic_name, inplace=True)
+            columns = [x for x in self.df.columns 
+                    if x.startswith(drug_prefix)]
+            self.df = self.df[columns]
         # If already interpreted, COSMIC name should be the index already.
         elif self.df.index.name == self.cosmic_name:
-            columns = [x for x in self.df.columns if x.startswith('Drug')]
+            columns = [x for x in self.df.columns 
+                    if x.startswith(drug_prefix)]
+            columns = list(set(columns))
             self.df = self.df[columns]
         # Otherwise, raise an error
         else:
@@ -388,11 +402,11 @@ class IC50(Reader, CosmicRows):
     def __add__(self, other):
         print("Experimantal. combines IC50 via COSMIC IDs")
         df = pd.concat([self.df, other.df], ignore_index=True)
-        df = df.drop_duplicates(cols=['COSMIC ID'])
+        df = df.drop_duplicates(cols=[self.cosmic_name])
         return df
 
     def copy(self):
-        new = IC50(self)
+        new = IC50(self, drug_prefix=self.drug_prefix)
         return new
 
 
@@ -623,7 +637,6 @@ class PANCAN(Reader):
         self.session = RSession()
         self.session.run('load("%s")' %self._filename)
         self.df = self._read_matrix_from_r('MoBEM')
-
 
 
 class Extra(Reader):
