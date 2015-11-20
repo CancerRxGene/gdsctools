@@ -31,7 +31,7 @@ IC50
 
 The most important input is the file that contains the IC50s. That input file
 contains a set of row where each row must have 1 unique COSMIC identifier and a
-set of IC50s; one IC50 per drug. So, the compulsary header must indicate the name of the drugs and the column that contains the cosmic identifiers, which must be named **COSMIC ID** (note the space). All columns that starts with **Drug** are interpreted as the IC50s for each drug considered. Othe columns are ignored. The order of the columns is not important. Here is a valid example::
+set of IC50s; one IC50 per drug. So, the compulsary header must indicate the name of the drugs and the column that contains the cosmic identifiers, which must be named **COSMIC ID** (note the space). All columns that starts with **Drug** are interpreted as the IC50s for each drug considered. Other columns are ignored. The order of the columns is not important. Here is a valid example::
 
     COSMIC ID, Drug_1_IC50, Drug_20_IC50
     111111,    0.5,         0.8
@@ -46,6 +46,13 @@ If you save that example in a file, you can read it with the
     >>> r = IC50('source/ic50_tiny.csv')
     >>> r.drugIds
     ['Drug_1_IC50', 'Drug_20_IC50']
+
+.. note:: column without a name are ignored.
+.. note:: We encourage user to starts the column's name with the prefix
+    **Drug_**. However, would you decide to not follow that convention, the
+    IC50 reader will still work. Note, however, that if at least one column 
+    starts  with **Drug_**, then all other columns will be ignored. This can be
+    useful to store IC50s and genomic features in the same file for example.
 
     
 .. seealso:: developers should look at the references for more 
