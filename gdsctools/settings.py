@@ -82,7 +82,7 @@ class ANOVASettings(AttrDict):
     minimum_nonna_ic50      6         Minimum number of IC50 required
                                       to perform an analysis for a
                                       given drug.
-    fontsize                20        Used in some plots for labels
+    fontsize                25        Used in some plots for labels
     FDR_threshold           25        FDR threshold used in volcano
                                       plot and significant hits
     pvalue_threshold        np.inf    Used to select significant hits
@@ -117,7 +117,7 @@ class ANOVASettings(AttrDict):
         self.low_memory = False # False means this will be 10-20 faster
 
         # Visualisation and HTML related ---------------------
-        self.fontsize = 20
+        self.fontsize = 25
         self.FDR_threshold = 25
         self.pvalue_threshold = np.inf
         self.directory = 'html_gdsc_anova'
