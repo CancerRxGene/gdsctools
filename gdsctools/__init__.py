@@ -31,7 +31,7 @@ except:
 
 
 from gdsctools.readers import IC50, GenomicFeatures, DrugDecoder
-from gdsctools.anova import ANOVA, ANOVAReport 
+from gdsctools.anova import ANOVA, ANOVAReport , ANOVAResults
 from gdsctools.settings import ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
