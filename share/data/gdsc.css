@@ -346,9 +346,10 @@ div.footer {
     max-height:20%;
 }
 
+
 div.footer img{
     margin:3px;
-    width:150px;
+    width:180px;
     height:60px;
     max-height:20%;
     max-width:30%;
@@ -360,6 +361,7 @@ div.logo{
     float: right;
     max-width:55%;
 }
+
 
 div.copyright{
     margin:0px;
