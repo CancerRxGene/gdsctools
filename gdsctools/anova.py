@@ -121,6 +121,7 @@ class ANOVAResults(object):
 
     def to_csv(self, filename):
         """Save dataframe into a file using comma separated values"""
+        assert filename.enswith('.csv'), "filename should end in .csv"
         self.df.to_csv(filename, sep=',', index=False)
 
     def read_csv(self, filename):
@@ -130,6 +131,16 @@ class ANOVAResults(object):
         """
         self.reader = readers.Reader(filename)
         self._df = self.reader.df
+
+    def __len__(self):
+        return len(self.df)
+
+    def _get_drugIds(self):
+        if len(self) == 0:
+            return []
+        else:
+            return self.df[self.drug_id].unique()
+    drugIds = property(_get_drugIds)
 
 
 class ANOVAReport(object):
@@ -763,6 +774,7 @@ class ANOVA(object): #Logging):
 
         self.ic50.drop_cosmic(list(unknowns))
         self.features.cosmicIds  = self.ic50.cosmicIds
+        #self.cosmicIds = self.ic50.cosmicIds
 
         #: an instance of :class:`~gdsctools.settings.ANOVASettings`
         self.settings = ANOVASettings()
@@ -781,7 +793,6 @@ class ANOVA(object): #Logging):
 
         # must be called if ic50 or features are changed.
         self._init()
-
 
     def _autoset_msi(self):
         # if the number of pos. (or neg.) factors is not large enough then
@@ -889,13 +900,13 @@ class ANOVA(object): #Logging):
         tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
         self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
 
-
     def _get_cosmics(self):
         return self.ic50.cosmicIds
     def _set_cosmics(self, cosmics):
         self.ic50.cosmicIds = cosmics
         self.features.cosmicIds = cosmics
         self._init()
+        self.individual_anova = {}
     cosmicIds = property(_get_cosmics, _set_cosmics,
         doc="get/set the cosmic identifiers in the IC50 and feature matrices")
 
@@ -904,6 +915,7 @@ class ANOVA(object): #Logging):
     def _set_drug_names(self, drugs):
         self.ic50.drugIds = drugs
         self._init()
+        # not need to init this again ? self.individual_anova = {}
     drugIds = property(_get_drug_names, _set_drug_names,
             doc="Get/Set drug identifers")
 
@@ -912,6 +924,7 @@ class ANOVA(object): #Logging):
     def _set_features_names(self, features):
         self.features.features = features
         self._init()
+        self.individual_anova = {}
     feature_names = property(_get_feature_names, _set_features_names,
             doc="Get/Set feature names")
 
@@ -938,9 +951,9 @@ class ANOVA(object): #Logging):
         counter = 0
         for drug in self.ic50.drugIds:
             for feature in self.features.features[3:]:
-                status = self._get_one_drug_one_feature_data(drug, feature,
+                dd = self._get_one_drug_one_feature_data(drug, feature,
                         diagnostic_only=True)
-                if status is True:
+                if dd.status is True:
                     feasible += 1
             counter += 1
             pb.animate(counter)
@@ -952,11 +965,22 @@ class ANOVA(object): #Logging):
                 'percentage_feasible_tests': float(feasible)/n_combos*100}
         return results
 
+    """def get_image(self, name):
+        data = np.zeros((len(self.drugIds), len(self.feature_names)))
+
+        for i, drug in enumerate(self.drugIds):
+            for j, feature in enumerate(self.feature_names[3:]):
+                dd = self._get_one_drug_one_feature_data(drug, feature,
+                        diagnostic_only=True)
+                data[i,j] = dd[name]
+        data = pd.DataFrame(data, columns=self.feature_names,
+                index=self.drugIds)
+        return data 
+    """
     #@do_profile()
     def _get_one_drug_one_feature_data(self, drug_name, feature_name,
             diagnostic_only=False):
         """
-
         return: a dictionary with relevant information. There is also
             a test to see if the data can be analysis or not. This is
             stored ad a boolean value with key called *status*.
@@ -981,7 +1005,6 @@ class ANOVA(object): #Logging):
         #dd.masked_features = self.features.df[feature_name][mask]
         #dd.masked_tissue = self.tissue_factor[mask]
         #dd.masked_msi = self.msi_factor[mask]
-
 
         # Amother version using a dictionary instead of dataframer is actually
         # 2-3 times faster. It requires to transform the dataframe into a
@@ -1026,6 +1049,10 @@ class ANOVA(object): #Logging):
         dd.Npos = len(dd.positives)
         dd.Nneg = len(dd.negatives)
 
+        # additional information
+        dd.feature_name = feature_name
+        dd.drug_name = drug_name
+
         # FIXME is False does not give the same results as == False
         # in the test test_anova.py !!
         if (A == False) and (B == False):
@@ -1035,9 +1062,9 @@ class ANOVA(object): #Logging):
             dd.status = True
 
         if diagnostic_only is True:
-            return dd.status
+            return dd
 
-        # compute mean and std of pos and neg sets; using mean() takes 15us and
+        # compute mean and std of pos and neg sets;using mean() takes 15us and
         # using the already computed sum and N takes 5us
         pos_sum = dd.positives.sum()
         neg_sum = dd.negatives.sum()
@@ -1066,9 +1093,6 @@ class ANOVA(object): #Logging):
         csd /= dd.Npos + dd.Nneg - 2.  # make sure this is float
         dd.effectsize_ic50 = md / np.sqrt(csd)
 
-        # additional information
-        dd.feature_name = feature_name
-        dd.drug_name = drug_name
 
         # Note that equal_var is a user parameter and affects
         # results. The ANOVA_results.txt obtained from SFTP
@@ -1518,6 +1542,7 @@ class ANOVA(object): #Logging):
         pylab.shuffle(drug_names)
         if animate is True:
             pb.animate(0)
+
         for i, drug_name in enumerate(drug_names):
             # TODO: try/except
             if drug_name in self.individual_anova.keys():
@@ -1527,6 +1552,9 @@ class ANOVA(object): #Logging):
                 self.individual_anova[drug_name] = res
             if animate is True:
                 pb.animate(i+1)
+
+        if len(self.individual_anova) == 0:
+            return ANOVAResults()
 
         df = pd.concat(self.individual_anova, ignore_index=True)
 
@@ -1554,7 +1582,7 @@ class ANOVA(object): #Logging):
 
         return results
 
-    def add_pvalues_correction(self, df):
+    def add_pvalues_correction(self, df, colname='FEATURE_ANOVA_pval'):
         """Add the corrected pvalues column in a dataframe based on pvalues
 
         The default method (FDR correction) is stored in
@@ -1568,7 +1596,7 @@ class ANOVA(object): #Logging):
             return
 
         # extract pvalues
-        data = df['FEATURE_ANOVA_pval'].values
+        data = df[colname].values
 
         # set the method and compute new pvalues
         self.multiple_testing.method = self.settings.pval_correction_method
@@ -1822,11 +1850,14 @@ class HTMLPageMain(ReportMAIN):
 
         self.jinja['volcano'] = """
             <h3></h3>
-            <img alt="volcano plot for all associations"
-                src="volcano_all.png">
+            <a href="volcano_all_js.html">
+                <img alt="volcano plot for all associations"
+                    src="volcano_all.png">
+            </a>
             <br/>
-            <p> A javascript version is available <a
-                href="volcano_all_js.html">here</a></p>
+            <p> A javascript version is available 
+                <a href="volcano_all_js.html">here</a> (
+                or click on the image).</p>
         """
 
         # MANOVA link
@@ -1843,6 +1874,15 @@ class HTMLPageMain(ReportMAIN):
         df_features.to_csv(self.directory + os.sep + filename, sep=',')
 
         # drug summary
+        not_tested = [x for x in self.results.gdsc.drugIds if x not in 
+                self.results.df.DRUG_ID.unique()]
+        if len(not_tested) > 0:
+            not_tested = """Those drugs have not been analysed due to 
+            lack of valid data points: """ + ", ".join(not_tested)
+        else:
+            not_tested = ""
+        self.jinja['drug_not_tested'] = not_tested
+
         df_drugs = self.results.drug_summary(filename="drug_summary.png")
         get_name = self.results.gdsc.drug_decoder.get_name
         if len(self.results.gdsc.drug_decoder.df) > 0:
@@ -1865,12 +1905,22 @@ class HTMLPageMain(ReportMAIN):
         # let us also add number of associations computed
         counts = [len(groups.groups[k]) for k in df.DRUG_ID]
         df['Number of associations computed'] = counts
+        groups = self.results.get_significant_set().groupby('DRUG_ID').groups
+        count = []
+        for drug in df['DRUG_ID'].values:
+            if drug in groups.keys():
+                count.append(len(groups[drug]))
+            else:
+                count.append(0)
+        df['hits'] = count
 
         # add another set of drug_id but sorted in alpha numerical order
         table = HTMLTable(df, 'drugs')
         table.add_href('DRUG_ID')
         table.df.columns = [x.replace('ANOVA_FEATURE_FDR',
             'mean ANOVA FEATURE FDR') for x in table.df.columns]
+        table.add_bgcolor('hits', mode='max',
+                cmap=cmap_builder('white', 'orange', 'red'))
 
         self.jinja['drug_table'] = table.to_html(escape=False,
                 header=True, index=False)
