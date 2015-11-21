@@ -459,6 +459,8 @@ class GenomicFeatures(Reader, CosmicRows):
         package that is made of 1001 cell lines times 680 features.
 
         """
+        self.shift = 3 # this should be used to select features ignoring 
+        # the 3 compulsary column
         # first reset the filename to the shared data (if not provided)
         if filename is None:
             from gdsctools.datasets import genomic_features
@@ -606,6 +608,8 @@ class GenomicFeatures(Reader, CosmicRows):
         self._cleanup()
 
     def _cleanup(self, required_features=0):
+        # FIXME: there is view/copy warning here in pandas. it should be fixed
+        # or may have side-effects
         to_ignore = self._required_names
         # create a view ignoring the informative columns
         view = self.df[[x for x in self.df.columns if x not in to_ignore]]
@@ -616,7 +620,7 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def __repr__(self):
         Nc = len(self.cosmicIds)
-        Nf = len(self.features) - 3
+        Nf = len(self.features) - self.shift
         Nt = len(set(self.tissues))
         return "GenomicFeatures <Nc={0}, Nf={1}, Nt={2}>".format(Nc, Nf, Nt)
 
