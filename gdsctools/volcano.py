@@ -386,12 +386,11 @@ class VolcanoANOVA(object):
 
         pylab.close(1)
         fig = pylab.figure(num=1)
+        fig.set_size_inches(10,10)
         ax = pylab.axes(axisbg='#EEEEEE')
         ax = fig.gca()
         X = [easydev.precision(x, digit=2) for x in signed_effects]
         Y = [easydev.precision(y, digit=2) for y in Y]
-        X +=[-1]
-        Y+=[70]
         # black markers will have the same size
         # and will not be labelled
         scatter = ax.scatter(X, Y, s=markersize,
@@ -453,7 +452,8 @@ class VolcanoANOVA(object):
         #self.axx.set_ylabel('FDR \%', fontsize=self.settings.fontsize)
 
         # For the static version
-        title_handler = pylab.title("%s" % title.replace("_","  "))
+        title_handler = pylab.title("%s" % title.replace("_","  "),
+                fontsize=self.settings.fontsize)
         labels = []
 
         # This code allows the ipython user to click on the matplotlib figure
@@ -483,6 +483,7 @@ class VolcanoANOVA(object):
             labels.append(str(label.to_html(header=False)))
 
         css = """
+        svg.mpld3-figure { border: 2px black solid;margin:10px;}
         table{  font-size:0.8em;  }
         th {  color: #ffffff;  background-color: #aaaaaa;  }
         td { color: blue; background-color: #cccccc; }
@@ -507,7 +508,7 @@ class VolcanoANOVA(object):
             # 2 - % character even though there well interpreted in matploltib
             #     using \%, they are not once parsed by mpld3. So, here
             #     we remove the \ character
-            axl = pylab.legend(loc='upper left', framealpha=0.7, borderpad=1)
+            axl = pylab.legend(loc='upper left', framealpha=0.8, borderpad=1)
             axl.set_zorder(10) # in case there is a circle behind the legend.
             texts = [this.get_text() for this in axl.get_texts()]
 
@@ -521,4 +522,4 @@ class VolcanoANOVA(object):
                             mpld3_url=js_path2)
         except:
             htmljs = ""
-        return htmljs
+        return """<div class="jsimage"> """ + htmljs + "</div>"
