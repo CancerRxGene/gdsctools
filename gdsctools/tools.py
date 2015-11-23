@@ -59,14 +59,24 @@ class Savefig(object):
             directory = self.settings.directory
         except:
             directory = self.directory
-
         filename = directory + os.sep + name
+
         fig = pylab.gcf()
+        oldsize = fig.get_size_inches()
+
         if size_inches is not None:
             fig.set_size_inches(size_inches)
+        else:
+            fig.set_size_inches(10, 10)
         if self.verbose:
             print("saving file in %s" % filename)
+
         pylab.savefig(filename, **kargs)
+
+        # reset to original size
+        fig.set_size_inches(*oldsize)
+        fig.canvas.draw()
+
 
 
 class Logistic(object):
