@@ -423,7 +423,6 @@ class ANOVAReport(object):
             self.figtools.directory = self.settings.directory
             self.figtools.savefig(filename, size_inches=(12, 14), 
                     bbox_inches='tight')
-
         return df_count
 
     def feature_summary(self, filename=None, top=50, fontsize=15):
@@ -487,7 +486,7 @@ class ANOVAReport(object):
         ax = pylab.gca()
         self.labels = labels
         ax.set_yticks([x + 0.5 for x in ind])
-        ax.set_yticklabels(labels, fontsize=14)
+        ax.set_yticklabels(labels, fontsize=12)
         pylab.grid()
         pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
                     "\nassociated with drug  response", 
@@ -1741,14 +1740,8 @@ class HTMLOneFeature(ReportMAIN):
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_feature(self.feature)
-        v.figtools.savefig('volcano_{}.png'.format(self.feature))
+        v.savefig_and_js('volcano_{}'.format(self.feature))
 
-        htmljs = v.mpld3_to_html()
-
-        fh = open(self.directory + os.sep +
-                "volcano_{}.html".format(self.feature), "w")
-        fh.write(htmljs)
-        fh.close()
         # See https://github.com/CancerRxGene/gdsctools/issues/79
         v.current_fig.canvas.mpl_disconnect(v.cid)
         mpld3.plugins.clear(v.current_fig)
@@ -1796,14 +1789,8 @@ class HTMLOneDrug(ReportMAIN):
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_drug(self.drug)
-        v.figtools.savefig('volcano_{}.png'.format(self.drug),
-                size_inches=(10,10)
-                )
-        htmljs = v.mpld3_to_html()
-        fh = open(self.directory + os.sep +
-                "volcano_{}.html".format(self.drug),"w")
-        fh.write(htmljs)
-        fh.close()
+        v.savefig_and_js('volcano_{}'.format(self.drug), size_inches=(10,10))
+
         # See https://github.com/CancerRxGene/gdsctools/issues/79
         v.current_fig.canvas.mpl_disconnect(v.cid)
         mpld3.plugins.clear(v.current_fig)
@@ -1855,12 +1842,10 @@ class HTMLPageMain(ReportMAIN):
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
         v = VolcanoANOVA(self.results.df, settings=self.settings)
-        v.selector(v.df, 1000, 1000, inplace=True)
+        v.selector(v.df, 1500, 1500, inplace=True)
+        
         v.volcano_plot_all()
-        htmljs = v.mpld3_to_html()
-        fh = open(self.directory + os.sep + "volcano_all_js.html","w")
-        fh.write(htmljs)
-        fh.close()
+        v.savefig_and_js("volcano_all_js")
 
         self.jinja['volcano'] = """
             <h3></h3>

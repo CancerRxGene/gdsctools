@@ -20,6 +20,8 @@ The :class:`VolcanoANOVA` is used in the creation of the report but
 may be used by a usr in a Python shell.
 
 """
+import os
+
 import pandas as pd
 import pylab
 import numpy as np
@@ -184,8 +186,7 @@ class VolcanoANOVA(object):
         pb = Progress(len(drugs), 1)
         for i, drug in enumerate(drugs):
             self.volcano_plot_one_drug(drug)
-            self.figtools.savefig("volcano_%s.png" % drug,
-                    size_inches=(10, 10))
+            self.savefig_and_js("volcano_%s.png" % drug, size_inches=(10, 10))
             pb.animate(i+1)
 
             # This prevent memory leak.
@@ -202,7 +203,7 @@ class VolcanoANOVA(object):
         pb = Progress(len(features), 1)
         for i, feature in enumerate(features):
             self.volcano_plot_one_feature(feature)
-            self.figtools.savefig("volcano_%s.png" % feature,
+            self.savefig_and_js("volcano_%s.png" % feature, 
                     size_inches=(10, 10))
             pb.animate(i+1)
 
@@ -221,8 +222,7 @@ class VolcanoANOVA(object):
         data['annotation'] = ['' for x in range(len(data))]
 
         self._volcano_plot(data, title='all drugs all features')
-        self.figtools.savefig("volcano_all.png",
-                    size_inches=(10, 10))
+        self.savefig_and_js("volcano_all.png", size_inches=(10, 10))
 
     def _get_fdr_from_pvalue_interp(self, pvalue):
         """Here, FDR are computed using an interpolation"""
@@ -567,5 +567,20 @@ class VolcanoANOVA(object):
         except:
             htmljs = ""
         return """<div class="jsimage"> """ + htmljs + "</div>"
+
+    def savefig_and_js(self, filename, size_inches=(10,10)):
+        # Save the PNG first. The savefig automatically set the size
+        # to a defined set and back to original figsize.
+        self.figtools.savefig(filename + '.png', size_inches=size_inches)
+
+        # now the javascript. 
+        fig = self.current_fig
+        oldsize = fig.get_size_inches()
+        fig.set_size_inches(size_inches)
+        htmljs = self.mpld3_to_html()
+        fh = open(self.settings.directory + os.sep + filename + ".html", "w")
+        fh.write(htmljs)
+        fh.close()
+        fig.set_size_inches(*oldsize)
 
 
