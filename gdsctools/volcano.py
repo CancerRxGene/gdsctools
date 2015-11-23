@@ -26,7 +26,6 @@ import pandas as pd
 import pylab
 import numpy as np
 import easydev
-import mpld3
 
 
 from easydev import Progress, AttrDict
@@ -191,7 +190,11 @@ class VolcanoANOVA(object):
 
             # This prevent memory leak.
             self.current_fig.canvas.mpl_disconnect(self.cid)
-            mpld3.plugins.clear(self.current_fig)
+            try:
+                import mpld3
+                mpld3.plugins.clear(self.current_fig)
+            except:
+                pass
 
     def volcano_plot_all_features(self):
         """Create a volcano plot for each feature and save in PNG files
@@ -209,7 +212,11 @@ class VolcanoANOVA(object):
 
             # This prevent memory leak.
             self.current_fig.canvas.mpl_disconnect(self.cid)
-            mpld3.plugins.clear(self.current_fig)
+            try:
+                import mpld3
+                mpld3.plugins.clear(self.current_fig)
+            except:
+                pass
 
     def volcano_plot_all(self):
         """Create an overall volcano plot for all associations
@@ -531,9 +538,12 @@ class VolcanoANOVA(object):
         th {  color: #ffffff;  background-color: #aaaaaa;  }
         td { color: blue; background-color: #cccccc; }"""
 
-        tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
+        try:
+            tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
                 css=css)
-        mpld3.plugins.connect(fig, tooltip)
+            mpld3.plugins.connect(fig, tooltip)
+        except:
+            pass
         self.scatter = scatter
         self.current_fig = fig
         # not sure is this is required. could be a memory leak here
@@ -560,7 +570,7 @@ class VolcanoANOVA(object):
                 text = text.replace("\\%", "%")
                 text+="  "
                 axl.get_texts()[i].set_text(text)
-
+            import mpld3
             htmljs = mpld3.fig_to_html(self.current_fig,
                             d3_url=js_path1,
                             mpld3_url=js_path2)

@@ -22,7 +22,6 @@ import pandas as pd
 import scipy
 import pylab
 import numpy as np
-import mpld3
 
 from statsmodels.formula.api import OLS
 
@@ -1730,7 +1729,11 @@ class HTMLOneFeature(ReportMAIN):
 
         # See https://github.com/CancerRxGene/gdsctools/issues/79
         v.current_fig.canvas.mpl_disconnect(v.cid)
-        mpld3.plugins.clear(v.current_fig)
+        try:
+            import mpld3
+            mpld3.plugins.clear(v.current_fig)
+        except:
+            pass
 
     def _create_report(self, onweb=True):
         self.create_pictures()
@@ -1779,7 +1782,11 @@ class HTMLOneDrug(ReportMAIN):
 
         # See https://github.com/CancerRxGene/gdsctools/issues/79
         v.current_fig.canvas.mpl_disconnect(v.cid)
-        mpld3.plugins.clear(v.current_fig)
+        try:
+            import mpld3
+            mpld3.plugins.clear(v.current_fig)
+        except:
+            pass
 
 
     def _create_report(self, onweb=True):

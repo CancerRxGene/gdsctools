@@ -1,3 +1,2 @@
 easydev
 colormap
-mpld3
