@@ -3,7 +3,7 @@ from gdsctools.readers import Reader
 from easydev import TempFile
 from gdsctools import ic50_test
 import pandas as pd
-    
+ 
 from gdsctools.datasets import testing
 
 
@@ -66,13 +66,14 @@ def test_read_ic50():
     ic = IC50(testing['ic50_test_header_mixed_drug_prefix'].location)
     assert ic.drugIds == ['Drug_1_IC50', 'Drug_2_IC50']
 
+
 def test_read_gf():
     # Reads a default file
     r = GenomicFeatures()
 
     # we can also instanciate from another GenomicFeatures instance
     r = GenomicFeatures(r)
-    
+ 
     # we can also instanciate from a valid dataframe
     r = GenomicFeatures(r.df)
 
@@ -98,7 +99,6 @@ def test_read_gf():
     gf2 = GenomicFeatures(testing.genomic_features_csv)
 
     assert gf2 == gf1
-
 
 
 def _test_pancan_reader_rdata():
