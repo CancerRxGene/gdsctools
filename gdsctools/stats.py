@@ -121,7 +121,6 @@ class MultipleTesting(object):
         .. note:: in that example, the qvalue and FDR are identical, but 
             this is not true in general.
 
-        
         """
         if methods is None:
             methods = self.valid_methods
@@ -134,6 +133,7 @@ class MultipleTesting(object):
         pylab.legend(loc='best')
         pylab.ylabel('corrected pvalues')
         pylab.grid()
+
 
 def cohens(x, y):
     r"""Effect size metric through Cohen's *d* metric
