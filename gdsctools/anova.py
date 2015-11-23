@@ -38,8 +38,6 @@ from gdsctools.tools import Savefig
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
 
-#from cno.misc.profiler import do_profile
-
 
 __all__ = ['ANOVA', 'ANOVAResults', 'ANOVAReport']
 
@@ -54,9 +52,10 @@ class ANOVAResults(object):
     def __init__(self, filename=None):
         """.. rubric:: Constructor
 
-        :param str filename: Another ANOVAResults instance of a saved dataframe
-            that can be read by this class, that is a CSV with the official header
-            This parameter can also be set to None (default) and populated later..
+        :param str filename: Another ANOVAResults instance of a saved 
+            dataframe that can be read by this class, that is a CSV 
+            with the official header. This parameter can also be set 
+            to None (default) and populated later.
 
         """
         if filename is not None and isinstance(filename, str):
@@ -68,7 +67,8 @@ class ANOVAResults(object):
                 self._df = filename.df.copy()
             except:
                 self._df = filename.copy()
-            assert isinstance(self._df, pd.core.frame.DataFrame), "excepts a dataframe or filename"
+            assert isinstance(self._df, pd.core.frame.DataFrame), \
+                "excepts a dataframe or filename"
 
         # TODO: check the header of the dataframe
 
@@ -230,12 +230,6 @@ class ANOVAReport(object):
         return len(self.df[self._colname_drug_id].unique())
     n_drugs = property(_get_ndrugs, doc="return number of drugs")
 
-    def _get_nfeatures(self):
-        # !! -3 to remove sample name, tissue, msi columns
-        return len(self.gdsc.features.df.columns) - self.gdsc.features.shift
-    n_features = property(_get_nfeatures,
-            doc="return number of features ignoring MSI, sample and tissue")
-
     def read_drug_decoder(self, filename):
         """Read file with the DRUG information
 
@@ -261,10 +255,13 @@ class ANOVAReport(object):
 
     def diagnostics(self):
         """Return summary of the analysis (dataframe)"""
-        df = pd.DataFrame({'text':[], 'value':[]})
-        txt = []
+        df = pd.DataFrame({'text': [], 'value': []})
 
-        N = float(self.n_drugs*self.n_features)
+        n_features = len(self.gdsc.features.df.columns)
+        n_features -= self.gdsc.features.shift
+        n_drugs = len(self.df[self._colname_drug_id].unique())
+
+        N = float(n_drugs * n_features)
         ratio = float(self.n_tests)/(N) * 100
         ratio = easydev.precision(ratio, digit=2)
 
@@ -282,9 +279,9 @@ class ANOVAReport(object):
         df = self._df_append(df, ["", ""])
 
         msg = "Total number of tested drugs"
-        df = self._df_append(df, [msg, self.n_drugs])
+        df = self._df_append(df, [msg, n_drugs])
         msg = "Total number of genomic features used"
-        df = self._df_append(df, [msg, self.n_features])
+        df = self._df_append(df, [msg, n_features])
 
         msg = "Total number of screened cell lines"
         df = self._df_append(df, [msg, self.n_celllines])
@@ -309,12 +306,12 @@ class ANOVAReport(object):
 
         p1, p2 = self._get_pval_range()
         msg = 'Range of significant p-values'
-        value = "[{:.4}, {:.4}]".format(p1,p2)
+        value = "[{:.4}, {:.4}]".format(p1, p2)
         df = self._df_append(df, [msg, value])
 
         f1, f2 = self._get_fdr_range()
         msg = "Range of significant % FDRs"
-        value = '[{:.4} {:.4}]'.format(f1,f2)
+        value = '[{:.4} {:.4}]'.format(f1, f2)
         df = self._df_append(df, [msg, value])
         return df
 
@@ -333,17 +330,11 @@ class ANOVAReport(object):
     def _get_fdr_range(self):
         """Get FDR range of the significant hits"""
         name = self.varname_qval
-        data = self.df[name][(self.df[name]< self.settings.FDR_threshold)]
+        data = self.df[name][(self.df[name] < self.settings.FDR_threshold)]
         if len(data) == 0:
             return 0., 0.
         m, M = data.min(), data.max()
         return m, M
-
-    #def _get_pvalue_from_fdr(self):
-    #    qvals = df[self.varname_qval]
-    #    pvals = df[self.varname_pval]
-    #    pvalue = pvals[qvals < self.settings.FDR_threshold].max()
-    #    return pvalue
 
     def _set_sensible_df(self):
         # just an alias
@@ -674,6 +665,8 @@ class ANOVAReport(object):
         onweb(self.settings.directory + os.sep + 'index.html')
 
 
+# Not that Logging is not used: it is not pickable and prevent
+# multicore analysis.
 class ANOVA(object): #Logging):
     """ANOVA analysis of the IC50 vs Feature matrices
 
@@ -733,9 +726,6 @@ class ANOVA(object): #Logging):
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
-        #super(ANOVA, self).__init__(level=verbose)
-        #self.logging.info('Reading data and building data structures')
-
         # We first need to read the IC50 using a dedicated reader
         self.ic50 = readers.IC50(ic50)
 
@@ -770,7 +760,7 @@ class ANOVA(object): #Logging):
         unknowns = set(self.ic50.cosmicIds).difference(
                 set(self.features.cosmicIds))
         if len(unknowns) > 0:
-            print("WARNING:"+
+            print("WARNING: " +
                 "%s cosmic identifiers in your IC50 " % len(unknowns) +
                 "could not be found in the genomic feature matrix. "+
                 "They will be dropped. Consider using a user-defined " +
@@ -799,20 +789,23 @@ class ANOVA(object): #Logging):
         self._init()
 
     def _autoset_msi(self):
-        # if the number of pos. (or neg.) factors is not large enough then
-        # the MSI factor is not used
-        self.msi_factor = self.features.df['MS-instability Factor Value']
-        total = len(self.msi_factor)
-        positives = self.msi_factor.sum()
-        negatives = total - positives
+        if self.features.found_msi:
+            # if the number of pos. (or neg.) factors is not large enough then
+            # the MSI factor is not used
+            self.msi_factor = self.features.df['MS-instability Factor Value']
+            total = len(self.msi_factor)
+            positives = self.msi_factor.sum()
+            negatives = total - positives
 
-        # we must have at least 2 positives or 2 negative
-        # This is therefore a < comparison here below. See in
-        # _get_one_drug_one_feature_data that we use >= which
-        # is consistent.
-        if positives < self.settings.MSIfactorPopulationTh:
-            self.settings.includeMSI_factor = False
-        if negatives < self.settings.MSIfactorPopulationTh:
+            # we must have at least 2 positives or 2 negative
+            # This is therefore a < comparison here below. See in
+            # _get_one_drug_one_feature_data that we use >= which
+            # is consistent.
+            if positives < self.settings.MSIfactorPopulationTh:
+                self.settings.includeMSI_factor = False
+            if negatives < self.settings.MSIfactorPopulationTh:
+                self.settings.includeMSI_factor = False
+        else:
             self.settings.includeMSI_factor = False
 
     def _autoset_tissue(self):
@@ -849,7 +842,6 @@ class ANOVA(object): #Logging):
         self.ic50.df = self.ic50.df.ix[self.features.df.index]
         self._init()
 
-    #@profile
     def _init(self):
         # Some preprocessing to speed up data access
         ic50_parse = self.ic50.df.copy().unstack().dropna()
@@ -881,7 +873,8 @@ class ANOVA(object): #Logging):
                 self.features_dict[drug_name] = self.features.df.ix[indices]
 
             # MSI and tissue can be store
-            self.msi_dict[drug_name] = self.msi_factor.ix[indices]
+            if self.features.found_msi:
+                self.msi_dict[drug_name] = self.msi_factor.ix[indices]
             self.tissue_dict[drug_name] = self.tissue_factor.ix[indices]
 
         # some preprocessing for the OLS computation.
@@ -924,7 +917,8 @@ class ANOVA(object): #Logging):
             doc="Get/Set drug identifers")
 
     def _get_feature_names(self):
-        return self.features.features
+        shift = self.features.shift
+        return self.features.features[shift:]
     def _set_features_names(self, features):
         self.features.features = features
         self._init()
@@ -948,7 +942,7 @@ class ANOVA(object): #Logging):
 
         """
         n_drugs = len(self.ic50.drugIds)
-        n_features = len(self.features.features) - 3
+        n_features = len(self.features.features) - self.features.shift
         n_combos = n_drugs * n_features
         feasible = 0
         pb = Progress(n_drugs, 1)
@@ -969,19 +963,6 @@ class ANOVA(object): #Logging):
                 'percentage_feasible_tests': float(feasible)/n_combos*100}
         return results
 
-    """def get_image(self, name):
-        data = np.zeros((len(self.drugIds), len(self.feature_names)))
-
-        for i, drug in enumerate(self.drugIds):
-            for j, feature in enumerate(self.feature_names[3:]):
-                dd = self._get_one_drug_one_feature_data(drug, feature,
-                        diagnostic_only=True)
-                data[i,j] = dd[name]
-        data = pd.DataFrame(data, columns=self.feature_names,
-                index=self.drugIds)
-        return data 
-    """
-    #@do_profile()
     def _get_one_drug_one_feature_data(self, drug_name, feature_name,
             diagnostic_only=False):
         """
@@ -1025,14 +1006,15 @@ class ANOVA(object): #Logging):
             dd.masked_features = self.features.df.loc[indices, feature_name]
         else:
             dd.masked_features = self.features_dict[drug_name][feature_name]
-        dd.masked_tissue = self.tissue_dict[drug_name]
-        dd.masked_msi = self.msi_dict[drug_name]
 
+        dd.masked_tissue = self.tissue_dict[drug_name]
+        if self.features.found_msi:
+            dd.masked_msi = self.msi_dict[drug_name]
+            dd.positive_msi = dd.masked_msi.values.sum()
+            dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
         # compute length of pos/neg features and MSI
         dd.positive_feature = dd.masked_features.values.sum()
         dd.negative_feature = len(dd.masked_features) - dd.positive_feature
-        dd.positive_msi = dd.masked_msi.values.sum()
-        dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
 
         # Some validity tests to run the analysis or not
         A = self.settings.includeMSI_factor and\
@@ -1043,7 +1025,6 @@ class ANOVA(object): #Logging):
         B = (not self.settings.includeMSI_factor) and\
             dd.positive_feature >= self.settings.featFactorPopulationTh and\
             dd.negative_feature >= self.settings.featFactorPopulationTh
-
         # We could of course use the mean() and std() functions from pandas or
         # numpy. We could also use the glass and cohens functions from the
         # stats module but the following code is much faster because it
@@ -1168,10 +1149,11 @@ class ANOVA(object): #Logging):
         if drug_id not in self.drugIds:
             raise ValueError('Unknown drug name %s. Use e.g., %s'
                     % (drug_id, self.drugIds[0]))
+
         if feature_name not in self.feature_names:
             # we start index at 3 to skip tissue/name/msi
-            raise ValueError('Unknown feature name %s. Use e.g., %s'
-                    % (feature_name, self.feature_names[3]))
+            raise ValueError('Unknown feature name %s. Use e.g. one of %s'
+                    % (feature_name, self.feature_names[0:3]))
 
         # This extract the relevant data and some simple metrics
         # This is now pretty fast accounting for 45 seconds
@@ -1624,6 +1606,10 @@ class ANOVA(object): #Logging):
         txt += "\n" + self.features.__str__()
         return txt
 
+    def __repr__(self):
+        txt = self.__str__()
+        return txt
+
 
 class HTMLPageMANOVA(ReportMAIN):
     """Creates an HTML page dedicated to significant hits
@@ -1949,16 +1935,15 @@ class HTMLPageMain(ReportMAIN):
         self.jinja['feature_table'] = table.to_html(escape=False,
                 header=True, index=False)
 
-        # -------------------------------------- COSMIC table for complteness
-        df = self.results.gdsc.features.df[['Sample Name',
-                'Tissue Factor Value', 'MS-instability Factor Value']]
+        # -------------------------------------- COSMIC table for completeness
+        colnames = self.results.gdsc.features._special_names
+        df = self.results.gdsc.features.df[colnames]
 
         df = df.reset_index()
         table = HTMLTable(df)
         url = "http://cancer.sanger.ac.uk/cell_lines/sample/overview?id="
         table.add_href('COSMIC ID', url=url, newtab=True)
         self.jinja['cosmic_table'] = table.to_html()
-
 
         # -------------------------------------------- settings and files
         input_dir = self.directory + os.sep + 'INPUT'

@@ -158,7 +158,7 @@ def anova_pipeline(args=None):
 
     return
 
-def _set_settings(self, gdsc, options):
+def _set_settings(gdsc, options):
     if options.settings is not None:
         gdsc.settings.from_json(options.settings)
     gdsc.settings.directory = options.directory
@@ -174,7 +174,7 @@ def anova_one_drug(options):
     an = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
     
-    an = self._set_settings(an, options)
+    an = _set_settings(an, options)
     an.set_cancer_type(options.tissue)
     
     if options.feature:
@@ -208,7 +208,7 @@ def anova_all(options):
             low_memory=not options.fast)
     an.set_cancer_type(options.tissue)
 
-    an = self._set_settings(an, options)
+    an = _set_settings(an, options)
     if options.feature:
         an.feature_names = [options.feature]
     print(an)

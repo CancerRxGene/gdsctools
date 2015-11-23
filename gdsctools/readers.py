@@ -17,7 +17,7 @@
 """IO functionalities
 
 
-Provides readers to read 
+Provides readers to read
 
 - Matrix of IC50 data set :class:`IC50`
 - Matrix of Genomic features with :class:`GenomicFeatures`
@@ -42,10 +42,10 @@ class Reader(object):
         filename, or a dataframe or an instance of :class:`Reader` itself. This
         means than children classes such as :class:`IC50` can also be used
         as input as long as a dataframe named :attr:`df` can be found.
-        
+
         :param data: a filename in CSV or TSV format with format specified by
-            child class (see e.g. :class:`IC50`), or a valid dataframe, or an 
-            instance of :class:`Reader`. 
+            child class (see e.g. :class:`IC50`), or a valid dataframe, or an
+            instance of :class:`Reader`.
 
         The input can be a filename either in CSV (comma separated values) or
         TSV (tabular separated values). The extension will be used to interpret
@@ -62,7 +62,7 @@ class Reader(object):
             11856
 
         Note that :class:`Reader` is a base class and more sophisticated
-        readers are available. for example, the :class:`IC50` would be 
+        readers are available. for example, the :class:`IC50` would be
         better to read this IC50 data set.
 
         The data has been stored in a data frame in the :attr:`df` attribute.
@@ -92,8 +92,8 @@ class Reader(object):
 
 
         """
-        # input data 
-        if data is None: 
+        # input data
+        if data is None:
             # create an empty dataframe
             self.df = pd.DataFrame()
             self._filename = None
@@ -105,7 +105,7 @@ class Reader(object):
             # could be a data sets from gdsctools.datasets.Data
             self.read_data(data.filename)
             self._filename = data.filename
-        elif hasattr(data, 'df'): 
+        elif hasattr(data, 'df'):
             # an instance of a Reader (or child such as IC50, GenomicFeatures)
             self.df = data.df.copy()
             self._filename = data._filename
@@ -136,7 +136,7 @@ class Reader(object):
         # let us drop columns that are unnamed and print information
         columns = [x for x in rawdf.columns if x.startswith('Unnamed')]
         if len(columns) > 0:
-            print('%s  unnamed columns found and removed. ' % len(columns) + 
+            print('%s  unnamed columns found and removed. ' % len(columns) +
                 'Please fix your input file.')
         self.df = rawdf.drop(columns, axis=1)
 
@@ -292,7 +292,7 @@ class IC50(Reader, CosmicRows):
         self.check()
 
     def _interpret(self):
-        # if there is at least one column that starts with Drug or drug or 
+        # if there is at least one column that starts with Drug or drug or
         # DRUG or variant then all other columns are dropped except "COSMIC ID"
         if len(self.df) == 0:
             return
@@ -307,12 +307,12 @@ class IC50(Reader, CosmicRows):
         # found in the column and set as the index
         if self.cosmic_name in self.df.columns:
             self.df.set_index(self.cosmic_name, inplace=True)
-            columns = [x for x in self.df.columns 
+            columns = [x for x in self.df.columns
                     if x.startswith(drug_prefix)]
             self.df = self.df[columns]
         # If already interpreted, COSMIC name should be the index already.
         elif self.df.index.name == self.cosmic_name:
-            columns = [x for x in self.df.columns 
+            columns = [x for x in self.df.columns
                     if x.startswith(drug_prefix)]
             columns = list(set(columns))
             self.df = self.df[columns]
@@ -348,7 +348,7 @@ class IC50(Reader, CosmicRows):
 
         :param kargs: any valid parameters accepted by pylab.plot function.
         :return: the fraction of valid/measured IC50 per drug
-        
+
         """
         data = self.df.count()/len(self.df)
         pylab.clf()
@@ -366,8 +366,8 @@ class IC50(Reader, CosmicRows):
         :param bins: binning of the histogram
         :param kargs: any argument accepted by pylab.hist function.
         :return: all measured IC50
-        
-        .. plot:: 
+
+        .. plot::
             :include-source:
             :width: 80%
 
@@ -418,7 +418,7 @@ class GenomicFeatures(Reader, CosmicRows):
         - 'COSMIC ID'
         - 'Tissue Factor Value'
         - 'MS-instability Factor Value'
-        
+
     This one is optional and may be used for the HTML report:
 
         - 'Sample Name'
@@ -459,8 +459,6 @@ class GenomicFeatures(Reader, CosmicRows):
         package that is made of 1001 cell lines times 680 features.
 
         """
-        self.shift = 3 # this should be used to select features ignoring 
-        # the 3 compulsary column
         # first reset the filename to the shared data (if not provided)
         if filename is None:
             from gdsctools.datasets import genomic_features
@@ -469,23 +467,50 @@ class GenomicFeatures(Reader, CosmicRows):
 
         super(GenomicFeatures, self).__init__(filename)
 
-        # FIXME Remove columns related to Drug if any. Can be removed in 
+        # FIXME Remove columns related to Drug if any. Can be removed in
         # the future
         self.df = self.df[[x for x in self.df.columns
             if x.startswith('Drug_') is False]]
 
         # There are several types of features e.g., mutation, CNA,
         # methylation but all are stored within the same file
-        # Besides, these 3 first columns are compulsary
-        self._required_names = [self.colnames.tissue, 
-                self.colnames.sample, 
-                self.colnames.msi]
-        for name in self._required_names:
-            assert name in self.df.columns, 'Could not find column %s' % name
-        self._interpret()
+
+        # There are 3 special columns
+        self._special_names = []
+        
+
+        # If tissue is not provided, we force create it and fill with dummies.
+        # OTherwise, we need to change a lot in the original code in ANOVA
+        if self.colnames.tissue not in self.df.columns:
+            print("WARNING: column named '%s' not found" \
+                    % self.colnames.tissue)
+            self.df[self.colnames.tissue] = ['unspecified'] * len(self.df)
+            self._special_names.append(self.colnames.tissue)
+        else:
+            self._special_names.append(self.colnames.tissue)
+
+        self.found_msi = self.colnames.msi in self.df.columns
+        if self.found_msi is False:
+            print("WARNING: column named '%s' not found" % self.colnames.msi)
+        else:
+            self._special_names.append(self.colnames.msi)
+
+        self.found_sample = self.colnames.sample in self.df.columns
+        if self.found_sample is False:
+            print("WARNING: column named '%s' not found" \
+                    % self.colnames.sample)
+        else:
+            self._special_names.append(self.colnames.sample)
+
+        # trick to make sure the special columns appear first
+        # and ordered as tissue, msi, sample 
+        self.features = self.features
+
+        self.shift = len(self._special_names)
+        self._interpret_cosmic()
         self.check()
 
-    def _interpret(self):
+    def _interpret_cosmic(self):
         if self.colnames.cosmic in self.df.columns:
             self.df.set_index(self.colnames.cosmic, inplace=True)
         elif self.colnames.cosmic == self.df.index.name:
@@ -500,13 +525,13 @@ class GenomicFeatures(Reader, CosmicRows):
     def _set_features(self, features):
         for feature in features:
             if feature not in self.features:
-                raise ValueError('Unknown drug name')
+                raise ValueError('Unknown feature name')
         # remove the required column, that must be kept
-        # and are added afterwards 
-        for this in self._required_names:
+        # and are added afterwards
+        for this in self._special_names:
             if this in features:
                 features.remove(this)
-        features = self._required_names + features
+        features = self._special_names + features
         self.df = self.df[features]
 
     features = property(_get_features, _set_features,
@@ -533,7 +558,9 @@ class GenomicFeatures(Reader, CosmicRows):
 
 
         """
-        data = pd.get_dummies(self.df['Tissue Factor Value']).sum()
+        if self.colnames.tissue not in self.df.columns:
+            return
+        data = pd.get_dummies(self.df[self.colnames.tissue]).sum()
         data.index = [x.replace("_", " ") for x in data.index]
         # deprecated but works for python 3.3
         try:
@@ -553,17 +580,20 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def __str__(self):
         txt = 'Genomic features distribution\n'
-        tissues = list(self.df[self.colnames.tissue].unique())
-        Ntissue = len(tissues)
-        txt += 'Number of unique tissues {0}'.format(Ntissue)
-        if Ntissue == 1:
-             txt += ' ({0})'.format(tissues[0])
-        elif Ntissue < 10:
-            txt += '\nHere are the tissues: '
-            txt += ",".join(tissues) + "\n"
-        else:
-            txt += '\nHere are first 10 tissues: '
-            txt += ", ".join(tissues[0:10]) + "\n"
+        try:
+            tissues = list(self.df[self.colnames.tissue].unique())
+            Ntissue = len(tissues)
+            txt += 'Number of unique tissues {0}'.format(Ntissue)
+            if Ntissue == 1:
+                 txt += ' ({0})'.format(tissues[0])
+            elif Ntissue < 10:
+                txt += '\nHere are the tissues: '
+                txt += ",".join(tissues) + "\n"
+            else:
+                txt += '\nHere are first 10 tissues: '
+                txt += ", ".join(tissues[0:10]) + "\n"
+        except:
+            txt += 'No information about tissues\n'
 
         # -3 since we have also the MSI, tissue, sample columns
         Nfeatures = len(self.features)
@@ -610,7 +640,7 @@ class GenomicFeatures(Reader, CosmicRows):
     def _cleanup(self, required_features=0):
         # FIXME: there is view/copy warning here in pandas. it should be fixed
         # or may have side-effects
-        to_ignore = self._required_names
+        to_ignore = self._special_names
         # create a view ignoring the informative columns
         view = self.df[[x for x in self.df.columns if x not in to_ignore]]
 
@@ -621,7 +651,10 @@ class GenomicFeatures(Reader, CosmicRows):
     def __repr__(self):
         Nc = len(self.cosmicIds)
         Nf = len(self.features) - self.shift
-        Nt = len(set(self.tissues))
+        try:
+            Nt = len(set(self.tissues))
+        except:
+            Nt = '?'
         return "GenomicFeatures <Nc={0}, Nf={1}, Nt={2}>".format(Nc, Nf, Nt)
 
 
@@ -774,7 +807,7 @@ class DrugDecoder(Reader):
 
     def __len__(self):
         return len(self.df)
-    
+
     def __str__(self):
         txt = "Number of drugs: %s\n" % len(self.df)
         return txt
