@@ -6,6 +6,7 @@ ChangeLog
 version 0.9 Nov 2015
 --------------------------
 
+- MSI/Sample/Tissue columns in the genomic features are not required anymore.
 - FDR lines in volcano plots are now using interpolation and 
   therefore more  precisily placed. Fixes #57
 - volcano plot improvments. Fixes #79, #80, #81
