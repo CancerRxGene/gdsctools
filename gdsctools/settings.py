@@ -123,6 +123,8 @@ class ANOVASettings(AttrDict):
         self.directory = 'html_gdsc_anova'
         self.savefig = False
         self.effect_threshold = 0 # use in volcano
+        self.volcano_additional_FDR_lines = [0.01, 0.1, 10]
+        self.volcano_FDR_interpolation = True
 
     def check(self):
         """Checks the values of the parameters"""
@@ -153,7 +155,11 @@ class ANOVASettings(AttrDict):
 
     def to_html(self):
         """Convert the sets of parameters into a nice HTML table"""
-        settings = pd.DataFrame(self, index=[0]).transpose()
+        data = self.copy()
+        data['volcano_additional_FDR_lines'] = \
+                str(data['volcano_additional_FDR_lines'])
+
+        settings = pd.DataFrame(data, index=[0]).transpose()
         settings.reset_index(inplace=True)
         settings.columns = ['name', 'value']
         html = settings.to_html(header=True, index=False)
