@@ -96,7 +96,6 @@ class BoxPlots(Logging):
     def boxplot_pancan(self, mode, fignum=1, title_prefix=''):
         """Create boxplot related to the MSI factor or Tissue factor
 
-
         :param mode: either set to **msi** or **tissue**
 
         """
@@ -110,7 +109,7 @@ class BoxPlots(Logging):
             return
 
         fig = pylab.figure(fignum)
-        fig.set_size_inches(12,14)
+        oldsize = fig.get_size_inches()
 
         pylab.clf()  # or close ?
         data, names, significance = results
@@ -136,13 +135,15 @@ class BoxPlots(Logging):
         self.ax.set_ylim(common_ylim)
         self.ax.set_yticks(common_ticks)
         self.ax.set_yticklabels([len(this) for this in data], fontsize=fontsize)
-
         #pylab.tight_layout()
         if self.savefig is True:
             filename = self.directory + os.sep
             filename += 'ODOF_{}_{}____{}'.format(mode,
                     self.odof.drug_name, self.odof.feature_name)
+            fig.set_size_inches(12,14)
             pylab.savefig(filename + '.png', bbox_inches='tight')
+            fig.set_size_inches(oldsize)
+            fig.canvas.draw()
             #pylab.savefig(filename + '.svg', bbox_inches='tight')
 
     def boxplot_association(self, fignum=1):
