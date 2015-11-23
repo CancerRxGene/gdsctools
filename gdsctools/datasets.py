@@ -172,6 +172,7 @@ def _build_testing():
     d = Data()
     d.filename = _gsf('gdsctools', 'data', 'test_genomic_features_bare.csv')
     d.description = "A 50 cell lines by 17 features without MSI/tissue/sample"
+    testing.genomic_features_bare_csv = d
 
 
     return testing
