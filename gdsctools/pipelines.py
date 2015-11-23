@@ -27,6 +27,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 # ignore mpld3 warning
 warnings.simplefilter(action="ignore", category=UserWarning)
 
+
 __all__ = ['anova_pipeline', 'ANOVAOptions']
 
 
@@ -66,6 +67,10 @@ def anova_pipeline(args=None):
     except SystemExit:
         return
 
+    # -----------------------------------------------------------------
+    # ---------------------------------------- options without analysis
+    # -----------------------------------------------------------------
+
     if options.version is True:
         print("This is version %s of gdsctools_anova" % gdsctools.version)
         return
@@ -82,6 +87,13 @@ def anova_pipeline(args=None):
         print(darkgreen("\nGDSCTools seems to be installed properly"))
         return
 
+    if options.save_settings:
+        from gdsctools import ANOVA, ic50_test
+        an = ANOVA(ic50_test)
+        an.settings.to_json(options.save_settings)
+        print('Save a default parameter set in %s' % options.save_settings)
+        return 
+
     if options.license is True:
         print(gdsctools.license)
         return
@@ -92,10 +104,10 @@ def anova_pipeline(args=None):
         print(an)
         return
 
-    if options.help_web is True:
+    if options.onweb is True:
         from gdsctools import gdsctools_help
         gdsctools_help()
-        return
+        return 
 
     if options.print_tissues is True:
         from gdsctools import anova
@@ -124,6 +136,9 @@ def anova_pipeline(args=None):
             print(name)
         return
 
+    # -----------------------------------------------------------------
+    # --------------------------------------------------- real analysis
+    # -----------------------------------------------------------------
     # dispatcher to the functions according to the user parameters
     if options.drug is not None and options.feature is not None:
         print_color("ODOF mode", purple)
@@ -143,19 +158,28 @@ def anova_pipeline(args=None):
 
     return
 
+def _set_settings(self, gdsc, options):
+    if options.settings is not None:
+        gdsc.settings.from_json(options.settings)
+    gdsc.settings.directory = options.directory
+    gdsc.settings.includeMSI_factor = options.include_msi
+    gdsc.settings.FDR_threshold = options.FDR_threshold
+    gdsc.settings.check()
+    return gdsc
+
+
 def anova_one_drug(options):
     """Analyse one specific drug"""
     from gdsctools import anova
     an = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
-    an.settings.directory = options.directory
-    an.settings.includeMSI_factor = options.include_msi
-    an.settings.FDR_threshold = options.FDR_threshold
+    
+    an = self._set_settings(an, options)
     an.set_cancer_type(options.tissue)
+    
     if options.feature:
         an.feature_names = options.features
-
-    an.settings.check()
+    print(an)
 
     df = an.anova_one_drug(options.drug)
 
@@ -182,15 +206,11 @@ def anova_all(options):
     from gdsctools import anova
     an = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
+    an.set_cancer_type(options.tissue)
 
+    an = self._set_settings(an, options)
     if options.feature:
         an.feature_names = [options.feature]
-
-    an.settings.directory = options.directory
-    an.settings.includeMSI_factor = options.include_msi
-    an.settings.FDR_threshold = options.FDR_threshold
-    an.set_cancer_type(options.tissue)
-    an.settings.check()
     print(an)
 
     # The analysis
@@ -211,22 +231,21 @@ def anova_one_drug_one_feature(options):
     from gdsctools import anova
     gdsc = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
-    gdsc.settings.directory = options.directory
+    gdsc = _set_settings(gdsc, options)
 
     odof = anova.Association(gdsc,
             drug=options.drug,
             feature=options.feature)
-    #an.factory.settings.directory = options.directory
+    #FIXME: are those 4-5 lines required ??
     odof.factory.settings.includeMSI_factor = options.include_msi
     odof.factory.settings.FDR_threshold = options.FDR_threshold
 
     odof.factory.set_cancer_type(options.tissue)
     odof.factory.settings.check()
-    odof.goback_link = False
 
     # for the HTML
-    odof.add_dependencies = True
-    odof.add_settings = True
+    #odof.add_dependencies = True
+    #odof.add_settings = True
     df = odof.run()
 
     if df.ix[1]['FEATURE_IC50_effect_size'] is None:
@@ -329,14 +348,6 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            action="store_true",
                            help="verbose option.")
         
-        group.add_argument( "--help-onweb", dest='help_web',
-                           action="store_true",
-                           help="Open on-line documentation in a browser.")
-
-        group.add_argument("--on-web", dest='onweb',
-                           action="store_true",
-                           help="TODO")
-
         group.add_argument("--onweb", dest='onweb',
                            action="store_true",
                            help="same as -on-web")
@@ -367,16 +378,26 @@ http://github.com/CancerRxGene/gdsctools/issues """
                           i.e., tissue to restrict the analysis
                           to """)
 
-        group.add_argument('--fdr-threshold', dest="FDR_threshold",
+        group.add_argument('--FDR-threshold', dest="FDR_threshold",
                             default=25, type=float,
                             help="""FDR (False discovery Rate) used in the
                             multitesting analysis to correct the pvalues""")
 
-        # analysis itself
         group.add_argument("--exclude-msi", dest="include_msi",
                            action="store_false",
                            help="Include msi factor in the analysis")
 
+        group.add_argument("--save-settings", dest="save_settings",
+                            type=str, 
+                            help="Save settings into a json file")
+
+        group.add_argument("--read-settings", dest="settings",
+                            type=str,
+                            help="""Read settings from a json file. Type
+                            --save-settings <filename.json> to create
+                            an example. Note that the FDR-threshold 
+                            and includeMSI_factor will be replaced if
+                            --exclude-msi or fdr-threshold are used.""")
 
         # others
         group.add_argument("--summary", dest="summary",
