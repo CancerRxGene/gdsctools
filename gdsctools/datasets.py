@@ -169,6 +169,9 @@ def _build_testing():
     d.description = 'An IC50 test (header with mixed prefixes i.e. Drug_ or not)'
     testing.ic50_test_header_mixed_drug_prefix = d
 
+    d = Data()
+    d.filename = _gsf('gdsctools', 'data', 'test_genomic_features_bare.csv')
+    d.description = "A 50 cell lines by 17 features without MSI/tissue/sample"
 
 
     return testing
