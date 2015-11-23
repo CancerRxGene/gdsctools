@@ -1241,7 +1241,7 @@ class ANOVA(object): #Logging):
 
             self.Y = odof.Y
             self.EV = df.values
-            # The regression and anvoa summary are done here
+            # The regression and anova summary are done here
             #self.data_lm = OLS(odof.Y, df.values).fit_regularized()
             self.data_lm = OLS(odof.Y, df.values).fit()
             #self.anova_pvalues = self._get_anova_summary(self.data_lm,

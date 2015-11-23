@@ -9,7 +9,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 9
-_MICRO               = 7
+_MICRO               = 8
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -85,7 +85,7 @@ setup(
         '' : ['README.rst'],
         'share.data.images' : ['*png'],
         'share.data.templates' : ['*html'],
-        'share.data.js' : ['*js'],
+        'share.data.javascript' : ['*js'],
         },
 
     # comment the requirements otherwise RTD fails

@@ -6,6 +6,14 @@ ChangeLog
 version 0.9 Nov 2015
 --------------------------
 
+.. rubric:: 0.9.8
+
+* BUG: javascript were not included in version 0.9.7 had to rename js directory
+  into javascript to avoid known bug in distutils. Maybe solved in the future
+  but for bow just renamed the directory.
+
+.. rubric:: 0.9.7
+
 - MSI/Sample/Tissue columns in the genomic features are not required anymore.
 - FDR lines in volcano plots are now using interpolation and 
   therefore more  precisily placed. Fixes #57
