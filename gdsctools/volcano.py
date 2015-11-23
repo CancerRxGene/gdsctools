@@ -24,6 +24,8 @@ import pandas as pd
 import pylab
 import numpy as np
 import easydev
+import mpld3
+
 
 from easydev import Progress, AttrDict
 from gdsctools.tools import Savefig
@@ -107,6 +109,7 @@ class VolcanoANOVA(object):
         bottom  area of the plot with little information.
 
         """
+        # a copy since we do may change the data
         try:
             # an ANOVAResults contains a df attribute
             self.df = data.df.copy()
@@ -179,12 +182,15 @@ class VolcanoANOVA(object):
         """
         drugs = list(self.df[self._colname_drugid].unique())
         pb = Progress(len(drugs), 1)
-        pylab.ioff()
         for i, drug in enumerate(drugs):
             self.volcano_plot_one_drug(drug)
-            self.figtools.savefig("volcano_%s.png" % drug)
+            self.figtools.savefig("volcano_%s.png" % drug,
+                    size_inches=(10, 10))
             pb.animate(i+1)
-        pylab.ion()
+
+            # This prevent memory leak.
+            self.current_fig.canvas.mpl_disconnect(self.cid)
+            mpld3.plugins.clear(self.current_fig)
 
     def volcano_plot_all_features(self):
         """Create a volcano plot for each feature and save in PNG files
@@ -196,8 +202,13 @@ class VolcanoANOVA(object):
         pb = Progress(len(features), 1)
         for i, feature in enumerate(features):
             self.volcano_plot_one_feature(feature)
-            self.figtools.savefig("volcano_%s.png" % feature)
+            self.figtools.savefig("volcano_%s.png" % feature,
+                    size_inches=(10, 10))
             pb.animate(i+1)
+
+            # This prevent memory leak.
+            self.current_fig.canvas.mpl_disconnect(self.cid)
+            mpld3.plugins.clear(self.current_fig)
 
     def volcano_plot_all(self):
         """Create an overall volcano plot for all associations
@@ -210,13 +221,11 @@ class VolcanoANOVA(object):
         data['annotation'] = ['' for x in range(len(data))]
 
         self._volcano_plot(data, title='all drugs all features')
-        self.figtools.savefig("volcano_all.png")
+        self.figtools.savefig("volcano_all.png",
+                    size_inches=(10, 10))
 
     def _get_fdr_from_pvalue_interp(self, pvalue):
-        """Here, FDR are computed using an interpolation
-
-
-        """
+        """Here, FDR are computed using an interpolation"""
         pvalue += 1e-15
         qvals = self.df[self.varname_qvalue]
         pvals = self.df[self.varname_pvalue]
@@ -268,7 +277,6 @@ class VolcanoANOVA(object):
         return {'minN': minN, 'maxN': maxN,
                 'pvalues': (self.settings.FDR_threshold, pvalues)}
 
-
     def _get_volcano_sub_data(self, mode, target=None):
         # Return data needed for each plot
         # TODO could be simplified but works for now
@@ -295,6 +303,7 @@ class VolcanoANOVA(object):
         signed_effects = list(np.sign(deltas) * effects)
         qvals = list(subdf[self.varname_qvalue])
         pvals = list(subdf[self.varname_pvalue])
+        assocs = list(subdf['ASSOC_ID'])
 
         colors = []
         annotations = []
@@ -305,6 +314,7 @@ class VolcanoANOVA(object):
         data['Feature'] = list(subdf[self._colname_feature])
         data['Drug'] = list(subdf[self._colname_drugid])
         data['text'] = texts.values
+        data['Assoc'] = assocs
         ## !! here, we need to use .values since the pandas dataframe
         # index goes from 1 to N but the origignal indices in subdf
         # may not be from 1 to N but random between 1 and M>>N
@@ -343,8 +353,8 @@ class VolcanoANOVA(object):
         # here we normalise wrt the drug. In R code, normalised
         # my max across all data (minN, maxN)
         markersize = subdf['N_FEATURE_pos'] / subdf['N_FEATURE_pos'].max()
-        markersize = list(markersize*800)
-        markersize = [x if x > 50 else 50 for x in markersize]
+        markersize = list(markersize * 800)
+        markersize = [x if x > 80 else 80 for x in markersize]
 
         data['color'] = colors
         data['annotation'] = annotations
@@ -357,7 +367,7 @@ class VolcanoANOVA(object):
         :param feature: a valid feature name to be found in the results
         """
         assert feature in self.features, 'unknown feature name'
-        # FEATURE is is the mode name, not a column's name
+        # FEATURE is the mode's name, not a column's name
         data = self._get_volcano_sub_data('FEATURE', feature)
         self._volcano_plot(data, title=feature)
 
@@ -373,33 +383,45 @@ class VolcanoANOVA(object):
     def _volcano_plot(self, data, title=''):
         """Main volcano plot function called by other methods
         such as volcano_plot_all"""
+        # This functio is a bit complicated because it does create a few tricky
+        # plots
+
+        # It creates a volcano plot, which is the easy part
+        # Then, it creates tooltips for the user interface in an IPython
+        # shell using a callback to 'onpick' function coded here below
+        # finally, it creates a Javascript connection using mpld3 that
+        # will allow the creation of a JS version of the plot.
+
+        # !! There is a memory leak in this function due to matplotlib
+        # This is not easy to track down.
+
+        # You have to call clf() to make sure the content is erase.
+        # One reason for the memory leak is that it is called in the
+        # Report to loop over all drugs and then all featuers.
+        # To see the memory leak, you will need to call the
+        # volcano_plot_all_drugs function (or volcano_plot_all_features).
         colors = list(data['color'].values)
         pvalues = data['pvalue'].values
         signed_effects = data['signed_effect'].values
         markersize = data['markersize'].values
 
         Y = -np.log10(list(pvalues)) # should be cast to list ?
-        # This is horrendously slow as compared to plot()
-        # However, plot cannot take different sizes/colors
-        # Takes about 0.36 s per call and half the time
-        # is spent in the scatter() call
 
-        pylab.close(1)
+        num = 1
+        #pylab.close(num)
         fig = pylab.figure(num=1)
-        fig.set_size_inches(10,10)
-        ax = pylab.axes(axisbg='#EEEEEE')
-        ax = fig.gca()
+        fig.clf()
+        ax = fig.add_subplot(111)
+        ax.set_axis_bgcolor('#EEEEEE')
+        ax.cla()
         X = [easydev.precision(x, digit=2) for x in signed_effects]
         Y = [easydev.precision(y, digit=2) for y in Y]
-        # black markers will have the same size
-        # and will not be labelled
+
+        # Using scatter() is slow as compared to plot()
+        # However, plot cannot take different sizes/colors
         scatter = ax.scatter(X, Y, s=markersize,
-                alpha=0.3, c=colors,
-                linewidth=0, picker=True)
+                alpha=0.3, c=colors, linewidth=1, picker=True)
         scatter.set_zorder(11)
-        #pylab.plot(list(signed_effects), Y, markersize=5,
-        #            alpha=0.4, c='grey',
-        #            linewidth=0)
 
         m = abs(signed_effects.min())
         M = abs(signed_effects.max())
@@ -408,35 +430,34 @@ class VolcanoANOVA(object):
         l = max([m, M]) * 1.1
         pylab.xlim([-l, l])
         ax.grid(color='white', linestyle='solid')
-        #self.stats = self._get_volcano_global_data()
 
+        # some aliases
         fdr = self.settings.FDR_threshold
-        pvalue = self._get_pvalue_from_fdr(fdr)
-        ax.axhline(-np.log10(pvalue), linestyle='--',
+        fdrs = sorted(self.settings.volcano_additional_FDR_lines)
+        fdrs = fdrs[::-1] # reverse sorting
+
+        styles = ['--', ':', '-.']
+        if self.settings.volcano_FDR_interpolation is True:
+            get_pvalue_from_fdr = self._get_pvalue_from_fdr_interp
+        else:
+            get_pvalue_from_fdr = self._get_pvalue_from_fdr
+
+        pvalue = get_pvalue_from_fdr(fdr)
+        ax.axhline(-np.log10(pvalue), linestyle='--', lw=2,
             color='red', alpha=1, label="FDR %s " %  fdr + " \%")
-        #pvalue = self._get_pvalue_from_fdr_interp(fdr)
-        #ax.axhline(-np.log10(pvalue), linestyle='--',
-        #    color='red', alpha=1, label="FDR %s " %  fdr + " \%")
 
-        pvalue = self._get_pvalue_from_fdr(10)
-        #pvalue = self._get_pvalue_from_fdr_interp(10)
-        ax.axhline(-np.log10(pvalue), linestyle='-.',
-            color='red', alpha=1, label="FDR 10 \%")
-
-        #pvalue = self._get_pvalue_from_fdr_interp(1)
-        pvalue = self._get_pvalue_from_fdr(1)
-        ax.axhline(-np.log10(pvalue), linestyle=':',
-            color='red', alpha=1, label="FDR 1 \%")
-
-        pvalue = self._get_pvalue_from_fdr_interp(0.01)
-        pvalue = self._get_pvalue_from_fdr(0.01)
-        ax.axhline(-np.log10(pvalue), linestyle='--',
-            color='black', alpha=1, label="FDR 0.01 \%")
+        for i, this in enumerate(fdrs):
+            if this < self.df['ANOVA_FEATURE_FDR_%'].min() or\
+                this > self.df['ANOVA_FEATURE_FDR_%'].max():
+                    continue
+            pvalue = get_pvalue_from_fdr(this)
+            ax.axhline(-np.log10(pvalue), linestyle=styles[i],
+                color='red', alpha=1, label="FDR %s " % this +" \%")
 
         pylab.ylim([0, pylab.ylim()[1]*1.2]) # times 1.2 to put the legend
 
-        ax.axvline(0, color='gray', alpha=0.5)
-        axl = pylab.legend(loc='upper left')
+        ax.axvline(0, color='gray', alpha=0.8, lw=2)
+        axl = pylab.legend(loc='best')
         axl.set_zorder(10) # in case there is a circle behind the legend.
 
         #self.ax = ax
@@ -453,13 +474,12 @@ class VolcanoANOVA(object):
 
         # For the static version
         title_handler = pylab.title("%s" % title.replace("_","  "),
-                fontsize=self.settings.fontsize)
+                fontsize=self.settings.fontsize/1.2)
         labels = []
 
         # This code allows the ipython user to click on the matplotlib figure
         # to get information about the drug and feature of a given circles.
         def onpick(event):
-            self.event = event
             ind = event.ind[0]
             try:
                 title = data.ix[ind]['Drug'] + " / " + data.ix[ind].Feature
@@ -469,31 +489,56 @@ class VolcanoANOVA(object):
                 print('Failed to create new title on click')
             print(data.ix[ind].T)
             fig.canvas.draw()
-        fig.canvas.mpl_connect('pick_event', onpick)
-        #fig.canvas.mpl_connect('motion_notify_event', onpick)
+
+        # keep track on the id for further memory release
+        # For more info search for "matplotlib memory leak mpl_connect"
+        self.cid = fig.canvas.mpl_connect('pick_event', onpick)
 
         # for the JS version
         # TODO: for the first 1 to 2000 entries ?
-        import mpld3
         labels = []
-        for i, row in data[['Drug', 'Feature', 'FDR']].iterrows():
-            label = row.to_frame()
-            label.columns = ['Row {0}'.format(i)]
-            # .to_html() is unicode; so make leading 'u' go away with str()
-            labels.append(str(label.to_html(header=False)))
 
+
+        self.data = data
+        for i, row in data[['Drug', 'Feature', 'FDR']].iterrows():
+
+            template = """
+<table border="1" class="dataframe">
+  <tbody>
+    <tr>
+      <th>Drug</th>
+      <td>%(Drug)s</td>
+    </tr>
+    <tr>
+      <th>Feature</th>
+      <td>%(Feature)s</td>
+    </tr>
+    <tr>
+      <th>FDR</th>
+      <td>%(FDR)s</td>
+    </tr>
+  </tbody>
+</table>""" % row.to_dict()
+            labels.append(template)
+
+            # this is more elegant but slower
+            #label = row.to_frame()
+            #label.columns = ['Row {0}'.format(i)]
+            #labels.append(str(label.to_html(header=False)))
         css = """
         svg.mpld3-figure { border: 2px black solid;margin:10px;}
         table{  font-size:0.8em;  }
         th {  color: #ffffff;  background-color: #aaaaaa;  }
-        td { color: blue; background-color: #cccccc; }
-        """
+        td { color: blue; background-color: #cccccc; }"""
+
         tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
                 css=css)
         mpld3.plugins.connect(fig, tooltip)
-
         self.scatter = scatter
         self.current_fig = fig
+        # not sure is this is required. could be a memory leak here
+        import gc
+        gc.collect()
 
     def mpld3_to_html(self):
         """This require to call a plotting figure before hand"""
@@ -501,14 +546,13 @@ class VolcanoANOVA(object):
         js_path1 = gdsctools_data('d3.v3.min.js', where='js')
         js_path2 = gdsctools_data('mpld3.v0.2.js', where='js')
         try:
-            import mpld3
             # mpld3 is great but there are a couple of issues
             # 1 - legend zorder is not used so dots may be below the legend,
             #     hence we set the framealpha =0.5
             # 2 - % character even though there well interpreted in matploltib
             #     using \%, they are not once parsed by mpld3. So, here
             #     we remove the \ character
-            axl = pylab.legend(loc='upper left', framealpha=0.8, borderpad=1)
+            axl = pylab.legend(loc='best', framealpha=0.8, borderpad=1)
             axl.set_zorder(10) # in case there is a circle behind the legend.
             texts = [this.get_text() for this in axl.get_texts()]
 
@@ -523,3 +567,5 @@ class VolcanoANOVA(object):
         except:
             htmljs = ""
         return """<div class="jsimage"> """ + htmljs + "</div>"
+
+

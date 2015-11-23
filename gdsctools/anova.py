@@ -22,6 +22,7 @@ import pandas as pd
 import scipy
 import pylab
 import numpy as np
+import mpld3
 
 from statsmodels.formula.api import OLS
 
@@ -121,7 +122,7 @@ class ANOVAResults(object):
 
     def to_csv(self, filename):
         """Save dataframe into a file using comma separated values"""
-        assert filename.enswith('.csv'), "filename should end in .csv"
+        assert filename.endswith('.csv'), "filename should end in .csv"
         self.df.to_csv(filename, sep=',', index=False)
 
     def read_csv(self, filename):
@@ -184,7 +185,6 @@ class ANOVAReport(object):
         self.gdsc = gdsc
         self.df = ANOVAResults(results).df # this does a copy and sanity check
 
-
         self.settings = ANOVASettings()
         for k, v in gdsc.settings.items():
             self.settings[k] = v
@@ -192,9 +192,6 @@ class ANOVAReport(object):
         self._colname_drug_id = 'DRUG_ID'
         self.varname_pval = 'FEATURE_ANOVA_pval'
         self.varname_qval = 'ANOVA_FEATURE_FDR_%'
-
-        # with this alias, we get the ic50 and genomic features
-        self.gdsc = gdsc
 
         # maybe there was not drug_decoder in the gdsc parameter,
         # so a user may have provide a file, in which case, we need
@@ -235,7 +232,7 @@ class ANOVAReport(object):
 
     def _get_nfeatures(self):
         # !! -3 to remove sample name, tissue, msi columns
-        return len(self.gdsc.features.df.columns) - 3
+        return len(self.gdsc.features.df.columns) - self.gdsc.features.shift
     n_features = property(_get_nfeatures,
             doc="return number of features ignoring MSI, sample and tissue")
 
@@ -403,7 +400,7 @@ class ANOVAReport(object):
         df_count.drop('name', axis=1, inplace=True)
         return df_count
 
-    def drug_summary(self,  top=50, fontsize=10, filename=None):
+    def drug_summary(self,  top=50, fontsize=15, filename=None):
         """Return dataframe with significant drugs
 
         :param fontsize:
@@ -421,15 +418,15 @@ class ANOVAReport(object):
         df_count = self._get_data(df_count_sensible, df_count_resistant)
 
         if len(df_count):
-            self._plot(df_count, 'drug', top, fontsize=fontsize)
+            self._plot(df_count, 'drug', top)
             fig = pylab.gcf()
-            fig.set_size_inches(12, 14)
             self.figtools.directory = self.settings.directory
-            self.figtools.savefig(filename, bbox_inches='tight')
+            self.figtools.savefig(filename, size_inches=(12, 14), 
+                    bbox_inches='tight')
 
         return df_count
 
-    def feature_summary(self, filename=None, top=50, fontsize=10):
+    def feature_summary(self, filename=None, top=50, fontsize=15):
         """Return dataframe with significant features
 
         :param fontsize:
@@ -445,14 +442,14 @@ class ANOVAReport(object):
         df_count = self._get_data(df_count_sensible, df_count_resistant)
 
         if len(df_count) > 0:
-            self._plot(df_count, 'feature', top, fontsize=fontsize)
+            self._plot(df_count, 'feature', top)
             fig = pylab.gcf()
-            fig.set_size_inches(12, 14)
             self.figtools.directory = self.settings.directory
-            self.figtools.savefig(filename, bbox_inches='tight')
+            self.figtools.savefig(filename, set_inches=(12, 14),
+                    bbox_inches='tight')
         return df_count
 
-    def _plot(self, df_count, title_tag, top, fontsize=10):
+    def _plot(self, df_count, title_tag, top):
         """Used by drug_summary and feature_summary to plot the
         bar plot"""
         if top > len(df_count):
@@ -470,6 +467,8 @@ class ANOVAReport(object):
                     pass
 
         labels = [x.replace('_', ' ') for x in labels]
+        # restrict size to first 30 characters
+        labels = [x[0:30] for x in labels]
         ind = range(0, len(labels))
         # reverse does not exist with python3
         try:
@@ -487,14 +486,20 @@ class ANOVAReport(object):
                         left=data1, label='resistance')
         ax = pylab.gca()
         self.labels = labels
-        ax.set_yticks([x+0.5 for x in ind])
-        ax.set_yticklabels(labels, fontsize=fontsize)
+        ax.set_yticks([x + 0.5 for x in ind])
+        ax.set_yticklabels(labels, fontsize=14)
         pylab.grid()
         pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
-                    "\nassociated with drug  response", fontsize=15)
+                    "\nassociated with drug  response", 
+                    fontsize=self.settings.fontsize/1.2)
         pylab.xlabel(r'Number of significant associations (FDR %s %s %s) '
                      % ("$>$", self.settings.FDR_threshold, "$\%$"),
-                     fontsize=15)
+                     fontsize=18)
+
+        M = max(data1+data2)
+        #ax.set_xticks()
+        #ax.set_xticklabels(labels, fontsize=fontsize)
+        ax.set_xlim([0, M+1])
         pylab.legend(loc='lower right')
         pylab.tight_layout()
 
@@ -1744,6 +1749,9 @@ class HTMLOneFeature(ReportMAIN):
                 "volcano_{}.html".format(self.feature), "w")
         fh.write(htmljs)
         fh.close()
+        # See https://github.com/CancerRxGene/gdsctools/issues/79
+        v.current_fig.canvas.mpl_disconnect(v.cid)
+        mpld3.plugins.clear(v.current_fig)
 
     def _create_report(self, onweb=True):
         self.create_pictures()
@@ -1788,12 +1796,18 @@ class HTMLOneDrug(ReportMAIN):
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_drug(self.drug)
-        v.figtools.savefig('volcano_{}.png'.format(self.drug))
+        v.figtools.savefig('volcano_{}.png'.format(self.drug),
+                size_inches=(10,10)
+                )
         htmljs = v.mpld3_to_html()
         fh = open(self.directory + os.sep +
                 "volcano_{}.html".format(self.drug),"w")
         fh.write(htmljs)
         fh.close()
+        # See https://github.com/CancerRxGene/gdsctools/issues/79
+        v.current_fig.canvas.mpl_disconnect(v.cid)
+        mpld3.plugins.clear(v.current_fig)
+
 
     def _create_report(self, onweb=True):
         self.create_pictures()
