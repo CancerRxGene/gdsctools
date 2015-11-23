@@ -6,6 +6,9 @@ ChangeLog
 version 0.9 Nov 2015
 --------------------------
 
+- FDR lines in volcano plots are now using interpolation and 
+  therefore more  precisily placed. Fixes #57
+- volcano plot improvments. Fixes #79, #80, #81
 - Fixes issue #72 to get the drug_decoder information from the ANOVA class.
 - Fixes issue #76  to drop IC50 cosmic Id not found in the genomic feature
   matrix
