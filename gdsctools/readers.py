@@ -124,37 +124,29 @@ class Reader(object):
         # remove possible white spaces in the header's names
         if ".csv" in filename:
             try:
-                rawdf = pd.read_csv(filename, sep=",", comment="#")
+                # this is to cope with pandas 0.13 on ReadTheDoc
+                # and newer versions
+                try:
+                    rawdf = pd.read_csv(filename, sep=",", comment="#")
+                except:
+                    rawdf = pd.read_csv(filename, sep="\t", comment="#",
+                            compression='gzip')
             except:
                 raise ValueError('Could not read %s' % filename)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         elif ".tsv" in filename or '.txt' in filename: # txt not supported
             # officialy but txt file from previous run were interepreted as tsv
 
-
-            
             try:
+                # this is to cope with pandas 0.13 on ReadTheDoc
+                # and newer versions
                 try:
                     rawdf = pd.read_csv(filename, sep="\t", comment="#")
                 except:
                     rawdf = pd.read_csv(filename, sep="\t", comment="#",
                             compression='gzip')
             except:
-                import pkg_resources
-                import os
                 msg = 'Could not read %s' % filename
-                msg += '\nis there?: ' + str(os.path.exists(filename))
-                msg += "\npandas version" + str(pkg_resources.get_distribution('pandas').version)
-                msg += "\n" + pkg_resources.get_distribution('gdsctools').location
-                loc = pkg_resources.get_distribution('gdsctools').location
-                import os
-                msg += "\n" + str(os.listdir(loc + os.sep + 'share'))
-                try:
-                    msg += "\n" + str(os.listdir(loc + os.sep + 'share' +
-                        os.sep+'data'))
-                except:
-                    msg += '\nDATA not found'
-
                 raise ValueError(msg)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         else:
