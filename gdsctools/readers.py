@@ -130,11 +130,16 @@ class Reader(object):
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         elif ".tsv" in filename or '.txt' in filename: # txt not supported
             # officialy but txt file from previous run were interepreted as tsv
+
+
+            
             try:
                 rawdf = pd.read_csv(filename, sep="\t", comment="#")
             except:
                 import pkg_resources
+                import os
                 msg = 'Could not read %s' % filename
+                msg += '\nis there?: ' + str(os.path.exists(filename))
                 msg += "\n" + pkg_resources.get_distribution('gdsctools').location
                 loc = pkg_resources.get_distribution('gdsctools').location
                 import os
