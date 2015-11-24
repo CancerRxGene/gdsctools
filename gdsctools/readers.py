@@ -133,6 +133,7 @@ class Reader(object):
 
 
             
+            rawdf = pd.read_csv(filename, sep="\t", comment="#")
             try:
                 rawdf = pd.read_csv(filename, sep="\t", comment="#")
             except:
