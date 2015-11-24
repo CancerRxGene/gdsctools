@@ -126,14 +126,14 @@ class Reader(object):
             try:
                 rawdf = pd.read_csv(filename, sep=",", comment="#")
             except:
-                print('Could not read %s' % filename)
+                raise ValueError('Could not read %s' % filename)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         elif ".tsv" in filename or '.txt' in filename: # txt not supported
             # officialy but txt file from previous run were interepreted as tsv
             try:
                 rawdf = pd.read_csv(filename, sep="\t", comment="#")
             except:
-                print('Could not read %s' % filename)
+                raise ValueError('Could not read %s' % filename)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         else:
             raise ValueError("Only file ending in .csv or .csv.gz or .tsv"+
