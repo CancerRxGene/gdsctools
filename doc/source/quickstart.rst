@@ -143,13 +143,8 @@ One can then repeat the ODOF analysis for the given drug across all features usi
 The following image illustrates how those 3 methods interweave together like
 Russian dolls. 
 
-1
-
 .. image:: _static/layout1.png
 
-2
-
-.. image:: layout1.png
 
 
 The computational time is therefore increasing with the number of drugs and
@@ -165,7 +160,7 @@ Let us start with the first case (ODOF). User needs to provide a drug and a feat
 
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
-    gdsc.anova_one_drug_one_feature('Drug_999_IC50', 
+    gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 
         'TP53_mut', show=True)
 
 Setting the :attr:`show` parameter to True, we created a set of 3 boxplots that is one for each explanatory feature considered: tissue, :term:`MSI` and genomic feature. 
