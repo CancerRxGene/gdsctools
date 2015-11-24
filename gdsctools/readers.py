@@ -135,7 +135,10 @@ class Reader(object):
             except:
                 import pkg_resources
                 msg = 'Could not read %s' % filename
-                msg += pkg_resources.get_distribution('gdsctools').location
+                msg += "\n" + pkg_resources.get_distribution('gdsctools').location
+                loc = pkg_resources.get_distribution('gdsctools').location
+                import os
+                msg += "\n" + os.listdir(loc)
 
                 raise ValueError(msg)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
