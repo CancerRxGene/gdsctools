@@ -133,7 +133,6 @@ class Reader(object):
 
 
             
-            rawdf = pd.read_csv(filename, sep="\t", comment="#")
             try:
                 rawdf = pd.read_csv(filename, sep="\t", comment="#")
             except:
@@ -141,6 +140,7 @@ class Reader(object):
                 import os
                 msg = 'Could not read %s' % filename
                 msg += '\nis there?: ' + str(os.path.exists(filename))
+                msg += "\npandas version" + str(pkg_resources.get_distribution('pandas').version)
                 msg += "\n" + pkg_resources.get_distribution('gdsctools').location
                 loc = pkg_resources.get_distribution('gdsctools').location
                 import os
