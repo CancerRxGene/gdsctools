@@ -154,8 +154,8 @@ class BoxPlots(Logging):
         pylab.figure(fignum)
         pylab.clf()
         # aliases
-        drug_name = self.odof.drug_name.replace("_", "\_")
-        feature_name = self.odof.feature_name.replace("_", "\_")
+        drug_name = self.odof.drug_name.replace("_", " ")
+        feature_name = self.odof.feature_name.replace("_", " ")
 
         # the plot itself
         boxswarm.boxswarm(
