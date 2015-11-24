@@ -2,3 +2,5 @@ easydev
 colormap
 matplotlib
 statsmodels
+pandas
+scipy
