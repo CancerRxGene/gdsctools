@@ -31,6 +31,7 @@ or used in analysis:
 - :attr:`genomic_features`
 """
 # use underscore to hide from API
+import os
 import easydev
 from easydev import get_share_file as _gsf
 
@@ -60,6 +61,11 @@ class Data(object):
         #: list of authors (string)
         self.authors = 'GDSC consortium'
 
+        import pkg_resources
+        self.datapath = pkg_resources.get_distribution('gdsctools').location +\
+            os.sep + 'share'
+
+
     def __str__(self):
         txt = 'location: %s\n' % self.filename
         txt += 'description: %s\n' % self.description
@@ -72,6 +78,8 @@ class Data(object):
 
     def __repr__(self):
         return self.__str__()
+
+
 
 
 def dataset(dataname):
@@ -98,7 +106,8 @@ def dataset(dataname):
         d.filename = _gsf('gdsctools', 'data', 'IC50_10drugs.tsv')
         d.description = 'IC50s for 10 public drugs across cell lines'
     elif dataname == 'genomic_features':
-        d.filename = _gsf('gdsctools', 'data', 'genomic_features.tsv.gz')
+        d.filename = d.datapath + os.sep + 'data' + os.sep + 'genomic_features.tsv.gz'
+        #d.filename = _gsf('gdsctools', 'data', 'genomic_features.tsv.gz')
         d.descritption = 'Set of genomic features + tissue + sample name + msi'
     elif dataname == 'cancer_cell_lines':
         d.filename = _gsf('gdsctools', 'data', 'cancer_cell_lines.csv')
