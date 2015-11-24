@@ -133,7 +133,11 @@ class Reader(object):
             try:
                 rawdf = pd.read_csv(filename, sep="\t", comment="#")
             except:
-                raise ValueError('Could not read %s' % filename)
+                import pkg_resources
+                msg = 'Could not read %s' % filename
+                msg += pkg_resources.get_distribution('gdsctools').location
+
+                raise ValueError(msg)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         else:
             raise ValueError("Only file ending in .csv or .csv.gz or .tsv"+
