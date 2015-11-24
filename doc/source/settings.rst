@@ -6,7 +6,7 @@ Settings
 Overview
 -----------
 
-When using the :class`~gdsctools.anova.ANOVA` instance or you wish to create an
+When using the :class:`~gdsctools.anova.ANOVA` instance or you wish to create an
 HTML report (see :ref:`html`), all tunable settings are accessible from an
 attribute called :attr:`settings`::
 

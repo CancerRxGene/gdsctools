@@ -151,6 +151,7 @@ Russian dolls.
 
 .. image:: layout1.png
 
+
 The computational time is therefore increasing with the number of drugs and
 features. Let us now perform the analysis for the 3 different cases.
 
