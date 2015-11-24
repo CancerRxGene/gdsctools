@@ -143,7 +143,13 @@ One can then repeat the ODOF analysis for the given drug across all features usi
 The following image illustrates how those 3 methods interweave together like
 Russian dolls. 
 
+1
+
 .. image:: _static/layout1.png
+
+2
+
+.. image:: layout1.png
 
 The computational time is therefore increasing with the number of drugs and
 features. Let us now perform the analysis for the 3 different cases.
