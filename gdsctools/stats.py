@@ -133,6 +133,7 @@ class MultipleTesting(object):
         pylab.legend(loc='best')
         pylab.ylabel('corrected pvalues')
         pylab.grid()
+        pylab.ylim([0, 1.05])
 
 
 def cohens(x, y):
