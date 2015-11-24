@@ -49,7 +49,7 @@ from distutils.core import setup, Extension
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if on_rtd is True:  # only import and set the theme if we're building docs
-    install_requires = ['colormap', 'easydev', 'numpy', 'statsmodels']
+    install_requires = ['colormap', 'easydev', 'pandas>=0.16.2']
 else:
     install_requires = ['numpy', 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.5', 'scipy', "colormap>=0.9.7",
