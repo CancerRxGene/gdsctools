@@ -49,7 +49,7 @@ from distutils.core import setup, Extension
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if on_rtd is True:  # only import and set the theme if we're building docs
-    install_requires = []
+    install_requires = ['colormap', 'easydev', 'numpy']
 else:
     install_requires = ['numpy', 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.5', 'scipy', "colormap>=0.9.7",
@@ -77,15 +77,18 @@ setup(
     packages = find_packages(),
     include_package_data = True,
 
+    # tells discutils extra packages are under share/data
     package_dir={'share.data': 'share/data'},
 
+    # here below '': pattern means include that pattern in all packages
+    # so '' :['README.rst'] will include all README.rst recursively
     package_data = {
-        'share.data' : ['*css', '*js', '*.txt', '*.csv', '*tsv', 
-            '*gz', 'README.rst'],
+        'share.data' : ['*.css', '*.js', '*.txt', '*.csv', '*.tsv', 
+            '*.gz', 'README.rst'],
         '' : ['README.rst'],
-        'share.data.images' : ['*png'],
-        'share.data.templates' : ['*html'],
-        'share.data.javascript' : ['*js'],
+        'share.data.images' : ['*.png'],
+        'share.data.templates' : ['*.html'],
+        'share.data.javascript' : ['*.js'],
         },
 
     # comment the requirements otherwise RTD fails
