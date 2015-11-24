@@ -134,7 +134,11 @@ class Reader(object):
 
             
             try:
-                rawdf = pd.read_csv(filename, sep="\t", comment="#")
+                try:
+                    rawdf = pd.read_csv(filename, sep="\t", comment="#")
+                except:
+                    rawdf = pd.read_csv(filename, sep="\t", comment="#",
+                            compression='gzip')
             except:
                 import pkg_resources
                 import os
