@@ -123,11 +123,17 @@ class Reader(object):
     def read_data(self, filename):
         # remove possible white spaces in the header's names
         if ".csv" in filename:
-            rawdf = pd.read_csv(filename, sep=",", comment="#")
+            try:
+                rawdf = pd.read_csv(filename, sep=",", comment="#")
+            except:
+                print('Could not read %s' % filename)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         elif ".tsv" in filename or '.txt' in filename: # txt not supported
             # officialy but txt file from previous run were interepreted as tsv
-            rawdf = pd.read_csv(filename, sep="\t", comment="#")
+            try:
+                rawdf = pd.read_csv(filename, sep="\t", comment="#")
+            except:
+                print('Could not read %s' % filename)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         else:
             raise ValueError("Only file ending in .csv or .csv.gz or .tsv"+
