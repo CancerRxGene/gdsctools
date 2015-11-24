@@ -2,5 +2,5 @@ easydev
 colormap
 matplotlib
 statsmodels
-pandas>=0.16.2
+pandas>=0.13.1
 scipy

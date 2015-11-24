@@ -198,10 +198,15 @@ class BoxPlots(Logging):
         counts = groups.count().unstack().fillna(0)
 
         # if positive or negative for a combo, is not>=2, drop it
-        cc = (counts >= 2).all()
+        try:
+            # pandas 0.16.2
+            cc = (counts >= 2).all()
+            # create a groups structure 
+            categories = list(cc.unstack().columns[cc])
+        except:
+            # pandas 0.13 for the doc only
+            categories = list(df.tissue.unique())[0:10]
 
-        # create a groups structure 
-        categories = list(cc.unstack().columns[cc])
         groups = df.query(mode + ' in @categories',
                 engine='python').groupby([mode, 'feature'])
 
