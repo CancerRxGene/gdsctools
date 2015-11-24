@@ -138,7 +138,7 @@ class Reader(object):
                 msg += "\n" + pkg_resources.get_distribution('gdsctools').location
                 loc = pkg_resources.get_distribution('gdsctools').location
                 import os
-                msg += "\n" + os.listdir(loc)
+                msg += "\n" + str(os.listdir(loc))
 
                 raise ValueError(msg)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
