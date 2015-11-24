@@ -310,7 +310,7 @@ class VolcanoANOVA(object):
         signed_effects = list(np.sign(deltas) * effects)
         qvals = list(subdf[self.varname_qvalue])
         pvals = list(subdf[self.varname_pvalue])
-        assocs = list(subdf['ASSOC_ID'])
+        #assocs = list(subdf['ASSOC_ID'])
 
         colors = []
         annotations = []
@@ -321,7 +321,7 @@ class VolcanoANOVA(object):
         data['Feature'] = list(subdf[self._colname_feature])
         data['Drug'] = list(subdf[self._colname_drugid])
         data['text'] = texts.values
-        data['Assoc'] = assocs
+        #data['Assoc'] = assocs
         ## !! here, we need to use .values since the pandas dataframe
         # index goes from 1 to N but the origignal indices in subdf
         # may not be from 1 to N but random between 1 and M>>N
