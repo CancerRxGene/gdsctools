@@ -40,63 +40,84 @@ class ANOVASettings(AttrDict):
         25
         >>> s.FDR_threshold = 20
 
-    When you change a value, you can check its validity by calling the
-    :meth:`check`  method. This is not very thorough right now but should
-    help.
+    It is the responsability of the users or developers to check the validity
+    of the settings by calling the :meth:`check` method. Note, however, that 
+    this method does not perform exhaustive checks. 
 
     Finally, the method :meth:`to_html` creates an HTML table that can
-    be added to HTML report.
+    be added to an HTML report.
 
     .. note:: **for developers** a key can be changed or accessed to as if
        it was an attribute. This prevents some functionalities (such as copy()
-       or property) to be used effectively normaly hence the creation of the
+       or property) to be used normaly hence the creation of the
        :meth:`check` method to check validity of the values rather than
        using properties.
 
-    Here are the current values used:
+    Here are the current values available. 
+
+
+
+    ========================= ================ ========================================
+    Name                      Default          Description
+    ========================= ================ ========================================
+    include_MSI_factor        True             Include MSI in the regression
+    feature_factor_threshold  3                Discard association where a
+                                               genomic feature has less than 3
+                                               positives or 3 negatives values
+                                               (e.g., 0, 1 or 2)
+    MSI_factor_threshold      2                Discard association where a MSI
+                                               count has less than 2 positives
+                                               or 2 negatives values (e.g., 0,
+                                               or 1).
+    analysis_type             PANCAN           Type of analysis. PANCAN means
+                                               use all data. Otherwise, you must
+                                               provide a valid tissue name to
+                                               be found in the Genomic Feature
+                                               data set.
+    pval_correction_method    fdr              Type of p-values correction
+                                               method used. Could be *fdr*,
+                                               *qvalue*  or one accepted
+                                               by
+                                               :class:`~gdsctools.stats.MultipleTesting`
+    equal_var_ttest           True             Assume equal variance in the
+                                               t-test
+    minimum_nonna_ic50        6                Minimum number of IC50 required
+                                               to perform an analysis for a
+                                               given drug.
+    fontsize                  25               Used in some plots for labels
+    FDR_threshold             25               FDR threshold used in volcano
+                                               plot and significant hits
+    pvalue_threshold          np.inf           Used to select significant hits see
+                                               :class:`~gdsctools.anova.ANOVAReport`
+    directory                 html_gdsc_anova  Directory where images and HTML 
+                                               documents are saved.
+    savefig                   False            Save the figure or not (PNG format)
+    effect_threshold          0                Used in the volcano plot. See
+                                               :class:`~gdsctools.volcano.VolcanoPlot`
+
+    low_memory                False            Faster (20%) if set to false but
+                                               uses about 1Gb per run
+    ========================= ================ ========================================
+
+
+    There are parameters dedicated to the regression method:
 
     ======================= ========= =========================================
     Name                    Default   Description
     ======================= ========= =========================================
-    includeMSI_factor       True      Include MSI in the regression
-    featFactorPopulationTh  3         Discard association where a
-                                      genomic feature has less than 3
-                                      positives or 3 negatives values
-                                      (e.g., 0, 1 or 2)
-    MSIfactorPopulationTh   2         Discard association where a MSI
-                                      count has less than 2 positives
-                                      or 2 negatives values (e.g., 0,
-                                      or 1).
-    analysis_type           PANCAN    Type of analysis. PANCAN means
-                                      use all data. Otherwise, you must
-                                      provide a valid tissue name to
-                                      be found in the Genomic Feature
-                                      data set.
-    pval_correction_method  fdr       Type of p-values correction
-                                      method used. Could be *fdr*,
-                                      *qvalue*  or one accepted
-                                      by
-                                      :class:`~gdsctools.stats.MultipleTesting`
-    equal_var_ttest         True      Assume equal variance in the
-                                      t-test
-    minimum_nonna_ic50      6         Minimum number of IC50 required
-                                      to perform an analysis for a
-                                      given drug.
-    fontsize                25        Used in some plots for labels
-    FDR_threshold           25        FDR threshold used in volcano
-                                      plot and significant hits
-    pvalue_threshold        np.inf    Used to select significant hits
-                                      see
-                                      :class:`~gdsctools.anova.ANOVAReport`
-    directory               html_gdsc Directory where images and HTML documents
-                                      are saved.
-    savefig                 False     Save the figure or not (PNG format)
-    effect_threshold        0         Used in the volcano plot. See
-                                      :class:`~gdsctools.volcano.VolcanoPlot`
-
-    low_memory              False     Faster (20%) if set to false but
-                                      uses about 1Gb per run
+    regression.method       OLS       Regression method amongst OLS, Ridge
+                                      Lasso, ElasticiNet.
+    regression.alpha        0         Fraction of penalty included. If 0,
+                                      equivalent to OLS.
+    regression.L1_wt        0         Fraction of the penalty given to L1
+                                      penalty term. Must be between 0 and 1. 
+                                      If 0, equivalent to Ridge. If 1 
+                                      equivalent to Lasso
     ======================= ========= =========================================
+
+
+    .. seealso:: :ref:`settings_filtering` or 
+        gdsctools.readthedocs.org/en/master/settings.html#filtering
 
     """
     def __init__(self, **kargs):
@@ -104,11 +125,12 @@ class ANOVASettings(AttrDict):
 
         ## ANALYSIS ---------------------------------
         # include MSI as a co-factor
-        self.includeMSI_factor = True
+        self.include_MSI_factor = True
         # number of positive samples required to perform the test
-        self.featFactorPopulationTh = 3
+        self.feature_factor_threshold = 3
         # How many MSI samples must be present to perform the test
-        self.MSIfactorPopulationTh = 2
+        self.MSI_factor_threshold = 2
+
         self.analysis_type = 'PANCAN'
         self.pval_correction_method = 'fdr'   # or qvalue
         self.equal_var_ttest = True
@@ -126,14 +148,37 @@ class ANOVASettings(AttrDict):
         self.volcano_additional_FDR_lines = [0.01, 0.1, 10]
         self.volcano_FDR_interpolation = True
 
+        # ----------------------- regression related
+        self.regression = AttrDict()
+        self.regression.method = 'OLS' # can be ElasticNet, LAsso, Ridge
+        self.regression.alpha = 0
+        self.regression.L1_wt = 0
+        # uses statsmodels package
+        # The fraction of the penalty given to the L1 penalty term. Must be
+        # between 0 and 1 (inclusive). If 0, the fit is ridge regression. If
+        # 1, the fit is the lasso.
+
+
+
     def check(self):
-        """Checks the values of the parameters"""
+        """Checks the values of the parameters
+        
+        This may not be exhaustive. Right now, checks 
+        
+         - MSI factor is boolean.
+         - Regression.method in OLS/Ridge/Lasso/ElasticNet
+         - FDR thresohld in [0,1]
+         - pvalues_threshold in [0,inf[
+         - effect_threshold in [0,inf[
+         - pval_correction_method
+         - etc
+        """
         inrange = easydev.check_range
         inlist = easydev.check_param_in_list
         # check validity of the settings
-        inlist(self.includeMSI_factor, [False, True], 'MSI')
-        inrange(self.featFactorPopulationTh, 0, np.inf)
-        inrange(self.MSIfactorPopulationTh, 0, np.inf)
+        inlist(self.include_MSI_factor, [False, True], 'MSI')
+        inrange(self.feature_factor_threshold, 0, np.inf)
+        inrange(self.MSI_factor_threshold, 0, np.inf)
 
         # all those methods are from statsmodels.stats.multitest.multipletests
         inlist(self.pval_correction_method, ['bonferroni', 'sidak',
@@ -148,20 +193,30 @@ class ANOVASettings(AttrDict):
 
         # for now, if MSI is False, this cannot be a PANCAN analysis
         # but a cancer specific analysis
-        if self.includeMSI_factor is False:
+        if self.include_MSI_factor is False:
             assert self.analysis_type != 'PANCAN', \
                 'If MSI factor is not included, the analysis must be cancer'+\
                 ' specific (i.e., a tissue must be set.'
+
+        valid_reg_meth = ['OLS', 'ElasticNet', 'Lasso', 'Ridge']
+        inlist(self.regression.method, valid_reg_meth)
 
     def to_html(self):
         """Convert the sets of parameters into a nice HTML table"""
         data = self.copy()
         data['volcano_additional_FDR_lines'] = \
                 str(data['volcano_additional_FDR_lines'])
-
+        
         settings = pd.DataFrame(data, index=[0]).transpose()
+
+        settings.drop('regression', inplace=True)
+
+        for key in self.regression.keys():
+            settings.ix['regression.' + key] = [self.regression[key]]
+
         settings.reset_index(inplace=True)
         settings.columns = ['name', 'value']
+
         html = settings.to_html(header=True, index=False)
         return html
 
