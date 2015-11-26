@@ -165,12 +165,13 @@ class ANOVAReport(object):
         r.settings.directory = 'testing'
         r.create_html_pages()
 
-    :Significant association: a significant association is either
-        **resistant** or **sensitive**. Those conditions have to be fulfilled:
+    :Significant association: an association is significant if one of those
+        conditions is fulfilled:
          - The field *ANOVA_FEATURE_FDR_%* must be < FDR_threshold
          - The field *FEATURE_ANOVA_pval* must be < pvalue_threshold
          - The field *FEATURE_deltaMEAN_IC50* must be < 0 (sensible) or
            >= 0 (resistant)
+        It can be **resistant** or **sensitive**.
 
     """
     def __init__(self, gdsc, results, sep="\t", drug_decoder=None):
@@ -286,7 +287,7 @@ class ANOVAReport(object):
         df = self._df_append(df, [msg, self.n_celllines])
 
         msg = "MicroSatellite instability included as factor"
-        msi = self.settings.includeMSI_factor
+        msi = self.settings.include_MSI_factor
         df = self._df_append(df, [msg, msi])
 
         # trick to have an empty line
@@ -645,7 +646,11 @@ class ANOVAReport(object):
         self.settings.savefig = buffer_
 
     def create_html_manova(self, onweb=True):
-        """Create summary table with all significant hits"""
+        """Create summary table with all significant hits
+        
+        :param onweb: open browser with the created HTML page.
+
+        """
         df = self.get_significant_set()
         page = HTMLPageMANOVA(self.gdsc, df)
         page.report(onweb)
@@ -800,12 +805,12 @@ class ANOVA(object): #Logging):
             # This is therefore a < comparison here below. See in
             # _get_one_drug_one_feature_data that we use >= which
             # is consistent.
-            if positives < self.settings.MSIfactorPopulationTh:
-                self.settings.includeMSI_factor = False
-            if negatives < self.settings.MSIfactorPopulationTh:
-                self.settings.includeMSI_factor = False
+            if positives < self.settings.MSI_factor_threshold:
+                self.settings.include_MSI_factor = False
+            if negatives < self.settings.MSI_factor_threshold:
+                self.settings.include_MSI_factor = False
         else:
-            self.settings.includeMSI_factor = False
+            self.settings.include_MSI_factor = False
 
     def _autoset_tissue(self):
         # select tissue based on the features
@@ -835,7 +840,6 @@ class ANOVA(object): #Logging):
            assert this in self.features.tissues
 
         # keep only features that correspond to the tissue
-        # and have at least featFactorPopulationTh positives
         self.features.keep_tissue_in(ctype)
 
         self.ic50.df = self.ic50.df.ix[self.features.df.index]
@@ -930,7 +934,7 @@ class ANOVA(object): #Logging):
         if self.settings.analysis_type == 'PANCAN':
             modes.append('tissue')
 
-        if self.settings.includeMSI_factor is True:
+        if self.settings.include_MSI_factor is True:
             modes.append('msi')
 
         modes.append('feature')
@@ -1016,14 +1020,18 @@ class ANOVA(object): #Logging):
         dd.negative_feature = len(dd.masked_features) - dd.positive_feature
 
         # Some validity tests to run the analysis or not
-        A = self.settings.includeMSI_factor and\
-            dd.positive_feature >= self.settings.featFactorPopulationTh and\
-            dd.negative_feature >= self.settings.featFactorPopulationTh and\
-            dd.negative_msi >= self.settings.MSIfactorPopulationTh and\
-            dd.positive_msi >= self.settings.MSIfactorPopulationTh
-        B = (not self.settings.includeMSI_factor) and\
-            dd.positive_feature >= self.settings.featFactorPopulationTh and\
-            dd.negative_feature >= self.settings.featFactorPopulationTh
+        feature_threshold = self.settings.feature_factor_threshold
+        msi_threshold = self.settings.MSI_factor_threshold
+
+        A = self.settings.include_MSI_factor and\
+            dd.positive_feature >= feature_threshold and\
+            dd.negative_feature >= feature_threshold and\
+            dd.negative_msi >= msi_threshold and \
+            dd.positive_msi >= msi_threshold
+
+        B = (not self.settings.include_MSI_factor) and\
+            dd.positive_feature >= feature_threshold and\
+            dd.negative_feature >= feature_threshold
         # We could of course use the mean() and std() functions from pandas or
         # numpy. We could also use the glass and cohens functions from the
         # stats module but the following code is much faster because it
@@ -1076,7 +1084,6 @@ class ANOVA(object): #Logging):
                 (dd.Nneg - 1.) * dd.neg_IC50_std**2
         csd /= dd.Npos + dd.Nneg - 2.  # make sure this is float
         dd.effectsize_ic50 = md / np.sqrt(csd)
-
 
         # Note that equal_var is a user parameter and affects
         # results. The ANOVA_results.txt obtained from SFTP
@@ -1227,11 +1234,9 @@ class ANOVA(object): #Logging):
             # One issue is that some columns end up with sum == 0
             # and needs to be dropped.
             df = self._tissue_dummies.ix[odof.masked_tissue.index]
-            todrop = df.columns[df.values.sum(axis=0)==0]
+            todrop = df.columns[df.values.sum(axis=0) == 0]
             if len(todrop) > 0: # use if since drop() is slow
                 df = df.drop(todrop, axis=1)
-
-            Ntissue = len(df.columns) - 3 # -3 to ignore msi, feat., interc.
 
             # Here we set other variables with dataframe columns' names as
             # expected by OLS.
@@ -1241,10 +1246,23 @@ class ANOVA(object): #Logging):
             self.Y = odof.Y
             self.EV = df.values
             # The regression and anova summary are done here
-            #self.data_lm = OLS(odof.Y, df.values).fit_regularized()
-            self.data_lm = OLS(odof.Y, df.values).fit()
+            #
+            if self.settings.regression.method == 'ElasticNet':
+                self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                        alpha=self.settings.regression.alpha, 
+                        L1_wt=self.settings.regression.L1_wt)
+            elif self.settings.regression.method == 'OLS':
+                self.data_lm = OLS(odof.Y, df.values).fit()
+            elif self.settings.regression.method == 'Ridge':
+                self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                        alpha=self.settings.regression.alpha, 
+                        L1_wt=0)
+            elif self.settings.regression.method == 'Lasso':
+                self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                        alpha=self.settings.regression.alpha, 
+                        L1_wt=1)
             #self.anova_pvalues = self._get_anova_summary(self.data_lm,
-            #    Ntissue, output='dict')
+            #    output='dict')
 
             # example of computing null model ?
             # Example of computing pvalues ourself
@@ -1258,14 +1276,14 @@ class ANOVA(object): #Logging):
                 #data_lm = OLS(Y, df.values).fit()
                 data_lm = OLS(Y+0.3*pylab.randn(len(Y)), df.values).fit()
                 anova_pvalues = self._get_anova_summary(data_lm,
-                    Ntissue, output='dict')
+                    output='dict')
                 self.samples1.append(anova_pvalues['msi'])
                 self.samples2.append(anova_pvalues['feature'])
                 self.samples3.append(anova_pvalues['tissue'])
                 pb.animate(i)
             """
 
-        elif self.settings.includeMSI_factor is True:
+        elif self.settings.include_MSI_factor is True:
             #self._mydata = pd.DataFrame({'Y': odof.Y,
             #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
             #self.data_lm = ols('Y ~ C(msi) + feature',
@@ -1275,21 +1293,18 @@ class ANOVA(object): #Logging):
             df['feature'] = odof.masked_features.values
             df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
             self.data_lm = OLS(odof.Y, df.values).fit()
-            Ntissue = 0
         else:
             df = pd.DataFrame()
             df['feature'] = odof.masked_features.values
             df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
             self.data_lm = OLS(odof.Y, df.values).fit()
-            Ntissue = 0
             #self._mydata = pd.DataFrame({'Y': odof.Y,
             #    'feature': odof.masked_features})
             #self.data_lm = ols('Y ~ feature',
             #    data=self._mydata).fit() #Specify C for Categorical
-            #Ntissue = 0
 
         self.anova_pvalues = self._get_anova_summary(self.data_lm,
-                Ntissue, output='dict')
+                 output='dict')
 
         # Store the pvalues. Note that some may be missing so we use try
         # except, which is faster than if/else
@@ -1317,7 +1332,7 @@ class ANOVA(object): #Logging):
             # the settings.analyse_type to be PANCAN
             if self.settings.analysis_type == 'PANCAN':
                 boxplot.boxplot_pancan(fignum=2, mode='tissue')
-            if self.settings.includeMSI_factor:
+            if self.settings.include_MSI_factor:
                 boxplot.boxplot_pancan(fignum=3, mode='msi')
 
         results = {'FEATURE': feature_name,
@@ -1349,24 +1364,90 @@ class ANOVA(object): #Logging):
             df = pd.DataFrame(results, index=[1])
             return df
 
+    def optimise_elastic_net(self, drug_name, feature_name, N=20, Nalpha=20):
+        lwts = pylab.linspace(0, 1, N)
+        alphas = pylab.linspace(0,5, Nalpha)
+
+        mses = np.zeros((N, Nalpha))
+
+        pb = Progress(N)
+        for i, lwt in enumerate(lwts):
+            for j, alpha in enumerate(alphas):
+                self.settings.regression_method = 'ElasticNet'
+                self.settings.elastic_net.alpha = alpha
+                self.settings.elastic_net.L1_wt = lwt
+                odof = self.anova_one_drug_one_feature(drug_name, 
+                        feature_name)
+                anova = self._get_anova_summary(self.data_lm, 
+                        output='dataframe')
+                mses[i,j] = self.data_lm.bic
+            pb.animate(i+1)
+        return mses
+    
+    def optimise_ridge(self, drug_name, feature_name, alphas=None):
+        return self._opt_ridge_lasso(drug_name, feature_name, 
+                'Ridge', alphas=alphas)
+    
+    def optimise_lasso(self, drug_name, feature_name, alphas=None):
+        return self._opt_ridge_lasso(drug_name, feature_name, 
+                'Lasso', alphas=alphas)
+
+    def _opt_ridge_lasso(self, drug_name, feature_name, method, alphas=None):
+
+        if alphas is None:
+            alphas = pylab.linspace(0,1, Nalpha)
+
+        mses = []
+        params = [] 
+        method_buf = self.settings.regression_method
+        alpha_buf = self.settings.elastic_net.alpha
+
+        pb = Progress(len(alphas))
+        for j, alpha in enumerate(alphas):
+            self.settings.regression_method = method
+            self.settings.elastic_net.alpha = alpha
+            odof = self.anova_one_drug_one_feature(drug_name, 
+                    feature_name)
+            anova = self._get_anova_summary(self.data_lm, 
+                    output='dataframe')
+            print anova
+            #mses.append(anova.ix['Residuals']['Sum Sq'])
+            mses.append(anova.ix['tissue']['F value'])
+            #mses.append(anova['Sum Sq'].sum())
+            pb.animate(j+1)
+            params.append(self.data_lm.params)
+        self.settings.regression_method = method_buf
+        self.settings.elastic_net.alpha = alpha_buf
+        return alphas, mses, params
+
     # no need to optimise anymore
-    def _get_anova_summary(self, data_lm, Ntissue, output='dict'):
+    def _get_anova_summary(self, data_lm, output='dict'):
         # could use this with statsmodels but somehow anova_lm with typ I
         # does not work, which is the one used in R version, so we implement
         # the anova here
         q, r = np.linalg.qr(data_lm.model.data.exog)
         effects = np.dot(q.T, data_lm.model.data.endog)
 
-        # create the W matrix using tissue and MSI if requested
-        # default is that the 3 features are used
+        # In the regression, the first tissue is dropped hence -1
+        # The degree of freedom for tissues is N - 1
+        # self.features.tissues contains all tissues even those that 
+        # were dropped due to lack of pos or neg features. So, we must use
         modes = self._get_analysis_mode()
         Ncolumns = data_lm.model.data.exog.shape[1]
+        Ntissue = Ncolumns
+        Ntissue -= 1 # remove intercept
+        Ntissue -= 1 # remove feature, which are always taken into account
+        if 'msi' in modes:
+            Ntissue -= 1
+
+        # create the W matrix using tissue and MSI if requested
+        # default is that the 3 features are used
         if 'tissue' in modes and 'msi' in modes:
             dof = [Ntissue, 1, 1]
             indices = ['tissue', 'msi', 'feature', 'Residuals']
             # 4 stands for intercept + tissue + msi +feature
             arr = np.zeros((4, Ncolumns))
-            arr[1, slice(1, Ntissue+1)] = 1
+            arr[1, slice(1, Ntissue)] = 1
             arr[2, Ntissue + 1] = 1
             arr[3, Ntissue + 2] = 1
         elif 'tissue' not in modes and 'msi' in modes:
@@ -1374,14 +1455,14 @@ class ANOVA(object): #Logging):
             indices = ['msi', 'feature', 'Residuals']
             # 3 stands for intercept + msi +feature
             arr = np.zeros((3, Ncolumns))
-            arr[1, Ntissue + 1] = 1
-            arr[2, Ntissue + 2] = 1
+            arr[1, 1] = 1
+            arr[2, 2] = 1
         elif 'tissue' not in modes and 'msi' not in modes:
             dof = [1]
             indices = ['feature', 'Residuals']
             # 3 stands for intercept + msi +feature
             arr = np.zeros((2, Ncolumns))
-            arr[1, Ntissue + 1] = 1
+            arr[1, 1] = 1
         arr[0, 0] = 1                   # intercept
 
         sum_sq = np.dot(arr, effects**2)[1:] # drop the intercep
@@ -1405,7 +1486,7 @@ class ANOVA(object): #Logging):
         elif self.settings.analysis_type == 'PANCAN':
             return {'tissue': F_pvalues[0], 'msi':F_pvalues[1],
                     'feature':F_pvalues[2]}
-        elif self.settings.includeMSI_factor is True:
+        elif self.settings.include_MSI_factor is True:
             return {'msi': F_pvalues[0], 'feature':F_pvalues[1]}
         else:
             return {'feature': F_pvalues[0]}
@@ -1515,6 +1596,7 @@ class ANOVA(object): #Logging):
         # axis=0 is default but we emphasize that sum is over
         # column (i.e. drug
         vv = (self.ic50.df.isnull() == False).sum(axis=0)
+        # FIXME: should be in one_drug_one_feature ??
         drug_names = vv.index[vv >= self.settings.minimum_nonna_ic50]
 
         # if user provided a list of drugs, use them:
@@ -1529,7 +1611,6 @@ class ANOVA(object): #Logging):
             pb.animate(0)
 
         for i, drug_name in enumerate(drug_names):
-            # TODO: try/except
             if drug_name in self.individual_anova.keys():
                 pass
             else:
@@ -1694,7 +1775,7 @@ class Association(ReportMAIN):
         tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
         section = '<img alt="association {0}" src="{0}">\n'.format(tag)
 
-        if self.factory.settings.includeMSI_factor:
+        if self.factory.settings.include_MSI_factor:
             prefix = 'ODOF_msi'
             tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
             section += '<img alt="association {0}" src="{0}">\n'.format(tag)
