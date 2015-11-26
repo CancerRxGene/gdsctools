@@ -129,15 +129,16 @@ previous IC50 test example, we create an ANOVA instance as follows::
 
 There are now several possible analysis but the core of the analysis consists
 in taking one drug and one feature (ODOF hereafter) and to compute the
-association using a regression analysis. The IC50 across the cell lines being
-the dependent variable :math:`Y` and the explanatory variables denoted :math:`X` are made of tissues, :term:`MSI` and one genomic feature. following the regression analysis, we compute the ANOVA summary leading to a p-value for the significance of the association between the drug's IC50s and the genomic feature considered. This calculation is performed with the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. 
+association using a regression analysis (see :ref:`regression` for details). 
+The IC50 across the cell lines being
+the dependent variable :math:`Y` and the explanatory variables denoted :math:`X` are made of tissues, :term:`MSI` and one genomic feature. Following the regression analysis, we compute the ANOVA summary leading to a p-value for the significance of the association between the drug's IC50s and the genomic feature considered. This calculation is performed with the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. 
 
 One can then repeat the ODOF analysis for the given drug across all features using the :meth:`~gdsctools.anova.ANOVA.anova_one_drug` method. This is also named One Drug All Feature case (ODAF). Finally we can even extend the analysis to All Drugs All Features (ADAF) using :meth:`~gdsctools.anova.ANOVA.anova_all`.
 
 .. note:: P-values reported by the ODOF method need to be corrected with a
     multiple testing correction when combined in the ODAF or ADAF cases. 
     For more information, please see the 
-    :meth:`gdsctools.stats.MulipleTesting` description.
+    :meth:`gdsctools.stats.MultipleTesting` description.
 
 
 The following image illustrates how those 3 methods interweave together like
@@ -172,7 +173,7 @@ In the first boxplot, the feature factor is considered;  we see the IC50s being 
 In the second boxplot, the tissue variable is explored; this is a decomposition
 of the first boxplot across tissues.
 
-Finally, the third boxplot shows the impact of the :term:`MSI` factor. Here again, all tissues are mixed.
+Finally, the third boxplot shows the impact of the :term:`MSI` factor. Here again, all tissues are mixed. In the MSI column, zeros and ones correspond to MSI unstable and stab le, respetively. The **pos** and **neg** labels correspond to the feature being true or not, respetively.
 
 The output of an ODOF analysis is a time series that contains statistical information about the association found between the drug and the feature. See for :class:`gdsctools.anova.ANOVAResults` for more details.
 

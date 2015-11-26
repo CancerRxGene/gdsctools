@@ -61,6 +61,7 @@ Contents
     notebooks.rst
     standalone.rst
     settings.rst
+    regression.rst
     data_packages.rst
     references.rst
     developers.rst

@@ -61,22 +61,14 @@ Pipelines and reports
     :members:
     :undoc-members:
 
-Others
-------------
+Data-related
+--------------
 
 .. automodule:: gdsctools.tissues
     :members:
     :undoc-members:
  
-.. automodule:: gdsctools.tools
-    :members:
-    :undoc-members:
-
 .. automodule:: gdsctools.datasets
-    :members:
-    :undoc-members:
-
-.. automodule:: gdsctools.settings
     :members:
     :undoc-members:
 
@@ -85,8 +77,23 @@ Others
     :undoc-members:
 
 
+Logistics
+-------------
+
+.. automodule:: gdsctools.logistics
+    :members:
+    :undoc-members:
 
 
+MISC
+------
+
+.. automodule:: gdsctools.tools
+    :members:
+    :undoc-members:
 
 
+.. automodule:: gdsctools.settings
+    :members:
+    :undoc-members:
 

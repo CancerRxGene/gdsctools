@@ -100,4 +100,9 @@ Glossary
         It is a specialised :term:`CLI` that is a command-line shell (e.g., 
         bash) where users can execute programs.
 
-
+    OLS
+        An ordinary least squares (OLS) or linear least squares is a
+        method for estimating the unknown parameters in a linear regression
+        model, with the goal of minimizing the differences between the observed
+        responses in some arbitrary dataset and the responses predicted by the
+        linear approximation of the data
