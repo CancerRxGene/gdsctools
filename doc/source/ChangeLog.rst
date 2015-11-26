@@ -5,6 +5,15 @@ ChangeLog
 
 version 0.9 Nov 2015
 --------------------------
+.. rubric:: 0.9.9
+
+* CHANGES:
+   - add new regression method: Ridge/Lasso/ElasticNet in
+     :class:`gdsctools.anova.ANOVA`
+   - Rename some of the settings to have a more uniform naming convention in
+     :class:`gdsctools.settings.ANOVASettings`
+   - Add new module related to fitting ot logistic function  parameters
+     (:mod:`gdsctools.logistics`)
 
 .. rubric:: 0.9.8
 
