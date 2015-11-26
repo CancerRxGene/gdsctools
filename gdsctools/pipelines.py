@@ -162,7 +162,7 @@ def _set_settings(gdsc, options):
     if options.settings is not None:
         gdsc.settings.from_json(options.settings)
     gdsc.settings.directory = options.directory
-    gdsc.settings.includeMSI_factor = options.include_msi
+    gdsc.settings.include_MSI_factor = options.include_msi
     gdsc.settings.FDR_threshold = options.FDR_threshold
     gdsc.settings.check()
     return gdsc
@@ -237,7 +237,7 @@ def anova_one_drug_one_feature(options):
             drug=options.drug,
             feature=options.feature)
     #FIXME: are those 4-5 lines required ??
-    odof.factory.settings.includeMSI_factor = options.include_msi
+    odof.factory.settings.include_MSI_factor = options.include_msi
     odof.factory.settings.FDR_threshold = options.FDR_threshold
 
     odof.factory.set_cancer_type(options.tissue)
@@ -396,7 +396,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
                             help="""Read settings from a json file. Type
                             --save-settings <filename.json> to create
                             an example. Note that the FDR-threshold 
-                            and includeMSI_factor will be replaced if
+                            and include_MSI_factor will be replaced if
                             --exclude-msi or fdr-threshold are used.""")
 
         # others

@@ -101,7 +101,6 @@ class BoxPlots(Logging):
         """
         assert mode in ['tissue', 'msi']
         drug_name = self.odof.drug_name.replace("_", " ")
-        #feature_name = odof.feature_name.replace("_", "\_")
 
         results = self._get_boxplot_data(mode)
         if results is None:
@@ -134,7 +133,8 @@ class BoxPlots(Logging):
         self.ax = ax.twinx()
         self.ax.set_ylim(common_ylim)
         self.ax.set_yticks(common_ticks)
-        self.ax.set_yticklabels([len(this) for this in data], fontsize=fontsize)
+        self.ax.set_yticklabels([str(len(this))+" " for this in data], 
+                fontsize=fontsize/1.4)
         #pylab.tight_layout()
         if self.savefig is True:
             filename = self.directory + os.sep
@@ -147,7 +147,7 @@ class BoxPlots(Logging):
             #pylab.savefig(filename + '.svg', bbox_inches='tight')
 
     def boxplot_association(self, fignum=1):
-        """Boxplot of the associtiona (negative versus positive)
+        """Boxplot of the association (negative versus positive)
         
         :param fignum: number of the figure 
         """

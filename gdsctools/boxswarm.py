@@ -106,7 +106,7 @@ class BoxSwarm(object):
         self.hold = hold
         self.title = title
         self.lw = lw
-        self.markersize = 15
+        self.markersize = 12
 
     def beeswarm(self, data, position, ratio=2.):
         r"""Naive plotting of the data points 
@@ -140,7 +140,7 @@ class BoxSwarm(object):
         newdata = position + (pylab.random(N) - 0.5)/float(ratio) * factor
         return newdata
 
-    def plot(self, vert=True, widths=0.5, **kwargs):
+    def plot(self, vert=True, alpha=0.4, widths=0.5, **kwargs):
         """Plot the boxplots and dots
 
 
@@ -159,9 +159,10 @@ class BoxSwarm(object):
                 X, Y = self.beeswarm(vector, i+1), vector
             else:
                 X, Y = vector, self.beeswarm(vector, i+1)
+            
             pylab.plot(X, Y,
                 'o', markersize=self.markersize, markerfacecolor=color,
-                markeredgewidth=0, alpha=0.5)
+                markeredgewidth=1, alpha=alpha)
 
         #show means but not outliers
         try:
@@ -207,7 +208,7 @@ class BoxSwarm(object):
             this.set_linewidth(self.lw)
             color = self.colors[i%len(self.colors)]
             this.set_facecolor(color)
-            this.set_alpha(0.4) # 0.4 is less than the alpha of the dots to ...
+            this.set_alpha(0.3) # 0.4 is less than the alpha of the dots to ...
             # ... so as to see the dots inside the boxes
             this.set_zorder(10) # this moves the box on top of all dots
         for this in d['caps']:
@@ -223,19 +224,23 @@ class BoxSwarm(object):
         extend = 0.05
         R = (M-m) * extend
         X, Y = range(1, len(self.names)+1), self.names
-        Y = [y.replace("_", "\_") for y in Y]
+        Y = [y.replace("_", " ") for y in Y]
         if vert is True:
             pylab.ylabel(self.ylabel, fontsize=self.fontsize)
             pylab.xticks(X, Y, fontsize=self.fontsize, rotation=90)
             pylab.ylabel(self.xlabel, fontsize=self.fontsize)
             pylab.yticks(pylab.yticks()[0], fontsize=self.fontsize)
-            pylab.ylim([m-R,M+R])
+            pylab.ylim([m-R, M+R])
         else:
             pylab.xlabel(self.xlabel, fontsize=self.fontsize)
-            pylab.yticks(X, Y, fontsize=self.fontsize, rotation=00)
+            if len(X) > 20:
+                pylab.yticks(X, Y, fontsize=self.fontsize/1.5, rotation=00)
+            else:
+                pylab.yticks(X, Y, fontsize=self.fontsize, rotation=00)
+
             pylab.ylabel(self.ylabel, fontsize=self.fontsize)
             pylab.xticks(pylab.xticks()[0], fontsize=self.fontsize)
-            pylab.xlim([m-R,M+R])
+            pylab.xlim([m-R, M+R])
 
         pylab.title(self.title, fontsize=self.fontsize*1.25)
         pylab.grid()
