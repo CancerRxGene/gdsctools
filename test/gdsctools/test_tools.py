@@ -1,13 +1,11 @@
-from gdsctools.tools import Logistic
+from gdsctools.tools import Savefig
 
 
 
+def test_savefig():
+    # TODO if required. Most probably used by other tests
+    # e.g. when creating HTML report.
+    pass
 
-def test_logistic():
-    import pylab
-    tl = Logistic(2, 1)
-    tl.plot()
-    tl.scale = 4
-    tl.plot(hold=True)
-    pylab.legend(['scale=1', 'scale=4'])
+
 

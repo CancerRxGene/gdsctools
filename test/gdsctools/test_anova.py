@@ -78,7 +78,7 @@ def test_anova_summary():
     assert_list_almost_equal(x, y)
 
     # now remove also the MSI factor
-    an.settings.includeMSI_factor = False
+    an.settings.include_MSI_factor = False
     df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
     x = an.anova_pvalues
     y = [0.21266050833611852, None]
