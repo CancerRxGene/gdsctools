@@ -725,6 +725,8 @@ class ANOVA(object): #Logging):
         :param features: another dataframe with rows as in the IC50 matrix
             and columns as features.  The first 3 columns must be named
             specifically to hold tissues, MSI (see format).
+        :param drug_decoder: a 3 column CSV file with drug's name and targets
+            see :mod:`readers` for more information.
         :param verbose: verbosity in "WARNING", "ERROR", "DEBUG", "INFO"
 
         The attribute :attr:`settings` contains specific settings related
@@ -1938,7 +1940,7 @@ class HTMLPageMain(ReportMAIN):
         There were %(N)s significant associations found.
         All significant associations have been gatherered
         in the following link: <a href="manova.html">manova results</a>.
-        """ % {'N':N}
+        """ % {'N': N}
 
         # feature summary
         df_features = self.results.feature_summary("feature_summary.png")
@@ -2038,31 +2040,35 @@ class HTMLPageMain(ReportMAIN):
         html = ''
         if filename is not None:
             shutil.copy(filename, input_dir)
+            filename = os.path.basename(filename)
+            filename = os.sep.join(['INPUT', filename])
             self.jinja['ic50_file'] = filename
 
         # the genomic features, which may be the default version.
         filename = self.results.gdsc.features._filename
-        if filename is not None:
-            shutil.copy(filename, input_dir)
-            self.jinja['gf_file'] = filename
-        else:
-            # the default one ??
-            from gdsctools import datasets
-            filename = datasets.genomic_features.filename
-            shutil.copy(filename, input_dir)
-            filename = os.path.split(filename)[1]
-            html += 'No Genomic Features file was provided. '
-            html += 'The <a href="INPUT/%s">default version</a> was most probably used.<br/>' % filename
+        shutil.copy(filename, input_dir)
+        filename = os.path.basename(filename)
+        txt = """Get <a href="INPUT/%s">Genomic Features</a> file.<br/>"""
+        self.jinja['gf_file'] = txt % filename
 
         # the drug decode file
         filename = self.results.gdsc.drug_decoder._filename
         if filename is not None:
             shutil.copy(filename, input_dir)
-            filename = os.path.split(filename)[1]
+            filename = os.path.basename(filename)
             html += 'Get <a href="INPUT/%s">Drug DECODE file</a>' % filename
         else:
-            html += 'No Drug DECODE file was provided<br/>'
-        self.jinja['settings'] = html
+            html += 'No Drug DECODE file was provided'
+        self.jinja['drug_decode'] = html
+
+        # Save settings as json file
+        filename = os.sep.join([input_dir, 'settings.json'])
+        self.settings.to_json(filename)
+        filename = os.path.basename(filename)
+        self.jinja['settings'] = \
+                """Get the settings as a <a href="INPUT/%s">
+                json file</a>.""" % filename
+
 
 
 class SignificantHits(object):
