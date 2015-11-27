@@ -5,6 +5,17 @@ ChangeLog
 
 version 0.9 Nov 2015
 --------------------------
+
+.. rubric:: 0.9.10
+
+* NEW:
+  - add settings as json file in the HTML report
+
+* CHANGES:
+
+* BUG FIXES:
+
+
 .. rubric:: 0.9.9
 
 * CHANGES:

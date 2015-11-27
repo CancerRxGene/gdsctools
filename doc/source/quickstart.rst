@@ -189,14 +189,9 @@ Now that we have analysed one drug for one feature, we could repeat the analysis
 
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
-    df = gdsc.anova_one_drug('Drug_999_IC50')  
-    
-    # no plots were generated in the previous statement
-    # so we need to do it. The API will be simplified in the future
-    from gdsctools import VolcanoANOVA
-    df = gdsc.add_pvalues_correction(df)
-    v = VolcanoANOVA(df)
-    v.volcano_plot_all()
+    results = gdsc.anova_one_drug('Drug_999_IC50')  
+    results.volcano()
+
 
 .. note:: This method takes 4-10 seconds per drug depending on the 
     number of features.
@@ -246,9 +241,7 @@ a :term:`PANCAN` analysis.
     gdsc.set_cancer_type('breast')
     results = gdsc.anova_all()
 
-    from gdsctools import VolcanoANOVA
-    v = VolcanoANOVA(results.df)
-    v.volcano_plot_all()
+    results.volcano()
 
 .. warning:: :meth:`anova_all` may take a long time to run 
     (e.g., 10 minutes, 30 minutes) depending on the number of drugs

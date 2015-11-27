@@ -3,10 +3,13 @@
 FAQS
 =======
 
+.. contents::
+
 Installation
 -----------------
 
-Any trouble, please let us know: send a ticket 
+The :ref:`installation` should guide you to install **GDSCTools** but would you
+have any trouble, please let us know and send a ticket 
 on `gdsctools github <https://github.com/CancerRxGene/gdsctools/issues>`_.
 
 
@@ -15,6 +18,31 @@ Usage
 
 Any trouble using **gdsctools_anova** executable, please let us know: send a
 on `gdsctools github <https://github.com/CancerRxGene/gdsctools/issues>`_.
+
+
+I cannot see any plots or figures
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First solution is to import ths show function from pylab::
+
+    from pylab import show
+    show()
+
+The figures should appear now but you will have to close them to get back to the
+shell. To get a better interaction, exit from the shell and start a new one
+typing::
+
+    ipython --pylab
+
+Under MAC, the default backend for pylab may cause some trouble with this
+message::
+
+    RuntimeError: CGContextRef is NULL
+
+If so, try another backend::
+
+    ipython --pylab=qt
+
 
 About Python
 ---------------
@@ -36,5 +64,7 @@ I’ve never used Python before. Is there a Python tutorial?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There are numerous tutorials and books available. The standard documentation
 includes `The Python Tutorial <https://docs.python.org/3/tutorial/index.html#tutorial-index>`_. 
+
+
 
 
