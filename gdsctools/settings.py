@@ -158,8 +158,6 @@ class ANOVASettings(AttrDict):
         # between 0 and 1 (inclusive). If 0, the fit is ridge regression. If
         # 1, the fit is the lasso.
 
-
-
     def check(self):
         """Checks the values of the parameters
         

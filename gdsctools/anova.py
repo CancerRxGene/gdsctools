@@ -1583,7 +1583,7 @@ class ANOVA(object): #Logging):
             df = self.add_pvalues_correction(df)
             res = ANOVAResults(df)
             res.settings = ANOVASettings(**self.settings)
-            
+            return res 
 
     def anova_all(self, animate=True, drugs=None):
         """Run all ANOVA tests for all drugs and all features.
@@ -1769,7 +1769,7 @@ class Association(ReportMAIN):
     def run(self):
         # to keep . Used in the standalone version
         df = self.factory.anova_one_drug_one_feature(self.drug,
-                self.feature, savefig=True, show=True,
+                self.feature, show=True,
                 directory=self.directory)
         df['ASSOC_ID'] = self.assoc_id
         df['ANOVA_FEATURE_FDR_%'] = self.fdr
@@ -2055,21 +2055,31 @@ class HTMLPageMain(ReportMAIN):
             filename = os.sep.join(['INPUT', filename])
             self.jinja['ic50_file'] = filename
 
-        # the genomic features, which may be the default version.
+        # the genomic features, which may be the default version or without
+        # location
         filename = self.results.gdsc.features._filename
-        shutil.copy(filename, input_dir)
-        filename = os.path.basename(filename)
-        txt = """Get <a href="INPUT/%s">Genomic Features</a> file.<br/>"""
-        self.jinja['gf_file'] = txt % filename
+        if filename is None: 
+            filename = os.sep.join([input_dir, 'genomic_features.csv'])
+            self.results.gdsc.features.to_csv(filename)
+            html = """Saved <a href="INPUT/genomic_features.csv">Genomic 
+                      Features</a> file<br/> (possibly the default 
+                      version)."""
+            self.jinja['gf_file'] = html
+        else:
+            shutil.copy(filename, input_dir)
+            filename = os.path.basename(filename)
+            txt = """Get <a href="INPUT/%s">Genomic Features</a> 
+                     file.<br/>"""
+            self.jinja['gf_file'] = txt % filename
 
         # the drug decode file
         filename = self.results.gdsc.drug_decoder._filename
         if filename is not None:
             shutil.copy(filename, input_dir)
             filename = os.path.basename(filename)
-            html += 'Get <a href="INPUT/%s">Drug DECODE file</a>' % filename
+            html = 'Get <a href="INPUT/%s">Drug DECODE file</a>' % filename
         else:
-            html += 'No Drug DECODE file was provided'
+            html = 'No Drug DECODE file was provided'
         self.jinja['drug_decode'] = html
 
         # Save settings as json file

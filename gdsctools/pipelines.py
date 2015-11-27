@@ -181,21 +181,20 @@ def anova_one_drug(options):
         an.feature_names = options.features
     print(an)
 
-    df = an.anova_one_drug(options.drug)
+    results = an.anova_one_drug(options.drug)
 
-    if len(df)==0:
+    if len(results.df)==0:
         print(red("\nNo valid associations tested. Please try another drug"))
         return
 
-    df = an.add_pvalues_correction(df)
-
-    N = len(df)
-    df.insert(0, 'ASSOC_ID', range(1, N+1))
+    # ?? is this required ?
+    N = len(results.df)
+    results.df.insert(0, 'ASSOC_ID', range(1, N+1))
 
     if options.no_html is True:
         return
 
-    r = anova.ANOVAReport(an, results=df)
+    r = anova.ANOVAReport(an, results=results)
     print(darkgreen("\nCreating all figure and html documents in %s" %
             r.settings.directory))
     r.create_html_pages(onweb=options.onweb)
