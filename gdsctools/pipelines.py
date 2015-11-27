@@ -124,16 +124,16 @@ def anova_pipeline(args=None):
 
     if options.print_drugs is True:
         from gdsctools import anova
-        an = anova.ANOVA(options.input_ic50, options.input_features)
-        for name in an.drugIds:
-            print(name)
+        gdsc = anova.ANOVA(options.input_ic50, options.input_features)
+        import textwrap
+        print("\n".join(textwrap.wrap(" , ".join(gdsc.drugIds))))
         return
 
     if options.print_features is True:
         from gdsctools import anova
-        an = anova.ANOVA(options.input_ic50, options.input_features)
-        for name in an.feature_names:
-            print(name)
+        gdsc = anova.ANOVA(options.input_ic50, options.input_features)
+        import textwrap
+        print("\n".join(textwrap.wrap(" , ".join(gdsc.feature_names))))
         return
 
     # -----------------------------------------------------------------
