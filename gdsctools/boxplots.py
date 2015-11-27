@@ -220,6 +220,7 @@ class BoxPlots(Logging):
                 delta.sort_values(inplace=True)
             except:
                 # sort_values not in anaconda for py3.3
+                # FIXME does not work in readthedocs.
                 delta.sort(inplace=True)
 
             significance = {}

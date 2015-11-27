@@ -1410,7 +1410,6 @@ class ANOVA(object): #Logging):
                     feature_name)
             anova = self._get_anova_summary(self.data_lm, 
                     output='dataframe')
-            print anova
             #mses.append(anova.ix['Residuals']['Sum Sq'])
             mses.append(anova.ix['tissue']['F value'])
             #mses.append(anova['Sum Sq'].sum())
