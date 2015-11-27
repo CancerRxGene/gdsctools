@@ -135,7 +135,11 @@ class BoxPlots(Logging):
         self.ax.set_yticks(common_ticks)
         self.ax.set_yticklabels([str(len(this))+" " for this in data], 
                 fontsize=fontsize/1.4)
-        #pylab.tight_layout()
+        try:
+            pylab.tight_layout()
+        except:
+            pass
+
         if self.savefig is True:
             filename = self.directory + os.sep
             filename += 'ODOF_{}_{}____{}'.format(mode,
@@ -167,7 +171,9 @@ class BoxPlots(Logging):
         pylab.ylabel("{0} logIC50".format(drug_name),
                 fontsize=self.fontsize)
 
-        pylab.tight_layout()
+        try:pylab.tight_layout()
+        except: pass
+
         if self.savefig is True:
             filename = self.directory + os.sep
             filename += 'ODOF_all_{}____{}'.format(self.odof.drug_name,
