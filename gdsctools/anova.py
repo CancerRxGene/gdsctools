@@ -438,7 +438,7 @@ class ANOVAReport(object):
 
         if len(df_count) > 0:
             self._plot(df_count, 'feature', top)
-            fig = pylab.gcf()
+            #fig = pylab.gcf()
             self.figtools.directory = self.settings.directory
             self.figtools.savefig(filename, set_inches=(12, 14),
                     bbox_inches='tight')
@@ -584,7 +584,7 @@ class ANOVAReport(object):
         N = len(df)
         pb = Progress(N)
 
-        html = Association(self.gdsc, drug='dummy', feature='dummy', 
+        html = Association(self, drug='dummy', feature='dummy', 
                 fdr='dummy')
 
         for i in range(N):
@@ -594,7 +594,7 @@ class ANOVAReport(object):
             html.fdr = fdrs[i]
             html.assoc_id = assocs[i]
             html._init_report() # since we have one shared instance
-            html.report(onweb=False)
+            html.create_report(onweb=False)
             pb.animate(i+1)
 
     def create_html_features(self):
@@ -607,8 +607,8 @@ class ANOVAReport(object):
         for i, feature in enumerate(groups.indices.keys()):
             # get the indices and therefore subgroup
             subdf = groups.get_group(feature)
-            html = HTMLOneFeature(self.gdsc, self.df, subdf, feature)
-            html.report(onweb=False)
+            html = HTMLOneFeature(self, self.df, subdf, feature)
+            html.create_report(onweb=False)
             pb.animate(i+1)
 
     def create_html_drugs(self):
@@ -636,8 +636,8 @@ class ANOVAReport(object):
             else:
                 subdf = {}
 
-            html = HTMLOneDrug(self.gdsc, self.df, subdf, drug)
-            html.report(onweb=False)
+            html = HTMLOneDrug(self, self.df, subdf, drug)
+            html.create_report(onweb=False)
             pb.animate(i+1)
 
     def create_html_main(self, onweb=False):
@@ -648,7 +648,7 @@ class ANOVAReport(object):
         self.settings.savefig = True
         html = HTMLPageMain(self, 'index.html')
         html._init_report() # created the directory
-        html.report(onweb=onweb)
+        html.create_report(onweb=onweb)
         self.settings.savefig = buffer_
 
     def create_html_manova(self, onweb=True):
@@ -659,7 +659,7 @@ class ANOVAReport(object):
         """
         df = self.get_significant_set()
         page = HTMLPageMANOVA(self.gdsc, df)
-        page.report(onweb)
+        page.create_report(onweb)
 
     def create_html_pages(self, onweb=True):
         """Create all HTML pages"""
@@ -1748,9 +1748,16 @@ class HTMLPageMANOVA(ReportMAIN):
 
 
 class Association(ReportMAIN):
-    def __init__(self, gdsc, drug=None, feature=None,
+    def __init__(self, report, drug=None, feature=None,
             fdr=-1, assoc_id=-1):
-        self.factory = gdsc
+        try:
+            # here report is expected to be ANOVAReport
+            # gdsctools interface from ipython
+            self.factory = report.gdsc
+        except:
+            # here report is actually ANOVA itself
+            # pipeline/standalone version
+            self.factory = report
         # Does that changes the main settings ?? YES
         self.factory.settings.savefig = True
         self.assoc_id = assoc_id
@@ -1762,9 +1769,9 @@ class Association(ReportMAIN):
                 self.feature.replace(" ", "_"))
 
         super(Association, self).__init__(
-                directory=gdsc.settings.directory,
+                directory=report.settings.directory,
                 filename=filename, template_filename='association.html')
-        self.jinja['analysis_type'] = gdsc.settings.analysis_type
+        self.jinja['analysis_type'] = report.settings.analysis_type
 
     def run(self):
         # to keep . Used in the standalone version
@@ -1801,20 +1808,19 @@ class Association(ReportMAIN):
 
 
 class HTMLOneFeature(ReportMAIN):
-    def __init__(self, gdsc, data, subdata, feature):
+    def __init__(self, report, data, subdata, feature):
         self.df = data
         self.subdf = subdata
         self.feature = feature
-        self.settings = gdsc.settings
+        self.settings = report.settings
 
         filename = "{0}.html".format(self.feature)
         super(HTMLOneFeature, self).__init__(
-                directory=gdsc.settings.directory,
+                directory=report.settings.directory,
                 filename=filename, template_filename='feature.html')
         self.title = 'Single Feature analysis (%s)' % self.feature
-        self.analysis_type = gdsc.settings.analysis_type
 
-        self.jinja['n_cell_lines'] = gdsc.features.df[feature].sum()
+        self.jinja['n_cell_lines'] = report.gdsc.features.df[feature].sum()
         self.jinja['feature_name'] = feature
 
     def create_pictures(self):
@@ -1844,7 +1850,7 @@ class HTMLOneFeature(ReportMAIN):
 
 
 class HTMLOneDrug(ReportMAIN):
-    def __init__(self, gdsc, data, subdata, drug):
+    def __init__(self, report, data, subdata, drug):
         """
         data is a dataframe with all results from anova_all
         subdata is a dataframe with significant associations. Can be empty
@@ -1857,18 +1863,18 @@ class HTMLOneDrug(ReportMAIN):
         self.df = data
         self.subdf = subdata
         self.drug = drug
-        self.settings = gdsc.settings
+        self.settings = report.settings
 
         filename = "{0}.html".format(self.drug)
-        super(HTMLOneDrug, self).__init__(directory=gdsc.settings.directory,
+        super(HTMLOneDrug, self).__init__(
+                directory=report.settings.directory,
                 filename=filename, template_filename='drug.html')
         self.title = 'Single Drug analysis (%s)' % self.drug
-        self.analysis_type = gdsc.settings.analysis_type
            
-        self.jinja['n_cell_lines'] = len(gdsc.ic50.df[drug].dropna())
+        self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[drug].dropna())
         self.jinja['drug_id'] = drug
-        self.jinja['drug_name'] = gdsc.drug_decoder.get_name(drug)
-        self.jinja['drug_target'] = gdsc.drug_decoder.get_target(drug)
+        self.jinja['drug_name'] = report.gdsc.drug_decoder.get_name(drug)
+        self.jinja['drug_target'] = report.gdsc.drug_decoder.get_target(drug)
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
@@ -1908,14 +1914,14 @@ class HTMLPageMain(ReportMAIN):
         super(HTMLPageMain, self).__init__(
                 directory=report.settings.directory,
                 filename=filename)
-        self.results = report
+        self.report = report
         self.settings = report.settings
         self.analysis_type = report.settings.analysis_type
         self.jinja['settings_table'] = self.settings.to_html()
 
     def _create_report(self, onweb=True):
         # A summary table
-        diag = self.results.diagnostics()
+        diag = self.report.diagnostics()
         table = HTMLTable(diag, 'summary')
         txt = ''
         for index, row in diag.iterrows():
@@ -1928,7 +1934,7 @@ class HTMLPageMain(ReportMAIN):
         print('Creating volcano plots')
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
-        v = VolcanoANOVA(self.results.df, settings=self.settings)
+        v = VolcanoANOVA(self.report.df, settings=self.settings)
         v.selector(v.df, 1500, 1500, inplace=True)
         v.volcano_plot_all()
         v.savefig_and_js("volcano_all_js")
@@ -1946,7 +1952,7 @@ class HTMLPageMain(ReportMAIN):
         """
 
         # MANOVA link
-        N = len(self.results.get_significant_set())
+        N = len(self.report.get_significant_set())
         self.jinja['manova'] = """
         There were %(N)s significant associations found.
         All significant associations have been gatherered
@@ -1954,13 +1960,13 @@ class HTMLPageMain(ReportMAIN):
         """ % {'N': N}
 
         # feature summary
-        df_features = self.results.feature_summary("feature_summary.png")
+        df_features = self.report.feature_summary("feature_summary.png")
         filename = 'OUTPUT' + os.sep + 'features_summary.csv'
         df_features.to_csv(self.directory + os.sep + filename, sep=',')
 
         # drug summary
-        not_tested = [x for x in self.results.gdsc.drugIds if x not in 
-                self.results.df.DRUG_ID.unique()]
+        not_tested = [x for x in self.report.gdsc.drugIds if x not in 
+                self.report.df.DRUG_ID.unique()]
         if len(not_tested) > 0:
             not_tested = """Those drugs have not been analysed due to 
             lack of valid data points: """ + ", ".join(not_tested)
@@ -1968,15 +1974,15 @@ class HTMLPageMain(ReportMAIN):
             not_tested = ""
         self.jinja['drug_not_tested'] = not_tested
 
-        df_drugs = self.results.drug_summary(filename="drug_summary.png")
-        get_name = self.results.gdsc.drug_decoder.get_name
-        if len(self.results.gdsc.drug_decoder.df) > 0:
+        df_drugs = self.report.drug_summary(filename="drug_summary.png")
+        get_name = self.report.gdsc.drug_decoder.get_name
+        if len(self.report.gdsc.drug_decoder.df) > 0:
             df_drugs.index = [x + "-" + get_name(x) for x in df_drugs.index]
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
 
         # --------------------------- Create table with links to all drugs
-        groups = self.results.df.groupby('DRUG_ID')
+        groups = self.report.df.groupby('DRUG_ID')
         try:
             df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort_values()
         except:
@@ -1985,12 +1991,12 @@ class HTMLPageMain(ReportMAIN):
         df = df.reset_index() # get back the Drug id in the dframe columns
 
         # let us add also the drug name
-        df = self.results.gdsc.drug_annotations(df)
+        df = self.report.gdsc.drug_annotations(df)
 
         # let us also add number of associations computed
         counts = [len(groups.groups[k]) for k in df.DRUG_ID]
         df['Number of associations computed'] = counts
-        groups = self.results.get_significant_set().groupby('DRUG_ID').groups
+        groups = self.report.get_significant_set().groupby('DRUG_ID').groups
         count = []
         for drug in df['DRUG_ID'].values:
             if drug in groups.keys():
@@ -2011,13 +2017,13 @@ class HTMLPageMain(ReportMAIN):
                 header=True, index=False)
 
         # ---------------------- Create full table with links to all features
-        df = pd.DataFrame({'FEATURE': self.results.df['FEATURE'].unique()})
+        df = pd.DataFrame({'FEATURE': self.report.df['FEATURE'].unique()})
         try:
             df.sort_values(by='FEATURE', inplace=True)
         except:
             df.sort('FEATURE', inplace=True)
 
-        groups = self.results.get_significant_set().groupby('FEATURE').groups
+        groups = self.report.get_significant_set().groupby('FEATURE').groups
 
         count = []
         for feature in df['FEATURE'].values:
@@ -2036,8 +2042,8 @@ class HTMLPageMain(ReportMAIN):
                 header=True, index=False)
 
         # -------------------------------------- COSMIC table for completeness
-        colnames = self.results.gdsc.features._special_names
-        df = self.results.gdsc.features.df[colnames]
+        colnames = self.report.gdsc.features._special_names
+        df = self.report.gdsc.features.df[colnames]
 
         df = df.reset_index()
         table = HTMLTable(df)
@@ -2047,7 +2053,7 @@ class HTMLPageMain(ReportMAIN):
 
         # -------------------------------------------- settings and files
         input_dir = self.directory + os.sep + 'INPUT'
-        filename = self.results.gdsc.ic50._filename
+        filename = self.report.gdsc.ic50._filename
         html = ''
         if filename is not None:
             shutil.copy(filename, input_dir)
@@ -2057,10 +2063,10 @@ class HTMLPageMain(ReportMAIN):
 
         # the genomic features, which may be the default version or without
         # location
-        filename = self.results.gdsc.features._filename
+        filename = self.report.gdsc.features._filename
         if filename is None: 
             filename = os.sep.join([input_dir, 'genomic_features.csv'])
-            self.results.gdsc.features.to_csv(filename)
+            self.report.gdsc.features.to_csv(filename)
             html = """Saved <a href="INPUT/genomic_features.csv">Genomic 
                       Features</a> file<br/> (possibly the default 
                       version)."""
@@ -2073,11 +2079,12 @@ class HTMLPageMain(ReportMAIN):
             self.jinja['gf_file'] = txt % filename
 
         # the drug decode file
-        filename = self.results.gdsc.drug_decoder._filename
+        filename = self.report.gdsc.drug_decoder._filename
         if filename is not None:
-            shutil.copy(filename, input_dir)
+            output_filename = 'DRUG_DECODE.csv'
+            shutil.copy(filename, input_dir + os.sep + output_filename)
             filename = os.path.basename(filename)
-            html = 'Get <a href="INPUT/%s">Drug DECODE file</a>' % filename
+            html = 'Get <a href="INPUT/%s">Drug DECODE file</a>' % output_filename
         else:
             html = 'No Drug DECODE file was provided'
         self.jinja['drug_decode'] = html

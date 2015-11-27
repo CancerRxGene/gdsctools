@@ -259,7 +259,7 @@ def anova_one_drug_one_feature(options):
         # HTML report
         if options.no_html is True:
             return
-        odof.report(onweb=options.onweb)
+        odof.create_report(onweb=options.onweb)
 
 
 class ANOVAOptions(argparse.ArgumentParser):

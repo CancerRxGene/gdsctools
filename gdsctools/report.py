@@ -379,7 +379,7 @@ class ReportMAIN(object):
         pass
         # this shoudl populate the self.params and create the figures.
 
-    def report(self, onweb=True):
+    def create_report(self, onweb=True):
         self._create_report()
         self.write()
         if onweb is True:
