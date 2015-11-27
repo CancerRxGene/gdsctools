@@ -142,6 +142,11 @@ class ANOVAResults(object):
             return self.df[self.drug_id].unique()
     drugIds = property(_get_drugIds)
 
+    def volcano(self):
+        v = VolcanoANOVA(self.df)
+        v.volcano_plot_all()
+
+
 
 class ANOVAReport(object):
     """Class used to interpret the results and create final HTML report
@@ -491,7 +496,8 @@ class ANOVAReport(object):
         #ax.set_xticklabels(labels, fontsize=fontsize)
         ax.set_xlim([0, M+1])
         pylab.legend(loc='lower right')
-        pylab.tight_layout()
+        try:pylab.tight_layout()
+        except:pass
 
     def get_significant_hits(self,  show=True):
         """Return a summary of significant hits
@@ -1134,13 +1140,12 @@ class ANOVA(object): #Logging):
 
     def anova_one_drug_one_feature(self, drug_id,
             feature_name, show=False,
-            production=False, savefig=False, directory='.'):
+            production=False, directory='.'):
         """Compute ANOVA and various tests on one drug and one feature
 
         :param drug_id: a valid drug identifier
         :param feature_name: a valid feature name
         :param bool show: show some plots
-        :param bool savefig: save figures
         :param str directory: where to save the figure.
         :param bool production: if False, returns a dataframe otherwise
             a dictionary. This is to speed up analysis when scanning
@@ -1517,7 +1522,7 @@ class ANOVA(object): #Logging):
         """)
 
     #98% of time in  method anova_one_drug_one_feature
-    def anova_one_drug(self, drug_id, animate=True):
+    def anova_one_drug(self, drug_id, animate=True, output='object'):
         """Computes ANOVA for a given drug across all features
 
         :param str drug_id: a valid drug identifier.
@@ -1572,7 +1577,13 @@ class ANOVA(object): #Logging):
         if len(self.drug_decoder) > 0:
             df = self.drug_annotations(df)
         # TODO: drop rows where FEATURE_ANOVA_PVAL is None
-        return df
+        if output != 'object':
+            return df
+        else:
+            df = self.add_pvalues_correction(df)
+            res = ANOVAResults(df)
+            res.settings = ANOVASettings(**self.settings)
+            
 
     def anova_all(self, animate=True, drugs=None):
         """Run all ANOVA tests for all drugs and all features.
@@ -1615,7 +1626,8 @@ class ANOVA(object): #Logging):
             if drug_name in self.individual_anova.keys():
                 pass
             else:
-                res = self.anova_one_drug(drug_name, animate=False)
+                res = self.anova_one_drug(drug_name, animate=False,
+                                          output='dataframe')
                 self.individual_anova[drug_name] = res
             if animate is True:
                 pb.animate(i+1)
@@ -1646,6 +1658,7 @@ class ANOVA(object): #Logging):
 
         results = ANOVAResults()
         results.df = df
+        results.settings = ANOVASettings(**self.settings)
 
         return results
 
@@ -1870,7 +1883,6 @@ class HTMLOneDrug(ReportMAIN):
         except:
             pass
 
-
     def _create_report(self, onweb=True):
         self.create_pictures()
 
@@ -1918,7 +1930,6 @@ class HTMLPageMain(ReportMAIN):
         # values and 1000 random ones to get an idea of the distribution
         v = VolcanoANOVA(self.results.df, settings=self.settings)
         v.selector(v.df, 1500, 1500, inplace=True)
-        
         v.volcano_plot_all()
         v.savefig_and_js("volcano_all_js")
 
@@ -1926,7 +1937,7 @@ class HTMLPageMain(ReportMAIN):
             <h3></h3>
             <a href="volcano_all_js.html">
                 <img alt="volcano plot for all associations"
-                    src="volcano_all.png">
+                    src="volcano_all_js.png">
             </a>
             <br/>
             <p> A javascript version is available 

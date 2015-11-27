@@ -595,7 +595,10 @@ class GenomicFeatures(Reader, CosmicRows):
         data.plot(kind='barh')
         pylab.grid()
         pylab.xlabel('Occurences')
-        pylab.tight_layout()
+
+        # keep the try to prevent MacOS issue
+        try:pylab.tight_layout()
+        except:pass
         return data
 
     def __str__(self):

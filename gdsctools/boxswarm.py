@@ -244,6 +244,7 @@ class BoxSwarm(object):
 
         pylab.title(self.title, fontsize=self.fontsize*1.25)
         pylab.grid()
-        pylab.tight_layout()
+        try:pylab.tight_layout()
+        except:pass
 
         return pylab.gca()

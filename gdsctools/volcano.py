@@ -568,7 +568,7 @@ class VolcanoANOVA(object):
 
             for i, text in enumerate(texts):
                 text = text.replace("\\%", "%")
-                text+="  "
+                text += "  "
                 axl.get_texts()[i].set_text(text)
             import mpld3
             htmljs = mpld3.fig_to_html(self.current_fig,
@@ -578,7 +578,7 @@ class VolcanoANOVA(object):
             htmljs = ""
         return """<div class="jsimage"> """ + htmljs + "</div>"
 
-    def savefig_and_js(self, filename, size_inches=(10,10)):
+    def savefig_and_js(self, filename, size_inches=(10, 10)):
         # Save the PNG first. The savefig automatically set the size
         # to a defined set and back to original figsize.
         self.figtools.savefig(filename + '.png', size_inches=size_inches)
