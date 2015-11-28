@@ -843,15 +843,29 @@ class ANOVA(object): #Logging):
         """
         if ctype is None:
             return
-        ctype = easydev.to_list(ctype)
+        # input may be unicode. transform to str otherwise, error pandas.
+        ctype = str(ctype)
+
+        if ctype == 'PANCAN':
+            return
+
+
+        if isinstance(ctype, str):
+            ctype = [ctype]
+
         for this in ctype:
-           assert this in self.features.tissues
+            assert this in self.features.tissues, "%s not found" % ctype
 
         # keep only features that correspond to the tissue
         self.features.keep_tissue_in(ctype)
 
         self.ic50.df = self.ic50.df.ix[self.features.df.index]
         self._init()
+
+    def read_settings(self, settings):
+        """Read settings and update cancer type if set"""
+        self.settings.from_json(settings)
+        self.set_cancer_type(self.settings.analysis_type)
 
     def _init(self):
         # Some preprocessing to speed up data access
@@ -907,6 +921,9 @@ class ANOVA(object): #Logging):
         # # should be if there are at least 2 tissues ?
         tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
         self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
+
+        # reset the buffer.
+        self.individual_anova = {}
 
     def _get_cosmics(self):
         return self.ic50.cosmicIds
@@ -1254,19 +1271,19 @@ class ANOVA(object): #Logging):
             self.EV = df.values
             # The regression and anova summary are done here
             #
-            if self.settings.regression.method == 'ElasticNet':
+            if self.settings.regression_method == 'ElasticNet':
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                        alpha=self.settings.regression.alpha, 
-                        L1_wt=self.settings.regression.L1_wt)
-            elif self.settings.regression.method == 'OLS':
+                        alpha=self.settings.regression_alpha, 
+                        L1_wt=self.settings.regression_L1_wt)
+            elif self.settings.regression_method == 'OLS':
                 self.data_lm = OLS(odof.Y, df.values).fit()
-            elif self.settings.regression.method == 'Ridge':
+            elif self.settings.regression_method == 'Ridge':
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                        alpha=self.settings.regression.alpha, 
+                        alpha=self.settings.regression_alpha, 
                         L1_wt=0)
-            elif self.settings.regression.method == 'Lasso':
+            elif self.settings.regression_method == 'Lasso':
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                        alpha=self.settings.regression.alpha, 
+                        alpha=self.settings.regression_alpha, 
                         L1_wt=1)
             #self.anova_pvalues = self._get_anova_summary(self.data_lm,
             #    output='dict')
@@ -1332,7 +1349,7 @@ class ANOVA(object): #Logging):
 
         if show is True:
             boxplot = BoxPlots(odof, savefig=self.settings.savefig,
-                    directory=self.settings.directory)
+                    directory=directory)
             boxplot.boxplot_association(fignum=1)
 
             # a boxplot to show cell lines effects. This requires
@@ -1381,8 +1398,8 @@ class ANOVA(object): #Logging):
         for i, lwt in enumerate(lwts):
             for j, alpha in enumerate(alphas):
                 self.settings.regression_method = 'ElasticNet'
-                self.settings.elastic_net.alpha = alpha
-                self.settings.elastic_net.L1_wt = lwt
+                self.settings.regression_alpha = alpha
+                self.settings.regression_L1_wt = lwt
                 odof = self.anova_one_drug_one_feature(drug_name, 
                         feature_name)
                 anova = self._get_anova_summary(self.data_lm, 
@@ -1771,13 +1788,13 @@ class Association(ReportMAIN):
         super(Association, self).__init__(
                 directory=report.settings.directory,
                 filename=filename, template_filename='association.html')
-        self.jinja['analysis_type'] = report.settings.analysis_type
+        self.jinja['analysis_domain'] = report.settings.analysis_type
 
     def run(self):
         # to keep . Used in the standalone version
         df = self.factory.anova_one_drug_one_feature(self.drug,
                 self.feature, show=True,
-                directory=self.directory)
+                directory=self.directory + os.sep + 'images')
         df['ASSOC_ID'] = self.assoc_id
         df['ANOVA_FEATURE_FDR_%'] = self.fdr
         return df
@@ -1792,7 +1809,7 @@ class Association(ReportMAIN):
         self.jinja['association_table'] = html_table
 
         # Main boxplot always included
-        prefix = 'ODOF_all'
+        prefix = 'images/ODOF_all'
         tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
         section = '<img alt="association {0}" src="{0}">\n'.format(tag)
 
@@ -1822,11 +1839,12 @@ class HTMLOneFeature(ReportMAIN):
 
         self.jinja['n_cell_lines'] = report.gdsc.features.df[feature].sum()
         self.jinja['feature_name'] = feature
+        self.jinja['analysis_domain'] = report.settings.analysis_type
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_feature(self.feature)
-        v.savefig_and_js('volcano_{}'.format(self.feature))
+        v.savefig_and_js('images/volcano_{}'.format(self.feature))
 
         # See https://github.com/CancerRxGene/gdsctools/issues/79
         v.current_fig.canvas.mpl_disconnect(v.cid)
@@ -1846,7 +1864,7 @@ class HTMLOneFeature(ReportMAIN):
             self.jinja['association_table'] = html
 
         # image section
-        self.jinja['image_filename'] = "volcano_{0}".format(self.feature)
+        self.jinja['image_filename'] = "images/volcano_{0}".format(self.feature)
 
 
 class HTMLOneDrug(ReportMAIN):
@@ -1875,11 +1893,12 @@ class HTMLOneDrug(ReportMAIN):
         self.jinja['drug_id'] = drug
         self.jinja['drug_name'] = report.gdsc.drug_decoder.get_name(drug)
         self.jinja['drug_target'] = report.gdsc.drug_decoder.get_target(drug)
+        self.jinja['analysis_domain'] = report.settings.analysis_type
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_one_drug(self.drug)
-        v.savefig_and_js('volcano_{}'.format(self.drug), size_inches=(10,10))
+        v.savefig_and_js('images/volcano_{}'.format(self.drug), size_inches=(10,10))
 
         # See https://github.com/CancerRxGene/gdsctools/issues/79
         v.current_fig.canvas.mpl_disconnect(v.cid)
@@ -1906,7 +1925,7 @@ class HTMLOneDrug(ReportMAIN):
             self.jinja['association_table'] = html
 
         # image section
-        self.jinja['image_filename'] = "volcano_{0}".format(self.drug)
+        self.jinja['image_filename'] = "images/volcano_{0}".format(self.drug)
 
 
 class HTMLPageMain(ReportMAIN):
@@ -1916,7 +1935,7 @@ class HTMLPageMain(ReportMAIN):
                 filename=filename)
         self.report = report
         self.settings = report.settings
-        self.analysis_type = report.settings.analysis_type
+        self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['settings_table'] = self.settings.to_html()
 
     def _create_report(self, onweb=True):
@@ -1956,7 +1975,7 @@ class HTMLPageMain(ReportMAIN):
         self.jinja['manova'] = """
         There were %(N)s significant associations found.
         All significant associations have been gatherered
-        in the following link: <a href="manova.html">manova results</a>.
+        in the following link: <br/><a href="manova.html">manova results</a>.
         """ % {'N': N}
 
         # feature summary
@@ -2051,32 +2070,35 @@ class HTMLPageMain(ReportMAIN):
         table.add_href('COSMIC ID', url=url, newtab=True)
         self.jinja['cosmic_table'] = table.to_html()
 
-        # -------------------------------------------- settings and files
+        # -------------------------------------- settings and INPUT files
         input_dir = self.directory + os.sep + 'INPUT'
         filename = self.report.gdsc.ic50._filename
         html = ''
         if filename is not None:
             shutil.copy(filename, input_dir)
             filename = os.path.basename(filename)
+            ic50_filename = filename
             filename = os.sep.join(['INPUT', filename])
             self.jinja['ic50_file'] = filename
+        else:
+            ic50_filename = 'unknown'
 
         # the genomic features, which may be the default version or without
         # location
-        filename = self.report.gdsc.features._filename
-        if filename is None: 
-            filename = os.sep.join([input_dir, 'genomic_features.csv'])
-            self.report.gdsc.features.to_csv(filename)
+        gf_filename = self.report.gdsc.features._filename
+        if gf_filename is None: 
+            gf_filename = os.sep.join([input_dir, 'genomic_features.csv'])
+            self.report.gdsc.features.to_csv(gf_filename)
             html = """Saved <a href="INPUT/genomic_features.csv">Genomic 
                       Features</a> file<br/> (possibly the default 
                       version)."""
             self.jinja['gf_file'] = html
         else:
-            shutil.copy(filename, input_dir)
-            filename = os.path.basename(filename)
+            shutil.copy(gf_filename, input_dir)
+            gf_filename = os.path.basename(gf_filename)
             txt = """Get <a href="INPUT/%s">Genomic Features</a> 
                      file.<br/>"""
-            self.jinja['gf_file'] = txt % filename
+            self.jinja['gf_file'] = txt % gf_filename
 
         # the drug decode file
         filename = self.report.gdsc.drug_decoder._filename
@@ -2096,6 +2118,36 @@ class HTMLPageMain(ReportMAIN):
         self.jinja['settings'] = \
                 """Get the settings as a <a href="INPUT/%s">
                 json file</a>.""" % filename
+
+        # Save all Results dataframe
+        filename = os.sep.join([self.settings.directory, 'OUTPUT', 
+            'results.csv'])
+        ANOVAResults(self.report.df).to_csv(filename)
+
+        code = """from gdsctools import *
+import os
+
+def getfile(filename, where='../INPUT'):
+    return os.sep.join([where, filename])
+
+# reback the IC50 and genomic features matrices
+gdsc = ANOVA(getfile('%(ic50)s'), getfile('%(gf_filename)s'))
+gdsc.settings.from_json(getfile('settings.json'))
+
+# Analyse the data
+results = gdsc.anova_all()
+
+# Create the HTML report
+r = ANOVAReport(gdsc, results)
+r.create_html_pages(onweb=False)"""
+        code = code % {
+                'ic50': ic50_filename, 
+                'gf_filename': gf_filename}
+
+        filename = os.sep.join([self.settings.directory, 'code','rerun.py'])
+        fh = open(filename, 'w')
+        fh.write(code)
+        fh.close()
 
 
 
