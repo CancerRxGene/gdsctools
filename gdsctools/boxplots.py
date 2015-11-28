@@ -144,7 +144,7 @@ class BoxPlots(Logging):
             filename = self.directory + os.sep
             filename += 'ODOF_{}_{}____{}'.format(mode,
                     self.odof.drug_name, self.odof.feature_name)
-            fig.set_size_inches(12,14)
+            fig.set_size_inches(12, 14)
             pylab.savefig(filename + '.png', bbox_inches='tight')
             fig.set_size_inches(oldsize)
             fig.canvas.draw()
