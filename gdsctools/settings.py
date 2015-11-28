@@ -105,11 +105,11 @@ class ANOVASettings(AttrDict):
     ======================= ========= =========================================
     Name                    Default   Description
     ======================= ========= =========================================
-    regression.method       OLS       Regression method amongst OLS, Ridge
+    regression_method       OLS       Regression method amongst OLS, Ridge
                                       Lasso, ElasticiNet.
-    regression.alpha        0         Fraction of penalty included. If 0,
+    regression_alpha        0         Fraction of penalty included. If 0,
                                       equivalent to OLS.
-    regression.L1_wt        0         Fraction of the penalty given to L1
+    regression_L1_wt        0         Fraction of the penalty given to L1
                                       penalty term. Must be between 0 and 1. 
                                       If 0, equivalent to Ridge. If 1 
                                       equivalent to Lasso
@@ -149,10 +149,9 @@ class ANOVASettings(AttrDict):
         self.volcano_FDR_interpolation = True
 
         # ----------------------- regression related
-        self.regression = AttrDict()
-        self.regression.method = 'OLS' # can be ElasticNet, LAsso, Ridge
-        self.regression.alpha = 0
-        self.regression.L1_wt = 0
+        self.regression_method = 'OLS' # can be ElasticNet, LAsso, Ridge
+        self.regression_alpha = 0
+        self.regression_L1_wt = 0
         # uses statsmodels package
         # The fraction of the penalty given to the L1 penalty term. Must be
         # between 0 and 1 (inclusive). If 0, the fit is ridge regression. If
@@ -197,7 +196,7 @@ class ANOVASettings(AttrDict):
                 ' specific (i.e., a tissue must be set.'
 
         valid_reg_meth = ['OLS', 'ElasticNet', 'Lasso', 'Ridge']
-        inlist(self.regression.method, valid_reg_meth)
+        inlist(self.regression_method, valid_reg_meth)
 
     def to_html(self):
         """Convert the sets of parameters into a nice HTML table"""
@@ -206,11 +205,6 @@ class ANOVASettings(AttrDict):
                 str(data['volcano_additional_FDR_lines'])
         
         settings = pd.DataFrame(data, index=[0]).transpose()
-
-        settings.drop('regression', inplace=True)
-
-        for key in self.regression.keys():
-            settings.ix['regression.' + key] = [self.regression[key]]
 
         settings.reset_index(inplace=True)
         settings.columns = ['name', 'value']
