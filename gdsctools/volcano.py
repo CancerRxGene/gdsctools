@@ -229,7 +229,6 @@ class VolcanoANOVA(object):
         data['annotation'] = ['' for x in range(len(data))]
 
         self._volcano_plot(data, title='all drugs all features')
-        self.savefig_and_js("volcano_all.png", size_inches=(10, 10))
 
     def _get_fdr_from_pvalue_interp(self, pvalue):
         """Here, FDR are computed using an interpolation"""
@@ -553,8 +552,8 @@ class VolcanoANOVA(object):
     def mpld3_to_html(self):
         """This require to call a plotting figure before hand"""
         from gdsctools import gdsctools_data
-        js_path1 = gdsctools_data('d3.v3.min.js', where='js')
-        js_path2 = gdsctools_data('mpld3.v0.2.js', where='js')
+        js_path1 = gdsctools_data('d3.v3.min.js', where='javascript')
+        js_path2 = gdsctools_data('mpld3.v0.2.js', where='javascript')
         try:
             # mpld3 is great but there are a couple of issues
             # 1 - legend zorder is not used so dots may be below the legend,
