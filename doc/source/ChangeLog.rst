@@ -9,12 +9,17 @@ version 0.9 Nov 2015
 .. rubric:: 0.9.10
 
 * NEW:
-  - add settings as json file in the HTML report
+   - add settings as json file in the HTML report
+   - ANOVAResults has now a volcano() method
+   - add read_settings method in ANOVA
+   - add code in the HTML tree directory to reproduce HTML report and results
 
 * CHANGES:
+   - anova_one_drug now returns an ANOVAResults object
+   - Restructure data package tree directory (#83)
 
-* BUG FIXES:
-
+* BUG FIXES: 
+    - Fixes #89 (tight layout buggy under MAC)
 
 .. rubric:: 0.9.9
 
