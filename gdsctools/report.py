@@ -323,43 +323,41 @@ class ReportMAIN(object):
         self.sections = []
         self.section_names = []
         # if the directory already exists, print a warning
+
         try:
             if os.path.isdir(self.directory) is False:
                 print("Created directory {}".format(self.directory))
                 os.mkdir(self.directory)
-            os.mkdir(self.directory + os.sep + 'images')
+            for this in ['OUTPUT', 'INPUT', 'images', 'css', 'js', 'code']:
+                try:
+                    os.mkdir(self.directory + os.sep + this)
+                except:
+                    pass # already created ?
         except Exception:
             pass
         finally:
-            # TODO something more robust and automatic
-            # e.g. scan the directory and copy the contents
-            # instead of providing the filenames
-            for filename in ['gdsc.css', 'sorttable.js', 'highlight.pack.js',
-                    'github-gist.css']:
-                target = self.directory + os.sep + filename
+            for filename in ['gdsc.css', 'github-gist.css']:
+                target = os.sep.join([self.directory, 'css', filename ])
                 if os.path.isfile(target) is False:
                     filename = easydev.get_share_file("gdsctools", "data",
                         filename)
-                    shutil.copy(filename, self.directory)
-            for filename in ['EBI_logo.png', 'logo-nki.png', 'sanger-logo.png']:
+                    shutil.copy(filename, target)
+            
+            for filename in ['sorttable.js', 'highlight.pack.js']:
+                target = os.sep.join([self.directory, 'js', filename ])
+                if os.path.isfile(target) is False:
+                    filename = easydev.get_share_file("gdsctools", "data",
+                        filename)
+                    shutil.copy(filename, target)
 
-                target = self.directory + os.sep + filename
+            for filename in ['EBI_logo.png', 'sanger-logo.png']:
+                target = os.sep.join([self.directory, 'images', filename ])
                 if os.path.isfile(target) is False:
                     dire = 'data' + os.sep + 'images'
                     filename = easydev.get_share_file("gdsctools", dire,
                         filename)
-                    shutil.copy(filename, self.directory+ os.sep+'images')
+                    shutil.copy(filename, target)
 
-            input_dir = self.directory + os.sep + 'INPUT'
-            output_dir = self.directory + os.sep + 'OUTPUT'
-            try:
-                os.mkdir(input_dir)
-            except:
-                pass # already created
-            try:
-                os.mkdir(output_dir)
-            except:
-                pass # already created
 
     def to_html(self):
         self.jinja['time_now'] = self.get_time_now()
