@@ -24,6 +24,8 @@ Provides readers to read
 - Drug Decoder table with :class:`DrugDecoder`
 
 """
+import warnings
+
 import pandas as pd
 import pylab
 import numpy as np
@@ -240,24 +242,32 @@ class CosmicRows(object):
 class IC50(Reader, CosmicRows):
     """Reader of IC50 data set
 
-    The input matrix must be a tab-separated value file (TSV) although
-    comma-seprated files may be provided (see constructor section here below).
+    This input matrix must be a comman-separated value (CSV) or 
+    tab-separated value file (TSV). 
 
-    The matrix must have at least 2 columns and 2 rows.
+    The matrix must have a header and at least 2 columns. If the number of rows
+    is not sufficient, analysis may not be possible.
 
-    The first row is the header describing the columns' contents. One column
-    must be named "COSMIC ID". Other columns must be named "Drug_XX_IC50"
-    where XX is a positive integer (order is not important).
+    The header must have a column called "COSMIC_ID" or "COSMIC ID". 
+    This column will be used as indices (row names). All other columns will 
+    be considered as input data. 
 
-    The column "COSMIC ID" contains the cosmic identifiers (cell line). The
+    The column "COSMIC_ID" contains the cosmic identifiers (cell line). The
     other columns should be filled with the IC50s corresponding to a pair
-    of COSMIC Id and Drug.
+    of COSMIC identifers and Drug. Nothing prevents you to fill the file with
+    data that have other meaning (e.g. AUC).
 
-    Extra columns (e.g., tissue, sample name, MSI, features) will be ignored.
+    If at least one column starts with "Drug_", all other columns will be
+    ignored. This was implemented for back compatibility.
+
+    If no columns start with "Drug_", that prefix will be added to all column
+    names.
+
+    The order of the columns is not important. 
 
     Here is a simple example of a valid TSV file::
 
-        COSMIC ID   Drug_1_IC50 Drug_20_IC50
+        COSMIC_ID   Drug_1_IC50 Drug_20_IC50
         111111      0.5         0.8
         222222      1           2
 
@@ -296,7 +306,9 @@ class IC50(Reader, CosmicRows):
 
 
     """
-    cosmic_name = 'COSMIC ID'
+    cosmic_name = 'COSMIC_ID'
+    drug_prefix = 'Drug'
+
     def __init__(self, filename, drug_prefix=''):
         """.. rubric:: Constructor
 
@@ -320,11 +332,19 @@ class IC50(Reader, CosmicRows):
         columns = []
         drug_prefix = ''
         for col in self.df.columns:
-            if col.startswith('Drug_'):
-                drug_prefix = 'Drug'
+            if col.startswith(self.drug_prefix +"_"):
+                drug_prefix = self.drug_prefix 
 
+        # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
+        _cols = list(self.df.columns)
+        if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
+            warnings.warn("'COSMIC ID' column name is deprecated since " + 
+            "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
+            self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID") 
+                    for x in self.df.columns]
         # If the data has not been interpreted, COSMIC column should be
         # found in the column and set as the index
+
         if self.cosmic_name in self.df.columns:
             self.df.set_index(self.cosmic_name, inplace=True)
             columns = [x for x in self.df.columns
@@ -435,13 +455,13 @@ class GenomicFeatures(Reader, CosmicRows):
 
     These are the compulsary column names required (note the spaces):
 
-        - 'COSMIC ID'
-        - 'Tissue Factor Value'
-        - 'MS-instability Factor Value'
+        - 'COSMIC_ID'
+        - 'TISSUE_FACTOR'
+        - 'MSI_FACTOR'
 
     This one is optional and may be used for the HTML report:
 
-        - 'Sample Name'
+        - 'SAMPLE_NAME'
 
     and features can be also encoded with the following convention:
 
@@ -465,12 +485,14 @@ class GenomicFeatures(Reader, CosmicRows):
         - CNA (gain): 116
         - CNA (loss): 291
 
+    .. changedversion:: 0.9.10
+
     """
     colnames = easydev.AttrDict()
-    colnames.cosmic = 'COSMIC ID'
-    colnames.tissue = 'Tissue Factor Value'
-    colnames.sample = 'Sample Name'
-    colnames.msi = 'MS-instability Factor Value'
+    colnames.cosmic = 'COSMIC_ID'
+    colnames.tissue = 'TISSUE_FACTOR'
+    colnames.sample = 'SAMPLE_NAME'
+    colnames.msi = 'MSI_FACTOR'
 
     def __init__(self, filename=None):
         """.. rubric:: Constructor
@@ -491,6 +513,19 @@ class GenomicFeatures(Reader, CosmicRows):
         # the future
         self.df = self.df[[x for x in self.df.columns
             if x.startswith('Drug_') is False]]
+        
+        # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
+        for old, new in {
+                    'Tissue Factor Value': 'TISSUE_FACTOR', 
+                    'Sample Name': 'SAMPLE_NAME',
+                    'MS-instability Factor Value': 'MSI_FACTOR',
+                    'COSMIC ID': 'COSMIC_ID'}.items():
+            if old in self.df.columns:
+                warnings.warn("'%s' column name is deprecated " +
+                    " since 0.9.10. Please replace with '%s'", 
+                    DeprecationWarning)
+                self.df.columns = [x.replace(old, new) 
+                        for x in self.df.columns]
 
         # There are several types of features e.g., mutation, CNA,
         # methylation but all are stored within the same file
@@ -498,12 +533,11 @@ class GenomicFeatures(Reader, CosmicRows):
         # There are 3 special columns
         self._special_names = []
         
-
         # If tissue is not provided, we force create it and fill with dummies.
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
-            print("WARNING: column named '%s' not found" \
-                    % self.colnames.tissue)
+            warnings.warn("column named '%s' not found" % self.colnames.tissue,
+                    UserWarning)
             self.df[self.colnames.tissue] = ['unspecified'] * len(self.df)
             self._special_names.append(self.colnames.tissue)
         else:
