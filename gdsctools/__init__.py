@@ -30,8 +30,12 @@ except:
     license = '3-clause ("Simplified" or "New") BSD'
 
 
+
+
+
 from gdsctools.readers import IC50, GenomicFeatures, DrugDecoder
-from gdsctools.anova import ANOVA, ANOVAReport , ANOVAResults
+from gdsctools.anova import ANOVA, ANOVAReport 
+from gdsctools.anova_results import ANOVAResults
 from gdsctools.settings import ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
@@ -47,6 +51,8 @@ def gdsctools_data(filename, where=None):
         filename = os.sep.join([share, where, filename])
     else:
         filename = os.sep.join([share, filename])
+    if os.path.exists(filename) is False:
+        raise Exception('unknown file %s' % filename)
     return filename
 
 
