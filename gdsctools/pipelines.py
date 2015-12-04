@@ -324,7 +324,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            First column should be the COSMIC identifiers
                            Following columns contain the IC50s for a set of
                            drugs. The header must
-                           be COSMIC ID, Drug_1_IC50, Drug_2_IC50, ... """)
+                           be COSMIC_ID, Drug_1_IC50, Drug_2_IC50, ... """)
 
         group.add_argument("-F", "--input-features", dest='input_features',
                            default=None, type=str,
