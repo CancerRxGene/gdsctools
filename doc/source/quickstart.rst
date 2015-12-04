@@ -7,12 +7,12 @@ Quick Start
 
 There are currently 3 ways to use **GDSCTools**:
 
-#. Typing commands in a **Python shell**. That method is for **developers and users** who want to have high flexibility and use the **GDSCTools** to the best advantage.
-#. Re-using **IPython Notebooks** available within the source code.
-#. Using a **standalone application** called **gdsctools_anova**,
-   which is the recommended version for **end-users**.
+- Typing commands in a **Python shell**. That method is for **developers and users** who want to have high flexibility and use the **GDSCTools** to the best advantage.
+- Re-using **IPython Notebooks** available within the source code.
+- Using a **standalone application** (**gdsctools_anova**),
+  which is the recommended version for **end-users**.
 
-In this section we will focus on the first approach. This will also allow us to use IPython notebooks as explained in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section. The standalone application can be used to reproduce the following examples and should be used to produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with an HTML report (see :ref:`data_packages` section).
+In this section we will focus on the first approach. This will also allow us to use IPython notebooks as explained in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section; it can be used to reproduce the following examples and is recommended to produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with an HTML report (see :ref:`data_packages` section).
 
 
 We assume now that you have **gdsctools** installed together with **IPython**.
@@ -76,7 +76,7 @@ we will be as explicit as possible in the following examples; we would rather us
 This is better coding practice and has also the advantage of telling beginners
 which functions are going to be used. 
 
-Here above, we imported the :class:`~gdsctools.readers.IC50` class, that allows one to read the IC50 example file aforementioned. We will explain in details the different data sets and their formats in the :ref:`data` section. However, for now it is enough to know that it should be a CSV formatted file that contains IC50s; one value for each combination of drug and cell line. 
+Here above, we imported the :class:`~gdsctools.readers.IC50` class. It can read the IC50 example file aforementioned. We will explain in details the different data sets and their formats in the :ref:`data` section. However, for now it is enough to know that it should be a CSV formatted file that contains IC50s; one value for each combination of drug and cell line. 
 
 Note that the IC50 example is also installed with **GDSCTools** and its location obtained using::
 
@@ -116,7 +116,8 @@ that should open a new tab in a browser redirecting you to the HTML help version
 The ANOVA class
 ----------------
 
-Before starting, just a few words about the underlying stastistical analysis. On one hand, we have an IC50 file. It contains IC50s measured for :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a unique measured IC50. On the other hand, one should also provide a data file with genomic features with the same set of :math:`$N_c$` cell lines. The other dimension being the :math:`N_f` genomic features (e.g. mutation). A default set of about 50 genomic features is provided and automatically fetched in the following examples. You may also provide your own data set as an input. Note that all examples here below use the default file provided within **GDSCTools** software. 
+Before starting, just a few words about the underlying stastistical analysis. On one hand, we have an IC50 file. It contains IC50s measured for :math:`N_d` drugs and :math:`N_c` cell lines. Each combination of drug and cell line has a unique measured IC50. On the other hand, one should also provide a data file with genomic features with the same set of :math:`$N_c$` cell lines. The other dimension being the :math:`N_f` genomic features (e.g. mutation). A default set of about 50 genomic features is provided and automatically fetched in the following examples. You may also provide your own data set as an input. Note that all examples here below use the default file provided within **GDSCTools** software.
+
 
 .. seealso:: More details about the genomic features data format can be found in the :ref:`data` section.
 
@@ -127,16 +128,22 @@ previous IC50 test example, we create an ANOVA instance as follows::
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
 
+Would you have a specific genomic features file, you could provide it as a
+second argument::
+    
+    gdsc = ANOVA(ic50_test, "your_genomic_features.csv")
+
 There are now several possible analysis but the core of the analysis consists
-in taking one drug and one feature (ODOF hereafter) and to compute the
+in taking One Drug and One Feature (ODOF hereafter) and to compute the
 association using a regression analysis (see :ref:`regression` for details). 
 The IC50 across the cell lines being
 the dependent variable :math:`Y` and the explanatory variables denoted :math:`X` are made of tissues, :term:`MSI` and one genomic feature. Following the regression analysis, we compute the ANOVA summary leading to a p-value for the significance of the association between the drug's IC50s and the genomic feature considered. This calculation is performed with the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. 
 
 One can then repeat the ODOF analysis for the given drug across all features using the :meth:`~gdsctools.anova.ANOVA.anova_one_drug` method. This is also named One Drug All Feature case (ODAF). Finally we can even extend the analysis to All Drugs All Features (ADAF) using :meth:`~gdsctools.anova.ANOVA.anova_all`.
 
-.. note:: P-values reported by the ODOF method need to be corrected with a
-    multiple testing correction when combined in the ODAF or ADAF cases. 
+.. note:: P-values reported by the :term:`ODOF` method need to be 
+    corrected with using multiple testing correction. This is done 
+    in the the :term:`ODAF` and :term:`ADAF` cases. 
     For more information, please see the 
     :meth:`gdsctools.stats.MultipleTesting` description.
 
@@ -154,7 +161,7 @@ features. Let us now perform the analysis for the 3 different cases.
 One Drug One Feature (ODOF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Let us start with the first case (ODOF). User needs to provide a drug and a feature and to call the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. Here is an example:
+Let us start with the first case (ODOF). User needs to provide a drug and a feature name and to call the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature` method. Here is an example:
 
 .. plot::
     :include-source:
@@ -192,6 +199,7 @@ Now that we have analysed one drug for one feature, we could repeat the analysis
     results = gdsc.anova_one_drug('Drug_999_IC50')  
     results.volcano()
 
+In a python shell, you can click on a dot to get more information.     
 
 .. note:: This method takes 4-10 seconds per drug depending on the 
     number of features.
@@ -219,7 +227,9 @@ and  :math:`Es` is the effect size function based on the Cohens metric (see
 In the volcano plot, each reported p-value is an individual p-value for a given drug and feature.  Due to the number of possible tests, we have
 more chance to pick a significant hit by pure chance. Therefore, p-values are corrected using a multiple testing correction method (e.g., BH method), which uses :term:`FDR` metric. Significance of associations should therefore be based on the FDR rather than p-values. The horizontal dashed lines in the volcano plot show several FDR thresholds. 
 
-
+In the volcano example, the default FDR threshold is 25%. Besides, as you can
+see there is no horizontal lines. This means that all FDRs are above 25% and
+that there is no significant hits.
 
 
 All Drug All Features (ADAF)
@@ -228,10 +238,9 @@ All Drug All Features (ADAF)
 Here we compute the associations across all drugs and all features. 
 In essence, it is the same analysis as the ODAF case but with more tests. 
 In order to reduce the computational time, in the following example, 
-we restrict the analysis to the breat tissue 
+we restrict the analysis to the breast tissue 
 using :meth:`~gdsctools.anova.ANOVA.set_cancer_type` method. This would
-therefore be a **cancer-specific analysis**. If all cell lines are kept, this is
-a :term:`PANCAN` analysis.
+therefore be a **cancer-specific analysis**. If all cell lines are kept, this is a :term:`PANCAN` analysis. The information about tissue is stored in the genomic feature matrix in the column named **Tissue Factor Value**. 
 
 .. plot::
     :include-source:
@@ -268,7 +277,7 @@ If you want to learn more, please follow one of those links:
 * How to reproduce these analysis presented here above using the :ref:`standalone`.
 * Get more examples from IPython :ref:`notebooks`.
 * How to produce :ref:`data_packages` and learn about their contents.
-
+* Learn about the volcano plot and output in :ref:`results`.
 
 
 
