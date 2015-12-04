@@ -31,12 +31,11 @@ or used in analysis:
 - :attr:`genomic_features`
 """
 # use underscore to hide from API
-import os
 import easydev
 from easydev import get_share_file as _gsf
 
 
-__all__ = ['Data', 'dataset', 'ic50_test', 'genomic_features',
+__all__ = ['Data', 'dataset', 'ic50_test', 'genomic_features', 'cosmic_info',
            "cosmic_builder_test", "cancer_cell_lines"]
 
 
@@ -90,9 +89,6 @@ def dataset(dataname):
         ic50_test.filename
 
     """
-    registered = ['ic50_test', 'genomic_features',
-        'cancer_cell_lines', 'cosmic_builder_test']
-    easydev.check_param_in_list(dataname, registered)
 
     d = Data()
     if dataname == 'ic50_test':
@@ -108,6 +104,9 @@ def dataset(dataname):
     elif dataname == 'cosmic_builder_test':
         d.filename = _gsf('gdsctools', 'data', 'cosmic_builder_test.txt')
         d.description = "An example of flat file to be read by COSMICFetcher"
+    elif dataname == 'cosmic_info':
+        d.filename = _gsf('gdsctools', 'data', 'cosmic_info.csv.gz')
+        d.description = "Information about 1001 cell lines including COSMIC ID"
 
     return d
 
@@ -124,6 +123,9 @@ cancer_cell_lines = dataset('cancer_cell_lines')
 
 #: Example of flat file to be read by COSMICFetcher
 cosmic_builder_test = dataset("cosmic_builder_test")
+
+#: Dataframe with COSMIC ID and their information
+cosmic_info = dataset("cosmic_info")
 
 
 
