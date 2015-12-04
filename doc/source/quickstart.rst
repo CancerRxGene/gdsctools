@@ -240,7 +240,7 @@ In essence, it is the same analysis as the ODAF case but with more tests.
 In order to reduce the computational time, in the following example, 
 we restrict the analysis to the breast tissue 
 using :meth:`~gdsctools.anova.ANOVA.set_cancer_type` method. This would
-therefore be a **cancer-specific analysis**. If all cell lines are kept, this is a :term:`PANCAN` analysis. The information about tissue is stored in the genomic feature matrix in the column named **Tissue Factor Value**. 
+therefore be a **cancer-specific analysis**. If all cell lines are kept, this is a :term:`PANCAN` analysis. The information about tissue is stored in the genomic feature matrix in the column named **TISSUE_FACTOR**. 
 
 .. plot::
     :include-source:

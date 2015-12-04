@@ -1,4 +1,4 @@
-COSMIC ID, Tissue Factor Value, Sample Name, MS-instability Factor Value, BRAF_mut, gain_cna
+COSMIC_ID, TISSUE_FACTOR, SAMPLE_NAME, MSI_FACTOR, BRAF_mut, gain_cna
 111111, lung_NSCLC, 201T,  1, 1, 0
 222222, prostate,   22RV1, 1, 0, 1
 

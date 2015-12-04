@@ -17,6 +17,13 @@ version 0.9 Nov 2015
 * CHANGES:
    - anova_one_drug now returns an ANOVAResults object
    - Restructure data package tree directory (#83)
+   - Default header have changed:
+     COSMIC ID --> COSMID_ID
+     Sample Name --> SAMPLE_NAME
+     MS-instability Factor Value --> MSI_FACTOR
+     Tissue Factor Value --> TISSUE_FACTOR
+
+     Previous values will still be accepted but deprecation warning added.
 
 * BUG FIXES: 
     - Fixes #89 (tight layout buggy under MAC)

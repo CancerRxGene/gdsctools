@@ -31,9 +31,9 @@ IC50
 
 The most important input is the file that contains the IC50s. That input file
 contains a set of row where each row must have 1 unique COSMIC identifier and a
-set of IC50s; one IC50 per drug. So, the compulsary header must indicate the name of the drugs and the column that contains the cosmic identifiers, which must be named **COSMIC ID** (note the space). All columns that starts with **Drug** are interpreted as the IC50s for each drug considered. Other columns are ignored. The order of the columns is not important. Here is a valid example::
+set of IC50s; one IC50 per drug. So, the compulsary header must indicate the name of the drugs and the column that contains the cosmic identifiers, which must be named **COSMIC_ID** (note the space). All columns that starts with **Drug** are interpreted as the IC50s for each drug considered. Other columns are ignored. The order of the columns is not important. Here is a valid example::
 
-    COSMIC ID, Drug_1_IC50, Drug_20_IC50
+    COSMIC_ID, Drug_1_IC50, Drug_20_IC50
     111111,    0.5,         0.8
     222222,    1,           2
 
@@ -65,20 +65,20 @@ Genomic Features
 ---------------------
 
 The **ANOVA** analysis computes the associations between the Drug IC50s and
-genomic features. The file containing the Genomic Features must map to the IC50s file that is it must contains a column named **COSMIC ID** with the same COSMIC identifiers. Besides, 2 compulsary columns are required. One that contains the tissue names and one with information about the :term:`MSI` factor. Those 2 columns must be named ::
+genomic features. The file containing the Genomic Features must map to the IC50s file that is it must contains a column named **COSMIC_ID** with the same COSMIC identifiers. Besides, 2 compulsary columns are required. One that contains the tissue names and one with information about the :term:`MSI` factor. Those 2 columns must be named ::
 
-    - 'Tissue Factor Value'
-    - 'MS-instability Factor Value'
+    - TISSUE_FACTOR
+    - MSI_FACTOR
 
 We may provide alternative (simple) names in the futures. You may also have an additional informative column named:: 
 
-    - 'Sample Name'
+    - SAMPLE_NAME
 
 Finally, remaining columns are assumed to be related to genomic features. 
 Note that columns starting with `Drug_` are removed without warning for now. 
 Here is a simple example::
     
-    COSMIC ID, Tissue Factor Value, Sample Name, MS-instability Factor Value, BRAF_mut, gain_cna
+    COSMIC_ID, TISSUE_FACTOR, SAMPLE_NAME, MSI_FACTOR, BRAF_mut, gain_cna
     111111, lung_NSCLC, 201T,  1, 1, 0
     222222, prostate,   22RV1, 1, 0, 1
 
@@ -91,7 +91,7 @@ It can be saved and read as follows:
     >>> gf
     GenomicFeatures <Nc=2, Nf=2, Nt=2>
 
-In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../share/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). 
+In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../share/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). A more complex file will be provided in the future.
 
 By default, the creation of an ANOVA class we read that file automatically. Of
 course, you may provide your own. The :class:`~gdsctools.readers.GenomicFeatures` if created without input contains the default file mentionned here above::
