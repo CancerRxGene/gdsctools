@@ -11,7 +11,7 @@ GDSCTools
 .. image::  https://coveralls.io/repos/CancerRxGene/gdsctools/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/CancerRxGene/gdsctools?branch=master 
 
-.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=issues&title=issues
+.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=Ready
    :target: https://waffle.io/CancerRxGene/gdsctools
 
 .. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
