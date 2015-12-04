@@ -130,6 +130,7 @@ class ANOVASettings(AttrDict):
         self.feature_factor_threshold = 3
         # How many MSI samples must be present to perform the test
         self.MSI_factor_threshold = 2
+        self.include_media_factor = False
 
         self.analysis_type = 'PANCAN'
         self.pval_correction_method = 'fdr'   # or qvalue
@@ -156,6 +157,10 @@ class ANOVASettings(AttrDict):
         # The fraction of the penalty given to the L1 penalty term. Must be
         # between 0 and 1 (inclusive). If 0, the fit is ridge regression. If
         # 1, the fit is the lasso.
+
+        for k, v in kargs.items():
+            self[k] = v
+
 
     def check(self):
         """Checks the values of the parameters
