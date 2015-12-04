@@ -304,6 +304,9 @@ class IC50(Reader, CosmicRows):
 
         r.drugsIds = ['Drug_1_IC50', 'Drug_1000_IC50']
 
+    .. versionchanged:: 0.9.10
+        The column **COSMIC ID** should now be **COSMIC_ID**. 
+        Previous name is deprecated but still accepted.
 
     """
     cosmic_name = 'COSMIC_ID'
@@ -485,7 +488,9 @@ class GenomicFeatures(Reader, CosmicRows):
         - CNA (gain): 116
         - CNA (loss): 291
 
-    .. changedversion:: 0.9.10
+    .. versionchanged:: 0.9.10
+        The header's columns' names have changed to be more consistant.
+        Previous names are deprecated but still accepted.
 
     """
     colnames = easydev.AttrDict()

@@ -14,8 +14,6 @@ GDSCTools
 .. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=Done
    :target: https://waffle.io/CancerRxGene/gdsctools
 
-.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=Backlog&title=issues
-   :target: https://waffle.io/CancerRxGene/gdsctools
 
 .. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
     :target: http://gdsctools.readthedocs.org/en/latest/?badge=master

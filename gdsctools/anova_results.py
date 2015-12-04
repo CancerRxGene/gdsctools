@@ -32,107 +32,108 @@ class ANOVAResults(object):
     :meth:`gdsctools.anova.ANOVA.anova_all` method.
 
 
-    =========================== ==============================================
-    =========================== ==============================================
-    Domain                      The analysis in which the interaction 
+    =========================== ===============================================
+    column name                 description
+    =========================== ===============================================
+    Domain                      The analysis in which the interaction
                                 has been identified (can be PANCAN
-                                for Pan-Cancer or one of the TCGA labels 
+                                for Pan-Cancer or one of the TCGA labels
                                 indicating one of the cancer types
                                 included in the study, see Table S1A);
-    assoc_id                    Alphanumerical identifier of the 
+    assoc_id                    Alphanumerical identifier of the
                                 interaction;
-    Feature                     The CFE involved in the interaction, it 
-                                can be a mutated cancer driver gene 
-                                (CG) [suffix _mut], an abberrantly 
+    Feature                     The CFE involved in the interaction, it
+                                can be a mutated cancer driver gene
+                                (CG) [suffix _mut], an abberrantly
                                 fused protein [suffix fusion], a copy
-                                number altered chromosomal region (RACS) 
+                                number altered chromosomal region (RACS)
                                 [prefix gain for amplifications or loss
                                 for deletions];
-    Drug id                     Numerical id of the drug involved in the 
+    Drug id                     Numerical id of the drug involved in the
                                 interaction;
-    Drug Target                 Putative target of the drug involved in the 
+    Drug Target                 Putative target of the drug involved in the
                                 interaction;
-    N_FEATURE_pos:              Number of cell lines harbouring the CFE 
-                                indicated in column E and that have been 
-                                screened with the drug indicated in columns 
-                                F and G, therefore have been included in 
+    N_FEATURE_pos:              Number of cell lines harbouring the CFE
+                                indicated in column E and that have been
+                                screened with the drug indicated in columns
+                                F and G, therefore have been included in
                                 the test;
-    N_FEATURE_neg               Number of cell lines not harbouring the 
-                                CFE indicated in column E and that have been 
-                                screened with the drug indicated in columns 
-                                F and G, therefore have been included in the 
-                                test; 
-    log max.Conc.tested         Maximal concentration tested (values are in 
+    N_FEATURE_neg               Number of cell lines not harbouring the
+                                CFE indicated in column E and that have been
+                                screened with the drug indicated in columns
+                                F and G, therefore have been included in the
+                                test;
+    log max.Conc.tested         Maximal concentration tested (values are in
                                 natural log);
-    log max.Conc.tested2        2nd Maximal concentration tested (values are 
-                                in natural log); some compounds have been 
-                                screened at two different ranges of 
-                                concentrations. When this is not the case, 
+    log max.Conc.tested2        2nd Maximal concentration tested (values are
+                                in natural log); some compounds have been
+                                screened at two different ranges of
+                                concentrations. When this is not the case,
                                 this column contains NA;
-    FEATUREpos_logIC50_MEAN     Average log IC50 of the population of cell 
+    FEATUREpos_logIC50_MEAN     Average log IC50 of the population of cell
                                 lines accounted in colum i;
-    FEATUREneg_logIC50_MEAN     Average log IC50 of the population of cell 
+    FEATUREneg_logIC50_MEAN     Average log IC50 of the population of cell
                                 lines accounted in colum j;
-    FEATURE_deltaMEAN_IC50      Difference between the two average natural 
-                                log IC50 values in the previous two columns 
-                                (j - i). A negative value indicates an 
-                                interaction for sensitivity, whereas a 
+    FEATURE_deltaMEAN_IC50      Difference between the two average natural
+                                log IC50 values in the previous two columns
+                                (j - i). A negative value indicates an
+                                interaction for sensitivity, whereas a
                                 positive value indicates an interaction
                                 for resistance;
-    FEATUREpos_IC50_sd          Log IC50 Standard deviation for the 
-                                population of cell lines accounted in column 
-                                i; 
-    FEATUREneg_IC50_sd          Log IC50 Standard deviation for the 
-                                population of cell lines accounted in column 
+    FEATUREpos_IC50_sd          Log IC50 Standard deviation for the
+                                population of cell lines accounted in column
+                                i;
+    FEATUREneg_IC50_sd          Log IC50 Standard deviation for the
+                                population of cell lines accounted in column
                                 j;
-    FEATURE_IC50_effect_size    Cohen's d, quantifying the effect size of 
-                                the interaction. A value >=0.5 indicates 
+    FEATURE_IC50_effect_size    Cohen's d, quantifying the effect size of
+                                the interaction. A value >=0.5 indicates
                                 a moderate effect size. A value >=1
                                 indicates a large effect size (i.e. difference
-                                in mean log IC50 values greater than their 
-                                pooled standard deviations). A value >= 2 
-                                indicates a very large effect size (i.e. 
-                                difference in mean log IC50 is at least two 
+                                in mean log IC50 values greater than their
+                                pooled standard deviations). A value >= 2
+                                indicates a very large effect size (i.e.
+                                difference in mean log IC50 is at least two
                                 times their pooled standard deviation);
-    FEATUREpos_Glass_delta      Glass delta, quantifying the effect size of 
-                                the interaction as the ratio between the 
-                                difference of the mean log IC50 values and 
-                                the standard deviation of the log IC50 values 
+    FEATUREpos_Glass_delta      Glass delta, quantifying the effect size of
+                                the interaction as the ratio between the
+                                difference of the mean log IC50 values and
+                                the standard deviation of the log IC50 values
                                 of the population of cell lines accounted in
                                 column i;
     FEATUREneg_Glass_delta      Glass delta Same as above for the negative set.
-    FEATURE_ANOVA_pval          ANOVA test p-value quantyfing the interaction 
+    FEATURE_ANOVA_pval          ANOVA test p-value quantyfing the interaction
                                 significance;
-    Tissue_ANOVA_pval           ANOVA test p-value quantifying the 
-                                significance of the interaction between drug 
-                                response and the tissue of origin of the 
-                                cell lines; for the cancer-specific 
+    Tissue_ANOVA_pval           ANOVA test p-value quantifying the
+                                significance of the interaction between drug
+                                response and the tissue of origin of the
+                                cell lines; for the cancer-specific
                                 interactions this value is NA;
-    MEDIA_ANOVA_pval            ANOVA test p-value quantifying the 
-                                significance of the interaction between drug 
-                                response and the screening medium of the cell 
-                                lines; for the cancer-specific interactions 
+    MEDIA_ANOVA_pval            ANOVA test p-value quantifying the
+                                significance of the interaction between drug
+                                response and the screening medium of the cell
+                                lines; for the cancer-specific interactions
                                 this value is NA;
-    MSI_ANOVA_pval              ANOVA test p-value quantifying the 
-                                significance of the interaction between drug 
-                                response and the micro-satellite instability 
-                                status of the cell lines; for the cancer type 
+    MSI_ANOVA_pval              ANOVA test p-value quantifying the
+                                significance of the interaction between drug
+                                response and the micro-satellite instability
+                                status of the cell lines; for the cancer type
                                 with no micro-satellite instable cell line
                                 samples this value is NA;
-    ANOVA_FEATURE_FDR_%         False discovery rate obtained by correcting 
-                                the p-values in column u, on an individual 
-                                analysis basis, for multiple hypothesis 
-                                testing with the q-value correction method 
+    ANOVA_FEATURE_FDR_%         False discovery rate obtained by correcting
+                                the p-values in column u, on an individual
+                                analysis basis, for multiple hypothesis
+                                testing with the q-value correction method
                                 (Storey & TIbshirani, 2003)
-    =========================== ==============================================
+    =========================== ===============================================
 
     """
     def __init__(self, filename=None):
         """.. rubric:: Constructor
 
-        :param str filename: Another ANOVAResults instance of a saved 
-            dataframe that can be read by this class, that is a CSV 
-            with the official header. This parameter can also be set 
+        :param str filename: Another ANOVAResults instance of a saved
+            dataframe that can be read by this class, that is a CSV
+            with the official header. This parameter can also be set
             to None (default) and populated later.
 
         """
@@ -219,7 +220,7 @@ class ANOVAResults(object):
             return []
         else:
             return self.df[self.drug_id].unique()
-    drugIds = property(_get_drugIds, 
+    drugIds = property(_get_drugIds,
             doc="Returns the list of drug identifiers")
 
     def volcano(self):

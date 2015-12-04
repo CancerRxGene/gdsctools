@@ -14,6 +14,9 @@ ANOVA related
     :members:
     :undoc-members:
 
+.. automodule:: gdsctools.anova_results
+    :members:
+    :undoc-members:
 
 Statistical Tools
 -------------------
