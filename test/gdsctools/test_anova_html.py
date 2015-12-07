@@ -1,14 +1,14 @@
-from gdsctools.anova import ANOVA, ANOVAReport
-from . import tools
-
+from gdsctools.anova import ANOVA
+from gdsctools.anova_report import ANOVAReport
+from gdsctools import ic50_test
 
 
 def test_html():
     # same as above, could factorise
-    an = ANOVA(tools.get_data())
+    an = ANOVA(ic50_test)
     features = an.features.df
     features = features[features.columns[0:30]]
-    an = ANOVA(tools.get_data(), features)
+    an = ANOVA(ic50_test, features)
     #an.settings.include_media_factor = False
     results = an.anova_all()
 

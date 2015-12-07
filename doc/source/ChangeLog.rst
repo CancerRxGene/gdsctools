@@ -47,6 +47,7 @@ version 0.9 Nov/Dec 2015
     - print function is  more verbose
   - volcano: uses new naming convention for the columns as described above.
 
+  - split anova.py module (create anova_report.py) (issue #98).
 
 
 .. rubric:: 0.9.10
