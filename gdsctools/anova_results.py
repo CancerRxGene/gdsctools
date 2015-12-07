@@ -15,6 +15,8 @@
 #
 ##############################################################################
 """ANOVAResults stored the output of the ANOVA analysis"""
+from collections import OrderedDict
+
 import pandas as pd
 import numpy as np
 
@@ -33,7 +35,7 @@ class ANOVAResults(object):
 
 
     =========================== ===============================================
-    column name                 description
+         column name                                  description
     =========================== ===============================================
     Domain                      The analysis in which the interaction
                                 has been identified (can be PANCAN
@@ -70,20 +72,20 @@ class ANOVAResults(object):
                                 screened at two different ranges of
                                 concentrations. When this is not the case,
                                 this column contains NA;
-    FEATUREpos_logIC50_MEAN     Average log IC50 of the population of cell
+    FEATURE_pos_logIC50_MEAN    Average log IC50 of the population of cell
                                 lines accounted in colum i;
-    FEATUREneg_logIC50_MEAN     Average log IC50 of the population of cell
+    FEATURE_neg_logIC50_MEAN    Average log IC50 of the population of cell
                                 lines accounted in colum j;
-    FEATURE_deltaMEAN_IC50      Difference between the two average natural
+    FEATURE_delta_MEAN_IC50     Difference between the two average natural
                                 log IC50 values in the previous two columns
                                 (j - i). A negative value indicates an
                                 interaction for sensitivity, whereas a
                                 positive value indicates an interaction
                                 for resistance;
-    FEATUREpos_IC50_sd          Log IC50 Standard deviation for the
+    FEATURE_pos_IC50_sd         Log IC50 Standard deviation for the
                                 population of cell lines accounted in column
                                 i;
-    FEATUREneg_IC50_sd          Log IC50 Standard deviation for the
+    FEATURE_neg_IC50_sd         Log IC50 Standard deviation for the
                                 population of cell lines accounted in column
                                 j;
     FEATURE_IC50_effect_size    Cohen's d, quantifying the effect size of
@@ -95,26 +97,26 @@ class ANOVAResults(object):
                                 indicates a very large effect size (i.e.
                                 difference in mean log IC50 is at least two
                                 times their pooled standard deviation);
-    FEATUREpos_Glass_delta      Glass delta, quantifying the effect size of
+    FEATURE_pos_Glass_delta     Glass delta, quantifying the effect size of
                                 the interaction as the ratio between the
                                 difference of the mean log IC50 values and
                                 the standard deviation of the log IC50 values
                                 of the population of cell lines accounted in
                                 column i;
-    FEATUREneg_Glass_delta      Glass delta Same as above for the negative set.
-    FEATURE_ANOVA_pval          ANOVA test p-value quantyfing the interaction
+    FEATURE_neg_Glass_delta     Glass delta Same as above for the negative set.
+    ANOVA_FEATURE_pval          ANOVA test p-value quantyfing the interaction
                                 significance;
-    Tissue_ANOVA_pval           ANOVA test p-value quantifying the
+    ANOVA_TISSUE_pval           ANOVA test p-value quantifying the
                                 significance of the interaction between drug
                                 response and the tissue of origin of the
                                 cell lines; for the cancer-specific
                                 interactions this value is NA;
-    MEDIA_ANOVA_pval            ANOVA test p-value quantifying the
+    ANOVA_MEDIA_pval            ANOVA test p-value quantifying the
                                 significance of the interaction between drug
                                 response and the screening medium of the cell
                                 lines; for the cancer-specific interactions
                                 this value is NA;
-    MSI_ANOVA_pval              ANOVA test p-value quantifying the
+    ANOVA_MSI_pval              ANOVA test p-value quantifying the
                                 significance of the interaction between drug
                                 response and the micro-satellite instability
                                 status of the cell lines; for the cancer type
@@ -152,34 +154,50 @@ class ANOVAResults(object):
         # TODO: check the header of the dataframe
 
         self.drug_target = 'DRUG_TARGET'
-        self.drug_id = 'DRUG_ID'
         self.drug_name = 'DRUG_NAME'
-        self.feature = 'FEATURE'
 
         #: dictionary with the relevant column names and their expected types
-        self.mapping = {
-             self.drug_target: np.dtype('O'),
-             self.drug_id: np.dtype('O'),
-             self.drug_name: np.dtype('O'),
-             self.feature: np.dtype('O'),
-             self.feature + '_ANOVA_pval': np.dtype('float64'),
-             self.feature + '_IC50_T_pval': np.dtype('float64'),
-             self.feature + '_IC50_effect_size': np.dtype('float64'),
-             self.feature + '_deltaMEAN_IC50': np.dtype('float64'),
-             self.feature + 'neg_Glass_delta': np.dtype('float64'),
-             self.feature + 'neg_IC50_sd': np.dtype('float64'),
-             self.feature + 'neg_logIC50_MEAN':  np.dtype('float64'),
-             self.feature + 'pos_Glass_delta': np.dtype('float64'),
-             self.feature + 'pos_IC50_sd': np.dtype('float64'),
-             self.feature + 'pos_logIC50_MEAN': np.dtype('float64'),
-             'N_FEATURE_neg': np.dtype('int64'),
-             'N_FEATURE_pos': np.dtype('int64'),
-             'MSI_ANOVA_pval': np.dtype('O'),
-             'TISSUE_ANOVA_pval': np.dtype('O'),
-             'log max.Conc.tested': np.dtype('O'),
-             'log max.Conc.tested2': np.dtype('O'),
-             'ASSOC_ID': np.dtype('int64'),
-             'ANOVA_FEATURE_FDR_%': np.dtype('float64')}
+        self.mapping = OrderedDict()
+        self.mapping['ASSOC_ID'] =  np.dtype('int64')
+        self.mapping['FEATURE'] = np.dtype('O')
+        self.mapping['DRUG_ID'] = np.dtype('O')
+        self.mapping['DRUG_NAME'] = np.dtype('O')
+        self.mapping['DRUG_TARGET'] = np.dtype('O')
+        self.mapping['N_FEATURE_neg'] = np.dtype('int64')
+        self.mapping['N_FEATURE_pos'] = np.dtype('int64')
+        self.mapping['FEATURE_pos_logIC50_MEAN'] = np.dtype('float64')
+        self.mapping['FEATURE_neg_logIC50_MEAN'] = np.dtype('float64')
+        self.mapping['FEATURE_delta_MEAN_IC50'] = np.dtype('float64')
+        self.mapping['FEATURE_IC50_effect_size'] = np.dtype('float64')
+        self.mapping['FEATURE_neg_Glass_delta'] = np.dtype('float64')
+        self.mapping['FEATURE_pos_Glass_delta'] = np.dtype('float64')
+        self.mapping['FEATURE_neg_IC50_sd'] = np.dtype('float64')
+        self.mapping['FEATURE_pos_IC50_sd'] = np.dtype('float64')
+        self.mapping['FEATURE_IC50_T_pval'] = np.dtype('float64')
+       
+        # FIXME will be removed in the future
+        self.mapping['log max.Conc.tested'] = np.dtype('O'),
+        self.mapping['log max.Conc.tested2'] = np.dtype('O'),
+        
+        self.mapping['ANOVA_FEATURE_pval'] = np.dtype('float64')
+        self.mapping['ANOVA_TISSUE_pval'] = np.dtype('float64')
+        self.mapping['ANOVA_MSI_pval'] = np.dtype('float64')
+        self.mapping['ANOVA_MEDIA_pval'] = np.dtype('float64')
+  
+        self.mapping['ANOVA_FEATURE_FDR_%'] = np.dtype('float64')
+
+        self.colnames_subset = ['ASSOC_ID', 'FEATURE',
+            'DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET',
+            'N_FEATURE_neg', 'N_FEATURE_pos',
+            'FEATURE_pos_logIC50_MEAN', 'FEATURE_neg_logIC50_MEAN',
+            'FEATURE_delta_MEAN_IC50',
+            'FEATURE_IC50_effect_size',
+            'FEATURE_neg_Glass_delta', 'FEATURE_pos_Glass_delta',
+            'ANOVA_FEATURE_pval',
+            'ANOVA_TISSUE_pval',
+            'ANOVA_MSI_pval',
+            'ANOVA_MEDIA_pval',
+            'ANOVA_FEATURE_FDR_%']
 
     def astype(self, df):
         try:
