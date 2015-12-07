@@ -30,16 +30,13 @@ except:
     license = '3-clause ("Simplified" or "New") BSD'
 
 
-
-
-
 from gdsctools.readers import IC50, GenomicFeatures, DrugDecoder
 from gdsctools.anova import ANOVA, ANOVAReport 
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.settings import ANOVASettings
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
-
+from gdsctools.cosmictools import COSMICInfo
 
 def gdsctools_data(filename, where=None):
     """Simple utilities to retrieve data sets from gdsctools/share directory"""
