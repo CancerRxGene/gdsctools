@@ -242,15 +242,15 @@ class CosmicRows(object):
 class IC50(Reader, CosmicRows):
     """Reader of IC50 data set
 
-    This input matrix must be a comman-separated value (CSV) or 
-    tab-separated value file (TSV). 
+    This input matrix must be a comman-separated value (CSV) or
+    tab-separated value file (TSV).
 
     The matrix must have a header and at least 2 columns. If the number of rows
     is not sufficient, analysis may not be possible.
 
-    The header must have a column called "COSMIC_ID" or "COSMIC ID". 
-    This column will be used as indices (row names). All other columns will 
-    be considered as input data. 
+    The header must have a column called "COSMIC_ID" or "COSMIC ID".
+    This column will be used as indices (row names). All other columns will
+    be considered as input data.
 
     The column "COSMIC_ID" contains the cosmic identifiers (cell line). The
     other columns should be filled with the IC50s corresponding to a pair
@@ -263,7 +263,7 @@ class IC50(Reader, CosmicRows):
     If no columns start with "Drug_", that prefix will be added to all column
     names.
 
-    The order of the columns is not important. 
+    The order of the columns is not important.
 
     Here is a simple example of a valid TSV file::
 
@@ -305,7 +305,7 @@ class IC50(Reader, CosmicRows):
         r.drugsIds = ['Drug_1_IC50', 'Drug_1000_IC50']
 
     .. versionchanged:: 0.9.10
-        The column **COSMIC ID** should now be **COSMIC_ID**. 
+        The column **COSMIC ID** should now be **COSMIC_ID**.
         Previous name is deprecated but still accepted.
 
     """
@@ -336,14 +336,14 @@ class IC50(Reader, CosmicRows):
         drug_prefix = ''
         for col in self.df.columns:
             if col.startswith(self.drug_prefix +"_"):
-                drug_prefix = self.drug_prefix 
+                drug_prefix = self.drug_prefix
 
         # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
         _cols = list(self.df.columns)
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
-            warnings.warn("'COSMIC ID' column name is deprecated since " + 
+            warnings.warn("'COSMIC ID' column name is deprecated since " +
             "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
-            self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID") 
+            self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID")
                     for x in self.df.columns]
         # If the data has not been interpreted, COSMIC column should be
         # found in the column and set as the index
@@ -462,9 +462,10 @@ class GenomicFeatures(Reader, CosmicRows):
         - 'TISSUE_FACTOR'
         - 'MSI_FACTOR'
 
-    This one is optional and may be used for the HTML report:
+    If this column is found, it is removed::
 
         - 'SAMPLE_NAME'
+        - 'Sample Name'
 
     and features can be also encoded with the following convention:
 
@@ -496,13 +497,13 @@ class GenomicFeatures(Reader, CosmicRows):
     colnames = easydev.AttrDict()
     colnames.cosmic = 'COSMIC_ID'
     colnames.tissue = 'TISSUE_FACTOR'
-    colnames.sample = 'SAMPLE_NAME'
     colnames.msi = 'MSI_FACTOR'
+    colnames.media = 'MEDIA_FACTOR'
 
     def __init__(self, filename=None):
         """.. rubric:: Constructor
 
-        If not file is provided, using the edfault file provided in the
+        If no file is provided, using the edfault file provided in the
         package that is made of 1001 cell lines times 680 features.
 
         """
@@ -518,27 +519,27 @@ class GenomicFeatures(Reader, CosmicRows):
         # the future
         self.df = self.df[[x for x in self.df.columns
             if x.startswith('Drug_') is False]]
-        
+
+        for this in ['Sample Name', 'SAMPLE_NAME']:
+            if this in self.df.columns:
+                self.df.drop(this, axis=1, inplace=True)
+
         # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
         for old, new in {
-                    'Tissue Factor Value': 'TISSUE_FACTOR', 
-                    'Sample Name': 'SAMPLE_NAME',
+                    'Tissue Factor Value': 'TISSUE_FACTOR',
                     'MS-instability Factor Value': 'MSI_FACTOR',
                     'COSMIC ID': 'COSMIC_ID'}.items():
             if old in self.df.columns:
                 warnings.warn("'%s' column name is deprecated " +
-                    " since 0.9.10. Please replace with '%s'", 
+                    " since 0.9.10. Please replace with '%s'",
                     DeprecationWarning)
-                self.df.columns = [x.replace(old, new) 
+                self.df.columns = [x.replace(old, new)
                         for x in self.df.columns]
 
-        # There are several types of features e.g., mutation, CNA,
-        # methylation but all are stored within the same file
-
-        # There are 3 special columns
+        # There are 3 special columns to hold the factors
         self._special_names = []
-        
-        # If tissue is not provided, we force create it and fill with dummies.
+
+        # If tissue factor is not provided, we create and fill it with dummies.
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
             warnings.warn("column named '%s' not found" % self.colnames.tissue,
@@ -554,20 +555,25 @@ class GenomicFeatures(Reader, CosmicRows):
         else:
             self._special_names.append(self.colnames.msi)
 
-        self.found_sample = self.colnames.sample in self.df.columns
-        if self.found_sample is False:
+        self.found_media = self.colnames.media in self.df.columns
+        if self.found_media is False:
             print("WARNING: column named '%s' not found" \
-                    % self.colnames.sample)
+                    % self.colnames.media)
         else:
-            self._special_names.append(self.colnames.sample)
+            self._special_names.append(self.colnames.media)
 
-        # trick to make sure the special columns appear first
-        # and ordered as tissue, msi, sample 
-        self.features = self.features
+        # order columns
+        self._order()
 
-        self.shift = len(self._special_names)
+        # 
         self._interpret_cosmic()
+
+        #
         self.check()
+
+    def _get_shift(self):
+        return len(self._special_names)
+    shift = property(_get_shift)
 
     def _interpret_cosmic(self):
         if self.colnames.cosmic in self.df.columns:
@@ -579,20 +585,30 @@ class GenomicFeatures(Reader, CosmicRows):
                 " named %s" % self.colnames.cosmic
             raise ValueError(error_msg)
 
+    def _fill_media_factor(self):
+        from gdsctools import COSMICInfo
+        c = COSMICInfo()
+        self.df['MEDIA_FACTOR'] = [c.get(x).SCREEN_MEDIUM
+                for x in self.df.index]
+        self.found_media = True
+        if self.colnames.media not in self._special_names:
+            self._special_names.append(self.colnames.media)
+        self._order()
+
+    def _order(self):
+        others = [x for x in self.df.columns if x not in self._special_names]
+        self.df = self.df[self._special_names + others]
+
     def _get_features(self):
         return list(self.df.columns)
     def _set_features(self, features):
         for feature in features:
             if feature not in self.features:
-                raise ValueError('Unknown feature name')
-        # remove the required column, that must be kept
-        # and are added afterwards
-        for this in self._special_names:
-            if this in features:
-                features.remove(this)
+                raise ValueError('Unknown feature name %s' % feature)
+        features = [x for x in features if x.endswith('FACTOR') is False]
         features = self._special_names + features
         self.df = self.df[features]
-
+        self._order()
     features = property(_get_features, _set_features,
                         doc="return list of features")
 
@@ -657,7 +673,18 @@ class GenomicFeatures(Reader, CosmicRows):
         except:
             txt += 'No information about tissues\n'
 
-        # -3 since we have also the MSI, tissue, sample columns
+        if self.found_msi:
+            txt +=  "MSI column: yes\n"
+        else:
+            txt +=  "MSI column: no\n"
+
+        if self.found_media:
+            txt +=  "MEDIA column: yes\n"
+        else:
+            txt +=  "MEDIA column: no\n"
+
+        # -3 since we have also the MSI, tissue, media columns
+        # TODO should use shift attribute ?
         Nfeatures = len(self.features)
         txt += '\nThere are {0} unique features distributed as\n'.format(Nfeatures-3)
 
