@@ -64,19 +64,18 @@ def test_anova_all():
 def test_odof_with_without_media():
 
     gdsc = ANOVA(ic50_test)
-    res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+    _res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
     dd1 = gdsc._get_anova_summary(gdsc.data_lm, output='dict')
-    assert dd1 == {'feature': 1.5750735472022118e-58,
-                   'msi': 0.025902887791637515,
-                  'tissue': 5.541879283763767e-44}
+    assert_list_almost_equal([dd1['feature'], dd1['msi'], dd1['tissue']], 
+        [1.5750735472022118e-58,  0.025902887791637515, 
+            5.541879283763767e-44])
 
     gdsc = ANOVA(ic50_test, set_media_factor=True)
-    res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+    _res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
     dd2 = gdsc._get_anova_summary(gdsc.data_lm, output='dict')
-    assert dd2 == {'feature': 2.9236500715529455e-58,
-         'media': 0.7762487502315283,
-         'msi': 0.023777744527686766,
-         'tissue': 1.5729157319290974e-44}
+    assert_list_almost_equal([dd2['feature'], dd2['media'], dd2['msi'],
+    dd2['tissue']], [ 2.9236500715529455e-58, 0.7762487502315283,
+         0.023777744527686766, 1.5729157319290974e-44])
 
 
 
