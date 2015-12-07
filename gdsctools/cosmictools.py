@@ -11,7 +11,7 @@ import pandas as pd
 import easydev
 
 
-__all__ = ['COSMICFetcher', 'COSMIC', 'COSMICInfo']
+__all__ = ['COSMICFetcher', 'COSMICInfo']
 
 
 class COSMICFetcher(object):
@@ -149,10 +149,12 @@ class COSMICFetcher(object):
 class COSMICInfo(object):
     """Retrieve information about cell line included in GDSC1000
 
-    There is just one method called :meth:`get` that retrieve information
-    contained in a flat file provided in GDSCTools.
+    This file reads a GDSCTools dataset :attr:`gdsctools.datasets.cosmic_info`.
+    Its content is stored in :attr:`df`. 
 
-    One can retrieve a specific field for a cosmic identifier:
+    The method :meth:`get` retrieves information
+    contained in the dataframe :attr:`df`. Provide a known cosmic identifier
+    as follows:
 
     .. doctest::
 
@@ -178,6 +180,9 @@ class COSMICInfo(object):
         GROWTH_PROPERTIES     Adherent
         Name: 909907, dtype: object
 
+    .. note:: there are only 1000 cell lines in the :attr:`df`. Additional cell
+        lines may be retrieve using :class:`COSMICFetcher`
+
     If a cosmic identifier is not found, the returned object has the same
     structure as above but with all fields set to False.
 
@@ -193,8 +198,8 @@ class COSMICInfo(object):
     def get(self, identifier, colname=None):
         """
 
-        :param identifier: a cosmic identifiers. Possible values are stored in 
-            :attr:`df.index` attribute
+        :param int identifier: a cosmic identifiers. Possible values are 
+            stored in :attr:`df.index` attribute
         :param colname: specific field. 
 
         :return: if colname is not provided, returns a time series for the 
@@ -220,6 +225,7 @@ class COSMICInfo(object):
         return url
 
     def on_web(self, identifier):
+        """Open a tab related to the COSMIC identifier (in your browser)"""
         from easydev.browser import browse
         url = self._get_url(identifier)
         browse(url)
