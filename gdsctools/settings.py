@@ -20,6 +20,7 @@ import pandas as pd
 import numpy as np
 from easydev import AttrDict
 import easydev
+from gdsctools import version
 
 
 __all__ = ['ANOVASettings']
@@ -41,8 +42,8 @@ class ANOVASettings(AttrDict):
         >>> s.FDR_threshold = 20
 
     It is the responsability of the users or developers to check the validity
-    of the settings by calling the :meth:`check` method. Note, however, that 
-    this method does not perform exhaustive checks. 
+    of the settings by calling the :meth:`check` method. Note, however, that
+    this method does not perform exhaustive checks.
 
     Finally, the method :meth:`to_html` creates an HTML table that can
     be added to an HTML report.
@@ -53,7 +54,7 @@ class ANOVASettings(AttrDict):
        :meth:`check` method to check validity of the values rather than
        using properties.
 
-    Here are the current values available. 
+    Here are the current values available.
 
 
 
@@ -89,7 +90,7 @@ class ANOVASettings(AttrDict):
                                                plot and significant hits
     pvalue_threshold          np.inf           Used to select significant hits see
                                                :class:`~gdsctools.anova.ANOVAReport`
-    directory                 html_gdsc_anova  Directory where images and HTML 
+    directory                 html_gdsc_anova  Directory where images and HTML
                                                documents are saved.
     savefig                   False            Save the figure or not (PNG format)
     effect_threshold          0                Used in the volcano plot. See
@@ -110,13 +111,12 @@ class ANOVASettings(AttrDict):
     regression_alpha        0         Fraction of penalty included. If 0,
                                       equivalent to OLS.
     regression_L1_wt        0         Fraction of the penalty given to L1
-                                      penalty term. Must be between 0 and 1. 
-                                      If 0, equivalent to Ridge. If 1 
+                                      penalty term. Must be between 0 and 1.
+                                      If 0, equivalent to Ridge. If 1
                                       equivalent to Lasso
     ======================= ========= =========================================
 
-
-    .. seealso:: :ref:`settings_filtering` or 
+    .. seealso:: :ref:`settings_filtering` or
         gdsctools.readthedocs.org/en/master/settings.html#filtering
 
     """
@@ -157,6 +157,7 @@ class ANOVASettings(AttrDict):
         # The fraction of the penalty given to the L1 penalty term. Must be
         # between 0 and 1 (inclusive). If 0, the fit is ridge regression. If
         # 1, the fit is the lasso.
+        self.version = version
 
         for k, v in kargs.items():
             self[k] = v
@@ -164,9 +165,9 @@ class ANOVASettings(AttrDict):
 
     def check(self):
         """Checks the values of the parameters
-        
-        This may not be exhaustive. Right now, checks 
-        
+
+        This may not be exhaustive. Right now, checks
+
          - MSI factor is boolean.
          - Regression.method in OLS/Ridge/Lasso/ElasticNet
          - FDR thresohld in [0,1]
@@ -208,7 +209,7 @@ class ANOVASettings(AttrDict):
         data = self.copy()
         data['volcano_additional_FDR_lines'] = \
                 str(data['volcano_additional_FDR_lines'])
-        
+
         settings = pd.DataFrame(data, index=[0]).transpose()
 
         settings.reset_index(inplace=True)

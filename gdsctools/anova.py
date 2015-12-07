@@ -142,6 +142,7 @@ class ANOVA(object): #Logging):
         # before hand to give a
         unknowns = set(self.ic50.cosmicIds).difference(
                 set(self.features.cosmicIds))
+
         if len(unknowns) > 0:
             print("WARNING: " +
                 "%s cosmic identifiers in your IC50 " % len(unknowns) +

@@ -32,8 +32,8 @@ from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 
-__all__ = ['ANOVAReport']
 
+__all__ = ['ANOVAReport']
 
 
 class ANOVAReport(object):
