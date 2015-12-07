@@ -42,20 +42,20 @@ class ANOVAResults(object):
                                 for Pan-Cancer or one of the TCGA labels
                                 indicating one of the cancer types
                                 included in the study, see Table S1A);
-    assoc_id                    Alphanumerical identifier of the
+    ASSOC_ID                    Alphanumerical identifier of the
                                 interaction;
-    Feature                     The CFE involved in the interaction, it
+    FEATURE                     The CFE involved in the interaction, it
                                 can be a mutated cancer driver gene
                                 (CG) [suffix _mut], an abberrantly
                                 fused protein [suffix fusion], a copy
                                 number altered chromosomal region (RACS)
                                 [prefix gain for amplifications or loss
                                 for deletions];
-    Drug id                     Numerical id of the drug involved in the
+    DRUG_ID                     Numerical id of the drug involved in the
                                 interaction;
-    Drug Target                 Putative target of the drug involved in the
+    DRUG_TARGET                 Putative target of the drug involved in the
                                 interaction;
-    N_FEATURE_pos:              Number of cell lines harbouring the CFE
+    N_FEATURE_pos               Number of cell lines harbouring the CFE
                                 indicated in column E and that have been
                                 screened with the drug indicated in columns
                                 F and G, therefore have been included in
@@ -65,13 +65,6 @@ class ANOVAResults(object):
                                 screened with the drug indicated in columns
                                 F and G, therefore have been included in the
                                 test;
-    log max.Conc.tested         Maximal concentration tested (values are in
-                                natural log);
-    log max.Conc.tested2        2nd Maximal concentration tested (values are
-                                in natural log); some compounds have been
-                                screened at two different ranges of
-                                concentrations. When this is not the case,
-                                this column contains NA;
     FEATURE_pos_logIC50_MEAN    Average log IC50 of the population of cell
                                 lines accounted in colum i;
     FEATURE_neg_logIC50_MEAN    Average log IC50 of the population of cell
@@ -175,10 +168,6 @@ class ANOVAResults(object):
         self.mapping['FEATURE_pos_IC50_sd'] = np.dtype('float64')
         self.mapping['FEATURE_IC50_T_pval'] = np.dtype('float64')
        
-        # FIXME will be removed in the future
-        self.mapping['log max.Conc.tested'] = np.dtype('O'),
-        self.mapping['log max.Conc.tested2'] = np.dtype('O'),
-        
         self.mapping['ANOVA_FEATURE_pval'] = np.dtype('float64')
         self.mapping['ANOVA_TISSUE_pval'] = np.dtype('float64')
         self.mapping['ANOVA_MSI_pval'] = np.dtype('float64')

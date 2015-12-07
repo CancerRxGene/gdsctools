@@ -33,11 +33,11 @@ version 0.9 Nov/Dec 2015
       indeed just an annotation and is now encoded in the flat file
       cosmic_info.csv.gz (see above)
   - anova, anova_results modules:
-    - Implement new factor (MEDIA) in the regression, which is automatically
-      populated in the genomic_features matrix if not already done.
+    - Implement new factor (MEDIA) in the regression
     - Uses new naming convention for the columns as described above
     - When initialising a ANOVA instance, prints the factor that will be
       included.
+    - add new option (set_media_factor) to populate the MEDIA column automatically 
   - reader module:
     - 'Sample Name' or SAMPLE_NAME are deprecated. There are removed from the
       matrix if found

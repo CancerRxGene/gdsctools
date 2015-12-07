@@ -31,9 +31,7 @@ def test_anova_one_drug_one_feature():
         'ANOVA_MSI_pval': {1: 0.14598946672374763},
         'N_FEATURE_neg': {1: 370},
         'N_FEATURE_pos': {1: 5},
-        'ANOVA_TISSUE_pval': {1: 3.2808255732569986e-06},
-        'log max.Conc.tested': {1: None},
-        'log max.Conc.tested2': {1: None}}
+        'ANOVA_TISSUE_pval': {1: 3.2808255732569986e-06}}
     control = pd.DataFrame(control)
 
     assert_list_almost_equal(df,control)

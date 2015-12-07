@@ -103,22 +103,6 @@ class ANOVAReport(object):
         else: # should be in gdsc.drug_decoder
             pass
 
-        """if concentrations:
-            # input may not have the concentrations columns right now.
-            # This should be fixed in input data set
-            if "log max.Conc.tested" in self.df.columns:
-                print("your dataframe already contains concentration. replace them")
-            self.df.drop('log max.Conc.tested', axis=1, inplace=True)
-            self.df.drop('log max.Conc.tested2', axis=1, inplace=True)
-            drugid = self._colname_drug_id
-            self.conc = pd.read_csv(concentrations, sep='\t')
-            newdata = self.conc[drugid].apply(lambda x: "Drug_"+str(x)+"_IC50")
-            self.conc[drugid] = newdata
-            self.conc.set_index(drugid, inplace=True)
-            df = self.df.join(self.conc, on=drugid, how='left')
-            self.df = df
-            del self.conc
-        """
         # create some data
         self._set_sensible_df()
 
@@ -407,8 +391,6 @@ class ANOVAReport(object):
         strong_hits = []
         full_strong_hits = []
 
-        MC1 = self.df['log max.Conc.tested']
-        MC2 = self.df['log max.Conc.tested2']
         mask2 = self.df['FEATURE_pos_logIC50_MEAN'] < MC1
         mask3 = self.df['FEATURE_pos_logIC50_MEAN'] < MC2
         mask4 = self.df['FEATURE_neg_logIC50_MEAN'] < MC1
@@ -1333,8 +1315,6 @@ class ANOVA(object): #Logging):
                 'DRUG_TARGET': drug_target,
                 'N_FEATURE_pos': odof.Npos,
                 'N_FEATURE_neg': odof.Nneg,
-                'log max.Conc.tested': None,
-                'log max.Conc.tested2': None,
                 'FEATURE_pos_logIC50_MEAN': odof.pos_IC50_mean,
                 'FEATURE_neg_logIC50_MEAN': odof.neg_IC50_mean,
                 'FEATURE_delta_MEAN_IC50': odof.delta_mean_IC50,

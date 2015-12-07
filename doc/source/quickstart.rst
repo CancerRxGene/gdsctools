@@ -182,7 +182,7 @@ of the first boxplot across tissues.
 
 Finally, the third boxplot shows the impact of the :term:`MSI` factor. Here again, all tissues are mixed. In the MSI column, zeros and ones correspond to MSI unstable and stab le, respetively. The **pos** and **neg** labels correspond to the feature being true or not, respetively.
 
-The output of an ODOF analysis is a time series that contains statistical information about the association found between the drug and the feature. See for :class:`gdsctools.anova.ANOVAResults` for more details.
+The output of an ODOF analysis is a time series that contains statistical information about the association found between the drug and the feature. See for :class:`gdsctools.anova_results.ANOVAResults` for more details.
 
 .. seealso:: :class:`gdsctools.anova` and :ref:`data_packages`.
 
