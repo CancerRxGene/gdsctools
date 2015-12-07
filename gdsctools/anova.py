@@ -67,8 +67,8 @@ class ANOVAReport(object):
     :Significant association: an association is significant if one of those
         conditions is fulfilled:
          - The field *ANOVA_FEATURE_FDR_%* must be < FDR_threshold
-         - The field *FEATURE_ANOVA_pval* must be < pvalue_threshold
-         - The field *FEATURE_deltaMEAN_IC50* must be < 0 (sensible) or
+         - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
+         - The field *FEATURE_delta_MEAN_IC50* must be < 0 (sensible) or
            >= 0 (resistant)
         It can be **resistant** or **sensitive**.
 
@@ -89,7 +89,7 @@ class ANOVAReport(object):
             self.settings[k] = v
 
         self._colname_drug_id = 'DRUG_ID'
-        self.varname_pval = 'FEATURE_ANOVA_pval'
+        self.varname_pval = 'ANOVA_FEATURE_pval'
         self.varname_qval = 'ANOVA_FEATURE_FDR_%'
 
         # maybe there was not drug_decoder in the gdsc parameter,
@@ -241,12 +241,12 @@ class ANOVAReport(object):
 
         # select sensible data set
         mask1 = self.df['ANOVA_FEATURE_FDR_%'] < self.settings.FDR_threshold
-        mask2 = self.df['FEATURE_ANOVA_pval'] < self.settings.pvalue_threshold
-        mask3 = self.df['FEATURE_deltaMEAN_IC50'] < 0
+        mask2 = self.df['ANOVA_FEATURE_pval'] < self.settings.pvalue_threshold
+        mask3 = self.df['FEATURE_delta_MEAN_IC50'] < 0
         self.sensible_df = self.df[logand(logand(mask1, mask2), mask3)]
 
         # select resistant data set
-        mask3 = self.df['FEATURE_deltaMEAN_IC50'] >= 0
+        mask3 = self.df['FEATURE_delta_MEAN_IC50'] >= 0
         self.resistant_df = self.df[logand(logand(mask1, mask2), mask3)]
 
     def get_significant_set(self):
@@ -311,7 +311,7 @@ class ANOVAReport(object):
             self._plot(df_count, 'drug', top)
             fig = pylab.gcf()
             self.figtools.directory = self.settings.directory
-            self.figtools.savefig(filename, size_inches=(12, 14), 
+            self.figtools.savefig(filename, size_inches=(12, 14),
                     bbox_inches='tight')
         return df_count
 
@@ -379,7 +379,7 @@ class ANOVAReport(object):
         ax.set_yticklabels(labels, fontsize=12)
         pylab.grid()
         pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
-                    "\nassociated with drug  response", 
+                    "\nassociated with drug  response",
                     fontsize=self.settings.fontsize/1.2)
         pylab.xlabel(r'Number of significant associations (FDR %s %s %s) '
                      % ("$>$", self.settings.FDR_threshold, "$\%$"),
@@ -409,10 +409,10 @@ class ANOVAReport(object):
 
         MC1 = self.df['log max.Conc.tested']
         MC2 = self.df['log max.Conc.tested2']
-        mask2 = self.df['FEATUREpos_logIC50_MEAN'] < MC1
-        mask3 = self.df['FEATUREpos_logIC50_MEAN'] < MC2
-        mask4 = self.df['FEATUREneg_logIC50_MEAN'] < MC1
-        mask5 = self.df['FEATUREneg_logIC50_MEAN'] < MC2
+        mask2 = self.df['FEATURE_pos_logIC50_MEAN'] < MC1
+        mask3 = self.df['FEATURE_pos_logIC50_MEAN'] < MC2
+        mask4 = self.df['FEATURE_neg_logIC50_MEAN'] < MC1
+        mask5 = self.df['FEATURE_neg_logIC50_MEAN'] < MC2
         maskMC = mask2 + mask3 +mask4 +mask5
 
         for fdr in fdrs:
@@ -426,13 +426,13 @@ class ANOVAReport(object):
             significant_meaningful.append(indices.sum())
 
             # meaningful strong hits
-            mask1 = self.df.ix[indices]['FEATUREpos_Glass_delta'] >= 1
-            mask2 = self.df.ix[indices]['FEATUREneg_Glass_delta'] >= 1
+            mask1 = self.df.ix[indices]['FEATURE_pos_Glass_delta'] >= 1
+            mask2 = self.df.ix[indices]['FEATURE_neg_Glass_delta'] >= 1
             strong_hits.append(np.logical_or(mask1, mask2).sum())
 
             # meaningful full strong hits
-            mask1 = self.df.ix[indices]['FEATUREpos_Glass_delta'] >= 1
-            mask2 = self.df.ix[indices]['FEATUREneg_Glass_delta'] >= 1
+            mask1 = self.df.ix[indices]['FEATURE_pos_Glass_delta'] >= 1
+            mask2 = self.df.ix[indices]['FEATURE_neg_Glass_delta'] >= 1
             full_strong_hits.append(np.logical_and(mask1, mask2).sum())
 
         data = {'significants': significants,
@@ -478,7 +478,7 @@ class ANOVAReport(object):
         N = len(df)
         pb = Progress(N)
 
-        html = Association(self, drug='dummy', feature='dummy', 
+        html = Association(self, drug='dummy', feature='dummy',
                 fdr='dummy')
 
         for i in range(N):
@@ -547,7 +547,7 @@ class ANOVAReport(object):
 
     def create_html_manova(self, onweb=True):
         """Create summary table with all significant hits
-        
+
         :param onweb: open browser with the created HTML page.
 
         """
@@ -615,8 +615,9 @@ class ANOVA(object): #Logging):
         loop over all drugs and all features, respectively.
 
     """
-    def __init__(self, ic50, genomic_features=None, 
-            drug_decoder=None, verbose='INFO', low_memory=False):
+    def __init__(self, ic50, genomic_features=None,
+            drug_decoder=None, verbose=True, low_memory=False,
+            set_media_factor=False):
         """.. rubric:: Constructor
 
         :param DataFrame IC50: a dataframe with the IC50. Rows should be
@@ -632,6 +633,8 @@ class ANOVA(object): #Logging):
         The attribute :attr:`settings` contains specific settings related
         to the analysis or visulation.
         """
+        self.verbose = verbose
+        
         # We first need to read the IC50 using a dedicated reader
         self.ic50 = readers.IC50(ic50)
 
@@ -650,6 +653,12 @@ class ANOVA(object): #Logging):
             self.features = readers.GenomicFeatures()
         else:
             self.features = readers.GenomicFeatures(genomic_features)
+       
+        if self.features.found_media is False and \
+                set_media_factor is True:
+            if self.verbose:
+                print('Populating MEDIA Factor in the Genomic Feature matrix')
+            self.features.fill_media_factor()
 
         #: a CSV with 3 columns used in the report
         self.read_drug_decoder(drug_decoder)
@@ -680,8 +689,8 @@ class ANOVA(object): #Logging):
         self.settings = ANOVASettings()
         self.settings.low_memory = low_memory
 
-        # alias to all column names to store results (unordered)
-        # cast to list because of  python3 error.
+        # alias to all column names to store results
+        # cast to list (Python3).
         self.column_names = list(ANOVAResults().mapping.keys())
 
         # skip assoc_id for now
@@ -692,9 +701,9 @@ class ANOVA(object): #Logging):
         self.individual_anova = {}
 
         # must be called if ic50 or features are changed.
-        self._init()
+        self.init()
 
-    def _autoset_msi(self):
+    def _autoset_msi_factor(self):
         if self.features.found_msi:
             # if the number of pos. (or neg.) factors is not large enough then
             # the MSI factor is not used
@@ -715,7 +724,7 @@ class ANOVA(object): #Logging):
         else:
             self.settings.include_MSI_factor = False
 
-    def _autoset_tissue(self):
+    def _autoset_tissue_factor(self):
         # select tissue based on the features
         tissue_name = self.features.colnames.tissue
         self.tissue_factor = self.features.df[tissue_name]
@@ -726,6 +735,17 @@ class ANOVA(object): #Logging):
         else:
             # this is a PANCAN analysis
             self.settings.analysis_type = 'PANCAN'
+
+    def _autoset_media_factor(self):
+
+        if self.settings.analysis_type != 'PANCAN':
+            self.settings.include_media_factor = False
+        elif self.features.found_media is True:
+            self.settings.include_media_factor = True
+            colname = self.features.colnames.media
+            self.media_factor = self.features.df[colname]
+        else:
+            self.settings.include_media_factor = False
 
     def set_cancer_type(self, ctype=None):
         """Select only a set of tissues.
@@ -745,7 +765,6 @@ class ANOVA(object): #Logging):
         if ctype == 'PANCAN':
             return
 
-
         if isinstance(ctype, str):
             ctype = [ctype]
 
@@ -756,14 +775,14 @@ class ANOVA(object): #Logging):
         self.features.keep_tissue_in(ctype)
 
         self.ic50.df = self.ic50.df.ix[self.features.df.index]
-        self._init()
+        self.init()
 
     def read_settings(self, settings):
         """Read settings and update cancer type if set"""
         self.settings.from_json(settings)
         self.set_cancer_type(self.settings.analysis_type)
 
-    def _init(self):
+    def init(self):
         # Some preprocessing to speed up data access
         ic50_parse = self.ic50.df.copy().unstack().dropna()
         # for each drug, we store the IC50s (Y) and corresponding indices
@@ -773,15 +792,19 @@ class ANOVA(object): #Logging):
              'Y': ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
 
         # save the tissues
-        self._autoset_tissue()
+        self._autoset_tissue_factor()
 
         # and MSI (Microsatellite instability) status of the samples.
-        self._autoset_msi()
+        self._autoset_msi_factor()
+
+        # and (growth) media factor
+        self._autoset_media_factor()
 
         # dictionaries to speed up code.
         self.features_dict = {}
         self.msi_dict = {}
         self.tissue_dict = {}
+        self.media_dict = {}
         # fill the dictionaries for each drug once for all
         for drug_name in self.ic50.drugIds:
             indices = self.ic50_dict[drug_name]['indices']
@@ -793,40 +816,62 @@ class ANOVA(object): #Logging):
             else:
                 self.features_dict[drug_name] = self.features.df.ix[indices]
 
-            # MSI and tissue can be store
+            # MSI, media and tissue are not large data files and can be store
             if self.features.found_msi:
                 self.msi_dict[drug_name] = self.msi_factor.ix[indices]
+            if self.features.found_media:
+                self.media_dict[drug_name] = self.media_factor.ix[indices]
+
             self.tissue_dict[drug_name] = self.tissue_factor.ix[indices]
 
         # some preprocessing for the OLS computation.
         # We create the dummies for the tissue factor once for all
-        # to agree with R convention, we sort the column
-        # by alpha order where a<B==b<c unlike in R where A<B<C<a<b<c
+        # Note that to agree with R convention, we have to resort the column
+        # to agree with R convention that is a<B==b<c instead of
+        # where A<B<C<a<b<c (in R)
         self._tissue_dummies = pd.get_dummies(self.tissue_factor)
         columns = self._tissue_dummies.columns
         columns = sorted(columns, key=lambda s: s.lower())
-
         columns = ['C(tissue)[T.' + x + ']' for x in columns]
         self._tissue_dummies.columns = columns
+
+        if self.settings.include_media_factor:
+            self._media_dummies = pd.get_dummies(self.media_factor)
+            columns = self._media_dummies.columns
+            columns = ['C(media)[T.' + x + ']' for x in columns]
+            self._media_dummies.columns = columns
+            for col in columns:
+                self._tissue_dummies[col] = self._media_dummies[col]
+
         N = len(self._tissue_dummies)
         self._tissue_dummies['C(msi)[T.1]'] = [1]*N
         self._tissue_dummies['feature'] = [1] * N
         self._tissue_dummies.insert(0, 'Intercept', [1] * N)
 
-        # drop first feature in the tissues used a reference in the regression
-        # # should be if there are at least 2 tissues ?
+        # drop first feature in the tissues that seems to be used as a
+        # reference in the regression
         tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
         self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
 
+        if self.settings.include_media_factor:
+            media = [x for x in self._tissue_dummies.columns if 'media' in x]
+            self._tissue_dummies.drop(media[0], axis=1, inplace=True)
+
         # reset the buffer.
         self.individual_anova = {}
+
+        for this in ['tissue', 'media', 'msi', 'feature']:
+            if this in self._get_analysis_mode():
+                print(this.upper() + " FACTOR : included")
+            else:
+                print(this.upper() + " FACTOR : NOT included")
 
     def _get_cosmics(self):
         return self.ic50.cosmicIds
     def _set_cosmics(self, cosmics):
         self.ic50.cosmicIds = cosmics
         self.features.cosmicIds = cosmics
-        self._init()
+        self.init()
         self.individual_anova = {}
     cosmicIds = property(_get_cosmics, _set_cosmics,
         doc="get/set the cosmic identifiers in the IC50 and feature matrices")
@@ -835,7 +880,7 @@ class ANOVA(object): #Logging):
         return self.ic50.drugIds
     def _set_drug_names(self, drugs):
         self.ic50.drugIds = drugs
-        self._init()
+        self.init()
         # not need to init this again ? self.individual_anova = {}
     drugIds = property(_get_drug_names, _set_drug_names,
             doc="Get/Set drug identifers")
@@ -845,7 +890,7 @@ class ANOVA(object): #Logging):
         return self.features.features[shift:]
     def _set_features_names(self, features):
         self.features.features = features
-        self._init()
+        self.init()
         self.individual_anova = {}
     feature_names = property(_get_feature_names, _set_features_names,
             doc="Get/Set feature names")
@@ -857,6 +902,9 @@ class ANOVA(object): #Logging):
 
         if self.settings.include_MSI_factor is True:
             modes.append('msi')
+
+        if self.settings.include_media_factor is True:
+            modes.append('media')
 
         modes.append('feature')
         return modes
@@ -936,6 +984,10 @@ class ANOVA(object): #Logging):
             dd.masked_msi = self.msi_dict[drug_name]
             dd.positive_msi = dd.masked_msi.values.sum()
             dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
+
+        if self.features.found_media:
+            dd.masked_media = self.media_dict[drug_name]
+
         # compute length of pos/neg features and MSI
         dd.positive_feature = dd.masked_features.values.sum()
         dd.negative_feature = len(dd.masked_features) - dd.positive_feature
@@ -1149,8 +1201,20 @@ class ANOVA(object): #Logging):
             #self.data_lm2 = ols('Y ~ C(tissue) + C(msi) + feature',
             #    data=self._mydata).fit() #Specify C for Categorical
 
+            # from statsmodels.stats.anova import anova_lm
+            # import statsmodels.formula.api as smf
+            # df  = pd.DataFrame({'Y': odof.Y.copy(),
+            #   'tissue':odof.masked_tissue,'media'
+            #    odof.masked_media, 'msi':  odof.masked_msi,
+            #   'feature': odof.masked_features})
+            # lm = smf.ols('Y~C(tissue)+C(media)+C(msi)+feature',
+            #    data=df).fit()
+            #  anova_lm(lm)
+            # The code above gives same answer as the code in gdsctools
+            # but is slower
+
             # We could use pd.get_dummies but pretty slow
-            # instead we create the full matrix in _init() method.
+            # instead we create the full matrix in init() method.
             # One issue is that some columns end up with sum == 0
             # and needs to be dropped.
             df = self._tissue_dummies.ix[odof.masked_tissue.index]
@@ -1160,8 +1224,10 @@ class ANOVA(object): #Logging):
 
             # Here we set other variables with dataframe columns' names as
             # expected by OLS.
-            if self.settings.include_media_factor is True:
-                raise NotImplementedError
+            if self.settings.include_media_factor == False:
+                todrop = [x for x in df.columns if
+                        x.startswith('C(media)')]
+                df = df.drop(todrop, axis=1)
 
             df['C(msi)[T.1]'] = odof.masked_msi.values
             df['feature'] = odof.masked_features.values
@@ -1172,20 +1238,18 @@ class ANOVA(object): #Logging):
             #
             if self.settings.regression_method == 'ElasticNet':
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                        alpha=self.settings.regression_alpha, 
+                        alpha=self.settings.regression_alpha,
                         L1_wt=self.settings.regression_L1_wt)
             elif self.settings.regression_method == 'OLS':
                 self.data_lm = OLS(odof.Y, df.values).fit()
             elif self.settings.regression_method == 'Ridge':
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                        alpha=self.settings.regression_alpha, 
+                        alpha=self.settings.regression_alpha,
                         L1_wt=0)
             elif self.settings.regression_method == 'Lasso':
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                        alpha=self.settings.regression_alpha, 
+                        alpha=self.settings.regression_alpha,
                         L1_wt=1)
-            #self.anova_pvalues = self._get_anova_summary(self.data_lm,
-            #    output='dict')
 
             # example of computing null model ?
             # Example of computing pvalues ourself
@@ -1246,6 +1310,11 @@ class ANOVA(object): #Logging):
         except:
             FEATURE_PVAL = None
 
+        try:
+            MEDIA_PVAL = self.anova_pvalues['media']
+        except:
+            MEDIA_PVAL = None
+
         if show is True:
             boxplot = BoxPlots(odof, savefig=self.settings.savefig,
                     directory=directory)
@@ -1266,17 +1335,18 @@ class ANOVA(object): #Logging):
                 'N_FEATURE_neg': odof.Nneg,
                 'log max.Conc.tested': None,
                 'log max.Conc.tested2': None,
-                'FEATUREpos_logIC50_MEAN': odof.pos_IC50_mean,
-                'FEATUREneg_logIC50_MEAN': odof.neg_IC50_mean,
-                'FEATURE_deltaMEAN_IC50': odof.delta_mean_IC50,
-                'FEATUREpos_IC50_sd': odof.pos_IC50_std,
-                'FEATUREneg_IC50_sd': odof.neg_IC50_std,
+                'FEATURE_pos_logIC50_MEAN': odof.pos_IC50_mean,
+                'FEATURE_neg_logIC50_MEAN': odof.neg_IC50_mean,
+                'FEATURE_delta_MEAN_IC50': odof.delta_mean_IC50,
+                'FEATURE_pos_IC50_sd': odof.pos_IC50_std,
+                'FEATURE_neg_IC50_sd': odof.neg_IC50_std,
                 'FEATURE_IC50_effect_size': odof.effectsize_ic50,
-                'FEATUREpos_Glass_delta': odof.pos_glass,
-                'FEATUREneg_Glass_delta': odof.neg_glass,
-                'FEATURE_ANOVA_pval': FEATURE_PVAL,
-                'TISSUE_ANOVA_pval': tissue_PVAL,
-                'MSI_ANOVA_pval': MSI_PVAL,
+                'FEATURE_pos_Glass_delta': odof.pos_glass,
+                'FEATURE_neg_Glass_delta': odof.neg_glass,
+                'ANOVA_FEATURE_pval': FEATURE_PVAL,
+                'ANOVA_TISSUE_pval': tissue_PVAL,
+                'ANOVA_MSI_pval': MSI_PVAL,
+                'ANOVA_MEDIA_pval': MEDIA_PVAL,
                 'FEATURE_IC50_T_pval': odof.ttest # pvalues is in index 1
                 }
 
@@ -1289,7 +1359,7 @@ class ANOVA(object): #Logging):
 
     def optimise_elastic_net(self, drug_name, feature_name, N=20, Nalpha=20):
         lwts = pylab.linspace(0, 1, N)
-        alphas = pylab.linspace(0,5, Nalpha)
+        alphas = pylab.linspace(0, 5, Nalpha)
 
         mses = np.zeros((N, Nalpha))
 
@@ -1299,29 +1369,29 @@ class ANOVA(object): #Logging):
                 self.settings.regression_method = 'ElasticNet'
                 self.settings.regression_alpha = alpha
                 self.settings.regression_L1_wt = lwt
-                odof = self.anova_one_drug_one_feature(drug_name, 
+                odof = self.anova_one_drug_one_feature(drug_name,
                         feature_name)
-                anova = self._get_anova_summary(self.data_lm, 
+                anova = self._get_anova_summary(self.data_lm,
                         output='dataframe')
                 mses[i,j] = self.data_lm.bic
             pb.animate(i+1)
         return mses
-    
+
     def optimise_ridge(self, drug_name, feature_name, alphas=None):
-        return self._opt_ridge_lasso(drug_name, feature_name, 
+        return self._opt_ridge_lasso(drug_name, feature_name,
                 'Ridge', alphas=alphas)
-    
+
     def optimise_lasso(self, drug_name, feature_name, alphas=None):
-        return self._opt_ridge_lasso(drug_name, feature_name, 
+        return self._opt_ridge_lasso(drug_name, feature_name,
                 'Lasso', alphas=alphas)
 
     def _opt_ridge_lasso(self, drug_name, feature_name, method, alphas=None):
 
         if alphas is None:
-            alphas = pylab.linspace(0,1, Nalpha)
+            alphas = pylab.linspace(0,1, 20)
 
         mses = []
-        params = [] 
+        params = []
         method_buf = self.settings.regression_method
         alpha_buf = self.settings.elastic_net.alpha
 
@@ -1329,9 +1399,9 @@ class ANOVA(object): #Logging):
         for j, alpha in enumerate(alphas):
             self.settings.regression_method = method
             self.settings.elastic_net.alpha = alpha
-            odof = self.anova_one_drug_one_feature(drug_name, 
+            odof = self.anova_one_drug_one_feature(drug_name,
                     feature_name)
-            anova = self._get_anova_summary(self.data_lm, 
+            anova = self._get_anova_summary(self.data_lm,
                     output='dataframe')
             #mses.append(anova.ix['Residuals']['Sum Sq'])
             mses.append(anova.ix['tissue']['F value'])
@@ -1352,7 +1422,7 @@ class ANOVA(object): #Logging):
 
         # In the regression, the first tissue is dropped hence -1
         # The degree of freedom for tissues is N - 1
-        # self.features.tissues contains all tissues even those that 
+        # self.features.tissues contains all tissues even those that
         # were dropped due to lack of pos or neg features. So, we must use
         modes = self._get_analysis_mode()
         Ncolumns = data_lm.model.data.exog.shape[1]
@@ -1361,10 +1431,25 @@ class ANOVA(object): #Logging):
         Ntissue -= 1 # remove feature, which are always taken into account
         if 'msi' in modes:
             Ntissue -= 1
+        if 'media' in modes:
+            Nmedia = len(self._media_dummies.columns)-1
+        else:
+            Nmedia = 0
+        Ntissue -= Nmedia
 
         # create the W matrix using tissue and MSI if requested
         # default is that the 3 features are used
-        if 'tissue' in modes and 'msi' in modes:
+        if 'tissue' in modes and 'msi' in modes and 'media' in modes:
+            dof = [Ntissue, Nmedia, 1, 1]
+            indices = ['tissue', 'media', 'msi', 'feature', 'Residuals']
+            # 4 stands for intercept + tissue + msi +feature
+            arr = np.zeros((5, Ncolumns))
+            arr[1, slice(1, Ntissue+1)] = 1
+            arr[2, slice(Ntissue+1, Ntissue+Nmedia+1)] = 1
+            arr[3, Ntissue + Nmedia + 1] = 1
+            arr[4, Ntissue + Nmedia + 2] = 1
+            self.arr = arr
+        elif 'tissue' in modes and 'msi' in modes:
             dof = [Ntissue, 1, 1]
             indices = ['tissue', 'msi', 'feature', 'Residuals']
             # 4 stands for intercept + tissue + msi +feature
@@ -1372,6 +1457,7 @@ class ANOVA(object): #Logging):
             arr[1, slice(1, Ntissue)] = 1
             arr[2, Ntissue + 1] = 1
             arr[3, Ntissue + 2] = 1
+            self.arr = arr
         elif 'tissue' not in modes and 'msi' in modes:
             dof = [1, 1]
             indices = ['msi', 'feature', 'Residuals']
@@ -1406,8 +1492,16 @@ class ANOVA(object): #Logging):
                 )
             return anova
         elif self.settings.analysis_type == 'PANCAN':
-            return {'tissue': F_pvalues[0], 'msi':F_pvalues[1],
-                    'feature':F_pvalues[2]}
+            if self.settings.include_media_factor:
+                dd = {'tissue': F_pvalues[0], 
+                      'media': F_pvalues[1],
+                      'msi':F_pvalues[2],
+                      'feature':F_pvalues[3]}
+            else:
+                dd = {'tissue': F_pvalues[0], 
+                      'msi':F_pvalues[1],
+                      'feature':F_pvalues[2]}
+            return dd
         elif self.settings.include_MSI_factor is True:
             return {'msi': F_pvalues[0], 'feature':F_pvalues[1]}
         else:
@@ -1456,8 +1550,10 @@ class ANOVA(object): #Logging):
         # Then, we keep only cases with at least 3 features.
         # MSI could be used but is not like in original R code.
         features = self.features.df.copy()
+        # need to skip the FACTOR to keep only features
+        shift = self.features.shift
 
-        features = features[features.columns[3:]]
+        features = features[features.columns[shift:]]
         mask = features.sum(axis=0) >= 3
 
         # TODO: MSI, tissues, name must always be kept
@@ -1476,7 +1572,7 @@ class ANOVA(object): #Logging):
             # Instead, we require dictionaries
             this = self.anova_one_drug_one_feature(drug_id, feature,
                     production=True)
-            if this['FEATURE_ANOVA_pval'] is not None:
+            if this['ANOVA_FEATURE_pval'] is not None:
                 res[feature] = this
             if animate is True:
                 pb.animate(i+1)
@@ -1492,7 +1588,7 @@ class ANOVA(object): #Logging):
 
         if len(self.drug_decoder) > 0:
             df = self.drug_annotations(df)
-        # TODO: drop rows where FEATURE_ANOVA_PVAL is None
+        # TODO: drop rows where ANOVA_FEATURE_PVAL is None
         if output != 'object':
             return df
         else:
@@ -1500,7 +1596,7 @@ class ANOVA(object): #Logging):
 
             res = ANOVAResults(df)
             res.settings = ANOVASettings(**self.settings)
-            return res 
+            return res
 
     def anova_all(self, animate=True, drugs=None):
         """Run all ANOVA tests for all drugs and all features.
@@ -1548,7 +1644,7 @@ class ANOVA(object): #Logging):
                 self.individual_anova[drug_name] = res
             if animate is True:
                 pb.animate(i+1)
-
+        print("\n")
         if len(self.individual_anova) == 0:
             return ANOVAResults()
 
@@ -1558,9 +1654,9 @@ class ANOVA(object): #Logging):
             return df
         # sort all data by ANOVA p-values
         try:
-            df.sort_values('FEATURE_ANOVA_pval', inplace=True)
+            df.sort_values('ANOVA_FEATURE_pval', inplace=True)
         except:
-            df.sort('FEATURE_ANOVA_pval', inplace=True)
+            df.sort('ANOVA_FEATURE_pval', inplace=True)
 
         # all ANOVA have been computed individually for each drug and each
         # feature. Now, we need to compute the multiple testing corrections
@@ -1578,7 +1674,7 @@ class ANOVA(object): #Logging):
         results.settings = ANOVASettings(**self.settings)
         return results
 
-    def add_pvalues_correction(self, df, colname='FEATURE_ANOVA_pval'):
+    def add_pvalues_correction(self, df, colname='ANOVA_FEATURE_pval'):
         """Add the corrected pvalues column in a dataframe based on pvalues
 
         The default method (FDR correction) is stored in
@@ -1645,7 +1741,7 @@ class HTMLPageMANOVA(ReportMAIN):
         be changes (default is manova.html)
         """
         super(HTMLPageMANOVA, self).__init__(filename='manova.html',
-                directory=gdsc.settings.directory, 
+                directory=gdsc.settings.directory,
                 template_filename='manova.html')
         #self.template = self.env.get_template('manova.html')
 
@@ -1787,7 +1883,7 @@ class HTMLOneDrug(ReportMAIN):
                 directory=report.settings.directory,
                 filename=filename, template_filename='drug.html')
         self.title = 'Single Drug analysis (%s)' % self.drug
-           
+
         self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[drug].dropna())
         self.jinja['drug_id'] = drug
         self.jinja['drug_name'] = report.gdsc.drug_decoder.get_name(drug)
@@ -1864,7 +1960,7 @@ class HTMLPageMain(ReportMAIN):
                     src="volcano_all_js.png">
             </a>
             <br/>
-            <p> A javascript version is available 
+            <p> A javascript version is available
                 <a href="volcano_all_js.html">here</a> (
                 or click on the image).</p>
         """
@@ -1883,10 +1979,10 @@ class HTMLPageMain(ReportMAIN):
         df_features.to_csv(self.directory + os.sep + filename, sep=',')
 
         # drug summary
-        not_tested = [x for x in self.report.gdsc.drugIds if x not in 
+        not_tested = [x for x in self.report.gdsc.drugIds if x not in
                 self.report.df.DRUG_ID.unique()]
         if len(not_tested) > 0:
-            not_tested = """Those drugs have not been analysed due to 
+            not_tested = """Those drugs have not been analysed due to
             lack of valid data points: """ + ", ".join(not_tested)
         else:
             not_tested = ""
@@ -1927,7 +2023,7 @@ class HTMLPageMain(ReportMAIN):
         table = HTMLTable(df, 'drugs')
         table.add_href('DRUG_ID')
         table.df.columns = [x.replace('ANOVA_FEATURE_FDR',
-            'mean ANOVA FEATURE FDR') for x in table.df.columns]
+            'mean FEATURE ANOVA FDR') for x in table.df.columns]
         table.add_bgcolor('hits', mode='max',
                 cmap=cmap_builder('white', 'orange', 'red'))
 
@@ -1985,17 +2081,17 @@ class HTMLPageMain(ReportMAIN):
         # the genomic features, which may be the default version or without
         # location
         gf_filename = self.report.gdsc.features._filename
-        if gf_filename is None: 
+        if gf_filename is None:
             gf_filename = os.sep.join([input_dir, 'genomic_features.csv'])
             self.report.gdsc.features.to_csv(gf_filename)
-            html = """Saved <a href="INPUT/genomic_features.csv">Genomic 
-                      Features</a> file<br/> (possibly the default 
+            html = """Saved <a href="INPUT/genomic_features.csv">Genomic
+                      Features</a> file<br/> (possibly the default
                       version)."""
             self.jinja['gf_file'] = html
         else:
             shutil.copy(gf_filename, input_dir)
             gf_filename = os.path.basename(gf_filename)
-            txt = """Get <a href="INPUT/%s">Genomic Features</a> 
+            txt = """Get <a href="INPUT/%s">Genomic Features</a>
                      file.<br/>"""
             self.jinja['gf_file'] = txt % gf_filename
 
@@ -2019,7 +2115,7 @@ class HTMLPageMain(ReportMAIN):
                 json file</a>.""" % filename
 
         # Save all Results dataframe
-        filename = os.sep.join([self.settings.directory, 'OUTPUT', 
+        filename = os.sep.join([self.settings.directory, 'OUTPUT',
             'results.csv'])
         ANOVAResults(self.report.df).to_csv(filename)
 
@@ -2040,14 +2136,13 @@ results = gdsc.anova_all()
 r = ANOVAReport(gdsc, results)
 r.create_html_pages(onweb=False)"""
         code = code % {
-                'ic50': ic50_filename, 
+                'ic50': ic50_filename,
                 'gf_filename': gf_filename}
 
         filename = os.sep.join([self.settings.directory, 'code','rerun.py'])
         fh = open(filename, 'w')
         fh.write(code)
         fh.close()
-
 
 
 class SignificantHits(object):
@@ -2058,38 +2153,26 @@ class SignificantHits(object):
         self.name = name
         self.clip_threshold = 2
 
-        columns = [u'ASSOC_ID', 'FEATURE',
-            'DRUG_ID', u'DRUG_NAME', 'DRUG_TARGET',
-            'N_FEATURE_neg', 'N_FEATURE_pos',
-            'FEATUREpos_logIC50_MEAN',
-            'FEATUREneg_logIC50_MEAN',
-            'FEATURE_deltaMEAN_IC50',
-            'FEATURE_IC50_effect_size',
-            'FEATUREneg_Glass_delta',
-            'FEATUREpos_Glass_delta',
-            'FEATURE_ANOVA_pval',
-            'TISSUE_ANOVA_pval',
-            'MSI_ANOVA_pval',
-            'ANOVA_FEATURE_FDR_%']
+        columns = ANOVAResults().colnames_subset
         self.df = self.df[columns]
 
     def to_html(self, escape=False, header=True, index=False):
         # If there is a value below 0.01, a scientific notation is
         # use. we prefer to use 2 digits and write <0.01
         colname = 'ANOVA_FEATURE_FDR_%'
-        self.df.loc[self.df[colname] <0.01, colname] = '<0.01'
+        self.df.loc[self.df[colname] < 0.01, colname] = '<0.01'
         html = HTMLTable(self.df, self.name)
         # Those columns should be links
         for this in ['FEATURE', 'DRUG_ID', 'ASSOC_ID']:
             html.add_href(this)
 
-        for this in ['FEATURE_IC50_effect_size', 'FEATUREneg_Glass_delta',
-                'FEATUREpos_Glass_delta']:
+        for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
+                'FEATURE_pos_Glass_delta']:
             html.add_bgcolor(this, self.cmap_clip, mode='clip',
                     threshold=self.clip_threshold)
 
         # normalise data and annotate with color
-        html.add_bgcolor('FEATURE_deltaMEAN_IC50', self.cmap_absmax,
+        html.add_bgcolor('FEATURE_delta_MEAN_IC50', self.cmap_absmax,
                 mode='absmax')
 
         html.df.columns = [x.replace("_", " ") for x in html.df.columns]
