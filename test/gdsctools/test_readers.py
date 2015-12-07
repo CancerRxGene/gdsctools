@@ -84,7 +84,7 @@ def test_read_gf():
     r.drop_tissue_in('breast')
     r.drop_tissue_in(['skin', 'bone'])
     r.keep_tissue_in(['cervix', 'lung'])
-    assert r.shift == 3
+    assert r.shift == 2
 
     # big genomic feature file
     #assert len(r.features) == 382
@@ -95,8 +95,9 @@ def test_read_gf():
 
     gf1 = GenomicFeatures()
     gf1.drop_cosmic(gf1.cosmicIds[50:])
-    gf1.features = gf1.features[0:20]
+    gf1.features = gf1.features[0:19]
     gf2 = GenomicFeatures(testing.genomic_features_csv)
+
     assert gf2 == gf1
 
     gf = GenomicFeatures(testing.genomic_features_bare_csv)

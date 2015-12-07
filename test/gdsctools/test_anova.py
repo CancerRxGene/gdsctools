@@ -1,13 +1,12 @@
 from gdsctools.anova import ANOVA
 import pandas as pd
 from easydev import assert_list_almost_equal
-from . import tools
 from nose.tools import assert_almost_equal
-
+from gdsctools import ic50_test
 
 def test_anova_one_drug_one_feature():
 
-    an = ANOVA(tools.get_data())
+    an = ANOVA(ic50_test)
 
     # test 1 drug
     drug_id = 'Drug_999_IC50'
@@ -19,20 +18,20 @@ def test_anova_one_drug_one_feature():
         'DRUG_NAME': {1: drug_id},
         'DRUG_TARGET': {1: drug_id},
         'FEATURE': {1: 'ABCB1_mut'},
-        'FEATURE_ANOVA_pval': {1: 0.86842684367357359},
+        'ANOVA_FEATURE_pval': {1: 0.86842684367357359},
         'FEATURE_IC50_T_pval': {1: 0.48586107208790896},
         'FEATURE_IC50_effect_size': {1: 0.31407773405409201},
-        'FEATURE_deltaMEAN_IC50': {1: -0.36105662590553411},
+        'FEATURE_delta_MEAN_IC50': {1: -0.36105662590553411},
         'FEATUREneg_Glass_delta': {1: 0.31296252976074801},
         'FEATUREneg_IC50_sd': {1: 1.1536736560173895},
         'FEATUREneg_logIC50_MEAN': {1: 2.8007757068403043},
         'FEATUREpos_Glass_delta': {1: 0.53754504818376181},
         'FEATUREpos_IC50_sd': {1: 0.67167696386648634},
         'FEATUREpos_logIC50_MEAN': {1: 2.4397190809347702},
-        'MSI_ANOVA_pval': {1: 0.14598946672374763},
+        'ANOVA_MSI_pval': {1: 0.14598946672374763},
         'N_FEATURE_neg': {1: 370},
         'N_FEATURE_pos': {1: 5},
-        'TISSUE_ANOVA_pval': {1: 3.2808255732569986e-06},
+        'ANOVA_TISSUE_pval': {1: 3.2808255732569986e-06},
         'log max.Conc.tested': {1: None},
         'log max.Conc.tested2': {1: None}}
     control = pd.DataFrame(control)
@@ -42,25 +41,62 @@ def test_anova_one_drug_one_feature():
 
 def test_anova_one_drug():
     # test entire drug across all fearures
-    an = ANOVA(tools.get_data())
+    an = ANOVA(ic50_test)
     df = an.anova_one_drug('Drug_999_IC50')
 
 
 def test_anova_all():
-    an = ANOVA(tools.get_data())
+    an = ANOVA(ic50_test)
     # slow, let us cut the features to keep only tenish
     # this is a trick but would be nice to have this in the API
     features = an.features.df
-    features = features[features.columns[0:13]]
+    features = features[features.columns[0:12]]
 
-    an = ANOVA(tools.get_data(), features)
+    an = ANOVA(ic50_test, features)
     results = an.anova_all()
     assert_almost_equal( results.df['ANOVA_FEATURE_FDR_%'].sum(), 
             10312.23061065521, 6)
 
+    an2 = ANOVA(ic50_test, features, set_media_factor=True)
+    results = an2.anova_all()
+    assert_almost_equal( results.df['ANOVA_FEATURE_FDR_%'].sum(), 
+            10238.529313503008, 6)
+
+
+def test_odof_with_without_media():
+
+    gdsc = ANOVA(ic50_test)
+    res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+    dd1 = gdsc._get_anova_summary(gdsc.data_lm, output='dict')
+    assert dd1 == {'feature': 1.5750735472022118e-58,
+                   'msi': 0.025902887791637515,
+                  'tissue': 5.541879283763767e-44}
+
+    gdsc = ANOVA(ic50_test, set_media_factor=True)
+    res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+    dd2 = gdsc._get_anova_summary(gdsc.data_lm, output='dict')
+    assert dd2 == {'feature': 2.9236500715529455e-58,
+         'media': 0.7762487502315283,
+         'msi': 0.023777744527686766,
+         'tissue': 1.5729157319290974e-44}
+
+
+
+
+
+def test_odof():
+    pass
+    # gdsc.anova_one_drug_one_feature('Drug_1013_IC50', 'BCR-ABL_mut').TOut[65]: 
+    #                                   1
+    #ANOVA_FEATURE_pval              0.176635
+    #ANOVA_MEDIA_pval                0.720394
+    #ANOVA_MSI_pval                  0.720394
+
+
+
 
 def test_anova_summary():
-    an = ANOVA(tools.get_data())
+    an = ANOVA(ic50_test)
     # by default  regression includes + msi + feature
     drug_id = 'Drug_999_IC50'
 

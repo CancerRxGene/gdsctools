@@ -9,9 +9,13 @@ def test_html():
     features = an.features.df
     features = features[features.columns[0:30]]
     an = ANOVA(tools.get_data(), features)
-    df = an.anova_all()
+    #an.settings.include_media_factor = False
+    results = an.anova_all()
 
-    r = ANOVAReport(gdsc=an, results=df)
+    assert len(results.df) == 302 
+
+    r = ANOVAReport(gdsc=an, results=results)
+    assert len(r.get_significant_set()) == 3
     # long but should cover everthinh.
     try:
         r.create_html_pages()
