@@ -585,7 +585,12 @@ class GenomicFeatures(Reader, CosmicRows):
                 " named %s" % self.colnames.cosmic
             raise ValueError(error_msg)
 
-    def _fill_media_factor(self):
+    def fill_media_factor(self):
+        """Given the COSMIC identifiers, fills the MEDIA_FACTOR column
+
+        If already populated, replaced by new content.
+
+        """
         from gdsctools import COSMICInfo
         c = COSMICInfo()
         self.df['MEDIA_FACTOR'] = [c.get(x).SCREEN_MEDIUM
