@@ -3,8 +3,51 @@ ChangeLog
 
 
 
-version 0.9 Nov 2015
+version 0.9 Nov/Dec 2015
 --------------------------
+
+
+.. rubric:: 0.9.11
+
+* NEW:
+  - Add a new factor called MEDIA_FACTOR. If not provided, genomic feature
+    matrix can populated the MEDIA_FACTOR column automatically.
+  - add a class COSMICInfo and a related data file called cosmic_info.csv.gz to
+    get information about COSMIC ids. Replaces COSMIC class, which was removed.
+
+* CHANGES:
+  - COSMIC class removed and replaced by COSMICInfo class
+  - column name convention:
+    - FEATURE_ANOVA_pval --> ANOVA_FEATURE_pval
+    - MSI_ANOVA_pval --> ANOVA_MSI_pval
+    - TISSUE_ANOVA_pval --> ANOVA_TISSUE_pval
+    - FEATURE_ANOVA_FDR_% -->  ANOVA_FEATURE_FDR_%
+    - new column named ANOVA_MEDIA_pval
+    - to be constistant, name such as  FEATUREpos have now underscores to
+      separate words e.g., 
+        - FEATUREpos is now FEATURE_pos
+        - FEATUREneg is now FEATURE_neg
+        - deltaMEAN is now delta_MEAN
+    - refactor volcano.py module to factorise code and use new naming convention
+    - SAMPLE_NAME is not required anymore in the genomic features. This is
+      indeed just an annotation and is now encoded in the flat file
+      cosmic_info.csv.gz (see above)
+  - anova, anova_results modules:
+    - Implement new factor (MEDIA) in the regression, which is automatically
+      populated in the genomic_features matrix if not already done.
+    - Uses new naming convention for the columns as described above
+    - When initialising a ANOVA instance, prints the factor that will be
+      included.
+  - reader module:
+    - 'Sample Name' or SAMPLE_NAME are deprecated. There are removed from the
+      matrix if found
+    - Uses MEDIA_FACTOR column in addition to MSI and tissue columns
+    - shift attribute is now read-only and set automatically
+    - add a function to fill media column automatically
+    - print function is  more verbose
+  - volcano: uses new naming convention for the columns as described above.
+
+
 
 .. rubric:: 0.9.10
 

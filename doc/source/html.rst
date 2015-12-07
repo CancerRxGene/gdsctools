@@ -16,7 +16,7 @@ First, let us generate the results again (see :ref:`quickstart`).
 
 The :attr:`results` variable contains a dataframe :attr:`df`. This dataframe 
 contains as many rows as associations of
-drugs and features. See :class:`~gdsctools.anova.ANOVAResults` for the contents. The HTML report extracts the significant associations, and then create figures and HTML pages for each of the associations that are significant.  You can easily create HTML report as follows::
+drugs and features. See :class:`~gdsctools.anova_results.ANOVAResults` for the contents. The HTML report extracts the significant associations, and then create figures and HTML pages for each of the associations that are significant.  You can easily create HTML report as follows::
 
     >>> report = ANOVAReport(gdsc, results)
     >>> report.create_html_pages()
