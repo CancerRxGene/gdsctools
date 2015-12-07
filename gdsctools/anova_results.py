@@ -30,20 +30,19 @@ __all__ = ['ANOVAResults']
 class ANOVAResults(object):
     """Class to handle results of the ANOVA analysis
 
-     Used to wrap the results returned by the
-    :meth:`gdsctools.anova.ANOVA.anova_all` method.
+    The :class:`ANOVA` performs the regression and ANOVA analysis and 
+    returns an :class:`ANOVAResults` instance (e.g., when you call 
+    :meth:`gdsctools.anova.ANOVA.anova_all` method). The :class:`ANOVAResults`
+    contains a dataframe with all results in :attr:`df`. 
+
+    The columns of the dataframe are defined as follows:
 
 
     =========================== ===============================================
-         column name                                  description
+         Column name                                  Description
     =========================== ===============================================
-    Domain                      The analysis in which the interaction
-                                has been identified (can be PANCAN
-                                for Pan-Cancer or one of the TCGA labels
-                                indicating one of the cancer types
-                                included in the study, see Table S1A);
     ASSOC_ID                    Alphanumerical identifier of the
-                                interaction;
+                                interaction
     FEATURE                     The CFE involved in the interaction, it
                                 can be a mutated cancer driver gene
                                 (CG) [suffix _mut], an abberrantly

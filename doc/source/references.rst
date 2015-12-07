@@ -10,13 +10,21 @@ References
 ANOVA related
 ------------------
 
+The regression and ANOVA analysis
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: gdsctools.anova
     :members:
     :undoc-members:
 
+The ANOVA results
+~~~~~~~~~~~~~~~~~~~~~~~~
+
 .. automodule:: gdsctools.anova_results
     :members:
     :undoc-members:
+
+
+
 
 Statistical Tools
 -------------------

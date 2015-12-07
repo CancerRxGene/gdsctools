@@ -29,9 +29,11 @@ To be identified CSV/TSV files must have the proper extension that is **.csv** o
 IC50
 ------
 
-The most important input is the file that contains the IC50s. That input file
-contains a set of row where each row must have 1 unique COSMIC identifier and a
-set of IC50s; one IC50 per drug. So, the compulsary header must indicate the name of the drugs and the column that contains the cosmic identifiers, which must be named **COSMIC_ID** (note the space). All columns that starts with **Drug** are interpreted as the IC50s for each drug considered. Other columns are ignored. The order of the columns is not important. Here is a valid example::
+The most important input data is what we call the IC50 file. It is 
+simply a CSV (or TSV) file with a header and a set of rows. The header's column name must be labelled after each drug considered plus an additional column named **COSMIC_ID**. The order of the columns is not important. So each row contains a unique COSMIC identifier and a set of IC50s. Note that we speak of IC50s but one can populate the file with anything (e.g., AUCs).
+
+
+All columns that starts with **Drug** are interpreted as the IC50s for each drug considered (see note here below). Other columns are ignored. Here is a valid example::
 
     COSMIC_ID, Drug_1_IC50, Drug_20_IC50
     111111,    0.5,         0.8
@@ -46,6 +48,15 @@ If you save that example in a file, you can read it with the
     >>> r = IC50('source/ic50_tiny.csv')
     >>> r.drugIds
     ['Drug_1_IC50', 'Drug_20_IC50']
+
+
+.. note:: the columns' names should be identifiers (not drug names). There 
+    are two main reasons. The first one is that it allows us to keep anonymous
+    all drug names and targets. The second reason is that many characteristics
+    such as plate number and drug concentration may be associated with a drug
+    identifier. This should be stored in a different table rather than in 
+    the name. It can then be handled and interpreted using the DRUGDecoder 
+    file (see below).
 
 .. note:: column without a name are ignored.
 .. note:: We encourage user to starts the column's name with the prefix
@@ -65,22 +76,33 @@ Genomic Features
 ---------------------
 
 The **ANOVA** analysis computes the associations between the Drug IC50s and
-genomic features. The file containing the Genomic Features must map to the IC50s file that is it must contains a column named **COSMIC_ID** with the same COSMIC identifiers. Besides, 2 compulsary columns are required. One that contains the tissue names and one with information about the :term:`MSI` factor. Those 2 columns must be named ::
+genomic features. The mapping between these two data sets is performed on a common column named **COSMIC_ID**, which should contain same COSMIC identifiers. 
+If not, only the intersection is kept. 
+
+In addition to the COSMIC identifiers, the following columns should be provided::
+
 
     - TISSUE_FACTOR
     - MSI_FACTOR
+    - MEDIA_FACTOR
 
-We may provide alternative (simple) names in the futures. You may also have an additional informative column named:: 
+.. note::
+    .. versionchanged:: 0.9.11
+        A column called 'Sample Name' was interpreted if found. This is not 
+        the case anymore. It is actually removed now to not be interepreted as 
+        a feature.
+    
 
-    - SAMPLE_NAME
+All remaining columns are assumed to be genomic features. 
 
-Finally, remaining columns are assumed to be related to genomic features. 
-Note that columns starting with `Drug_` are removed without warning for now. 
+.. warning:: columns starting with `Drug_` are removed without warning for now. 
+
+
 Here is a simple example::
     
-    COSMIC_ID, TISSUE_FACTOR, SAMPLE_NAME, MSI_FACTOR, BRAF_mut, gain_cna
-    111111, lung_NSCLC, 201T,  1, 1, 0
-    222222, prostate,   22RV1, 1, 0, 1
+    COSMIC_ID, TISSUE_FACTOR, MSI_FACTOR, BRAF_mut, gain_cna
+    111111, lung_NSCLC,  1, 1, 0
+    222222, prostate,    1, 0, 1
 
 It can be saved and read as follows:
 

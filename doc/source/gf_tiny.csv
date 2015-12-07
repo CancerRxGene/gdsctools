@@ -1,4 +1,4 @@
-COSMIC_ID, TISSUE_FACTOR, SAMPLE_NAME, MSI_FACTOR, BRAF_mut, gain_cna
-111111, lung_NSCLC, 201T,  1, 1, 0
-222222, prostate,   22RV1, 1, 0, 1
+COSMIC_ID, TISSUE_FACTOR, MSI_FACTOR, BRAF_mut, gain_cna
+111111, lung_NSCLC,  1, 1, 0
+222222, prostate,    1, 0, 1
 
