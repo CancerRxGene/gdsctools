@@ -328,14 +328,12 @@ http://github.com/CancerRxGene/gdsctools/issues """
 
         group.add_argument("-F", "--input-features", dest='input_features',
                            default=None, type=str,
-                           help="""A matrix of genomic features. First column
-                           is made of COSMIC identifiers that should match
-                           those from the IC50s matrix. Then 3 compulsary
-                           columns are required named 'Sample', 'Tissue',
-                           'MSI'. Other
-                           columns should be the genomic features. There are
-                           recognised if the (1) ends in _mut for mutation, or
-                           starts with loss or gain for the CNA cases.
+                           help="""A matrix of genomic features. One column
+                           with COSMIC identifiers should match
+                           those from the IC50s matrix. Then columns named
+                           TISSUE_FACTOR, MSI_FACTOR, MEDIA_FACTOR should
+                           be provided. Finally, other columns will be
+                           considered as genomic features (e.g., mutation)
                            """)
 
         group.add_argument("--output-directory", default='html_gdsc_anova',
