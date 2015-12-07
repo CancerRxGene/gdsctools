@@ -86,6 +86,14 @@ class VolcanoANOVA(object):
       :meth:`volcano_plot_one_feature`.
 
     """
+    _colname_pvalue = 'ANOVA_FEATURE_pval'
+    _colname_qvalue = 'ANOVA_FEATURE_FDR_%'
+    _colname_drugid = 'DRUG_ID'
+    _colname_feature = 'FEATURE'
+    _colname_deltas = 'FEATURE_delta_MEAN_IC50'
+    _colname_effect_size = 'FEATURE_IC50_effect_size'
+    _colname_N_feature_pos = 'N_FEATURE_pos'
+
     def __init__(self, data, sep="\t", settings=None):
         """.. rubric:: Constructor
 
@@ -96,9 +104,9 @@ class VolcanoANOVA(object):
 
         Expected column names to be found if a filename is provided::
 
-            FEATURE_ANOVA_pval
+            ANOVA_FEATURE_pval
             ANOVA_FEATURE_FDR_%
-            FEATURE_deltaMEAN_IC50
+            FEATURE_delta_MEAN_IC50
             FEATURE_IC50_effect_size
             N_FEATURE_pos
             N_FEATURE_pos
@@ -128,15 +136,8 @@ class VolcanoANOVA(object):
         self.figtools = Savefig()
         self.figtools.directory = self.settings.directory
 
-        #: name of column that contains the drug identifier
-        self._colname_drugid = 'DRUG_ID'
-        self._colname_feature = 'FEATURE'
-
         self.drugs = set(self.df[self._colname_drugid])
         self.features = set(self.df[self._colname_feature])
-
-        self.varname_pvalue = 'FEATURE_ANOVA_pval'
-        self.varname_qvalue = 'ANOVA_FEATURE_FDR_%'
 
         # intensive calls made once for all
         self.groups_by_drugs = self.df.groupby(self._colname_drugid).groups
@@ -233,8 +234,8 @@ class VolcanoANOVA(object):
     def _get_fdr_from_pvalue_interp(self, pvalue):
         """Here, FDR are computed using an interpolation"""
         pvalue += 1e-15
-        qvals = self.df[self.varname_qvalue]
-        pvals = self.df[self.varname_pvalue]
+        qvals = self.df[self._colname_qvalue]
+        pvals = self.df[self._colname_pvalue]
         ya = qvals[pvals < pvalue].max()
         yb = qvals[pvals > pvalue].min()
         xa = pvals[pvals < pvalue].max()
@@ -252,8 +253,8 @@ class VolcanoANOVA(object):
         tested.
 
         """
-        qvals = self.df[self.varname_qvalue]
-        pvals = self.df[self.varname_pvalue]
+        qvals = self.df[self._colname_qvalue]
+        pvals = self.df[self._colname_pvalue]
         if isinstance(fdr, list):
             pvalues = [pvals[qvals < this].max() for this in fdr]
             return pvalues
@@ -263,8 +264,8 @@ class VolcanoANOVA(object):
     def _get_pvalue_from_fdr_interp(self, fdr):
         # same as get_pvalue_from_fdr but with a linear inerpolation
         fdr += 1e-15
-        qvals = self.df[self.varname_qvalue]
-        pvals = self.df[self.varname_pvalue]
+        qvals = self.df[self._colname_qvalue]
+        pvals = self.df[self._colname_pvalue]
         ya = pvals[qvals < fdr].max()
         yb = pvals[qvals > fdr].min()
         xa = qvals[qvals < fdr].max()
@@ -277,8 +278,9 @@ class VolcanoANOVA(object):
 
     def _get_volcano_global_data(self):
         # using all data
-        minN = self.df['N_FEATURE_pos'].min()
-        maxN = self.df['N_FEATURE_pos'].max()
+        colname = self._colname_N_feature_pos
+        minN = self.df[colname].min()
+        maxN = self.df[colname].max()
         pvalues = self._get_pvalue_from_fdr(self.settings.FDR_threshold)
         return {'minN': minN, 'maxN': maxN,
                 'pvalues': (self.settings.FDR_threshold, pvalues)}
@@ -304,11 +306,11 @@ class VolcanoANOVA(object):
 
         # replaced by groups created in the constructor
         #subdf = self.df[self.df[mode] == target]
-        deltas = subdf['FEATURE_deltaMEAN_IC50']
-        effects = subdf['FEATURE_IC50_effect_size']
+        deltas = subdf[self._colname_deltas]
+        effects = subdf[self._colname_effect_size]
         signed_effects = list(np.sign(deltas) * effects)
-        qvals = list(subdf[self.varname_qvalue])
-        pvals = list(subdf[self.varname_pvalue])
+        qvals = list(subdf[self._colname_qvalue])
+        pvals = list(subdf[self._colname_pvalue])
         #assocs = list(subdf['ASSOC_ID'])
 
         colors = []
@@ -324,7 +326,7 @@ class VolcanoANOVA(object):
         ## !! here, we need to use .values since the pandas dataframe
         # index goes from 1 to N but the origignal indices in subdf
         # may not be from 1 to N but random between 1 and M>>N
-        data['FDR'] = subdf['ANOVA_FEATURE_FDR_%'].values
+        data['FDR'] = subdf[self._colname_qvalue].values
         annotations = []
 
         # just an alias
@@ -358,7 +360,8 @@ class VolcanoANOVA(object):
 
         # here we normalise wrt the drug. In R code, normalised
         # my max across all data (minN, maxN)
-        markersize = subdf['N_FEATURE_pos'] / subdf['N_FEATURE_pos'].max()
+        colname = self._colname_N_feature_pos
+        markersize = subdf[colname] / subdf[colname].max()
         markersize = list(markersize * 800)
         markersize = [x if x > 80 else 80 for x in markersize]
 
@@ -453,8 +456,8 @@ class VolcanoANOVA(object):
             color='red', alpha=1, label="FDR %s " %  fdr + " \%")
 
         for i, this in enumerate(fdrs):
-            if this < self.df['ANOVA_FEATURE_FDR_%'].min() or\
-                this > self.df['ANOVA_FEATURE_FDR_%'].max():
+            if this < self.df[self._colname_qvalue].min() or\
+                this > self.df[self._colname_qvalue].max():
                     continue
             pvalue = get_pvalue_from_fdr(this)
             ax.axhline(-np.log10(pvalue), linestyle=styles[i],
@@ -470,7 +473,7 @@ class VolcanoANOVA(object):
         #self.axx = ax.twinx()
         #self.common_ticks = ax.get_yticks()
         #self.common_ylim = ax.get_ylim()
-        #pvals = self.df[self.varname_pvalue]
+        #pvals = self.df[self._colname_pvalue]
         #y1 = pvals.min()
         #y2 = pvals.max()
         #fdr1 = self._get_fdr_from_pvalue_interp(y1)
