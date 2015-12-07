@@ -11,7 +11,7 @@ import pandas as pd
 import easydev
 
 
-__all__ = ['COSMICFetcher', 'COSMIC']
+__all__ = ['COSMICFetcher', 'COSMIC', 'COSMICInfo']
 
 
 class COSMICFetcher(object):
@@ -142,35 +142,88 @@ class COSMICFetcher(object):
 
     def _scan_record_for(self, record, key):
         lines = [line for line in record.split("\n") if line.startswith(key)]
-        content = [this.split(" ",1)[1].strip() for this in lines]
+        content = [this.split(" ", 1)[1].strip() for this in lines]
         return content
 
 
-class COSMIC(object):
-    """A COSMIC object
+class COSMICInfo(object):
+    """Retrieve information about cell line included in GDSC1000
 
-    Simply hold the cosmic identifier and open browser on the relevant page.
+    There is just one method called :meth:`get` that retrieve information
+    contained in a flat file provided in GDSCTools.
 
-    ::
+    One can retrieve a specific field for a cosmic identifier:
 
-        >>> c = COSMIC(905940)
-        >>> c.on_web()
+    .. doctest::
 
+        >>> from gdsctools import COSMICInfo
+        >>> c = COSMICInfo()
+        >>> c.get(909907, 'SAMPLE_NAME')
+        'ZR-75-30'
+
+    or get all available field as follows::
+
+        >>> c.get(909907)
+        SAMPLE_NAME           ZR-75-30
+        SEQ                          1
+        CNA                          1
+        EXP                          1
+        MET                          1
+        DRUG_SCR                     1
+        GDSC_description_1      breast
+        GDSC_description_2      breast
+        Study_Abbreviation        BRCA
+        MMR                      MSI-L
+        SCREEN_MEDIUM                R
+        GROWTH_PROPERTIES     Adherent
+        Name: 909907, dtype: object
+
+    If a cosmic identifier is not found, the returned object has the same
+    structure as above but with all fields set to False.
 
     .. seealso:: http://www.cancerrxgene.org/translation/CellLine
     """
-    def __init__(self, identifier):
-        self.identifier = identifier
+    def __init__(self):
+        """.. rubric:: constructor"""
+        from gdsctools.datasets import cosmic_info
+        #: dataframe with all information
+        self.df = pd.read_csv(cosmic_info.filename, sep=',')
+        self.df.set_index('COSMIC_ID', inplace=True)
 
-    def _get_url(self, cosmic_id=None):
-        if cosmic_id is None:
-            cosmic_id = self.identifier
+    def get(self, identifier, colname=None):
+        """
+
+        :param identifier: a cosmic identifiers. Possible values are stored in 
+            :attr:`df.index` attribute
+        :param colname: specific field. 
+
+        :return: if colname is not provided, returns a time series for the 
+            **identifier** with all available fields. Otherwise, returns a
+            specific field.
+        """
+        if isinstance(identifier, str):
+            identifier = int(identifier)
+
+        if identifier not in self.df.index:
+            ts = pd.Series([None]*12, index=self.df.columns, name=identifier)
+        else:
+            ts = self.df.ix[identifier]
+
+        if colname is None:
+            return ts.copy() # to be safe since user may change it 
+        else:
+            return ts[colname]
+
+    def _get_url(self, cosmic_id):
         url = 'http://cancer.sanger.ac.uk/cell_lines/sample/overview'
         url = url + "?id={0}".format(cosmic_id)
         return url
 
-    def on_web(self):
+    def on_web(self, identifier):
         from easydev.browser import browse
-        url = self._get_url(self.identifier)
+        url = self._get_url(identifier)
         browse(url)
+
+
+
 

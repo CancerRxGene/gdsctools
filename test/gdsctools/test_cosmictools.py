@@ -1,4 +1,4 @@
-from gdsctools.cosmictools import COSMICFetcher, COSMIC, COSMICInfo
+from gdsctools.cosmictools import COSMICFetcher, COSMICInfo
 from gdsctools.datasets import cosmic_builder_test
 
 def test_cosmic_info():
@@ -11,6 +11,10 @@ def test_cosmic_fetcher():
 
 
 def test_cosmic():
-    r = COSMIC(924100)
-    r.on_web()
+    r = COSMICInfo()
+    r.get(924100)
+    r.get('924100')
+    r.get(924100, colname='SAMPLE_NAME')
+    r.on_web(924100)
+    r.get(1000000000)
 
