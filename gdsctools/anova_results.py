@@ -41,8 +41,7 @@ class ANOVAResults(object):
     =========================== ===============================================
          Column name                                  Description
     =========================== ===============================================
-    ASSOC_ID                    Alphanumerical identifier of the
-                                interaction
+    ASSOC_ID                    Alphanumerical identifier of the interaction
     FEATURE                     The CFE involved in the interaction, it
                                 can be a mutated cancer driver gene
                                 (CG) [suffix _mut], an abberrantly
@@ -114,7 +113,7 @@ class ANOVAResults(object):
                                 status of the cell lines; for the cancer type
                                 with no micro-satellite instable cell line
                                 samples this value is NA;
-    ANOVA_FEATURE_FDR_%         False discovery rate obtained by correcting
+    ANOVA_FEATURE_FDR           False discovery rate obtained by correcting
                                 the p-values in column u, on an individual
                                 analysis basis, for multiple hypothesis
                                 testing with the q-value correction method
@@ -172,7 +171,7 @@ class ANOVAResults(object):
         self.mapping['ANOVA_MSI_pval'] = np.dtype('float64')
         self.mapping['ANOVA_MEDIA_pval'] = np.dtype('float64')
   
-        self.mapping['ANOVA_FEATURE_FDR_%'] = np.dtype('float64')
+        self.mapping['ANOVA_FEATURE_FDR'] = np.dtype('float64')
 
         self.colnames_subset = ['ASSOC_ID', 'FEATURE',
             'DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET',
@@ -185,7 +184,7 @@ class ANOVAResults(object):
             'ANOVA_TISSUE_pval',
             'ANOVA_MSI_pval',
             'ANOVA_MEDIA_pval',
-            'ANOVA_FEATURE_FDR_%']
+            'ANOVA_FEATURE_FDR']
 
     def astype(self, df):
         try:

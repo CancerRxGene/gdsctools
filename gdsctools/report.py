@@ -28,7 +28,7 @@ from jinja2 import FileSystemLoader
 # `http://www.kryogenix.org/code/browser/sorttable/
 # with an X11 license
 
-__all__ = ['HTMLTable', 'Report']
+__all__ = ['HTMLTable', 'ReportMAIN']
 
 
 class HTMLTable(object):

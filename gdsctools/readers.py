@@ -254,7 +254,7 @@ class IC50(Reader, CosmicRows):
 
     The column "COSMIC_ID" contains the cosmic identifiers (cell line). The
     other columns should be filled with the IC50s corresponding to a pair
-    of COSMIC identifers and Drug. Nothing prevents you to fill the file with
+    of COSMIC identifiers and Drug. Nothing prevents you to fill the file with
     data that have other meaning (e.g. AUC).
 
     If at least one column starts with "Drug_", all other columns will be
@@ -691,7 +691,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # -3 since we have also the MSI, tissue, media columns
         # TODO should use shift attribute ?
         Nfeatures = len(self.features)
-        txt += '\nThere are {0} unique features distributed as\n'.format(Nfeatures-3)
+        txt += '\nThere are {0} unique features distributed as\n'.format(Nfeatures-self.shift)
 
         n_mutations = len([x for x in self.df.columns if x.endswith("_mut")])
         txt += "- Mutation: {}\n".format(n_mutations)

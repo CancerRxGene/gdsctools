@@ -87,7 +87,7 @@ class VolcanoANOVA(object):
 
     """
     _colname_pvalue = 'ANOVA_FEATURE_pval'
-    _colname_qvalue = 'ANOVA_FEATURE_FDR_%'
+    _colname_qvalue = 'ANOVA_FEATURE_FDR'
     _colname_drugid = 'DRUG_ID'
     _colname_feature = 'FEATURE'
     _colname_deltas = 'FEATURE_delta_MEAN_IC50'
@@ -105,7 +105,7 @@ class VolcanoANOVA(object):
         Expected column names to be found if a filename is provided::
 
             ANOVA_FEATURE_pval
-            ANOVA_FEATURE_FDR_%
+            ANOVA_FEATURE_FDR
             FEATURE_delta_MEAN_IC50
             FEATURE_IC50_effect_size
             N_FEATURE_pos

@@ -52,12 +52,12 @@ def test_anova_all():
 
     an = ANOVA(ic50_test, features)
     results = an.anova_all()
-    assert_almost_equal( results.df['ANOVA_FEATURE_FDR_%'].sum(), 
+    assert_almost_equal( results.df['ANOVA_FEATURE_FDR'].sum(), 
             10312.23061065521, 6)
 
     an2 = ANOVA(ic50_test, features, set_media_factor=True)
     results = an2.anova_all()
-    assert_almost_equal( results.df['ANOVA_FEATURE_FDR_%'].sum(), 
+    assert_almost_equal( results.df['ANOVA_FEATURE_FDR'].sum(), 
             10238.529313503008, 6)
 
 

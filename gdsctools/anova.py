@@ -66,7 +66,7 @@ class ANOVAReport(object):
 
     :Significant association: an association is significant if one of those
         conditions is fulfilled:
-         - The field *ANOVA_FEATURE_FDR_%* must be < FDR_threshold
+         - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
          - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
          - The field *FEATURE_delta_MEAN_IC50* must be < 0 (sensible) or
            >= 0 (resistant)
@@ -90,7 +90,7 @@ class ANOVAReport(object):
 
         self._colname_drug_id = 'DRUG_ID'
         self.varname_pval = 'ANOVA_FEATURE_pval'
-        self.varname_qval = 'ANOVA_FEATURE_FDR_%'
+        self.varname_qval = 'ANOVA_FEATURE_FDR'
 
         # maybe there was not drug_decoder in the gdsc parameter,
         # so a user may have provide a file, in which case, we need
@@ -224,7 +224,7 @@ class ANOVAReport(object):
         logand = np.logical_and
 
         # select sensible data set
-        mask1 = self.df['ANOVA_FEATURE_FDR_%'] < self.settings.FDR_threshold
+        mask1 = self.df['ANOVA_FEATURE_FDR'] < self.settings.FDR_threshold
         mask2 = self.df['ANOVA_FEATURE_pval'] < self.settings.pvalue_threshold
         mask3 = self.df['FEATURE_delta_MEAN_IC50'] < 0
         self.sensible_df = self.df[logand(logand(mask1, mask2), mask3)]
@@ -399,11 +399,11 @@ class ANOVAReport(object):
 
         for fdr in fdrs:
             # significant hits
-            res = self.df['ANOVA_FEATURE_FDR_%']<fdr
+            res = self.df['ANOVA_FEATURE_FDR']<fdr
             significants.append(res.sum())
 
             # meaningful hits
-            indices = np.logical_and(self.df['ANOVA_FEATURE_FDR_%']<fdr,
+            indices = np.logical_and(self.df['ANOVA_FEATURE_FDR']<fdr,
                     maskMC)
             significant_meaningful.append(indices.sum())
 
@@ -455,7 +455,7 @@ class ANOVAReport(object):
         drugs = df['DRUG_ID'].values
         features = df['FEATURE'].values
         assocs = df['ASSOC_ID'].values
-        fdrs = df['ANOVA_FEATURE_FDR_%'].values
+        fdrs = df['ANOVA_FEATURE_FDR'].values
 
         N = len(df)
         pb = Progress(N)
@@ -1583,7 +1583,8 @@ class ANOVA(object): #Logging):
 
         :param drugs: you may select a subset of drugs
         :param animate: shows the progress bar
-        :return: an :class:`ANOVAResults` instance with the dataframe
+        :return: an :class:`~gdsctools.anova_results.ANOVAResults` 
+            instance with the dataframe
             stored in an attribute called **df**
 
         Loops over all drugs calling :meth:`anova_one_drug` for each
@@ -1675,7 +1676,7 @@ class ANOVA(object): #Logging):
         new_pvalues = self.multiple_testing.get_corrected_pvalues(data)
         new_pvalues *= 100
         # insert new columns.
-        colname = 'ANOVA_FEATURE_FDR_%'
+        colname = 'ANOVA_FEATURE_FDR'
 
         try:
             df.insert(len(df.columns), colname, new_pvalues)
@@ -1771,7 +1772,7 @@ class Association(ReportMAIN):
                 self.feature, show=True,
                 directory=self.directory + os.sep + 'images')
         df['ASSOC_ID'] = self.assoc_id
-        df['ANOVA_FEATURE_FDR_%'] = self.fdr
+        df['ANOVA_FEATURE_FDR'] = self.fdr
         return df
 
     def _create_report(self, onweb=True):
@@ -1978,10 +1979,10 @@ class HTMLPageMain(ReportMAIN):
         # --------------------------- Create table with links to all drugs
         groups = self.report.df.groupby('DRUG_ID')
         try:
-            df = groups.mean()['ANOVA_FEATURE_FDR_%'].sort_values()
+            df = groups.mean()['ANOVA_FEATURE_FDR'].sort_values()
         except:
             # note double brackets for pythonn3.3
-            df = groups.mean()[['ANOVA_FEATURE_FDR_%']].sort()
+            df = groups.mean()[['ANOVA_FEATURE_FDR']].sort()
         df = df.reset_index() # get back the Drug id in the dframe columns
 
         # let us add also the drug name
@@ -2139,7 +2140,7 @@ class SignificantHits(object):
     def to_html(self, escape=False, header=True, index=False):
         # If there is a value below 0.01, a scientific notation is
         # use. we prefer to use 2 digits and write <0.01
-        colname = 'ANOVA_FEATURE_FDR_%'
+        colname = 'ANOVA_FEATURE_FDR'
         self.df.loc[self.df[colname] < 0.01, colname] = '<0.01'
         html = HTMLTable(self.df, self.name)
         # Those columns should be links
