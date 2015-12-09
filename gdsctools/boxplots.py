@@ -219,6 +219,8 @@ class BoxPlots(Logging):
         # TODO; move all this if block into a method
         # figure out the delta between pos and neg
         means = groups.mean().unstack(mode)
+
+
         if len(means):
             delta = means.ix[0] - means.ix[1]
             try:
@@ -227,7 +229,7 @@ class BoxPlots(Logging):
             except:
                 # sort_values not in anaconda for py3.3
                 # FIXME does not work in readthedocs.
-                delta = delta.sort()
+                delta.sort(inplace=True)
 
             significance = {}
             data = []
