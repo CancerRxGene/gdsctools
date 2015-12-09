@@ -128,6 +128,7 @@ class ANOVA(object): #Logging):
                 print('Populating MEDIA Factor in the Genomic Feature matrix')
             self.features.fill_media_factor()
 
+
         #: a CSV with 3 columns used in the report
         self.read_drug_decoder(drug_decoder)
 
@@ -151,7 +152,7 @@ class ANOVA(object): #Logging):
                 "genomic features matrix")
 
         self.ic50.drop_cosmic(list(unknowns))
-        self.features.cosmicIds  = self.ic50.cosmicIds
+        self.features.cosmicIds = self.ic50.cosmicIds
         #self.cosmicIds = self.ic50.cosmicIds
 
         #: an instance of :class:`~gdsctools.settings.ANOVASettings`
@@ -201,6 +202,7 @@ class ANOVA(object): #Logging):
             # there is only one tissue
             tissue = self.tissue_factor.unique()[0]
             self.settings.analysis_type = tissue
+            self.settings.directory = tissue
         else:
             # this is a PANCAN analysis
             self.settings.analysis_type = 'PANCAN'
@@ -543,10 +545,10 @@ class ANOVA(object): #Logging):
     def read_drug_decoder(self, filename=None):
         """Read file with the DRUG information
 
-        .. seealso:: :class:`gdsctools.readers.DrugDecoder`
+        .. seealso:: :class:`gdsctools.readers.DrugDecode`
         """
-        # Read the DRUG decoder file into a DrugDecoder/Reader instance
-        self.drug_decoder = readers.DrugDecoder(filename)
+        # Read the DRUG decoder file into a DrugDecode/Reader instance
+        self.drug_decoder = readers.DrugDecode(filename)
 
     def drug_annotations(self, df):
         """Populate the drug_name and drug_target field if possible
@@ -555,17 +557,13 @@ class ANOVA(object): #Logging):
         :return df: same as input but with the FDR column populated
         """
         if len(self.drug_decoder.df) == 0:
-            print("Nothing done. DrugDecoder file not provided.")
+            print("Nothing done. DrugDecode file not provided.")
 
         # aliases
-        decoder = self.drug_decoder.df
         drugs = df.DRUG_ID.values
 
-
-        drug_names = [decoder.ix[x].DRUG_NAME if x in decoder.index else None
-                 for x in drugs]
-        drug_target = [decoder.ix[x].DRUG_TARGET if x in decoder.index
-                else None for x in drugs]
+        drug_names = [self.drug_decoder.get_name(x) for x in drugs]
+        drug_target = [self.drug_decoder.get_target(x) for x in drugs]
 
         # this is not clean. It works but could be simpler surely.
         df['DRUG_NAME'] = drug_names

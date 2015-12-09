@@ -21,7 +21,7 @@ Provides readers to read
 
 - Matrix of IC50 data set :class:`IC50`
 - Matrix of Genomic features with :class:`GenomicFeatures`
-- Drug Decoder table with :class:`DrugDecoder`
+- Drug Decoder table with :class:`DrugDecode`
 
 """
 import warnings
@@ -32,7 +32,7 @@ import numpy as np
 import easydev
 
 
-__all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecoder']
+__all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecode']
 
 
 class Reader(object):
@@ -831,7 +831,7 @@ class Extra(Reader):
         pylab.ylabel(r'\#')
 
 
-class DrugDecoder(Reader):
+class DrugDecode(Reader):
     """Reads a "drug decode" file
 
     The format must be 3-columns comma-separated file.
@@ -847,7 +847,7 @@ class DrugDecoder(Reader):
     """
     def __init__(self, filename):
         """.. rubric:: Constructor"""
-        super(DrugDecoder, self).__init__(filename)
+        super(DrugDecode, self).__init__(filename)
         self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET', 'DRUG_OWNER',
             'PUBLIC']
 
@@ -863,12 +863,12 @@ class DrugDecoder(Reader):
                 inplace=True)
 
         if 'OWNED_BY' in self.df.columns:
-            print("DrugDecoder: renamed OWNED_BY in DRUG_OWNER")
+            print("DrugDecode: renamed OWNED_BY in DRUG_OWNER")
             self.df.rename(columns={'OWNED_BY': 'DRUG_OWNER'}, 
                 inplace=True)
 
         if 'WEBRELEASE' in self.df.columns:
-            print("DrugDecoder: renamed WEBRELEASE in PUBLIC")
+            print("DrugDecode: renamed WEBRELEASE in PUBLIC")
             self.df.rename(columns={'WEBRELEASE': 'PUBLIC'}, 
                 inplace=True)
 
