@@ -1,4 +1,4 @@
-from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecoder
+from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecode
 from gdsctools.readers import Reader
 from easydev import TempFile
 from gdsctools import ic50_test
@@ -109,8 +109,8 @@ def _test_pancan_reader_rdata():
 
 
 def test_drugs():
-    r1 = DrugDecoder(testing.drug_test_csv)
+    r1 = DrugDecode(testing.drug_test_csv)
     r1.drugIds
-    r2 = DrugDecoder(testing.drug_test_tsv)
+    r2 = DrugDecode(testing.drug_test_tsv)
     r2.drugIds
     assert r1 == r2
