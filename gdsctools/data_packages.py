@@ -20,6 +20,7 @@ class DataPackagesSummary(object):
             directory='.'):
         self.directory = directory
         self.filename = 'index.html'
+        self.collaborator =  collaborator
 
         if directories is None:
             self.directories = sorted(TCGA().keys())
@@ -59,6 +60,7 @@ class DataPackagesSummary(object):
                     mode='summary')
 
         report.jinja['data_table'] = self.html
+        report.jinja['collaborator'] = self.collaborator
         report.create_report(onweb=onweb)
 
 
