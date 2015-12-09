@@ -162,6 +162,13 @@ class Reader(object):
                 'Please fix your input file.')
         self.df = rawdf.drop(columns, axis=1)
 
+        # Finally, check that names do not contain the unwanted character
+        # / that was used in some old matrices. 
+        if len([True for x in self.df.columns if "/" in x])>0:
+            print("Your input data contains unwanted / characters in " +
+                    " the header. Let's remove them.")
+            self.df.columns = [x.replace("/", "_") for x in self.df.columns]
+
     def _interpret(self):
         pass
 
@@ -668,7 +675,7 @@ class GenomicFeatures(Reader, CosmicRows):
             Ntissue = len(tissues)
             txt += 'Number of unique tissues {0}'.format(Ntissue)
             if Ntissue == 1:
-                 txt += ' ({0})'.format(tissues[0])
+                 txt += ' ({0})\n'.format(tissues[0])
             elif Ntissue < 10:
                 txt += '\nHere are the tissues: '
                 txt += ",".join(tissues) + "\n"
@@ -841,15 +848,35 @@ class DrugDecoder(Reader):
     def __init__(self, filename):
         """.. rubric:: Constructor"""
         super(DrugDecoder, self).__init__(filename)
-        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET']
+        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET', 'DRUG_OWNER',
+            'PUBLIC']
+
         #self.df.drop_duplicates(inplace=True)
         self._interpret()
 
     def _interpret(self, filename=None):
-        if len(self.df) == 0:
+        N = len(self.df)
+        if N  == 0:
             return
 
-        self.df.rename(columns={'PUTATIVE_TARGET': 'DRUG_TARGET'}, inplace=True)
+        self.df.rename(columns={'PUTATIVE_TARGET': 'DRUG_TARGET'}, 
+                inplace=True)
+
+        if 'OWNED_BY' in self.df.columns:
+            print("DrugDecoder: renamed OWNED_BY in DRUG_OWNER")
+            self.df.rename(columns={'OWNED_BY': 'DRUG_OWNER'}, 
+                inplace=True)
+
+        if 'WEBRELEASE' in self.df.columns:
+            print("DrugDecoder: renamed WEBRELEASE in PUBLIC")
+            self.df.rename(columns={'WEBRELEASE': 'PUBLIC'}, 
+                inplace=True)
+
+        if 'PUBLIC' not in self.df.columns:
+            self.df['PUBLIC'] = [None] * N
+        
+        if 'DRUG_OWNER' not in self.df.columns:
+            self.df['DRUG_OWNER'] = [None] * N
 
         if self._valid_header(self.df) is True:
             self.df.set_index('DRUG_ID', inplace=True)
@@ -874,17 +901,28 @@ class DrugDecoder(Reader):
     drugIds = property(_get_drug_ids,
             doc="return list of drug identifiers")
 
-    def get_name(self, drug_id):
-        if drug_id in self.drugIds:
-            return self.df.ix[drug_id].DRUG_NAME
+    def _get_row(self, drug_id, colname):
+        if drug_id in self.df.index:
+            return self.df.ix[drug_id][colname]
+        elif "_" in str(drug_id):
+            try:
+                drug_id = int(drug_id.split("_")[1])
+            except:
+                print("DRUG ID %s not recognised" % drug_id)
+                return None
+            if drug_id in self.df.index:
+                return self.df[colname].ix[drug_id]
         else:
             return None
 
+    def get_name(self, drug_id):
+        return self._get_row(drug_id, 'DRUG_NAME')
+
     def get_target(self, drug_id):
-        if drug_id in self.drugIds:
-            return self.df.ix[drug_id].DRUG_TARGET
-        else:
-            return None
+        return self._get_row(drug_id, 'DRUG_TARGET')
+    
+    def get_public(self, drug_id):
+        return self._get_row(drug_id, 'PUBLIC')
 
     def check(self):
         for x in self.drugIds:
@@ -898,6 +936,13 @@ class DrugDecoder(Reader):
         #if  self.df.isnull().sum().sum()>0:
         #   print(d.df.isnull().sum())
         #    raise ValueError("all values must be non-na. check tabulation")
+
+    def get_info(self):
+        dd = {  'N': len(self), 
+                'N_public': sum(self.df.PUBLIC == 'Y'),
+                'N_prop': sum(self.df.PUBLIC == 'N')}
+        return dd
+
 
     def __len__(self):
         return len(self.df)
