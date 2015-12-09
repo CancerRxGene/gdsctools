@@ -20,7 +20,6 @@ import shutil
 
 import easydev
 import pandas as pd
-from jinja2 import Template
 from jinja2.environment import Environment
 from jinja2 import FileSystemLoader
 
@@ -168,7 +167,7 @@ class HTMLTable(object):
         self.df[colname] = [html_formatter.format(x, y)
                 for x, y in zip(hexcolors, data)]
 
-    def add_href(self, colname, url=None, newtab=False):
+    def add_href(self, colname, url=None, newtab=False, suffix=None):
         """
 
         default behaviour: takes column content and put into::
@@ -189,19 +188,23 @@ class HTMLTable(object):
 
         """
         if url is not None:
+            if suffix is None:
+                suffix = ''
             if newtab is False:
-                formatter = '<a  href="{0}{1}">{1}</a>'
+                formatter = '<a  href="{0}{1}{2}">{1}</a>'
             else:
-                formatter = '<a target="_blank"  href="{0}{1}">{1}</a>'
+                formatter = '<a target="_blank"  href="{0}{1}{2}">{1}</a>'
             self.df[colname] = self.df[colname].apply(lambda x:
-                    formatter.format(url, x))
+                    formatter.format(url, x, suffix))
         else:
+            if suffix is None:
+                suffix = '.html'
             if newtab is False:
-                formatter = '<a href="{0}.html">{1}</a>'
+                formatter = '<a href="{0}{2}">{1}</a>'
             else:
-                formatter = '<a target="_blank" href="{0}.html">{1}</a>'
+                formatter = '<a target="_blank" href="{0}{2}">{1}</a>'
             self.df[colname] = self.df[colname].apply(lambda x:
-                formatter.format(x,x))
+                formatter.format(x,x, suffix))
 
     def sort(self, name, ascending=True):
         # for different pandas implementations
@@ -239,7 +242,7 @@ class ReportMAIN(object):
 
     def __init__(self, filename='index.html', directory='report',
                  overwrite=True, verbose=True,
-                template_filename='index.html'):
+                template_filename='index.html', mode=None):
         """.. rubric:: Constructor
 
         :param filename: default to **index.html**
@@ -248,6 +251,10 @@ class ReportMAIN(object):
         :param verbose: default to True
         :param dependencies: add the dependencies table at the end of the
             document if True.
+        :param str mode: if none, report have a structure that contains the
+            following directories: OUTPUT, INPUT, js, css, images, code.
+            Otherwise, if mode is set to 'summary', only the following
+            directories are created: js, css, images, code
 
         """
         #: name of the analysis added in the title
@@ -292,7 +299,13 @@ class ReportMAIN(object):
                 'dependencies': self.get_table_dependencies().to_html(),
                 }
 
+        if mode is None:
+            self._to_create = ['OUTPUT', 'INPUT', 'images', 'css', 
+                    'js', 'code']
+        elif mode == 'summary':
+            self._to_create = ['images', 'css', 'js',]
         self._init_report()
+            
 
     def _get_filename(self):
         return self._filename
@@ -328,7 +341,9 @@ class ReportMAIN(object):
             if os.path.isdir(self.directory) is False:
                 print("Created directory {}".format(self.directory))
                 os.mkdir(self.directory)
-            for this in ['OUTPUT', 'INPUT', 'images', 'css', 'js', 'code']:
+                
+            # list of directories created in the constructor
+            for this in self._to_create:
                 try:
                     os.mkdir(self.directory + os.sep + this)
                 except:

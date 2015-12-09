@@ -3,6 +3,8 @@
 Settings
 ===========
 
+.. contents::
+
 Overview
 -----------
 
@@ -41,17 +43,37 @@ additional settings::
 
 See :class:`~gdsctools.anova.ANOVASettings` for details.
 
-The regression analysis uses possibly 3 factors: MSI, Tissue and Feature.
-Feature are always included. MSI are included by default but you may exclude it
-setting to False this parameter::
+The regression analysis uses at most 4 factors: :term:`MSI`, Tissue, 
+:term:`MEDIA` and Feature.  The latter is always included but others can be
+tuned.
+
+MSI factor
+~~~~~~~~~~~~
+If included in the genomic feature data set, MSI are included by default. 
+However, you may exclude it by setting its value to False::
 
     settings.include_MSI_factor
 
-If MSI column is not found in the Genomic Feature data set, the MSI factor will
-be excluded automatically. Another factor used in the regression (tissue) will
+If **MSI_FACTOR** column is not found in the Genomic Feature data set, the MSI factor will be excluded automatically and the parameter above set to False. 
+
+MEDIA factor
+~~~~~~~~~~~~~
+
+If included in the genomic feature data set, MEDIA are included by default.
+However, you may exclude it by setting its value to False::
+
+    settings.include_MEDIA_factor
+
+If **MEDIA_FACTOR** column is not found in the Genomic Feature data set, 
+the MEDIA factor will be set automatically to False. 
+
+Tissue factor
+~~~~~~~~~~~~~~~~~
+
+Another factor used in the regression (tissue) will
 be automatically excluded if there is only one tissue (or none). If several
-tissues are available, you can still exclude it settings this parameter to
-anything different from the default value (PANCAN)::
+tissues are available, you can still exclude it from the regression analysis
+by settings this parameter to anything different from the default value (PANCAN)::
 
     settings.analysis_type = PANCAN
 
@@ -64,10 +86,10 @@ not be performed if there is not enough statistics.
 
 These parameters will influence the number of tests being performed (number of associations of drug vs feature in :meth:`~gdsctools.anova.ANOVA.anova_all`)::
 
-    minimum_nonna_ic50
-    MSI_feature_threshold
-    feature_factor_threshold
-   
+    - minimum_nonna_ic50
+    - MSI_feature_threshold
+    - feature_factor_threshold
+ 
 The first parameter indicates the minimum number of valid IC50 required for a given drug to be analysed. The current default value is 6.
 
 The second parameter indicates the minimum size of the positive and negative
@@ -96,10 +118,6 @@ the number of IC50s corresponding to positive and negative feature is or equal
 to **feature_factor_threshold**.
 
 
-
-
-
-
 Mutiple testing corrections
 ------------------------------
 
@@ -111,19 +129,20 @@ method and can be set to other methods using ::
 .. seealso:: :class:`~gdsctools.stats.MultipleTesting` for details.
 
 
-
 volcano plots
 -----------------
 
 The volcano plots are one of the main results of the analysis and summarizes
 visually the significance of the different associations. Here are some
-parameters used to tune the plots and selection of significant events::
+parameters used to tune the plots and selection of significant events:
 
-    pvalue_threshold  : Used to select significant hits see ANOVAReport
-    effect_threshold  : Used in the volcano plot. See VolcanoPlot
-    FDR_threshold     : FDR threshold used in volcano plot and significant hits
-    volcano_FDR_interpolation: True,
-    volcano_additional_FDR_lines: [0.01, 0.1, 10]}
+- **pvalue_threshold** is used to select significant hits. See :class:`~gdsctools.anova_report.ANOVAReport`. 
+- **effect_threshold** is used to select significant hits as well.
+- **FDR_threshold**   is used in :class:`gdsctools.volcano.VolcanoANOVA`
+  (horizontal lines)
+- **volcano_FDR_interpolation** uses interpolation to plot the FDR lines in the
+  volcano plot.
+- **volcano_additional_FDR_lines** : [0.01, 0.1, 10]
 
 .. seealso:: :class:`~gdsctools.volcano.VolcanoANOVA`.
 

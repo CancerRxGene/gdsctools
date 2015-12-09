@@ -2,7 +2,7 @@ import os
 
 from gdsctools.report import ReportMAIN, HTMLTable
 from gdsctools.tissues import TCGA
-from gdsctools.readers import DrugDecoder
+from gdsctools.readers import DrugDecode
 
 
 import pandas as pd
@@ -68,7 +68,7 @@ class DataPackage(object):
 
     def __init__(self, directory):
         self.directory = directory
-        self.dd = DrugDecoder(os.sep.join([directory,'INPUT',
+        self.dd = DrugDecode(os.sep.join([directory,'INPUT',
             'DRUG_DECODE.csv']))
         filename = os.sep.join([self.directory, 'OUTPUT',
             'drugs_summary.csv'])

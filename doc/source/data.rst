@@ -7,15 +7,15 @@ Data Format and Readers
 
 CSV and TSV formats
 --------------------
-The formats used in **GDSCTools** are :term:`CSV` based but :term:`TSV` formatted files may be accepted. However, we would encourage to use CSV formats as much as possible. Results will be saved in CSV format. 
+The formats used in **GDSCTools** are :term:`CSV` based but :term:`TSV` formatted files may be accepted. However, we would encourage to use CSV formats as much as possible. Results will be saved in CSV format.
 
 
 There are different CSV files used in the analysis. They all have dedicated
-readers and expect specific names in the headers as explained hereafter. 
+readers and expect specific names in the headers as explained hereafter.
 So far, we have  3 types of input files (defined in the
 :mod:`~gdsctools.readers` module):
 
-- :class:`~gdsctools.readers.IC50` 
+- :class:`~gdsctools.readers.IC50`
 - :class:`~gdsctools.readers.GenomicFeatures`
 - :class:`~gdsctools.readers.DrugDecoder`
 - **Concentrations** (not yet used).
@@ -29,7 +29,7 @@ To be identified CSV/TSV files must have the proper extension that is **.csv** o
 IC50
 ------
 
-The most important input data is what we call the IC50 file. It is 
+The most important input data is what we call the IC50 file. It is
 simply a CSV (or TSV) file with a header and a set of rows. The header's column name must be labelled after each drug considered plus an additional column named **COSMIC_ID**. The order of the columns is not important. So each row contains a unique COSMIC identifier and a set of IC50s. Note that we speak of IC50s but one can populate the file with anything (e.g., AUCs).
 
 
@@ -50,24 +50,24 @@ If you save that example in a file, you can read it with the
     ['Drug_1_IC50', 'Drug_20_IC50']
 
 
-.. note:: the columns' names should be identifiers (not drug names). There 
+.. note:: the columns' names should be identifiers (not drug names). There
     are two main reasons. The first one is that it allows us to keep anonymous
     all drug names and targets. The second reason is that many characteristics
     such as plate number and drug concentration may be associated with a drug
-    identifier. This should be stored in a different table rather than in 
-    the name. It can then be handled and interpreted using the DRUGDecoder 
+    identifier. This should be stored in a different table rather than in
+    the name. It can then be handled and interpreted using the DRUGDecoder
     file (see below).
 
 .. note:: column without a name are ignored.
 .. note:: We encourage user to starts the column's name with the prefix
     **Drug_**. However, would you decide to not follow that convention, the
-    IC50 reader will still work. Note, however, that if at least one column 
+    IC50 reader will still work. Note, however, that if at least one column
     starts  with **Drug_**, then all other columns will be ignored. This can be
     useful to store IC50s and genomic features in the same file for example.
 
-    
-.. seealso:: developers should look at the references for more 
-    functionalities of the :class:`~gdsctools.readers.IC50`  
+
+.. seealso:: developers should look at the references for more
+    functionalities of the :class:`~gdsctools.readers.IC50`
     class (e.g., filter by tissues, removing drugs, visualisation of IC50s).
 
 
@@ -76,30 +76,32 @@ Genomic Features
 ---------------------
 
 The **ANOVA** analysis computes the associations between the Drug IC50s and
-genomic features. The mapping between these two data sets is performed on a common column named **COSMIC_ID**, which should contain same COSMIC identifiers. 
-If not, only the intersection is kept. 
+genomic features. The mapping between these two data sets is performed on a common column named **COSMIC_ID**, which should contain same COSMIC identifiers.
+If not, only the intersection is kept.
 
-In addition to the COSMIC identifiers, the following columns should be provided::
-
+In addition to the COSMIC identifiers, the following columns should be providedbut are not strictly speaking required::
 
     - TISSUE_FACTOR
     - MSI_FACTOR
     - MEDIA_FACTOR
 
+If not provided, the tissue, :term:`MSI` and :term:`MEDIA` factors will not be taken into account in the regression analysis (see :ref:`regression` for details).
+
 .. note::
     .. versionchanged:: 0.9.11
-        A column called 'Sample Name' was interpreted if found. This is not 
-        the case anymore. It is actually removed now to not be interepreted as 
+        A column called 'Sample Name' was interpreted if found. This is not
+        the case anymore. It is actually removed now to not be interepreted as
         a feature.
-    
 
-All remaining columns are assumed to be genomic features. 
 
-.. warning:: columns starting with `Drug_` are removed without warning for now. 
+All remaining columns are assumed to be genomic features.
+
+.. warning:: In the current version, all columns starting 
+    with `Drug_` are removed without warning.
 
 
 Here is a simple example::
-    
+
     COSMIC_ID, TISSUE_FACTOR, MSI_FACTOR, BRAF_mut, gain_cna
     111111, lung_NSCLC,  1, 1, 0
     222222, prostate,    1, 0, 1
@@ -150,7 +152,8 @@ An example can be read as follows:
     'Nutlin-3a'
 
 
-
+DrugDecoder files are not required for the analysis but are used by
+:class:`gdsctools.anova_report.ANOVAReport` to fill the HTML reports.
 
 
 

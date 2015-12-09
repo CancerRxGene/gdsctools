@@ -54,6 +54,10 @@ Glossary
         genetic mutations responsible for cancer, using genome sequencing and
         bioinformatics. See  `TCGA homepage <http://cancergenome.nih.gov/>`_
 
+    MEDIA
+        A factor used in the regression analysis. Stands for Growth MEDIA.
+        MEDIA_FACTOR ir one of the possible column filled in Genomic Feature.
+
     COSMIC
         COSMIC is a global resource for
         information on somatic mutations in human cancer, combining curation of
