@@ -110,7 +110,7 @@ class ANOVAReport(object):
     def read_drug_decoder(self, filename):
         """Read file with the DRUG information
 
-        .. seealso:: :class:`gdsctools.readers.DrugDecoder`
+        .. seealso:: :class:`gdsctools.readers.DrugDecode`
         """
         if filename is not None:
             self.gdsc.read_drug_decoder(filename)
@@ -132,6 +132,8 @@ class ANOVAReport(object):
 
     def diagnostics(self):
         """Return summary of the analysis (dataframe)"""
+        self._set_sensible_df()
+
         df = pd.DataFrame({'text': [], 'value': []})
 
         n_features = len(self.gdsc.features.df.columns)
@@ -179,6 +181,9 @@ class ANOVAReport(object):
         df = self._df_append(df, [msg, nres])
 
         msg = "p-value significance threshold"
+        df = self._df_append(df, [msg, self.settings.pvalue_threshold])
+        
+        msg = "FDR significance threshold"
         df = self._df_append(df, [msg, self.settings.FDR_threshold])
 
         p1, p2 = self._get_pval_range()
@@ -327,9 +332,10 @@ class ANOVAReport(object):
         # add drug name
         if len(self.gdsc.drug_decoder) > 0:
             for i, label in enumerate(labels):
-                name = self.gdsc.drug_decoder.get_name(label)
-                if name is not None:
-                    labels[i] = labels[i] + " - " + name
+                if title_tag == 'drug':
+                    name = self.gdsc.drug_decoder.get_name(label)
+                    if name is not None:
+                        labels[i] = labels[i] + " - " + name
                 else:
                     pass
 
@@ -810,8 +816,9 @@ class HTMLPageMain(ReportMAIN):
         not_tested = [x for x in self.report.gdsc.drugIds if x not in
                 self.report.df.DRUG_ID.unique()]
         if len(not_tested) > 0:
-            not_tested = """Those drugs have not been analysed due to
-            lack of valid data points: """ + ", ".join(not_tested)
+            not_tested = """%s drugs were not analysed due to
+            lack of valid data points: """ % len(not_tested) + \
+                    ", ".join(not_tested)
         else:
             not_tested = ""
         self.jinja['drug_not_tested'] = not_tested
@@ -887,6 +894,9 @@ class HTMLPageMain(ReportMAIN):
         colnames = self.report.gdsc.features._special_names
         df = self.report.gdsc.features.df[colnames]
 
+        # TODO
+        # add other columns if possible e.g., GDSC1, GDSC2, TCGA
+
         df = df.reset_index()
         table = HTMLTable(df)
         url = "http://cancer.sanger.ac.uk/cell_lines/sample/overview?id="
@@ -923,15 +933,14 @@ class HTMLPageMain(ReportMAIN):
                      file.<br/>"""
             self.jinja['gf_file'] = txt % gf_filename
 
-        # the drug decode file
-        filename = self.report.gdsc.drug_decoder._filename
-        if filename is not None:
-            output_filename = 'DRUG_DECODE.csv'
-            shutil.copy(filename, input_dir + os.sep + output_filename)
-            filename = os.path.basename(filename)
-            html = 'Get <a href="INPUT/%s">Drug DECODE file</a>' % output_filename
-        else:
-            html = 'No Drug DECODE file was provided'
+        # Always save DRUG_DECODE file even if empty
+        # It may be be interpreted in other pipeline or for reproducibility
+        output_filename = input_dir + os.sep + 'DRUG_DECODE.csv'
+        self.report.gdsc.drug_decoder.to_csv(output_filename)
+        html = 'Get <a href="INPUT/%s">Drug DECODE file</a>' % \
+                output_filename
+        if len(self.report.gdsc.drug_decoder) == 0:
+            html += 'Note that DRUG_DECODE file was not provided (empty?).'
         self.jinja['drug_decode'] = html
 
         # Save settings as json file
