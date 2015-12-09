@@ -228,11 +228,12 @@ def anova_all(options):
 def anova_one_drug_one_feature(options):
     """Analyse the entire data set"""
     from gdsctools import anova
+    from gdsctools import anova_report
     gdsc = anova.ANOVA(options.input_ic50, options.input_features,
             low_memory=not options.fast)
     gdsc = _set_settings(gdsc, options)
 
-    odof = anova.Association(gdsc,
+    odof = anova_report.Association(gdsc,
             drug=options.drug,
             feature=options.feature)
     #FIXME: are those 4-5 lines required ??
