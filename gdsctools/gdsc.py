@@ -14,7 +14,7 @@ class GDSC(ANOVA):
         
 
         super(GDSC, self).__init__(ic50, genomic_features=genomic_features, 
-            drug_decoder=drug_decode, verbose=True, low_memory=low_memory)
+            drug_decode=drug_decode, verbose=True, low_memory=low_memory)
         from gdsctools.tissues import map_to_tcga
         def tcga_names(x):
             if x in map_to_tcga.keys():

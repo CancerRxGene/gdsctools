@@ -84,7 +84,7 @@ class ANOVA(object): #Logging):
 
     """
     def __init__(self, ic50, genomic_features=None,
-            drug_decoder=None, verbose=True, low_memory=False,
+            drug_decode=None, verbose=True, low_memory=False,
             set_media_factor=False):
         """.. rubric:: Constructor
 
@@ -94,7 +94,7 @@ class ANOVA(object): #Logging):
         :param features: another dataframe with rows as in the IC50 matrix
             and columns as features.  The first 3 columns must be named
             specifically to hold tissues, MSI (see format).
-        :param drug_decoder: a 3 column CSV file with drug's name and targets
+        :param drug_decode: a 3 column CSV file with drug's name and targets
             see :mod:`readers` for more information.
         :param verbose: verbosity in "WARNING", "ERROR", "DEBUG", "INFO"
 
@@ -130,7 +130,7 @@ class ANOVA(object): #Logging):
 
 
         #: a CSV with 3 columns used in the report
-        self.read_drug_decoder(drug_decoder)
+        self.read_drug_decode(drug_decode)
 
         # create the multiple testing factory used in anova_all()
         self.multiple_testing = MultipleTesting()
@@ -542,13 +542,13 @@ class ANOVA(object): #Logging):
         return scipy.stats.ttest_ind(sample1, sample2,
                 equal_var=self.settings.equal_var_ttest)[1]
 
-    def read_drug_decoder(self, filename=None):
+    def read_drug_decode(self, filename=None):
         """Read file with the DRUG information
 
         .. seealso:: :class:`gdsctools.readers.DrugDecode`
         """
         # Read the DRUG decoder file into a DrugDecode/Reader instance
-        self.drug_decoder = readers.DrugDecode(filename)
+        self.drug_decode = readers.DrugDecode(filename)
 
     def drug_annotations(self, df):
         """Populate the drug_name and drug_target field if possible
@@ -556,14 +556,14 @@ class ANOVA(object): #Logging):
         :param df: input dataframe as given by e.g., :meth:`anova_one_drug`
         :return df: same as input but with the FDR column populated
         """
-        if len(self.drug_decoder.df) == 0:
+        if len(self.drug_decode.df) == 0:
             print("Nothing done. DrugDecode file not provided.")
 
         # aliases
         drugs = df.DRUG_ID.values
 
-        drug_names = [self.drug_decoder.get_name(x) for x in drugs]
-        drug_target = [self.drug_decoder.get_target(x) for x in drugs]
+        drug_names = [self.drug_decode.get_name(x) for x in drugs]
+        drug_target = [self.drug_decode.get_target(x) for x in drugs]
 
         # this is not clean. It works but could be simpler surely.
         df['DRUG_NAME'] = drug_names
@@ -604,8 +604,8 @@ class ANOVA(object): #Logging):
         # This is now pretty fast accounting for 45 seconds
         # for 265 drugs and 988 features
         odof = self._get_one_drug_one_feature_data(drug_id, feature_name)
-        drug_name = self.drug_decoder.get_name(drug_id)
-        drug_target = self.drug_decoder.get_target(drug_id)
+        drug_name = self.drug_decode.get_name(drug_id)
+        drug_target = self.drug_decode.get_target(drug_id)
 
         # if the status is False, it means the number of data points
         # in a category (e.g., positive feature) is too low.
@@ -1051,7 +1051,7 @@ class ANOVA(object): #Logging):
         if len(df) == 0:
             return df
 
-        if len(self.drug_decoder) > 0:
+        if len(self.drug_decode) > 0:
             df = self.drug_annotations(df)
         # TODO: drop rows where ANOVA_FEATURE_PVAL is None
         if output != 'object':

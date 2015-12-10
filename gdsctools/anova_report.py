@@ -67,7 +67,7 @@ class ANOVAReport(object):
         It can be **resistant** or **sensitive**.
 
     """
-    def __init__(self, gdsc, results, sep="\t", drug_decoder=None):
+    def __init__(self, gdsc, results, sep="\t", drug_decode=None):
         """.. rubric:: Constructor
 
         :param gdsc: the instance with which you created the results to report
@@ -86,15 +86,15 @@ class ANOVAReport(object):
         self.varname_pval = 'ANOVA_FEATURE_pval'
         self.varname_qval = 'ANOVA_FEATURE_FDR'
 
-        # maybe there was not drug_decoder in the gdsc parameter,
+        # maybe there was not drug_decode in the gdsc parameter,
         # so a user may have provide a file, in which case, we need
         # to update the content of the dur_decoder.
-        if len(gdsc.drug_decoder) == 0 and drug_decoder is None:
+        if len(gdsc.drug_decode) == 0 and drug_decode is None:
             print('\nWARNING no drug name or target will be populated')
-            print('You can read one if you wish using read_drug_decoder')
-        elif drug_decoder is not None:
-            self.read_drug_decoder(drug_decoder)
-        else: # should be in gdsc.drug_decoder
+            print('You can read one if you wish using read_drug_decode')
+        elif drug_decode is not None:
+            self.read_drug_decode(drug_decode)
+        else: # should be in gdsc.drug_decode
             pass
 
         # create some data
@@ -107,13 +107,13 @@ class ANOVAReport(object):
         return len(self.df[self._colname_drug_id].unique())
     n_drugs = property(_get_ndrugs, doc="return number of drugs")
 
-    def read_drug_decoder(self, filename):
+    def read_drug_decode(self, filename):
         """Read file with the DRUG information
 
         .. seealso:: :class:`gdsctools.readers.DrugDecode`
         """
         if filename is not None:
-            self.gdsc.read_drug_decoder(filename)
+            self.gdsc.read_drug_decode(filename)
             self.df = self.gdsc.drug_annotations(self.df)
 
     def _get_ntests(self):
@@ -330,10 +330,10 @@ class ANOVAReport(object):
         df = df_count.ix[0:top][[u'sens assoc', u'res assoc']]
         labels = list(df.index)
         # add drug name
-        if len(self.gdsc.drug_decoder) > 0:
+        if len(self.gdsc.drug_decode) > 0:
             for i, label in enumerate(labels):
                 if title_tag == 'drug':
-                    name = self.gdsc.drug_decoder.get_name(label)
+                    name = self.gdsc.drug_decode.get_name(label)
                     if name is not None:
                         labels[i] = labels[i] + " - " + name
                 else:
@@ -720,8 +720,8 @@ class HTMLOneDrug(ReportMAIN):
 
         self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[drug].dropna())
         self.jinja['drug_id'] = drug
-        self.jinja['drug_name'] = report.gdsc.drug_decoder.get_name(drug)
-        self.jinja['drug_target'] = report.gdsc.drug_decoder.get_target(drug)
+        self.jinja['drug_name'] = report.gdsc.drug_decode.get_name(drug)
+        self.jinja['drug_target'] = report.gdsc.drug_decode.get_target(drug)
         self.jinja['analysis_domain'] = report.settings.analysis_type
 
     def create_pictures(self):
@@ -824,8 +824,8 @@ class HTMLPageMain(ReportMAIN):
         self.jinja['drug_not_tested'] = not_tested
 
         df_drugs = self.report.drug_summary(filename="drug_summary.png")
-        get_name = self.report.gdsc.drug_decoder.get_name
-        if len(self.report.gdsc.drug_decoder.df) > 0:
+        get_name = self.report.gdsc.drug_decode.get_name
+        if len(self.report.gdsc.drug_decode.df) > 0:
             df_drugs.index = [x + "-" + get_name(x) for x in df_drugs.index]
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
@@ -936,10 +936,10 @@ class HTMLPageMain(ReportMAIN):
         # Always save DRUG_DECODE file even if empty
         # It may be be interpreted in other pipeline or for reproducibility
         output_filename = input_dir + os.sep + 'DRUG_DECODE.csv'
-        self.report.gdsc.drug_decoder.to_csv(output_filename)
+        self.report.gdsc.drug_decode.to_csv(output_filename)
         html = 'Get <a href="INPUT/%s">Drug DECODE file</a>' % \
                 output_filename
-        if len(self.report.gdsc.drug_decoder) == 0:
+        if len(self.report.gdsc.drug_decode) == 0:
             html += 'Note that DRUG_DECODE file was not provided (empty?).'
         self.jinja['drug_decode'] = html
 
