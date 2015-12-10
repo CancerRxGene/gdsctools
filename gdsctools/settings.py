@@ -211,7 +211,7 @@ class ANOVASettings(AttrDict):
         valid_reg_meth = ['OLS', 'ElasticNet', 'Lasso', 'Ridge']
         inlist(self.regression_method, valid_reg_meth)
 
-        inlist(self.pvalue_correction_level, ['globabl', 'drug_level'])
+        inlist(self.pvalue_correction_level, ['global', 'drug_level'])
 
     def to_html(self):
         """Convert the sets of parameters into a nice HTML table"""
