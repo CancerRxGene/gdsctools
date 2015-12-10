@@ -1055,6 +1055,7 @@ class ANOVA(object): #Logging):
             df = self.drug_annotations(df)
         # TODO: drop rows where ANOVA_FEATURE_PVAL is None
         if output != 'object':
+            df = self.add_pvalues_correction(df)
             return df
         else:
             df = self.add_pvalues_correction(df)
@@ -1126,11 +1127,13 @@ class ANOVA(object): #Logging):
 
         # all ANOVA have been computed individually for each drug and each
         # feature. Now, we need to compute the multiple testing corrections
-        df = self.add_pvalues_correction(df)
+        if self.settings.pvalue_correction_level == 'global':
+            df = self.add_pvalues_correction(df)
 
         # insert a unique identifier as first column
         df.insert(0, 'ASSOC_ID', range(1, len(df) + 1))
 
+        self.df = df
         # order the column names as defined in the __init__ method
         df = df[self.column_names]
         df.reset_index(inplace=True, drop=True)
@@ -1144,7 +1147,7 @@ class ANOVA(object): #Logging):
         """Add the corrected pvalues column in a dataframe based on pvalues
 
         The default method (FDR correction) is stored in
-        :attr:`settings.pval_correction_method` and can be changed to other
+        :attr:`settings.pvalue_correction_method` and can be changed to other
         methods (e.g., *qvalue*)
 
         .. seealso:: :meth:`anova_all`,
@@ -1157,7 +1160,7 @@ class ANOVA(object): #Logging):
         data = df[colname].values
 
         # set the method and compute new pvalues
-        self.multiple_testing.method = self.settings.pval_correction_method
+        self.multiple_testing.method = self.settings.pvalue_correction_method
         new_pvalues = self.multiple_testing.get_corrected_pvalues(data)
         new_pvalues *= 100
         # insert new columns.

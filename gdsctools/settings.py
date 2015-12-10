@@ -75,11 +75,17 @@ class ANOVASettings(AttrDict):
                                                provide a valid tissue name to
                                                be found in the Genomic Feature
                                                data set.
-    pval_correction_method    fdr              Type of p-values correction
+    pvalue_correction_method    fdr              Type of p-values correction
                                                method used. Could be *fdr*,
                                                *qvalue*  or one accepted
                                                by
                                                :class:`~gdsctools.stats.MultipleTesting`
+
+    pvalue_correction_level   global           Apply pvalue correction 
+                                               globally. Can also be set to 
+                                               'drug_level' to apply 
+                                               corrections at drug level
+                                               only.
     equal_var_ttest           True             Assume equal variance in the
                                                t-test
     minimum_nonna_ic50        6                Minimum number of IC50 required
@@ -133,7 +139,7 @@ class ANOVASettings(AttrDict):
         self.include_media_factor = False
 
         self.analysis_type = 'PANCAN'
-        self.pval_correction_method = 'fdr'   # or qvalue
+        self.pvalue_correction_method = 'fdr'   # or qvalue
         self.equal_var_ttest = True
         self.minimum_nonna_ic50 = 6
 
@@ -173,7 +179,7 @@ class ANOVASettings(AttrDict):
          - FDR thresohld in [0,1]
          - pvalues_threshold in [0,inf[
          - effect_threshold in [0,inf[
-         - pval_correction_method
+         - pvalue_correction_method
          - etc
         """
         inrange = easydev.check_range
@@ -184,7 +190,7 @@ class ANOVASettings(AttrDict):
         inrange(self.MSI_factor_threshold, 0, np.inf)
 
         # all those methods are from statsmodels.stats.multitest.multipletests
-        inlist(self.pval_correction_method, ['bonferroni', 'sidak',
+        inlist(self.pvalue_correction_method, ['bonferroni', 'sidak',
             'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh',
             'fdr_tsbj', 'fdr_tskby', 'fdr'],
             'pvalue correction method')
@@ -203,6 +209,8 @@ class ANOVASettings(AttrDict):
 
         valid_reg_meth = ['OLS', 'ElasticNet', 'Lasso', 'Ridge']
         inlist(self.regression_method, valid_reg_meth)
+
+        inlist(self.pvalue_correction_level, ['globabl', 'drug_level'])
 
     def to_html(self):
         """Convert the sets of parameters into a nice HTML table"""
