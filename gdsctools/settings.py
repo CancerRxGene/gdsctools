@@ -140,6 +140,7 @@ class ANOVASettings(AttrDict):
 
         self.analysis_type = 'PANCAN'
         self.pvalue_correction_method = 'fdr'   # or qvalue
+        self.pvalue_correction_level = 'global'   # or qvalue
         self.equal_var_ttest = True
         self.minimum_nonna_ic50 = 6
 
