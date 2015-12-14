@@ -76,162 +76,101 @@ class TCGA(AttrDict):
             self[k] = v
 
 
+# GDSC to TCGA is ambiguous. E.g, lung_NSCLC contains LUAD and LUSC TCGA labels.
+# TCGA to GDSC is also ambiguous since it may be a GDSC1 label (e.g. bone but
+# several GDSC2 labels), OR a GDSC2 label.  
+
+
 #: TCGA keys used in GDSC1000
 TCGA_GDSC1000 = ['BLCA', 'BRCA', 'COREAD', 'DLBC', 'ESCA', 'GBM',
     'HNSC', 'KIRC', 'LAML', 'LGG', 'LIHC', 'LUAD', 'LUSC',
-    'OV', 'PAAD', 'SKCM', 'STAD', 'THCA']
+    'OV', 'PAAD', 'PRAD', 'SKCM', 'STAD', 'THCA']
+
+# Here are some TCGA used in GDSC1000 genomic features 
+# and the corresponding Tissue label used in the input file.
+TCGA_2_GDSC = {
+        'ACC': 'kidney',
+        'ALL': 'leukemia',
+        #'ALL': 'lymphona', there are ALL with lymphona and leukemia so not a one-one mapping !
+        # THere were 15 leukemia and 1 lymphona so we choose here leukemia.
+        'BLCA': 'Bladder',
+        'BRCA':'breast',
+        'CESC': 'cervix',
+        'CLL': 'lymphona',
+        'COREAD': 'large_instetine',
+        'DLBC': 'lymphona',
+        'ESCA': 'aero_dig_tract',
+        'GBM': 'nervous_system',
+        'HNSC': 'aero_dig_tract',
+        'KIRC': 'kidney',
+        'LAML': 'leukemia',
+        'LGG': 'nervous_system',
+        'LIHC': 'liver',
+        'LUAD': 'lung_NSCLC',
+        'LUSC': 'lung_NSCLC',
+        'LCML': 'leukemia',
+        'MB': 'nervous_system',
+        'MESO': 'lung',
+        'MM': 'myeloma',
+        'NB': 'neuroblastoma',
+        'OV': 'ovary',
+        'PAAD': 'pancreas',
+        'PRAD': 'prostate',
+        'SCLC': 'lung_SCLC',
+        'SKCM': 'skin',
+        'STAD': 'stomach',
+        'THCA': 'thyroid',
+        'UCEC': 'endometrium',
+        }
 
 
-# urogenital_system_other; not prostate, bladder, ovary, cervix
-# could be therefore  endometrium (UCEC) 
-GDSC1_2_TCGA = {
-        #'aero_dig_tract': 'SKCM', # could be also HNSC (head and neck)
-        'aero_dig_tract': 'ESCA',
-        'bone': None,
-        'Bladder': 'BLCA',
-        'breast': 'BRCA',
-        'cervix': 'CESC',
-        'endometrium': 'UCEC',
-        'kidney':'KIRC',
-        #'large_intestine': 'COREAD', GDSC2
-        'disgestive_system': 'COREAD',
-        'lung_NSCLC': 'LUSC',
-        'lung_SCLC': 'LUAD', #TODO check that one
-        'nervous_system': 'GBM',
-        #'nervous_system': 'LGG',
-        'ovary': 'OV',
-        'pancreas':'PAAD',
-        'prostate': 'PRAD',
-        'skin': 'SKCM', #melanoma
-        'soft_tissue': None,
-        'stomach': 'STAD',
-        'thyroid': 'THCA',
-        'biliary_tract': None,
-        'leukemia': 'LAML',
-        'liver':' LIHC',
-        #'lymphoma': DLBC,
-        #'blood': DLBC,
-        'myeloma': None,
-        'neuroblastoma': None,
-        'testis': None,
-        'urogenital_system_other': 'UCEC' #TOD check this
-}
-
-#from gdsctools import COSMICInfo
-#c = COSMICInfo()
-#goups = c.df.groupby('TCGA')
-
-mapping = [
-    (['leukemia', 'lymphona'], ['leukemia', 'lymphoblastic_leukemia', 
-        'lymphoblastic_T_cell_leukaemia', 'lymphoid_neoplasm other', 
-        'T_cell_leukemia'], 'ALL'),
-    ('lymphoma', 'lymphoid_neoplasm other',  'CLL'),
-    ('lymphoma' 'B_cell_lymphoma' 'DLBC'),
-    ('aero_dig_tract' 'head and neck' 'HNSC'),
-    ('leukemia',['acute_myeloid_leukaemia', 'leukemia'], 'LAML'),
-    ('leukemia' 'chronic_myeloid_leukaemia' 'LCML'),
-    ('nervous_system' 'glioma' 'LGG'),
-    ('lung_NSCLC' 'lung_NSCLC_adenocarcinoma' 'LUAD'),
-    ('lung_NSCLC' 'lung_NSCLC_squamous_cell_carcinoma' 'LUSC'),
-    
-    ('myeloma', ['haematopoietic_neoplasm other',
-      'lymphoid_neoplasm other', 'myeloma'], 'MM'),
-    
-    
-    ('kidney', 'adrenal_gland', 'ACC'),
-    ('breast',  'breast',  'BRCA'),
-    ('urogenital_system',  'Bladder',  'BLCA'),
-    ('urogenital_system',  'cervix',  'CESC'),
-    ('aero_dig_tract' 'oesophagus' 'ESCA'),
-    ('nervous_system' 'glioma' 'GBM'),
-    ('kidney' 'kidney' 'KIRC'),
-    ('digestive_system' 'liver' 'LIHC'),
-    
-    ('skin', 'melanoma', 'SKCM'),
-    ('digestive_system', 'stomach', 'STAD'),
-    ('large_intestine',  'large_intestine',  'COREAD'),
-    ('nervous_system' 'medulloblastoma' 'MB'),
-    ('lung' 'mesothelioma' 'MESO'),
-    ('neuroblastoma', 'neuroblastoma', 'NB'),
-    ('urogenital_system', 'ovary', 'OV'),
-    ('pancreas', 'pancreas', 'PAAD'),
-    ('urogenital_system', 'prostate', 'PRAD'),
-    ('lung_SCLC' 'lung_small_cell_carcinoma' 'SCLC'),
-    ('thyroid', 'thyroid', 'THCA'),
-    ('urogenital_system', 'endometrium' 'UCEC')
-]
-
-# TO check:
-# 908118, 1330993
-# 1240141 
-
-
-GDSC1_included_in_v17 = ['myeloma', 'nervous_system', 'soft_tissue', 'bone', 'lung_NSCLC',  'skin', 'Bladder', 'cervix', 'lung_SCLC', 'lung', 'neuroblastoma',  'pancreas', 'aero_dig_tract', 'breast', 'kidney', 'leukemia',
+GDSC_included_in_v17 = ['myeloma', 'nervous_system', 'soft_tissue', 'bone', 'lung_NSCLC',  'skin', 'Bladder', 'cervix', 'lung_SCLC', 'lung', 'neuroblastoma',  'pancreas', 'aero_dig_tract', 'breast', 'kidney', 'leukemia',
         'ovary', 'prostate', 'large_intestine', 'lymphoma',
         'thyroid', 'stomach', 'biliary_tract', 'endometrium',
     'liver',  'urogenital_system_other', 'testis']
 
-#GDSC1_included_in_v17 = ['myeloma', 'soft_tissue', 'bone', 'lung_NSCLC', 'cervix', 'lung_SCLC', 'lung', 'neuroblastoma',  
-#        'prostate',    'biliary_tract', 'endometrium',
-#     'urogenital_system_other', 'testis']
-
-map_to_tcga = {
-        'large_intestine':'COREAD',
-        'lymphoma': 'DLBC',
-        'Bladder': 'BLCA',
-        'breast' :'BRCA',
-        'aero_dig_tract': 'ESCA',
-        'nervous_system': 'GBM',
-        '??': 'HNSC', # stored as EScA ???
-        'kidney': 'KIRC',
-        'leukemia': 'LAML',
-        '???': 'LGG', # stored as GBM ???
-        'liver': 'LIHC',
-        'lung_NSCLC_error2': 'LUAD',
-        'lung_NSCLC_error1': 'LUSC',
-        'ovary': 'OV',
-        'pancreas': 'PAAD',
-        'skin': 'SKCM',
-        'stomach': 'STAD',
-        'thyroid': 'THCA'
-        }
-
-# DLBC in PANCAN --> 69 but in DLBC file, only 34 ?
-# ESCA in PANCAN --> 79 but in DLBC file, only 35 ?
-# other discprepancies: GBM,
 
 
+"""
+The tissue factor provided in the genomic feature file seem to mix GDSC1 and
+GDSC2 labels. For instance lung_NSCLC is actually made of several TCGA labels
+such as LUAD, LUSC and NAs. So for now we must use the COSMIC identifiers 
+to make sure what were are speaking about. We can not assume that labels are
+GDSC1 or GDSC2. 
 
-# Takes COSMICFetcher, get df and create groups by TCGA
-# cf = COSMICFetcher()
-# cf = cf.df.set_index('COSMIC_ID')
-# cf.ix[groups['PRAD']]
+To help us, we have the COSMICInfo class that contains a bunch of information.
+with TCGA and COSMIC Identifiers together + much more.
 
-# c= COSMICInfo()
-# groups = c.df.groupby('TCGA').groups
-# Does that make sense ? 
+In v18 TISSUE FACTOR       Count  In Francesco GDSC2 mapping  TCGA   In v18 web
+lung_NSCLC                 111     111 GDSC1  64 LUAD, 15 LUSC, 9,  23 NA   YES (both)
+leukemia                    82     85 GDSC1   28 LAML, 25 ALL, 10 LCML      LAML only
+aero_dig_tract              79     79 GDSC1         42 HNSC + 35 ESCA       YES (both)
+lymphoma                    69     70 GDSC1         35 DLBC 3 CLL 1 ALL     YES (DCLC)
+lung_SCLC                   64     66 GDSC1         SCLC                    NO
+skin                        58     58 GDSC1         55 SKCM 3 NA            YES
+nervous_system              56     57 GDSC1         36 GBM 17 LGG 4 MB      YES (GBM
+breast                      52     52                 51 BRCA  1NA          YES
+large_intestine             50     50                 COREAD                YES
+ovary                       43     43               34 OV 3 Others 6 NA     YES (OV)
+bone                        39     GDSC1 39                      NA         NO
+kidney                      34        34          32 KIRC 1 ACC  1 NA       YES
+neuroblastoma               32        32          32 NB                     NO
+pancreas                    32        32          30 PAAD + 2NA             YES
+stomach                     29        29          25 STAD + 4 NA            YES
+lung                        22        GDSC1 22    MESO +1 unclassified      NO
+soft_tissue                 21        GDSC1 21                 NAN          NO
+Bladder                     19        19                       BLCA         YES
+myeloma                     18        18                       MM           NO
+liver                       17        17                       LIHC         YES
+thyroid                     16        16                       THCA         YES
+cervix                      15       15                        CESC         YES
+endometrium                 11       11                     9UCEC 2 NA      NO
+prostate                     7        8                    6 PRAD 2 NA      NO
+biliary_tract                5        5                        NAN          NO
+urogenital_system_other      4        4                        NAN          NO
+testis                       3        3                        NAN          NO
+
+"""
 
 
-
-# OK: SCLCTHCA,UCEC
-# ??: STAD
-
-#UNABLE TO CLASSIFY [['lung_NSCLC' 'lung_NSCLC_not specified' 'UNABLE TO
-#    CLASSIFY']
-#     ['lung' 'Lung_other' 'UNABLE TO CLASSIFY']
-#     ['pancreas' 'pancreas' 'UNABLE TO CLASSIFY']
-#       ['urogenital_system' 'ovary' 'UNABLE TO CLASSIFY']]
-#
-#   ('lymphoma','B_cell_lymphoma','DLBC'),
-
-
-
-    
-    
-
-
-
-
-#from easydev import swapdict
-#tcga_2_gdsc = swapdict(gdsc_2_tcga, check_ambiguity=False)
 
