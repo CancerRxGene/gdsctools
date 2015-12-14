@@ -72,7 +72,8 @@ class HTMLTable(object):
                 'max_colwidth': -1,
                 'precision': 2}
 
-    def to_html(self, index=False, escape=False, header=True, **kargs):
+    def to_html(self, index=False, escape=False, header=True,
+            collapse_table=True, **kargs):
         """Return HTML version of the table
 
         This is a wrapper of the to_html method of the pandas dataframe.
@@ -80,6 +81,7 @@ class HTMLTable(object):
         :param bool index: do not include the index
         :param bool escape: do not escape special characters
         :param bool header: include header
+        :param bool collapse_table: long tables are shorten with a scroll bar
         :param kargs: any parameter accepted by
             :meth:`pandas.DataFrame.to_html`
 
@@ -100,7 +102,7 @@ class HTMLTable(object):
         # get back to default options
         for k, v in _buffer.items():
             pd.set_option(k, v)
-        if len(self.df)>10:
+        if len(self.df) > 20 and collapse_table is True:
             return '<div class="table_outer">' + table+"</div>"
         else:
             return '<div class="table">' + table+"</div>"
@@ -191,18 +193,18 @@ class HTMLTable(object):
             if suffix is None:
                 suffix = ''
             if newtab is False:
-                formatter = '<a  href="{0}{1}{2}">{1}</a>'
+                formatter = '<a  alt="{1}" href="{0}{1}{2}">{1}</a>'
             else:
-                formatter = '<a target="_blank"  href="{0}{1}{2}">{1}</a>'
+                formatter = '<a target="_blank" alt={1} href="{0}{1}{2}">{1}</a>'
             self.df[colname] = self.df[colname].apply(lambda x:
                     formatter.format(url, x, suffix))
         else:
             if suffix is None:
                 suffix = '.html'
             if newtab is False:
-                formatter = '<a href="{0}{2}">{1}</a>'
+                formatter = '<a alt="{1}" href="{0}{2}">{1}</a>'
             else:
-                formatter = '<a target="_blank" href="{0}{2}">{1}</a>'
+                formatter = '<a target="_blank" alt="{1}" href="{0}{2}">{1}</a>'
             self.df[colname] = self.df[colname].apply(lambda x:
                 formatter.format(x,x, suffix))
 
