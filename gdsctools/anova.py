@@ -82,6 +82,12 @@ class ANOVA(object): #Logging):
         around :meth:`anova_one_drug_one_feature` to loop over all drugs, and
         loop over all drugs and all features, respectively.
 
+
+
+    V17 : 
+        gdsc.volcano_FDR_interpolation = False
+        gdsc.settings.pvalue_correction_method = 'qvalue'
+
     """
     def __init__(self, ic50, genomic_features=None,
             drug_decode=None, verbose=True, low_memory=False,
@@ -391,7 +397,7 @@ class ANOVA(object): #Logging):
         pb = Progress(n_drugs, 1)
         counter = 0
         for drug in self.ic50.drugIds:
-            for feature in self.features.features[3:]:
+            for feature in self.features.features[self.features.shift:]:
                 dd = self._get_one_drug_one_feature_data(drug, feature,
                         diagnostic_only=True)
                 if dd.status is True:
@@ -549,26 +555,6 @@ class ANOVA(object): #Logging):
         """
         # Read the DRUG decoder file into a DrugDecode/Reader instance
         self.drug_decode = readers.DrugDecode(filename)
-
-    def drug_annotations(self, df):
-        """Populate the drug_name and drug_target field if possible
-
-        :param df: input dataframe as given by e.g., :meth:`anova_one_drug`
-        :return df: same as input but with the FDR column populated
-        """
-        if len(self.drug_decode.df) == 0:
-            print("Nothing done. DrugDecode file not provided.")
-
-        # aliases
-        drugs = df.DRUG_ID.values
-
-        drug_names = [self.drug_decode.get_name(x) for x in drugs]
-        drug_target = [self.drug_decode.get_target(x) for x in drugs]
-
-        # this is not clean. It works but could be simpler surely.
-        df['DRUG_NAME'] = drug_names
-        df['DRUG_TARGET'] =  drug_target
-        return df
 
     def anova_one_drug_one_feature(self, drug_id,
             feature_name, show=False,
@@ -1051,8 +1037,9 @@ class ANOVA(object): #Logging):
         if len(df) == 0:
             return df
 
-        if len(self.drug_decode) > 0:
-            df = self.drug_annotations(df)
+        # append DRUG_NAME/DRUG_TARGET columns
+        df = self.drug_decode.drug_annotations(df)
+
         # TODO: drop rows where ANOVA_FEATURE_PVAL is None
         if output != 'object':
             df = self.add_pvalues_correction(df)
