@@ -8,9 +8,23 @@ based on a drug name
 from easydev import Progress
 
 
+__all__ = ["extract_drug_identifiers", "ChemSpiderSearch"]
+
+
+def extract_drug_identifiers(drug_lists):
+    drug_ids = []
+    for drug in drug_lists:
+        drug = str(drug)
+        if drug.lower().startswith('drug_'):
+            drug_ids.append(drug.split("_")[1])
+        else:
+            drug_ids.append(drug.split("_")[0])
+    drug_ids = [int(x) for x in drug_ids]
+    return drug_ids
+
 
 class ChemSpiderSearch(object):
-    """This class uses ChemSpider to identify drug name 
+    """This class uses ChemSpider to identify drug name
 
 
     c = ChemSpiderSearch()
@@ -20,10 +34,10 @@ class ChemSpiderSearch(object):
 
     It happends that most of public names can be found
     and almost none of non-public are not found. As expected.
-    
-    
-    
-    
+
+
+
+
     """
     def __init__(self, drug_list):
 
@@ -52,7 +66,7 @@ class ChemSpiderSearch(object):
         chemspider_ids = []
 
         for drug in self.drugs:
-            
+
             try:
                 entry = self.results_chembl[drug]
 
