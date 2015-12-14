@@ -23,9 +23,9 @@ body {
 div.document {
     margin-top:     20px;
     margin-bottom:   3em;
-    margin-left:   10%;
+    margin-left:   2%;
 /*    margin-right:    5em;*/
-    margin-right:    10%;
+    margin-right:    2%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -185,7 +185,7 @@ table.dataframe th
 table.dataframe td
 {
     border: 1px solid black;
-    max-width:400px;
+    max-width:120px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis
@@ -218,7 +218,7 @@ th.field-name
     padding-right: 1em;
 }
 
-.table_outer { height: 15em; overflow: auto; }
+.table_outer { height: 25em; overflow: auto; }
 
 /*
  * ┌──────────────────────────────────────────────────────────────────────────┐
@@ -265,6 +265,7 @@ dl.docutils > dt {
 dl > dt  {
     font-family: monospace;
 }
+
 dl.method, dl.attribute, dl.function, dl.class {
     margin-bottom: 1em;
 }
@@ -352,7 +353,7 @@ div.footer img{
     width:180px;
     height:60px;
     max-height:20%;
-    max-width:30%;
+    max-width:35%;
 }
 
 
