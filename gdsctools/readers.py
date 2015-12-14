@@ -163,7 +163,7 @@ class Reader(object):
         self.df = rawdf.drop(columns, axis=1)
 
         # Finally, check that names do not contain the unwanted character
-        # / that was used in some old matrices. 
+        # / that was used in some old matrices.
         if len([True for x in self.df.columns if "/" in x])>0:
             print("Your input data contains unwanted / characters in " +
                     " the header. Let's remove them.")
@@ -342,8 +342,9 @@ class IC50(Reader, CosmicRows):
         columns = []
         drug_prefix = ''
         for col in self.df.columns:
-            if col.startswith(self.drug_prefix +"_"):
+            if col.startswith(self.drug_prefix + "_"):
                 drug_prefix = self.drug_prefix
+        self.drug_prefix = drug_prefix
 
         # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
         _cols = list(self.df.columns)
@@ -352,18 +353,21 @@ class IC50(Reader, CosmicRows):
             "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
             self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID")
                     for x in self.df.columns]
+        if "CL" in _cols and "COSMID_ID" not in self.df.columns:
+            self.df.columns = [x.replace("CL", "COSMIC_ID")
+                    for x in self.df.columns]
+
         # If the data has not been interpreted, COSMIC column should be
         # found in the column and set as the index
-
         if self.cosmic_name in self.df.columns:
             self.df.set_index(self.cosmic_name, inplace=True)
             columns = [x for x in self.df.columns
-                    if x.startswith(drug_prefix)]
+                    if x.startswith(self.drug_prefix)]
             self.df = self.df[columns]
         # If already interpreted, COSMIC name should be the index already.
         elif self.df.index.name == self.cosmic_name:
             columns = [x for x in self.df.columns
-                    if x.startswith(drug_prefix)]
+                    if x.startswith(self.drug_prefix)]
             columns = list(set(columns))
             self.df = self.df[columns]
         # Otherwise, raise an error
@@ -538,10 +542,13 @@ class GenomicFeatures(Reader, CosmicRows):
                     'COSMIC ID': 'COSMIC_ID'}.items():
             if old in self.df.columns:
                 warnings.warn("'%s' column name is deprecated " +
-                    " since 0.9.10. Please replace with '%s'",
+                    " since 0.9.10. Please replace with '%s'" % old,
                     DeprecationWarning)
                 self.df.columns = [x.replace(old, new)
                         for x in self.df.columns]
+        if "CL" in self.df.columns and "COSMID_ID" not in self.df.columns:
+            self.df.columns = [x.replace("CL", "COSMIC_ID")
+                    for x in self.df.columns]
 
         # There are 3 special columns to hold the factors
         self._special_names = []
@@ -569,10 +576,10 @@ class GenomicFeatures(Reader, CosmicRows):
         else:
             self._special_names.append(self.colnames.media)
 
-        # order columns
+        # order columns and index
         self._order()
 
-        # 
+        #
         self._interpret_cosmic()
 
         #
@@ -591,6 +598,7 @@ class GenomicFeatures(Reader, CosmicRows):
             error_msg = "the features input file must contains a column " +\
                 " named %s" % self.colnames.cosmic
             raise ValueError(error_msg)
+        self.df.sort_index(inplace=True)
 
     def fill_media_factor(self):
         """Given the COSMIC identifiers, fills the MEDIA_FACTOR column
@@ -680,7 +688,7 @@ class GenomicFeatures(Reader, CosmicRows):
                 txt += '\nHere are the tissues: '
                 txt += ",".join(tissues) + "\n"
             else:
-                txt += '\nHere are first 10 tissues: '
+                txt += '\nHere are the first 10 tissues: '
                 txt += ", ".join(tissues[0:10]) + "\n"
         except:
             txt += 'No information about tissues\n'
@@ -757,6 +765,12 @@ class GenomicFeatures(Reader, CosmicRows):
         except:
             Nt = '?'
         return "GenomicFeatures <Nc={0}, Nf={1}, Nt={2}>".format(Nc, Nf, Nt)
+
+    def get_TCGA(self):
+        from gdsctools.cosmictools import COSMICInfo
+        c = COSMICInfo()
+        tcga = c.df.ix[self.df.index].TCGA
+        return tcga
 
 
 class PANCAN(Reader):
@@ -845,48 +859,43 @@ class DrugDecode(Reader):
     'PUTATIVE_TARGET' is found, it is renamed 'DRUG_TARGET'.
 
     """
-    def __init__(self, filename):
+    def __init__(self, filename=None):
         """.. rubric:: Constructor"""
         super(DrugDecode, self).__init__(filename)
-        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET', 'DRUG_OWNER',
-            'PUBLIC']
+        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET', 'OWNED_BY',
+            'WEBRELEASE']
 
         #self.df.drop_duplicates(inplace=True)
-        self._interpret()
+        try:self._interpret()
+        except:pass
 
     def _interpret(self, filename=None):
         N = len(self.df)
         if N  == 0:
             return
 
-        self.df.rename(columns={'PUTATIVE_TARGET': 'DRUG_TARGET'}, 
+        self.df.rename(columns={'PUTATIVE_TARGET': 'DRUG_TARGET'},
                 inplace=True)
 
-        if 'OWNED_BY' in self.df.columns:
-            print("DrugDecode: renamed OWNED_BY in DRUG_OWNER")
-            self.df.rename(columns={'OWNED_BY': 'DRUG_OWNER'}, 
-                inplace=True)
+        if 'WEBRELEASE' not in self.df.columns:
+            self.df['WEBRELEASE'] = [None] * N
 
-        if 'WEBRELEASE' in self.df.columns:
-            print("DrugDecode: renamed WEBRELEASE in PUBLIC")
-            self.df.rename(columns={'WEBRELEASE': 'PUBLIC'}, 
-                inplace=True)
+        if 'OWNED_BY' not in self.df.columns:
+            self.df['OWNED_BY'] = [None] * N
 
-        if 'PUBLIC' not in self.df.columns:
-            self.df['PUBLIC'] = [None] * N
-        
-        if 'DRUG_OWNER' not in self.df.columns:
-            self.df['DRUG_OWNER'] = [None] * N
-
-        if self._valid_header(self.df) is True:
-            self.df.set_index('DRUG_ID', inplace=True)
-        else:
+        for this in self.header:
             msg = "Could not read the file with expected format. "
             msg += "It should be a comma separated file."
             msg += " It should be made of 3 columns with this header"
-            msg += "%s" % self.header
-            msg += " Got %s" % list(self.df.columns)
-            raise ValueError(msg)
+            msg += "%s"
+            if this not in self.df.columns and this != self.df.index.name:
+                raise ValueError(msg % this)
+
+        try:
+            self.df.set_index('DRUG_ID', inplace=True)
+        except:
+            # could be done already
+            pass
 
     def _get_names(self):
         return list(self.df.DRUG_NAME.values)
@@ -904,9 +913,17 @@ class DrugDecode(Reader):
     def _get_row(self, drug_id, colname):
         if drug_id in self.df.index:
             return self.df.ix[drug_id][colname]
-        elif "_" in str(drug_id):
+        elif str(drug_id).startswith("Drug_"):
             try:
                 drug_id = int(drug_id.split("_")[1])
+            except:
+                print("DRUG ID %s not recognised" % drug_id)
+                return None
+            if drug_id in self.df.index:
+                return self.df[colname].ix[drug_id]
+        elif "_" in str(drug_id):
+            try:
+                drug_id = int(drug_id.split("_")[0])
             except:
                 print("DRUG ID %s not recognised" % drug_id)
                 return None
@@ -920,9 +937,9 @@ class DrugDecode(Reader):
 
     def get_target(self, drug_id):
         return self._get_row(drug_id, 'DRUG_TARGET')
-    
+
     def get_public(self, drug_id):
-        return self._get_row(drug_id, 'PUBLIC')
+        return self._get_row(drug_id, 'WEBRELEASE')
 
     def check(self):
         for x in self.drugIds:
@@ -938,11 +955,10 @@ class DrugDecode(Reader):
         #    raise ValueError("all values must be non-na. check tabulation")
 
     def get_info(self):
-        dd = {  'N': len(self), 
-                'N_public': sum(self.df.PUBLIC == 'Y'),
-                'N_prop': sum(self.df.PUBLIC == 'N')}
+        dd = {  'N': len(self),
+                'N_public': sum(self.df.WEBRELEASE == 'Y'),
+                'N_prop': sum(self.df.WEBRELEASE == 'N')}
         return dd
-
 
     def __len__(self):
         return len(self.df)
@@ -950,3 +966,40 @@ class DrugDecode(Reader):
     def __str__(self):
         txt = "Number of drugs: %s\n" % len(self.df)
         return txt
+
+    def __repr__(self):
+        txt = self.__str__()
+        if len(self.companies):
+            txt += "Contains %s companies" % len(self.companies)
+        return txt
+
+    def _get_companies(self):
+        if 'OWNED_BY' in self.df.columns:
+            companies = list(self.df.OWNED_BY.dropna().unique())
+        else:
+            companies = []
+        return sorted(companies)
+    companies = property(_get_companies)
+
+    def drug_annotations(self, df):
+        """Populate the drug_name and drug_target field if possible
+   
+        :param df: input dataframe as given by e.g., :meth:`anova_one_drug`
+        :return df: same as input but with the FDR column populated
+        """
+        if len(self.df) == 0:
+              print("Nothing done. DrugDecode is empty.")
+
+        # aliases
+        if 'DRUG_ID' not in df.columns:
+            raise ValueError('Expected column named DRUG_ID but not found')
+
+        drug_names = [self.get_name(x) for x in df.DRUG_ID.values]
+        drug_target = [self.get_target(x) for x in df.DRUG_ID.values]
+
+        # this is not clean. It works but could be simpler surely.
+        df['DRUG_NAME'] = drug_names
+        df['DRUG_TARGET'] = drug_target
+        return df
+
+   
