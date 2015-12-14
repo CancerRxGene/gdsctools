@@ -31,6 +31,7 @@ from gdsctools.tools import Savefig
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
+from gdsctools.readers import DrugDecode
 
 
 __all__ = ['ANOVAReport']
@@ -92,10 +93,14 @@ class ANOVAReport(object):
         if len(gdsc.drug_decode) == 0 and drug_decode is None:
             print('\nWARNING no drug name or target will be populated')
             print('You can read one if you wish using read_drug_decode')
+            self.drug_decode = DrugDecode()
         elif drug_decode is not None:
-            self.read_drug_decode(drug_decode)
-        else: # should be in gdsc.drug_decode
-            pass
+            # Read a file
+            self.drug_decode = DrugDecode(drug_decode)
+        else:
+            # Copy from gdsc instance
+            self.drug_decode = DrugDecode(gdsc.drug_decode)
+        self.df = self.drug_decode.drug_annotations(self.df)
 
         # create some data
         self._set_sensible_df()
@@ -106,15 +111,6 @@ class ANOVAReport(object):
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
     n_drugs = property(_get_ndrugs, doc="return number of drugs")
-
-    def read_drug_decode(self, filename):
-        """Read file with the DRUG information
-
-        .. seealso:: :class:`gdsctools.readers.DrugDecode`
-        """
-        if filename is not None:
-            self.gdsc.read_drug_decode(filename)
-            self.df = self.gdsc.drug_annotations(self.df)
 
     def _get_ntests(self):
         return len(self.df.index)
@@ -182,7 +178,7 @@ class ANOVAReport(object):
 
         msg = "p-value significance threshold"
         df = self._df_append(df, [msg, self.settings.pvalue_threshold])
-        
+
         msg = "FDR significance threshold"
         df = self._df_append(df, [msg, self.settings.FDR_threshold])
 
@@ -330,10 +326,10 @@ class ANOVAReport(object):
         df = df_count.ix[0:top][[u'sens assoc', u'res assoc']]
         labels = list(df.index)
         # add drug name
-        if len(self.gdsc.drug_decode) > 0:
+        if len(self.drug_decode) > 0:
             for i, label in enumerate(labels):
                 if title_tag == 'drug':
-                    name = self.gdsc.drug_decode.get_name(label)
+                    name = self.drug_decode.get_name(label)
                     if name is not None:
                         labels[i] = labels[i] + " - " + name
                 else:
@@ -579,7 +575,7 @@ class HTMLPageMANOVA(ReportMAIN):
                 template_filename='manova.html')
         #self.template = self.env.get_template('manova.html')
 
-        html = SignificantHits(df, 'all hits').to_html()
+        html = SignificantHits(df, 'all hits').to_html(collapse_table=False)
         self.jinja['manova'] = html
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
 
@@ -720,8 +716,8 @@ class HTMLOneDrug(ReportMAIN):
 
         self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[drug].dropna())
         self.jinja['drug_id'] = drug
-        self.jinja['drug_name'] = report.gdsc.drug_decode.get_name(drug)
-        self.jinja['drug_target'] = report.gdsc.drug_decode.get_target(drug)
+        self.jinja['drug_name'] = report.drug_decode.get_name(drug)
+        self.jinja['drug_target'] = report.drug_decode.get_target(drug)
         self.jinja['analysis_domain'] = report.settings.analysis_type
 
     def create_pictures(self):
@@ -813,19 +809,20 @@ class HTMLPageMain(ReportMAIN):
         df_features.to_csv(self.directory + os.sep + filename, sep=',')
 
         # drug summary
-        not_tested = [x for x in self.report.gdsc.drugIds if x not in
-                self.report.df.DRUG_ID.unique()]
-        if len(not_tested) > 0:
-            not_tested = """%s drugs were not analysed due to
-            lack of valid data points: """ % len(not_tested) + \
-                    ", ".join(not_tested)
-        else:
-            not_tested = ""
+        #not_tested = [x for x in self.report.gdsc.drugIds if x not in
+        #        self.report.df.DRUG_ID.unique()]
+        #if len(not_tested) > 0:
+        #    not_tested = """%s drugs were not analysed due to
+        #    lack of valid data points: """ % len(not_tested) + \
+        #            ", ".join(not_tested)
+        #else:
+        #    not_tested = ""
+        not_tested = ""
         self.jinja['drug_not_tested'] = not_tested
 
         df_drugs = self.report.drug_summary(filename="drug_summary.png")
-        get_name = self.report.gdsc.drug_decode.get_name
-        if len(self.report.gdsc.drug_decode.df) > 0:
+        get_name = self.report.drug_decode.get_name
+        if len(self.report.drug_decode.df) > 0:
             df_drugs.index = [x + "-" + get_name(x) for x in df_drugs.index]
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
@@ -840,7 +837,7 @@ class HTMLPageMain(ReportMAIN):
         df = df.reset_index() # get back the Drug id in the dframe columns
 
         # let us add also the drug name
-        df = self.report.gdsc.drug_annotations(df)
+        df = self.report.drug_decode.drug_annotations(df)
 
         # let us also add number of associations computed
         counts = [len(groups.groups[k]) for k in df.DRUG_ID]
@@ -916,30 +913,22 @@ class HTMLPageMain(ReportMAIN):
         else:
             ic50_filename = 'unknown'
 
-        # the genomic features, which may be the default version or without
-        # location
-        gf_filename = self.report.gdsc.features._filename
-        if gf_filename is None:
-            gf_filename = os.sep.join([input_dir, 'genomic_features.csv'])
-            self.report.gdsc.features.to_csv(gf_filename)
-            html = """Saved <a href="INPUT/genomic_features.csv">Genomic
-                      Features</a> file<br/> (possibly the default
-                      version)."""
-            self.jinja['gf_file'] = html
-        else:
-            shutil.copy(gf_filename, input_dir)
-            gf_filename = os.path.basename(gf_filename)
-            txt = """Get <a href="INPUT/%s">Genomic Features</a>
-                     file.<br/>"""
-            self.jinja['gf_file'] = txt % gf_filename
+        # the genomic features, which may be the default version
+        # one provided by the user. It may have been changed
+        gf_filename = os.sep.join([input_dir, 'genomic_features.csv'])
+        self.report.gdsc.features.to_csv(gf_filename)
+        html = """Saved <a href="INPUT/genomic_features.csv">Genomic
+                  Features</a> file<br/> (possibly the default
+                  version)."""
+        self.jinja['gf_file'] = html
 
         # Always save DRUG_DECODE file even if empty
         # It may be be interpreted in other pipeline or for reproducibility
         output_filename = input_dir + os.sep + 'DRUG_DECODE.csv'
-        self.report.gdsc.drug_decode.to_csv(output_filename)
-        html = 'Get <a href="INPUT/%s">Drug DECODE file</a>' % \
+        self.report.drug_decode.to_csv(output_filename)
+        html = 'Get <a href="%s">Drug DECODE file</a>' % \
                 output_filename
-        if len(self.report.gdsc.drug_decode) == 0:
+        if len(self.report.drug_decode) == 0:
             html += 'Note that DRUG_DECODE file was not provided (empty?).'
         self.jinja['drug_decode'] = html
 
@@ -964,6 +953,7 @@ def getfile(filename, where='../INPUT'):
 
 # reback the IC50 and genomic features matrices
 gdsc = ANOVA(getfile('%(ic50)s'), getfile('%(gf_filename)s'))
+        getfile('DRUG_DECODE.csv'))
 gdsc.settings.from_json(getfile('settings.json'))
 
 # Analyse the data
@@ -974,7 +964,7 @@ r = ANOVAReport(gdsc, results)
 r.create_html_pages(onweb=False)"""
         code = code % {
                 'ic50': ic50_filename,
-                'gf_filename': gf_filename}
+                'gf_filename': 'genomic_features.csv'}
 
         filename = os.sep.join([self.settings.directory, 'code','rerun.py'])
         fh = open(filename, 'w')
@@ -983,7 +973,7 @@ r.create_html_pages(onweb=False)"""
 
 
 class SignificantHits(object):
-    def __init__(self, df, name):
+    def __init__(self, df, name='undefined'):
         self.df = df.copy() # to not alter original version
         self.cmap_clip = cmap_builder('#ffffff', '#0070FF')
         self.cmap_absmax = cmap_builder('green', 'white', 'red')
@@ -993,7 +983,9 @@ class SignificantHits(object):
         columns = ANOVAResults().colnames_subset
         self.df = self.df[columns]
 
-    def to_html(self, escape=False, header=True, index=False):
+    def to_html(self, escape=False, header=True, index=False,
+            collapse_table=True):
+
         # If there is a value below 0.01, a scientific notation is
         # use. we prefer to use 2 digits and write <0.01
         colname = 'ANOVA_FEATURE_FDR'
@@ -1014,4 +1006,4 @@ class SignificantHits(object):
 
         html.df.columns = [x.replace("_", " ") for x in html.df.columns]
         return html.to_html(escape=escape, header=header, index=index,
-                justify='center')
+                collapse_table=collapse_table, justify='center')
