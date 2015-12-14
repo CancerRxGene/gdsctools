@@ -25,6 +25,12 @@ from gdsctools.qvalue import QValue
 __all__ = ['MultipleTesting', 'cohens']
 
 
+def multiple_correction(pvalues, method='fdr'):
+    mt = MultipleTesting(method=method)
+    values = mt.get_corrected_pvalues(pvalues, method=None)
+    return values
+
+
 class MultipleTesting(object):
     """This class eases the computation of multiple testing corrections
 
