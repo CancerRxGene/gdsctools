@@ -150,7 +150,10 @@ class COSMICInfo(object):
     """Retrieve information about cell line included in GDSC1000
 
     This file reads a GDSCTools dataset :attr:`gdsctools.datasets.cosmic_info`.
-    Its content is stored in :attr:`df`. 
+    Its content is stored in :attr:`df`.
+
+    In corresponds to Table S1E (List cell line samples with data 
+    availability and annotations across the different omics
 
     The method :meth:`get` retrieves information
     contained in the dataframe :attr:`df`. Provide a known cosmic identifier
@@ -221,7 +224,7 @@ class COSMICInfo(object):
 
     def _get_url(self, cosmic_id):
         url = 'http://cancer.sanger.ac.uk/cell_lines/sample/overview'
-        url = url + "?id={0}".format(cosmic_id)
+        url = url + "?id={0}#overview".format(cosmic_id)
         return url
 
     def on_web(self, identifier):
