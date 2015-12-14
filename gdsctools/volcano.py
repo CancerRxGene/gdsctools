@@ -171,6 +171,8 @@ class VolcanoANOVA(object):
             indices = range(0, Nbest) + x[0:n2pick]
         else:
             indices = range(0, Nbest)
+        # indices in the index may not be order
+        indices = [df.index[xx] for xx in indices]
         df = df.ix[indices]
         if inplace is True:
             self.df = df
