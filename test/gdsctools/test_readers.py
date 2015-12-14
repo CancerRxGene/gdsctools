@@ -86,17 +86,15 @@ def test_read_gf():
     r.keep_tissue_in(['cervix', 'lung'])
     assert r.shift == 2
 
-    # big genomic feature file
-    #assert len(r.features) == 382
-    # small one
-    #assert len(r.features) == 47
-
     assert len(r.unique_tissues) == 2
 
     gf1 = GenomicFeatures()
-    gf1.drop_cosmic(gf1.cosmicIds[50:])
-    gf1.features = gf1.features[0:19]
+
     gf2 = GenomicFeatures(testing.genomic_features_csv)
+    to_drop = [x for x in gf1.df.index if x not in gf2.df.index]
+
+    gf1.drop_cosmic(to_drop)
+    gf1.features = gf2.features
 
     assert gf2 == gf1
 
