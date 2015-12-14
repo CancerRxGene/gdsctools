@@ -79,3 +79,28 @@ class Savefig(object):
         fig.set_size_inches(*oldsize)
         fig.canvas.draw()
 
+
+
+
+def extract_drug_identifiers(drug_lists):
+
+    if isinstance(drug_lists, str):
+        drug_lists = [drug_lists]
+        string = True
+    else:
+        string = False
+
+    drug_ids = []
+    for drug in drug_lists:
+        if drug.lower().startswith('drug_'):
+            drug_ids.append(drug.split("_")[1])
+        else:
+            drug_ids.append(drug.split("_")[0])
+    # This should not fail !   
+    drug_ids = [int(x) for x in drug_ids]
+
+    if string is True:
+        return drug_ids[0]
+    else:
+        return drug_ids
+
