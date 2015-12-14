@@ -120,6 +120,10 @@ class ANOVAResults(object):
                                 (Storey & TIbshirani, 2003)
     =========================== ===============================================
 
+    Note that those column names are renamed internally (and if the data is
+    saved in a new file).
+
+
     """
     def __init__(self, filename=None):
         """.. rubric:: Constructor
@@ -143,9 +147,6 @@ class ANOVAResults(object):
                 "excepts a dataframe or filename"
 
         # TODO: check the header of the dataframe
-
-        self.drug_target = 'DRUG_TARGET'
-        self.drug_name = 'DRUG_NAME'
 
         #: dictionary with the relevant column names and their expected types
         self.mapping = OrderedDict()
@@ -173,7 +174,28 @@ class ANOVAResults(object):
   
         self.mapping['ANOVA_FEATURE_FDR'] = np.dtype('float64')
 
-        self.colnames_subset = ['ASSOC_ID', 'FEATURE',
+        # before gdsctools, columns names were a bit different.
+        # We need to rename some column names
+        self.df.rename(columns={
+            'assoc_id': 'ASSOC_ID',
+            'Drug id': 'DRUG_ID',
+            'Owned_by': 'OWNED_BY',
+            'FEATUREpos_IC50_sd': 'FEATURE_pos_IC50_sd',
+            'FEATUREneg_IC50_sd': 'FEATURE_neg_IC50_sd',
+            'FEATUREpos_Glass_delta': 'FEATURE_pos_Glass_delta',
+            'FEATUREneg_Glass_delta': 'FEATURE_neg_Glass_delta',
+            'FEATUREpos_logIC50_MEAN': 'FEATURE_pos_logIC50_MEAN',
+            'FEATUREneg_logIC50_MEAN': 'FEATURE_neg_logIC50_MEAN',
+            'Drug Target': 'DRUG_TARGET',
+            'FEATURE_deltaMEAN_IC50': 'FEATURE_delta_MEAN_IC50',
+            'FEATURE_ANOVA_pval': 'ANOVA_FEATURE_pval',
+            'ANOVA FEATURE FDR %': 'ANOVA_FEATURE_FDR',
+            'MSI_ANOVA_pval': 'ANOVA_MSI_pval',
+            'Tissue_ANOVA_pval': 'TISSUE_ANOVA_pval',
+            'Drug name': 'DRUG_NAME', 'A':'B'}, inplace=True)
+
+        self.colnames_subset = [
+            'ASSOC_ID', 'FEATURE',
             'DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET',
             'N_FEATURE_neg', 'N_FEATURE_pos',
             'FEATURE_pos_logIC50_MEAN', 'FEATURE_neg_logIC50_MEAN',
@@ -185,6 +207,8 @@ class ANOVAResults(object):
             'ANOVA_MSI_pval',
             'ANOVA_MEDIA_pval',
             'ANOVA_FEATURE_FDR']
+
+        self._df.reset_index(drop=True)
 
     def astype(self, df):
         try:
@@ -233,5 +257,10 @@ class ANOVAResults(object):
         v = VolcanoANOVA(self.df, settings=self.settings)
         v.volcano_plot_all()
 
-
-
+    def __str__(self):
+        txt = 'Total number of ANOVA tests performed: %s ' % len(self.df) 
+        return txt 
+    
+    def __repr__(self):
+        txt = 'ANOVAResults (%s tests): ' % len(self.df) 
+        return txt 
