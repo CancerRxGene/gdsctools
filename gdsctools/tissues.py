@@ -84,7 +84,7 @@ class TCGA(AttrDict):
 #: TCGA keys used in GDSC1000
 TCGA_GDSC1000 = ['BLCA', 'BRCA', 'COREAD', 'DLBC', 'ESCA', 'GBM',
     'HNSC', 'KIRC', 'LAML', 'LGG', 'LIHC', 'LUAD', 'LUSC',
-    'OV', 'PAAD', 'PRAD', 'SKCM', 'STAD', 'THCA']
+    'OV', 'PAAD',  'SKCM', 'STAD', 'THCA']
 
 # Here are some TCGA used in GDSC1000 genomic features 
 # and the corresponding Tissue label used in the input file.
