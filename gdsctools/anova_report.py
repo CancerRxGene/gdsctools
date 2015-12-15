@@ -484,12 +484,7 @@ class ANOVAReport(object):
             pb.animate(i+1)
 
     def create_html_drugs(self):
-        """Create an HTML page for each drug that has at
-        least one significant association
-
-        Actually, we are interested in each drug, could be a flag
-
-        """
+        """Create an HTML page for each drug"""
         # group by drugs
         all_drugs = list(self.df['DRUG_ID'].unique())
 
@@ -514,6 +509,7 @@ class ANOVAReport(object):
 
     def create_html_main(self, onweb=False):
         """Create HTML main document (summary)"""
+        self._set_sensible_df()
         print("\n\nCreating main HTML page in directory %s" %
                 (self.settings.directory))
         buffer_ = self.settings.savefig
@@ -535,7 +531,6 @@ class ANOVAReport(object):
 
     def create_html_pages(self, onweb=True):
         """Create all HTML pages"""
-        self._set_sensible_df()
         self.create_html_main(onweb=onweb)
         self.create_html_drugs()
         self.create_html_features()
