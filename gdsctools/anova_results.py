@@ -264,3 +264,7 @@ class ANOVAResults(object):
     def __repr__(self):
         txt = 'ANOVAResults (%s tests): ' % len(self.df) 
         return txt 
+
+    def copy(self):
+        a = ANOVAResults(self.df.copy())
+        return 
