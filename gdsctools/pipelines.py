@@ -140,6 +140,9 @@ def anova_pipeline(args=None):
     # --------------------------------------------------- real analysis
     # -----------------------------------------------------------------
     # dispatcher to the functions according to the user parameters
+
+    print options
+
     if options.drug is not None and options.feature is not None:
         print_color("ODOF mode", purple)
         anova_one_drug_one_feature(options)
@@ -147,11 +150,12 @@ def anova_pipeline(args=None):
         print_color("ODAF mode", purple)
         anova_one_drug(options)
     else: # analyse everything
-        if options.feature is not None:
+        if options.feature is None:
             print_color("ADAF mode", purple)
         else:
             print_color("ADOF mode", purple)
         anova_all(options)
+
     if options.onweb is False and options.no_html is False:
         msg = "\nNote that a directory {} was created and files saved into it"
         print(purple(msg.format(options.directory)))
@@ -170,8 +174,9 @@ def _set_settings(gdsc, options):
 
 def anova_one_drug(options):
     """Analyse one specific drug"""
-    from gdsctools import anova
-    an = anova.ANOVA(options.input_ic50, options.input_features,
+    from gdsctools import ANOVA, ANOVAReport
+    an = ANOVA(options.input_ic50, options.input_features,
+            options.input_drug,
             low_memory=not options.fast)
     
     an = _set_settings(an, options)
@@ -194,7 +199,7 @@ def anova_one_drug(options):
     if options.no_html is True:
         return
 
-    r = anova.ANOVAReport(an, results=results)
+    r = ANOVAReport(an, results=results)
     print(darkgreen("\nCreating all figure and html documents in %s" %
             r.settings.directory))
     r.create_html_pages(onweb=options.onweb)
@@ -202,12 +207,13 @@ def anova_one_drug(options):
 
 def anova_all(options):
     """Analyse the entire data set. May be restricted to one feature"""
-    from gdsctools import anova
-    an = anova.ANOVA(options.input_ic50, options.input_features,
+    from gdsctools import ANOVA, ANOVAReport
+    an = ANOVA(options.input_ic50, options.input_features,
+            options.input_drug,
             low_memory=not options.fast)
     an.set_cancer_type(options.tissue)
 
-    an = _set_settings(an, options)
+    #an = _set_settings(an, options)
     if options.feature:
         an.feature_names = [options.feature]
     print(an)
@@ -219,7 +225,8 @@ def anova_all(options):
     # HTML report
     if options.no_html is True:
         return
-    r = anova.ANOVAReport(an, results=df)
+    print df
+    r = ANOVAReport(an, results=df)
     print("Creating all figure and html documents in %s" %
             r.settings.directory)
     r.create_html_pages(onweb=options.onweb)
@@ -227,9 +234,9 @@ def anova_all(options):
 
 def anova_one_drug_one_feature(options):
     """Analyse the entire data set"""
-    from gdsctools import anova
-    from gdsctools import anova_report
-    gdsc = anova.ANOVA(options.input_ic50, options.input_features,
+    from gdsctools import ANOVA, ANOVAReport
+    gdsc = ANOVA(options.input_ic50, options.input_features,
+            options.input_drug,
             low_memory=not options.fast)
     gdsc = _set_settings(gdsc, options)
 
@@ -336,6 +343,10 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            be provided. Finally, other columns will be
                            considered as genomic features (e.g., mutation)
                            """)
+
+        group.add_argument("-D", "--input-drug-decode", dest='input_drug',
+                            default=None, type=str,
+                            help="a decoder file")
 
         group.add_argument("--output-directory", default='html_gdsc_anova',
                            dest='directory',
