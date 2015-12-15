@@ -732,15 +732,14 @@ class GenomicFeatures(Reader, CosmicRows):
         self._cleanup()
 
     def keep_tissue_in(self, tissues):
-        """Drop tissues from the list
+        """Drop tissues not in the list
 
-        :param list tissues: a list of tissues to drop. If you have only
+        :param list tissues: a list of tissues to keep. If you have only
             one tissue, can be provided as a string. Since rows are removed
             some features (columns) may now be empty (all zeros). If so, those
             columns are dropped (except for the special columns (e.g, MSI).
 
         """
-        tissues = easydev.to_list(tissues)
         tissues = easydev.to_list(tissues)
         mask = self.df[self.colnames.tissue].isin(tissues)
         self.df = self.df[mask]
@@ -955,9 +954,10 @@ class DrugDecode(Reader):
         #    raise ValueError("all values must be non-na. check tabulation")
 
     def get_info(self):
+        # Note that there are 4 cases : Y, N, U (unknown?) and NaN
         dd = {  'N': len(self),
                 'N_public': sum(self.df.WEBRELEASE == 'Y'),
-                'N_prop': sum(self.df.WEBRELEASE == 'N')}
+                'N_prop': sum(self.df.WEBRELEASE != 'Y')}
         return dd
 
     def __len__(self):
@@ -988,7 +988,8 @@ class DrugDecode(Reader):
         :return df: same as input but with the FDR column populated
         """
         if len(self.df) == 0:
-              print("Nothing done. DrugDecode is empty.")
+            return df
+        #      print("Nothing done. DrugDecode is empty.")
 
         # aliases
         if 'DRUG_ID' not in df.columns:
