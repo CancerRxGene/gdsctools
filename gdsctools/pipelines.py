@@ -234,7 +234,7 @@ def anova_all(options):
 
 def anova_one_drug_one_feature(options):
     """Analyse the entire data set"""
-    from gdsctools import ANOVA, ANOVAReport
+    from gdsctools import ANOVA, ANOVAReport, anova_report
     gdsc = ANOVA(options.input_ic50, options.input_features,
             options.input_drug,
             low_memory=not options.fast)
