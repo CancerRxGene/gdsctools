@@ -236,6 +236,15 @@ class GDSC(GDSCBase):
             self.report.create_html_pages()
 
     def _create_data_packages_for_companies(self, companies=None):
+        ##########################################################
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+        #                                                        #
+        # DRUG_DECODE and IC50 inputs must be filtered to keep   #
+        # only WEBRELEASE=Y and owner                            #
+        #                                                        #
+        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+        ##########################################################
+
         if isinstance(companies, str):
             companies = [companies]
 

@@ -977,7 +977,7 @@ def getfile(filename, where='../INPUT'):
     return os.sep.join([where, filename])
 
 # reback the IC50 and genomic features matrices
-gdsc = ANOVA(getfile('%(ic50)s'), getfile('%(gf_filename)s'))
+gdsc = ANOVA(getfile('%(ic50)s'), getfile('%(gf_filename)s'),
         getfile('DRUG_DECODE.csv'))
 gdsc.settings.from_json(getfile('settings.json'))
 

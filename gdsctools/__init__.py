@@ -39,6 +39,7 @@ from gdsctools.volcano import VolcanoANOVA
 from gdsctools.datasets import *
 from gdsctools.cosmictools import COSMICInfo
 from gdsctools.tissues import TCGA
+from gdsctools.gdsc import GDSC
 
 def gdsctools_data(filename, where=None):
     """Simple utilities to retrieve data sets from gdsctools/share directory"""
