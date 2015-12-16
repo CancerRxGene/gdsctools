@@ -209,18 +209,11 @@ class GDSC(GDSCBase):
 
             self.mkdir('ALL' + os.sep + tcga)
 
-            low_memory = True
-            if tcga != 'PANCAN':
-                low_memory = False
-
-            an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode,
-                    low_memory = low_memory)
+            an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode)
             self.an = an
             an.settings = ANOVASettings(**self.settings)
             an.init() # reset the analysis_type automatically
 
-            # this line may not be required.
-            an.settings.low_memory = low_memory
             print(an)
             results = an.anova_all()
             self.results[tcga] = results
@@ -232,8 +225,7 @@ class GDSC(GDSCBase):
             tcga = gf_filename.split("_")[1].split('.')[0]
             print('Analysing %s data' % tcga)
 
-            an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode,
-                       low_memory=True)
+            an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode)
             # FIXME use os.sep
             an.settings = ANOVASettings(**self.settings)
             an.init()
@@ -281,7 +273,7 @@ class GDSC(GDSCBase):
                 # just to create an instance with the subset of drug_decode
                 # and correct settings
                 an = ANOVA(self.ic50_filename, gf_filename,
-                        drug_decode_company, low_memory=True)
+                        drug_decode_company)
                 an.settings = ANOVASettings(**self.settings)
                 an.init()
                 an.settings.directory = company + os.sep + tcga

@@ -90,7 +90,7 @@ class ANOVA(object): #Logging):
 
     """
     def __init__(self, ic50, genomic_features=None,
-            drug_decode=None, verbose=True, low_memory=False,
+            drug_decode=None, verbose=True, low_memory=True,
             set_media_factor=False):
         """.. rubric:: Constructor
 
