@@ -1,14 +1,10 @@
-from gdsctools.anova import ANOVA
+from gdsctools import ANOVA, ic50_test
 from easydev import assert_list_almost_equal
-try:
-    from . import tools
-except:
-    import tools
 from gdsctools.boxplots import BoxPlots
 
 
 def test_get_boxplot_data():
-    an = ANOVA(tools.get_data())
+    an = ANOVA(ic50_test)
     odof = an._get_one_drug_one_feature_data('Drug_1047_IC50','TP53_mut')
 
     bb = BoxPlots(odof)
