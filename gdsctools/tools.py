@@ -19,7 +19,7 @@ import os
 import pylab
 
 
-__all__ = ['Savefig']
+__all__ = ['Savefig', 'get_drug_id']
 
 
 class Savefig(object):
@@ -104,3 +104,4 @@ def extract_drug_identifiers(drug_lists):
     else:
         return drug_ids
 
+get_drug_id = extract_drug_identifiers
