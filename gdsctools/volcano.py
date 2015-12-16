@@ -557,6 +557,8 @@ class VolcanoANOVA(object):
     def mpld3_to_html(self):
         """This require to call a plotting figure before hand"""
         from gdsctools import gdsctools_data
+        # This copy the full path and therefore HTML cannot
+        # be moved in another directory. to be fixed.
         js_path1 = gdsctools_data('d3.v3.min.js', where='javascript')
         js_path2 = gdsctools_data('mpld3.v0.2.js', where='javascript')
         try:
@@ -575,9 +577,13 @@ class VolcanoANOVA(object):
                 text += "  "
                 axl.get_texts()[i].set_text(text)
             import mpld3
-            htmljs = mpld3.fig_to_html(self.current_fig,
-                            d3_url=js_path1,
-                            mpld3_url=js_path2)
+            js_path1 = "https://raw.githubusercontent.com/CancerRxGene/" + \
+                    "gdsctools/master/share/data/javascript/d3.v3.min.js"
+            js_path2 = "https://raw.githubusercontent.com/CancerRxGene/" + \
+                    "gdsctools/master/share/data/javascript/mpld3.v0.2.js"
+            htmljs = mpld3.fig_to_html(self.current_fig)
+            #                d3_url=js_path1,
+            #                mpld3_url=js_path2)
         except:
             htmljs = ""
         return """<div class="jsimage"> """ + htmljs + "</div>"
