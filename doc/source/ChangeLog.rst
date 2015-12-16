@@ -17,10 +17,9 @@ Lots of changes in this version but for users the API should be very similar.
     - add a class COSMICInfo and a related data file called
       cosmic_info.csv.gz to get information about COSMIC ids. Replaces
       COSMIC class, which was removed.
-    - add new module data_packages to create summary page for a bunch of 
-      data packages.
     - add new class GDSC to perform the entire analysis splitting data across
       companies found in DrugDecode and across cancer types.
+
 
 * CHANGES:
     - COSMIC class removed and replaced by COSMICInfo class
