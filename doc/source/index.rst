@@ -62,6 +62,7 @@ Contents
     standalone.rst
     settings.rst
     regression.rst
+    gdsc.rst
     data_packages.rst
     references.rst
     developers.rst

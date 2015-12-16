@@ -4,8 +4,10 @@ ChangeLog
 .. contents::
 
 
-Version 0.9
+Version 0.10
 --------------------------
+
+Lots of changes in this version but for users the API should be very similar.
 
 .. rubric:: 0.10
 
@@ -17,6 +19,8 @@ Version 0.9
       COSMIC class, which was removed.
     - add new module data_packages to create summary page for a bunch of 
       data packages.
+    - add new class GDSC to perform the entire analysis splitting data across
+      companies found in DrugDecode and across cancer types.
 
 * CHANGES:
     - COSMIC class removed and replaced by COSMICInfo class
@@ -52,6 +56,12 @@ Version 0.9
       :mod:`~gdsctools.anova_report`) (issue #98).
     - :mod:`~gdsctools.readers`: improved DrugDecoder and renamed into
       DrugDecode (issue #102 and #101)
+    - add new settings and code to apply pvalue correction at drug level
+      rather than global level.
+    - add new module to find chemblId/ChemSpider from drug name.
+
+Version 0.10
+--------------------------
 
 .. rubric:: 0.9.10
 
