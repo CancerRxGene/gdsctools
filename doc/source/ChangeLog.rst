@@ -60,7 +60,7 @@ Lots of changes in this version but for users the API should be very similar.
       rather than global level.
     - add new module to find chemblId/ChemSpider from drug name.
 
-Version 0.10
+Version 0.9
 --------------------------
 
 .. rubric:: 0.9.10
