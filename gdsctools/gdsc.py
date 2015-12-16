@@ -8,6 +8,7 @@ from gdsctools.tools import extract_drug_identifiers
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.anova_report import ANOVAReport
 from gdsctools.settings import ANOVASettings
+from gdsctools.anova_report import ReportMAIN
 
 import pandas as pd
 
@@ -100,10 +101,25 @@ class IC50Cluster(IC50):
             self.df.drop(drug_names, axis=1, inplace=True)
 
 
+class GDSCBase(object):
+    def __init__(self, genomic_feature_pattern="GF_*csv", verbose=True):
+        self.verbose = True
+        self.gf_filenames = glob.glob(genomic_feature_pattern)
+        if len(self.gf_filenames) == 0:
+            msg = "NO Genomic feature input files found. We expect files " +\
+                    "with this pattern: GF_<TCGA>.csv e.g., (GF_COREAD.csv)"
+            raise ValueError(msg)
+        pass
+
+    def mkdir(self, name):
+        try:
+            os.mkdir(name)
+        except:
+            if self.verbose:
+                print("directory %s already exists" % name)
 
 
-
-class GDSC(object):
+class GDSC(GDSCBase):
     """Alias to ANOVA class with default settings
 
     Reads
@@ -117,11 +133,43 @@ class GDSC(object):
     Then split the data for each comapnies.
 
     It also converts tissue names into TCGA names.
-    """
 
-    def __init__(self, ic50, drug_decode, genomic_feature_pattern="GF_*csv",
+
+    gg = GDSC('IC50_v18.csv', 'DRUG_DECODE.txt',
+        genomic_feature_pattern='GF*csv')
+    # identifies all genomic features GF* that contains specific TCGA GF
+    gg.run() # This will take hours depending on the number of drugs.
+
+    # You should have a directory called **ALL** with about 20 directories for
+    # each TCGA GF file. Keep that in a safe place or you will have to restart
+    # the analysis
+
+    # You can now also split those data for specific proprietary compounds.
+    # For one::
+    gg._create_data_packages_for_companies(['AZ'])
+    # or for all:
+    gg._create_data_packages_for_companies()
+
+
+    # finally, you can create some summary pages:
+    from gdsctools.gdsc import GDSCDirectorySummary()
+    gs = GDSCDirectorySummary()
+    gs.create_summary_pages('ALL')
+    for company in gg.companies:
+        gs.create_summary_pages(company)
+
+    The last step is fast but the whole process of analyse and image 
+    creation is very long. 
+
+    .. todo:: LSF script could be nice.
+
+
+    """
+    def __init__(self, ic50, drug_decode,
+            genomic_feature_pattern="GF_*csv",
             mode='standard'):
-        self.verbose = True
+        super(GDSC, self).__init__(genomic_feature_pattern, verbose=True)
+
 
         self.ic50_filename = ic50
         self.dd_filename = drug_decode
@@ -139,11 +187,6 @@ class GDSC(object):
         print("Those settings will be used")
         print(self.settings)
 
-        self.gf_filenames = glob.glob(genomic_feature_pattern)
-        if len(self.gf_filenames) == 0:
-            msg = "NO Genomic feature input files found. We expect files " +\
-                    "with this pattern: GF_<TCGA>.csv e.g., (GF_COREAD.csv)"
-            raise ValueError(msg)
         # figure out the cancer types:
         self.results = {}
 
@@ -158,7 +201,6 @@ class GDSC(object):
         # but not the drug-related ones, which will emcompass all
         # drugs across all companies. 
         #self._create_data_packages_for_companies
-
 
     def _analyse_all(self):
         for gf_filename in sorted(self.gf_filenames):
@@ -201,13 +243,19 @@ class GDSC(object):
             self.report.settings.analysis_type = tcga
             self.report.create_html_pages()
 
-    def _create_data_packages_for_companies(self):
-        Ncomp = len(self.companies)
-        for ii, company in enumerate(self.companies):
+    def _create_data_packages_for_companies(self, companies=None):
+        if isinstance(companies, str):
+            companies = [companies]
+
+        if companies is None:
+            companies = self.companies
+
+        Ncomp = len(companies)
+        for ii, company in enumerate(companies):
             print("\n\n========= Analysing company %s out of %s (%s)" %
                     (ii+1, Ncomp, company))
             self.mkdir(company)
-            for gf_filename in self.gf_filenames:
+            for gf_filename in sorted(self.gf_filenames):
                 tcga = gf_filename.split("_")[1].split('.')[0]
                 print("---------------- for TCGA %s" % tcga)
 
@@ -235,22 +283,23 @@ class GDSC(object):
                 an = ANOVA(self.ic50_filename, gf_filename,
                         drug_decode_company, low_memory=True)
                 an.settings = ANOVASettings(**self.settings)
+                an.init()
                 an.settings.directory = company + os.sep + tcga
                 an.settings.analysis_type = tcga
-
-                r = ANOVAReport(an, results)
-                r.settings.analysis_type = tcga
-                r.create_html_main(False)
-                r.create_html_manova(False)
-                r.create_html_features()
-                r.create_html_associations()
+                self.an = an
+                self.report = ANOVAReport(an, results)
+                self.report.settings.analysis_type = tcga
+                self.report.create_html_main(False)
+                self.report.create_html_manova(False)
+                self.report.create_html_features()
+                self.report.create_html_associations()
 
                 # FIXME. Most of the HTML and images may have already been
                 # created in the _create_reports when using all the data
                 # For now, we just recreate everything but could be speed up
                 # significantly.
                 from easydev import shellcmd
-                print("Copying drug files")
+                print("\nCopying drug files")
                 from easydev import Progress
                 drug_ids = results.df.DRUG_ID.unique()
                 pb = Progress(len(drug_ids))
@@ -275,35 +324,48 @@ class GDSC(object):
         return [x.split("_")[1].split(".")[0] for x in self.gf_filenames]
     tcga = property(_get_tcga)
 
-    def mkdir(self, name):
-        try:
-            os.mkdir(name)
-        except:
-            if self.verbose:
-                print("directory %s already exists" % name)
-
     def _get_companies(self):
         return [x for x in self.drug_decode.companies if x != 'Commercial']
     companies = property(_get_companies)
 
-
-
-    def create_summary_pages(self):
+    def create_summary_pages(self, main_directory='ALL'):
         # Read in ALL all directories
-        import glob
+
+        # create directories and copy relevant files
+        self.mkdir(main_directory + os.sep + 'images')
+        self.mkdir(main_directory + os.sep + 'css')
+
+        for filename in ['gdsc.css', 'github-gist.css']:
+            target = os.sep.join([main_directory, 'css', filename ])
+            if os.path.isfile(target) is False:
+                filename = easydev.get_share_file("gdsctools", "data",
+                    filename)
+                shutil.copy(filename, target)
+
+        for filename in ['EBI_logo.png', 'sanger-logo.png']:
+            target = os.sep.join([main_directory, 'images', filename ])
+            if os.path.isfile(target) is False:
+                dire = 'data' + os.sep + 'images'
+                filename = easydev.get_share_file("gdsctools", dire,
+                    filename)
+                shutil.copy(filename, target)
+
         directories = glob.glob('ALL' + os.sep + '*')
+        directories = [x for x in directories if os.path.isdir(x)]
 
         summary = []
         for directory in sorted(directories):
+
             tcga = directory.split(os.sep)[1]
-            print(tcga)
+            if tcga in ['css', 'images']:
+                continue
 
             # number of hits
             path = directory + os.sep + 'OUTPUT' + os.sep
             try:
                 hits = pd.read_csv(path + 'drugs_summary.csv', sep=',')
             except:
-                summary.append([tcga] + ['?'] * 5)
+                summary.append([tcga] + [None] * 5)
                 continue
             total_hits = hits.total.sum()
 
@@ -313,7 +375,8 @@ class GDSC(object):
 
             results = ANOVAResults(path + 'results.csv')
             if len(results)>0:
-                drug_ids = extract_drug_identifiers(results.df.DRUG_ID.unique())
+                drug_ids = extract_drug_identifiers(
+                        results.df.DRUG_ID.unique())
             else:
                 drug_ids = []
 
@@ -321,8 +384,10 @@ class GDSC(object):
             drug_decode = DrugDecode(path + 'DRUG_DECODE.csv')
             info = drug_decode.get_info()
 
-            drug_inv_public = sum(drug_decode.df.ix[drug_involved].WEBRELEASE == 'Y')
-            drug_inv_prop = sum(drug_decode.df.ix[drug_involved].WEBRELEASE != 'Y')
+            webrelease = drug_decode.df.ix[drug_involved].WEBRELEASE
+            drug_inv_public = sum(webrelease == 'Y')
+            drug_inv_prop = sum(webrelease != 'Y')
+            
 
             summary.append([tcga, total_hits,
                 drug_inv_prop, info['N_prop'], 
@@ -330,17 +395,118 @@ class GDSC(object):
         print summary
         df = pd.DataFrame(summary)
         df.columns = ['Analysis name', 'Number of hits', 
-        'Number of involved proprietary compounds', 'out of',
-        'Number of involved public', 'out of']
-        #html = df.to_html()
-        
+            'Number of involved proprietary compounds', 'out of',
+            'Number of involved public', 'out of']
+
+
+        # FIXME include css and images of logo
+        # FIXME save in the proper directory
+        output_dir = main_directory + os.sep + '..' + os.sep
+        output_file = output_dir + os.sep + 'index.html'
+        self.html_page = ReportMAIN(directory='ALL', filename='index.html',
+                template_filename='datapack_summary.html' )
+
+        # Let us use our HTMLTable to add the HTML references
+        from gdsctools.report import HTMLTable
+        self.html_table = HTMLTable(df)
+        self.html_table.add_href('Analysis name', newtab=True, url=None,
+                suffix='/index.html')
+        #html_table.add_bgcolor('Number of hits')
+
+        self.html_page.jinja['data_table'] = self.html_table.to_html()
+        self.html_page.write()
+
         return df
+
+    def load_results(self):
+        """Find the files results.csv in all TCGA directories"""
+        for tcga in self.tcga:
+            print(tcga)
+            self.results[tcga] = ANOVAResults('ALL' + os.sep + tcga + os.sep +
+                    'OUTPUT' + os.sep + 'results.csv')
+
+
+class GDSCDirectorySummary(GDSCBase):
+
+    def __init__(self, genomic_feature_pattern="GF_*csv"):
+
+        super(GDSCDirectorySummary, self).__init__(genomic_feature_pattern)
+
+    def create_summary_pages(self, main_directory='ALL'):
+        # Read in ALL all directories
+
+        # create directories and copy relevant files
+
+        directories = glob.glob(main_directory + os.sep + '*')
+        directories = [x for x in directories if os.path.isdir(x)]
+
+        summary = []
+        for directory in sorted(directories):
+
+            tcga = directory.split(os.sep)[1]
+            if tcga in ['css', 'images', 'INPUT', 'OUTPUT', 'code', 'js' ]:
+                continue
+
+            # number of hits
+            path = directory + os.sep + 'OUTPUT' + os.sep
+            try:
+                hits = pd.read_csv(path + 'drugs_summary.csv', sep=',')
+            except:
+                summary.append([tcga] + [None] * 5)
+                continue
+            total_hits = hits.total.sum()
+
+            drug_involved = extract_drug_identifiers(
+                    hits['Unnamed: 0'].unique())
+
+
+            results = ANOVAResults(path + 'results.csv')
+            if len(results)>0:
+                drug_ids = extract_drug_identifiers(
+                        results.df.DRUG_ID.unique())
+            else:
+                drug_ids = []
+
+            path = directory + os.sep + 'INPUT' + os.sep
+            drug_decode = DrugDecode(path + 'DRUG_DECODE.csv')
+            info = drug_decode.get_info()
+
+            webrelease = drug_decode.df.ix[drug_involved].WEBRELEASE
+            drug_inv_public = sum(webrelease == 'Y')
+            drug_inv_prop = sum(webrelease != 'Y')
             
 
+            summary.append([tcga, total_hits,
+                drug_inv_prop, info['N_prop'], 
+                drug_inv_public, info['N_public']])
+        print summary
+        df = pd.DataFrame(summary)
+        df.columns = ['Analysis name', 'Number of hits', 
+            'Number of involved proprietary compounds', 'out of',
+            'Number of involved public', 'out of']
 
+        from gdsctools.anova_report import ReportMAIN
 
+        # FIXME include css and images of logo
+        # FIXME save in the proper directory
+        output_dir = main_directory +  os.sep
+        output_file = output_dir + os.sep + 'index.html'
+        self.html_page = ReportMAIN(directory=main_directory, 
+                filename='index.html',
+                template_filename='datapack_summary.html')
 
+        # Let us use our HTMLTable to add the HTML references
+        from gdsctools.report import HTMLTable
+        self.html_table = HTMLTable(df)
+        self.html_table.add_href('Analysis name', newtab=True, url=None,
+                suffix='/index.html')
+        #html_table.add_bgcolor('Number of hits')
 
+        self.html_page.jinja['data_table'] = self.html_table.to_html()
+        self.html_page.jinja['collaborator'] = main_directory
+        #self.html_page.jinja['analysis_domain'] = 'v18'
+        self.html_page.write()
 
+        return df
 
 
