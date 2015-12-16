@@ -201,6 +201,7 @@ class HTMLTable(object):
         else:
             if suffix is None:
                 suffix = '.html'
+
             if newtab is False:
                 formatter = '<a alt="{1}" href="{0}{2}">{1}</a>'
             else:
@@ -306,8 +307,8 @@ class ReportMAIN(object):
                     'js', 'code']
         elif mode == 'summary':
             self._to_create = ['images', 'css', 'js',]
+
         self._init_report()
-            
 
     def _get_filename(self):
         return self._filename
