@@ -32,7 +32,7 @@ from gdsctools.volcano import VolcanoANOVA
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.readers import DrugDecode
-
+from gdsctools.tools import get_drug_id
 
 __all__ = ['ANOVAReport']
 
@@ -651,6 +651,14 @@ class HTMLOneFeature(ReportMAIN):
         self.feature = feature
         self.settings = report.settings
 
+        self.n_hits = 0
+        if len(report.resistant_df):
+            self.n_hits += sum([True for x in report.resistant_df.FEATURE
+                if x == feature])
+        if len(report.sensible_df):
+            self.n_hits += sum([True for x in report.sensible_df.FEATURE
+                if x == feature])
+
         filename = "{0}.html".format(self.feature)
         super(HTMLOneFeature, self).__init__(
                 directory=report.settings.directory,
@@ -659,7 +667,8 @@ class HTMLOneFeature(ReportMAIN):
 
         self.jinja['n_cell_lines'] = report.gdsc.features.df[feature].sum()
         self.jinja['feature_name'] = feature
-        self.jinja['analysis_domain'] = report.settings.analysis_type
+        self.jinja['analysis_domaiin'] = report.settings.analysis_type
+        self.jinja['n_hits'] = self.n_hits
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
@@ -709,11 +718,34 @@ class HTMLOneDrug(ReportMAIN):
                 filename=filename, template_filename='drug.html')
         self.title = 'Single Drug analysis (%s)' % self.drug
 
+
+        self.nhits = 0
+        print report.resistant_df.DRUG_ID
+        print drug
+        if len(report.resistant_df):
+            self.nhits += sum([True for x in report.resistant_df.DRUG_ID
+                if x == drug])
+        if len(report.sensible_df):
+            self.nhits += sum([True for x in report.sensible_df.DRUG_ID
+                if x == drug])
+
+        drug_id = get_drug_id(drug)
         self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[drug].dropna())
-        self.jinja['drug_id'] = drug
-        self.jinja['drug_name'] = report.drug_decode.get_name(drug)
-        self.jinja['drug_target'] = report.drug_decode.get_target(drug)
+        self.jinja['drug_id'] = drug_id
+        self.jinja['drug_name'] = report.drug_decode.get_name(drug_id)
+        self.jinja['drug_target'] = report.drug_decode.get_target(drug_id)
+        try:
+            self.jinja['drug_synonyms'] = \
+                report.drug_decode._get_row(drug_id, 'SYNONYMS')
+        except:
+            pass
+        try:
+            self.jinja['drug_owner'] = \
+                report.drug_decode._get_row(drug_id, 'OWNED_BY')
+        except:
+            pass
         self.jinja['analysis_domain'] = report.settings.analysis_type
+        self.jinja['n_hits'] = self.nhits
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
