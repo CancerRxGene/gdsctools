@@ -4,7 +4,7 @@ import os
 from gdsctools.anova import ANOVA
 from gdsctools.readers import IC50
 from gdsctools.readers import DrugDecode
-from gdsctools.tools import extract_drug_identifiers
+from gdsctools.tools import get_drug_id
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.anova_report import ANOVAReport
 from gdsctools.settings import ANOVASettings
@@ -38,7 +38,7 @@ class IC50Cluster(IC50):
         from collections import defaultdict
         mapping = defaultdict(list)
 
-        drug_ids = extract_drug_identifiers(self.df.columns)
+        drug_ids = get_drug_id(self.df.columns)
         for drug_id, colname in zip(drug_ids, self.df.columns):
             mapping[drug_id].append(colname)
         return mapping
@@ -134,29 +134,34 @@ class GDSC(GDSCBase):
 
     It also converts tissue names into TCGA names.
 
+    First, create all main analysis that include all drugs::
 
-    gg = GDSC('IC50_v18.csv', 'DRUG_DECODE.txt',
-        genomic_feature_pattern='GF*csv')
-    # identifies all genomic features GF* that contains specific TCGA GF
-    gg.run() # This will take hours depending on the number of drugs.
+        gg = GDSC('IC50_v18.csv', 'DRUG_DECODE.txt',
+            genomic_feature_pattern='GF*csv')
+        # identifies all genomic features GF* that contains specific TCGA GF
+        gg.run() # This will take hours depending on the number of drugs.
 
-    # You should have a directory called **ALL** with about 20 directories for
-    # each TCGA GF file. Keep that in a safe place or you will have to restart
-    # the analysis
+    You should have a directory called **ALL** with about 20 directories for
+    each TCGA GF file. Keep that in a safe place or you will have to restart
+    the analysis
 
-    # You can now also split those data for specific proprietary compounds.
-    # For one::
-    gg._create_data_packages_for_companies(['AZ'])
-    # or for all:
-    gg._create_data_packages_for_companies()
+    Second, split those data just created for each specific proprietary 
+    compounds. For instance::
+
+        gg.create_data_packages_for_companies(['AZ'])
+    
+    or for all in one go::
+
+        gg.create_data_packages_for_companies()
 
 
-    # finally, you can create some summary pages:
-    from gdsctools.gdsc import GDSCDirectorySummary()
-    gs = GDSCDirectorySummary()
-    gs.create_summary_pages('ALL')
-    for company in gg.companies:
-        gs.create_summary_pages(company)
+    Third, create some summary pages::
+
+        from gdsctools.gdsc import GDSCDirectorySummary()
+        gs = GDSCDirectorySummary()
+        gs.create_summary_pages('ALL')
+        for company in gg.companies:
+            gs.create_summary_pages(company)
 
     The last step is fast but the whole process of analyse and image 
     creation is very long. 
@@ -169,8 +174,7 @@ class GDSC(GDSCBase):
             genomic_feature_pattern="GF_*csv",
             mode='standard'):
         super(GDSC, self).__init__(genomic_feature_pattern, verbose=True)
-
-
+        self.debug = False
         self.ic50_filename = ic50
         self.dd_filename = drug_decode
 
@@ -196,11 +200,6 @@ class GDSC(GDSCBase):
         # store all results in a dictionary.
         self._analyse_all()
         self._create_reports( )
-        # Now that all data has been analysed, we can split
-        # for each company. Note that some pictures will be created
-        # but not the drug-related ones, which will emcompass all
-        # drugs across all companies. 
-        #self._create_data_packages_for_companies
 
     def _analyse_all(self):
         for gf_filename in sorted(self.gf_filenames):
@@ -235,7 +234,7 @@ class GDSC(GDSCBase):
             self.report.settings.analysis_type = tcga
             self.report.create_html_pages()
 
-    def _create_data_packages_for_companies(self, companies=None):
+    def create_data_packages_for_companies(self, companies=None):
         ##########################################################
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
         #                                                        #
@@ -271,55 +270,61 @@ class GDSC(GDSCBase):
                 drug_decode_company = DrugDecode(drug_decode_company)
 
                 # filter results using the new drug decode
-                drug_ids_in_results = extract_drug_identifiers(
-                        results.df.DRUG_ID)
+                drug_ids_in_results = get_drug_id(results.df.DRUG_ID)
 
                 mask = [True if x in drug_decode_company.df.index else False
                         for x in drug_ids_in_results]
 
                 results.df = results.df.ix[mask]
 
-                # just to create an instance with the subset of drug_decode
-                # and correct settings
+                # Just to create an instance with the subset of drug_decode
+                # and correct settings. This is also used to store
+                # the entire input data set. So, we must remove all drugs
+                # not relevant for the analysis of this company
                 an = ANOVA(self.ic50_filename, gf_filename,
                         drug_decode_company)
+
+                def drug_to_keep(drug):
+                    to_keep = get_drug_id(drug) in drug_decode_company.df.index
+                    return to_keep
+                an.ic50.df = an.ic50.df.select(drug_to_keep, axis=1) 
+
                 an.settings = ANOVASettings(**self.settings)
                 an.init()
                 an.settings.directory = company + os.sep + tcga
                 an.settings.analysis_type = tcga
-                self.an = an
                 self.report = ANOVAReport(an, results)
                 self.report.settings.analysis_type = tcga
                 self.report.create_html_main(False)
                 self.report.create_html_manova(False)
-                self.report.create_html_features()
-                self.report.create_html_associations()
 
-                # FIXME. Most of the HTML and images may have already been
-                # created in the _create_reports when using all the data
-                # For now, we just recreate everything but could be speed up
-                # significantly.
-                from easydev import shellcmd
-                print("\nCopying drug files")
-                from easydev import Progress
-                drug_ids = results.df.DRUG_ID.unique()
-                pb = Progress(len(drug_ids))
-                for i, drug_id in enumerate(drug_ids):
-                    # copy the HTML
-                    filename = "%s.html" % drug_id
-                    source = "ALL%s%s%s" % (os.sep, tcga, os.sep)
-                    dest = "%s%s%s%s" % (company, os.sep, tcga, os.sep )
-                    cmd = "cp %s%s %s" % (source, filename, dest )
-                    shellcmd(cmd, verbose=False)
-                    #copy the images
-                    filename = "volcano_%s.*" % drug_id
-                    source = "ALL%s%s%simages%s" % (os.sep, tcga,
-                            os.sep, os.sep)
-                    dest = "%s%s%s%simages%s" % (company, os.sep,
-                            tcga, os.sep , os.sep)
-                    cmd = "cp %s%s %s" % (source, filename, dest )
-                    shellcmd(cmd, verbose=False)
-                    pb.animate(i+1)
+                if self.debug is False:
+                    self.report.create_html_features()
+                    self.report.create_html_associations()
+
+                    # For now, we just copy all DRUG images from 
+                    # the analysis made in ALL 
+                    from easydev import shellcmd
+                    print("\nCopying drug files")
+                    from easydev import Progress
+                    drug_ids = results.df.DRUG_ID.unique()
+                    pb = Progress(len(drug_ids))
+                    for i, drug_id in enumerate(drug_ids):
+                        # copy the HTML
+                        filename = "%s.html" % drug_id
+                        source = "ALL%s%s%s" % (os.sep, tcga, os.sep)
+                        dest = "%s%s%s%s" % (company, os.sep, tcga, os.sep )
+                        cmd = "cp %s%s %s" % (source, filename, dest )
+                        shellcmd(cmd, verbose=False)
+                        #copy the images
+                        filename = "volcano_%s.*" % drug_id
+                        source = "ALL%s%s%simages%s" % (os.sep, tcga,
+                                os.sep, os.sep)
+                        dest = "%s%s%s%simages%s" % (company, os.sep,
+                                tcga, os.sep , os.sep)
+                        cmd = "cp %s%s %s" % (source, filename, dest )
+                        shellcmd(cmd, verbose=False)
+                        pb.animate(i+1)
 
     def _get_tcga(self):
         return [x.split("_")[1].split(".")[0] for x in self.gf_filenames]
@@ -370,14 +375,11 @@ class GDSC(GDSCBase):
                 continue
             total_hits = hits.total.sum()
 
-            drug_involved = extract_drug_identifiers(
-                    hits['Unnamed: 0'].unique())
-
+            drug_involved = get_drug_id(hits['Unnamed: 0'].unique())
 
             results = ANOVAResults(path + 'results.csv')
             if len(results)>0:
-                drug_ids = extract_drug_identifiers(
-                        results.df.DRUG_ID.unique())
+                drug_ids = get_drug_id(results.df.DRUG_ID.unique())
             else:
                 drug_ids = []
 
@@ -456,14 +458,11 @@ class GDSCDirectorySummary(GDSCBase):
                 continue
             total_hits = hits.total.sum()
 
-            drug_involved = extract_drug_identifiers(
-                    hits['Unnamed: 0'].unique())
-
+            drug_involved = get_drug_id(hits['Unnamed: 0'].unique())
 
             results = ANOVAResults(path + 'results.csv')
             if len(results)>0:
-                drug_ids = extract_drug_identifiers(
-                        results.df.DRUG_ID.unique())
+                drug_ids = get_drug_id(results.df.DRUG_ID.unique())
             else:
                 drug_ids = []
 
@@ -484,7 +483,6 @@ class GDSCDirectorySummary(GDSCBase):
             'Number of involved proprietary compounds', 'out of',
             'Number of involved public', 'out of']
 
-        from gdsctools.anova_report import ReportMAIN
 
         # FIXME include css and images of logo
         # FIXME save in the proper directory

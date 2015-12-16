@@ -17,7 +17,6 @@
 """Code related to the ANOVA analysis to find associations between drug IC50s
 and genomic features"""
 import os
-import shutil
 import pandas as pd
 import pylab
 import numpy as np
@@ -927,16 +926,11 @@ class HTMLPageMain(ReportMAIN):
 
         # -------------------------------------- settings and INPUT files
         input_dir = self.directory + os.sep + 'INPUT'
-        filename = self.report.gdsc.ic50._filename
-        html = ''
-        if filename is not None:
-            shutil.copy(filename, input_dir)
-            filename = os.path.basename(filename)
-            ic50_filename = filename
-            filename = os.sep.join(['INPUT', filename])
-            self.jinja['ic50_file'] = filename
-        else:
-            ic50_filename = 'unknown'
+        filename = 'ANOVA_input.csv'
+        filename = os.sep.join([input_dir, filename])
+        self.report.gdsc.ic50.to_csv(filename)
+        filename = os.sep.join(['INPUT', 'ANOVA_input.csv'])
+        self.jinja['ic50_file'] = filename
 
         # the genomic features, which may be the default version
         # one provided by the user. It may have been changed
@@ -951,8 +945,7 @@ class HTMLPageMain(ReportMAIN):
         # It may be be interpreted in other pipeline or for reproducibility
         output_filename = input_dir + os.sep + 'DRUG_DECODE.csv'
         self.report.drug_decode.to_csv(output_filename)
-        html = 'Get <a href="%s">Drug DECODE file</a>' % \
-                output_filename
+        html = 'Get <a href="INPUT/DRUG_DECODE.csv">Drug DECODE file</a>'
         if len(self.report.drug_decode) == 0:
             html += 'Note that DRUG_DECODE file was not provided (empty?).'
         self.jinja['drug_decode'] = html
@@ -980,6 +973,7 @@ def getfile(filename, where='../INPUT'):
 gdsc = ANOVA(getfile('%(ic50)s'), getfile('%(gf_filename)s'),
         getfile('DRUG_DECODE.csv'))
 gdsc.settings.from_json(getfile('settings.json'))
+gdsc.init()
 
 # Analyse the data
 results = gdsc.anova_all()
@@ -988,7 +982,7 @@ results = gdsc.anova_all()
 r = ANOVAReport(gdsc, results)
 r.create_html_pages(onweb=False)"""
         code = code % {
-                'ic50': ic50_filename,
+                'ic50': 'ANOVA_input.csv',
                 'gf_filename': 'genomic_features.csv'}
 
         filename = os.sep.join([self.settings.directory, 'code','rerun.py'])
