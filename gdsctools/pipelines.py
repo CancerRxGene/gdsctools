@@ -141,7 +141,6 @@ def anova_pipeline(args=None):
     # -----------------------------------------------------------------
     # dispatcher to the functions according to the user parameters
 
-    print options
 
     if options.drug is not None and options.feature is not None:
         print_color("ODOF mode", purple)
@@ -225,7 +224,6 @@ def anova_all(options):
     # HTML report
     if options.no_html is True:
         return
-    print df
     r = ANOVAReport(an, results=df)
     print("Creating all figure and html documents in %s" %
             r.settings.directory)

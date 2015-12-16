@@ -96,7 +96,7 @@ class ChemSpiderSearch(object):
             try:
                 res = self._cs_find(drug)
             except:
-                print drug, 'failed'
+                print(drug, 'failed')
                 res = []
             self.results[drug] = res
             pb.animate(i+1)

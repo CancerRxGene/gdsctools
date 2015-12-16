@@ -393,7 +393,6 @@ class GDSC(GDSCBase):
             summary.append([tcga, total_hits,
                 drug_inv_prop, info['N_prop'], 
                 drug_inv_public, info['N_public']])
-        print summary
         df = pd.DataFrame(summary)
         df.columns = ['Analysis name', 'Number of hits', 
             'Number of involved proprietary compounds', 'out of',
@@ -480,7 +479,6 @@ class GDSCDirectorySummary(GDSCBase):
             summary.append([tcga, total_hits,
                 drug_inv_prop, info['N_prop'], 
                 drug_inv_public, info['N_public']])
-        print summary
         df = pd.DataFrame(summary)
         df.columns = ['Analysis name', 'Number of hits', 
             'Number of involved proprietary compounds', 'out of',
