@@ -542,7 +542,7 @@ class GenomicFeatures(Reader, CosmicRows):
                     'COSMIC ID': 'COSMIC_ID'}.items():
             if old in self.df.columns:
                 warnings.warn("'%s' column name is deprecated " +
-                    " since 0.9.10. Please replace with '%s'" % old,
+                    " since 0.9.10. Please replace with '%s'" % (old, new),
                     DeprecationWarning)
                 self.df.columns = [x.replace(old, new)
                         for x in self.df.columns]
