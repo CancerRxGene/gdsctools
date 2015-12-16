@@ -720,8 +720,6 @@ class HTMLOneDrug(ReportMAIN):
 
 
         self.nhits = 0
-        print report.resistant_df.DRUG_ID
-        print drug
         if len(report.resistant_df):
             self.nhits += sum([True for x in report.resistant_df.DRUG_ID
                 if x == drug])
