@@ -25,7 +25,6 @@ from gdsctools import version
 
 __all__ = ['ANOVASettings']
 
-
 class ANOVASettings(AttrDict):
     """All settings used in :class:`gdsctools.anova.ANOVA` analysis
 

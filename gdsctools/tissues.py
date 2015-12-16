@@ -1,6 +1,5 @@
 # -*- python -*-
 # -*- coding utf-8 -*-
-
 #  This file is part of GDSCTools software
 #
 #  Copyright (c) 2015 - Wellcome Trust Sanger Institute
@@ -23,7 +22,7 @@ class TCGA(AttrDict):
     .. doctest::
 
         >>> from gdsctools import TCGA
-        >>. tt = TCGA()
+        >>> tt = TCGA()
         >>> tt.ACC
         'Adrenocortical Carcinoma'
 
@@ -72,11 +71,11 @@ class TCGA(AttrDict):
             'UCS': 'Uterine Carcinosarcoma',
             'UCEC': 'Uterine Corpus Endometriod Carcinoma',
             }
-        for k,v in _data.items():
+        for k, v in _data.items():
             self[k] = v
 
 
-# GDSC to TCGA is ambiguous. E.g, lung_NSCLC contains LUAD and LUSC TCGA labels.
+# GDSC to TCGA is ambiguous. E.g, lung_NSCLC contains LUAD and LUSC labels.
 # TCGA to GDSC is also ambiguous since it may be a GDSC1 label (e.g. bone but
 # several GDSC2 labels), OR a GDSC2 label.  
 
@@ -124,10 +123,21 @@ TCGA_2_GDSC = {
         }
 
 
-GDSC_included_in_v17 = ['myeloma', 'nervous_system', 'soft_tissue', 'bone', 'lung_NSCLC',  'skin', 'Bladder', 'cervix', 'lung_SCLC', 'lung', 'neuroblastoma',  'pancreas', 'aero_dig_tract', 'breast', 'kidney', 'leukemia',
-        'ovary', 'prostate', 'large_intestine', 'lymphoma',
-        'thyroid', 'stomach', 'biliary_tract', 'endometrium',
-    'liver',  'urogenital_system_other', 'testis']
+class Tissues(object):
+    """List of tissues included in various analysis
+    
+    Contains tissues included e.g in v17,v18
+    """
+    def __init__(self):
+
+        self.v17 = ['myeloma', 'nervous_system', 
+            'soft_tissue', 'bone', 'lung_NSCLC',  'skin', 
+            'Bladder', 'cervix', 'lung_SCLC', 'lung', 'neuroblastoma',  
+            'pancreas', 'aero_dig_tract', 'breast', 'kidney', 'leukemia',
+            'ovary', 'prostate', 'large_intestine', 'lymphoma',
+            'thyroid', 'stomach', 'biliary_tract', 'endometrium',
+            'liver',  'urogenital_system_other', 'testis']
+        self.v18 = self.v17
 
 
 

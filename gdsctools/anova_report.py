@@ -567,9 +567,9 @@ class HTMLPageMANOVA(ReportMAIN):
         super(HTMLPageMANOVA, self).__init__(filename='manova.html',
                 directory=gdsc.settings.directory,
                 template_filename='manova.html')
-        #self.template = self.env.get_template('manova.html')
 
-        html = SignificantHits(df, 'all hits').to_html(collapse_table=False)
+        html = ANOVAResults(df).get_significant_hits(collapse_table=False)
+
         self.jinja['manova'] = html
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
 
@@ -623,7 +623,7 @@ class Association(ReportMAIN):
         df = self.run()
 
         # Create the table and add it
-        sign = SignificantHits(df, 'features')
+        sign = ANOVAResults(df).get_significant_hits()
         html_table = sign.to_html(escape=False, header=True, index=False)
         self.jinja['association_table'] = html_table
 
@@ -687,7 +687,7 @@ class HTMLOneFeature(ReportMAIN):
 
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf) > 0:
-            sign = SignificantHits(self.subdf, 'feature')
+            sign = ANOVAResults(self.subdf).get_significant_hits()
             html = sign.to_html(escape=False, header=True, index=False)
             self.jinja['association_table'] = html
 
@@ -769,7 +769,7 @@ class HTMLOneDrug(ReportMAIN):
         # Table section
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf)>0:
-            sign = SignificantHits(self.subdf, 'drugs')
+            sign = ANOVAResults(self.subdf).get_significant_hits()
             html = sign.to_html(escape=False, header=True, index=False)
             self.jinja['association_table'] = html
 
@@ -990,39 +990,3 @@ r.create_html_pages(onweb=False)"""
         fh.write(code)
         fh.close()
 
-
-class SignificantHits(object):
-    def __init__(self, df, name='undefined'):
-        self.df = df.copy() # to not alter original version
-        self.cmap_clip = cmap_builder('#ffffff', '#0070FF')
-        self.cmap_absmax = cmap_builder('green', 'white', 'red')
-        self.name = name
-        self.clip_threshold = 2
-
-        columns = ANOVAResults().colnames_subset
-        self.df = self.df[columns]
-
-    def to_html(self, escape=False, header=True, index=False,
-            collapse_table=True):
-
-        # If there is a value below 0.01, a scientific notation is
-        # use. we prefer to use 2 digits and write <0.01
-        colname = 'ANOVA_FEATURE_FDR'
-        self.df.loc[self.df[colname] < 0.01, colname] = '<0.01'
-        html = HTMLTable(self.df, self.name)
-        # Those columns should be links
-        for this in ['FEATURE', 'DRUG_ID', 'ASSOC_ID']:
-            html.add_href(this)
-
-        for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
-                'FEATURE_pos_Glass_delta']:
-            html.add_bgcolor(this, self.cmap_clip, mode='clip',
-                    threshold=self.clip_threshold)
-
-        # normalise data and annotate with color
-        html.add_bgcolor('FEATURE_delta_MEAN_IC50', self.cmap_absmax,
-                mode='absmax')
-
-        html.df.columns = [x.replace("_", " ") for x in html.df.columns]
-        return html.to_html(escape=escape, header=header, index=index,
-                collapse_table=collapse_table, justify='center')

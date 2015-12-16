@@ -268,3 +268,34 @@ class ANOVAResults(object):
     def copy(self):
         a = ANOVAResults(self.df.copy())
         return 
+
+
+    def get_significant_hits(self, collapse_table=False, clip_threshold=2):
+        cmap_clip = cmap_builder('#ffffff', '#0070FF')
+        cmap_absmax = cmap_builder('green', 'white', 'red')
+
+        columns = ANOVAResults().colnames_subset
+        df = self.df[self.colnames_subset]
+
+        colname = 'ANOVA_FEATURE_FDR'
+
+        df.loc[self.df[colname] < 0.01, colname] = '<0.01'
+
+        html = HTMLTable(self.df, self.name)
+        # Those columns should be links
+        for this in ['FEATURE', 'DRUG_ID', 'ASSOC_ID']:
+            html.add_href(this)
+
+        for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
+                'FEATURE_pos_Glass_delta']:
+            html.add_bgcolor(this, cmap_clip, mode='clip',
+                    threshold=clip_threshold)
+
+        # normalise data and annotate with color
+        html.add_bgcolor('FEATURE_delta_MEAN_IC50', cmap_absmax,
+            mode='absmax')
+
+        html.df.columns = [x.replace("_", " ") for x in html.df.columns]
+        return html.to_html(escape=escape, header=header, index=index,
+                collapse_table=collapse_table, justify='center')
+
