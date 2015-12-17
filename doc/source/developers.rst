@@ -1,5 +1,6 @@
 For developers
 =================
+.. contents::
 
 The GDSCTools test suite
 --------------------------
