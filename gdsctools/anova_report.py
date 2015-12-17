@@ -623,8 +623,9 @@ class Association(ReportMAIN):
         df = self.run()
 
         # Create the table and add it
-        sign = ANOVAResults(df).get_significant_hits()
-        html_table = sign.to_html(escape=False, header=True, index=False)
+        sign = ANOVAResults(df)
+        html_table = sign.get_significant_hits(escape=False, header=True, 
+                index=False)
         self.jinja['association_table'] = html_table
 
         # Main boxplot always included
@@ -687,8 +688,9 @@ class HTMLOneFeature(ReportMAIN):
 
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf) > 0:
-            sign = ANOVAResults(self.subdf).get_significant_hits()
-            html = sign.to_html(escape=False, header=True, index=False)
+            sign = ANOVAResults(self.subdf)
+            html = sign.get_significant_hits(escape=False, 
+                    header=True, index=False)
             self.jinja['association_table'] = html
 
         # image section
@@ -769,8 +771,9 @@ class HTMLOneDrug(ReportMAIN):
         # Table section
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf)>0:
-            sign = ANOVAResults(self.subdf).get_significant_hits()
-            html = sign.to_html(escape=False, header=True, index=False)
+            sign = ANOVAResults(self.subdf)
+            html = sign.get_significant_hits(escape=False, 
+                    header=True, index=False)
             self.jinja['association_table'] = html
 
         # image section

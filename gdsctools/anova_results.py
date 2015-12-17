@@ -270,7 +270,8 @@ class ANOVAResults(object):
         return 
 
 
-    def get_significant_hits(self, collapse_table=False, clip_threshold=2):
+    def get_significant_hits(self, collapse_table=False, clip_threshold=2,
+            index=False, header=True, escape=False):
         cmap_clip = cmap_builder('#ffffff', '#0070FF')
         cmap_absmax = cmap_builder('green', 'white', 'red')
 
@@ -281,7 +282,7 @@ class ANOVAResults(object):
 
         df.loc[self.df[colname] < 0.01, colname] = '<0.01'
 
-        html = HTMLTable(self.df, self.name)
+        html = HTMLTable(self.df, 'notused')
         # Those columns should be links
         for this in ['FEATURE', 'DRUG_ID', 'ASSOC_ID']:
             html.add_href(this)
