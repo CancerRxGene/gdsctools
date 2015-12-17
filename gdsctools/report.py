@@ -23,6 +23,7 @@ import pandas as pd
 from jinja2.environment import Environment
 from jinja2 import FileSystemLoader
 
+from colormap import rgb2hex, cmap_builder
 # note that the sorttable javascript is from
 # `http://www.kryogenix.org/code/browser/sorttable/
 # with an X11 license
@@ -134,7 +135,6 @@ class HTMLTable(object):
         If mode is set to 'max', values are normalised by the max.
 
         """
-        from colormap import rgb2hex, cmap_builder
         try:
             # if no cmap provided, it may be just a known cmap name
             cmap = cmap_builder(cmap)

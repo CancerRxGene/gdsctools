@@ -20,6 +20,8 @@ from collections import OrderedDict
 import pandas as pd
 import numpy as np
 
+from colormap import cmap_builder
+
 from gdsctools import readers
 from gdsctools.volcano import VolcanoANOVA
 
