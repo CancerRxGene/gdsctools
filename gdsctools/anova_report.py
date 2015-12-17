@@ -386,6 +386,8 @@ class ANOVAReport(object):
         strong_hits = []
         full_strong_hits = []
 
+        MC1 = 1
+        MC2 = 2
         mask2 = self.df['FEATURE_pos_logIC50_MEAN'] < MC1
         mask3 = self.df['FEATURE_pos_logIC50_MEAN'] < MC2
         mask4 = self.df['FEATURE_neg_logIC50_MEAN'] < MC1
@@ -568,7 +570,7 @@ class HTMLPageMANOVA(ReportMAIN):
                 directory=gdsc.settings.directory,
                 template_filename='manova.html')
 
-        html = ANOVAResults(df).get_significant_hits(collapse_table=False)
+        html = ANOVAResults(df).get_html_table(collapse_table=False)
 
         self.jinja['manova'] = html
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
@@ -624,7 +626,7 @@ class Association(ReportMAIN):
 
         # Create the table and add it
         sign = ANOVAResults(df)
-        html_table = sign.get_significant_hits(escape=False, header=True, 
+        html_table = sign.get_html_table(escape=False, header=True, 
                 index=False)
         self.jinja['association_table'] = html_table
 
@@ -689,7 +691,7 @@ class HTMLOneFeature(ReportMAIN):
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf) > 0:
             sign = ANOVAResults(self.subdf)
-            html = sign.get_significant_hits(escape=False, 
+            html = sign.get_html_table(escape=False, 
                     header=True, index=False)
             self.jinja['association_table'] = html
 
@@ -772,7 +774,7 @@ class HTMLOneDrug(ReportMAIN):
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf)>0:
             sign = ANOVAResults(self.subdf)
-            html = sign.get_significant_hits(escape=False, 
+            html = sign.get_html_table(escape=False, 
                     header=True, index=False)
             self.jinja['association_table'] = html
 

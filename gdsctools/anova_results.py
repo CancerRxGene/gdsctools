@@ -127,6 +127,8 @@ class ANOVAResults(object):
 
 
     """
+    _colname_drug_id = 'DRUG_ID'
+
     def __init__(self, filename=None):
         """.. rubric:: Constructor
 
@@ -248,14 +250,14 @@ class ANOVAResults(object):
         if len(self) == 0:
             return []
         else:
-            return self.df[self.drug_id].unique()
+            return self.df[self._colname_drug_id].unique()
     drugIds = property(_get_drugIds,
             doc="Returns the list of drug identifiers")
 
     def volcano(self):
         """Calls :class:`VolcanoANOVA` on the results"""
-        v = VolcanoANOVA(self.df, settings=self.settings)
-        v.volcano_plot_all()
+        self.handle_volcano = VolcanoANOVA(self.df, settings=self.settings)
+        self.handle_volcano.volcano_plot_all()
 
     def __str__(self):
         txt = 'Total number of ANOVA tests performed: %s ' % len(self.df) 
@@ -269,8 +271,7 @@ class ANOVAResults(object):
         a = ANOVAResults(self.df.copy())
         return 
 
-
-    def get_significant_hits(self, collapse_table=False, clip_threshold=2,
+    def get_html_table(self, collapse_table=False, clip_threshold=2,
             index=False, header=True, escape=False):
         cmap_clip = cmap_builder('#ffffff', '#0070FF')
         cmap_absmax = cmap_builder('green', 'white', 'red')

@@ -236,14 +236,12 @@ class ANOVA(object): #Logging):
         """
         if ctype is None:
             return
-        # input may be unicode. transform to str otherwise, error pandas.
-        ctype = str(ctype)
 
         if ctype == 'PANCAN':
             return
 
         if isinstance(ctype, str):
-            ctype = [ctype]
+            ctype = [str(ctype)]
 
         for this in ctype:
             assert this in self.features.tissues, "%s not found" % ctype
