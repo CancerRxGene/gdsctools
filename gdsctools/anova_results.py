@@ -24,7 +24,7 @@ from colormap import cmap_builder
 
 from gdsctools import readers
 from gdsctools.volcano import VolcanoANOVA
-
+from gdsctools.report import HTMLTable
 
 __all__ = ['ANOVAResults']
 
@@ -147,8 +147,6 @@ class ANOVAResults(object):
                 self._df = filename.copy()
             assert isinstance(self._df, pd.core.frame.DataFrame), \
                 "excepts a dataframe or filename"
-
-        # TODO: check the header of the dataframe
 
         #: dictionary with the relevant column names and their expected types
         self.mapping = OrderedDict()
