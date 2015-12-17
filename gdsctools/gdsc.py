@@ -30,8 +30,11 @@ class IC50Cluster(IC50):
 
     def _get_to_cluster(self):
         info = self.info()
-        to_cluster = info[info.ratio < 10].DRUG_ID.values
-        return list(to_cluster)
+        if len(info)> 0:
+            to_cluster = info[info.ratio < 10].DRUG_ID.values
+            return list(to_cluster)
+        else:
+            return []
     to_cluster = property(_get_to_cluster)
 
     def _get_mapping(self):
@@ -73,13 +76,15 @@ class IC50Cluster(IC50):
             results.append(result)
 
         df = pd.DataFrame(results)
-        df.columns = ['DRUG_ID'] + [str(x) for x in range(1, max_ids+1)] +\
-            ['total', 'common', 'ratio']
-        df.sort_values(by='ratio', ascending=False, inplace=True)
+        if len(df):
+            df.columns = ['DRUG_ID'] + [str(x) for x in range(1, max_ids+1)] +\
+                ['total', 'common', 'ratio']
+            df.sort_values(by='ratio', ascending=False, inplace=True)
         return df
 
     def cluster(self):
         # get list of drug identifiers to cluster
+
         to_cluster = self.to_cluster
         mapping = self._get_mapping()
 
