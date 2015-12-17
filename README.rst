@@ -40,7 +40,7 @@ Installation
   pip install gdsctools
   
 For beginners, please visit the main documentation `Installation
-<http://gdsctools.readthedocs.org/master/installation.html>`_ section.
+<http://gdsctools.readthedocs.org/en/master/installation.html>`_ section.
 
 
 QuickStart
@@ -61,7 +61,7 @@ or as a script::
   an = ANOVA(ic50_test, features_filename)  # second arg is optional
   an.anova_all()
   
-More examples are provided in the `documentation on ReadThedoc <http://gdsctools.readthedocs.org/master/index.html>`_. You can for example select a specific drug, or a set of drugs instead of the entire screening, or perform a sub selection on features. 
+More examples are provided in the `documentation on ReadThedoc <http://gdsctools.readthedocs.org/en/master/index.html>`_. You can for example select a specific drug, or a set of drugs instead of the entire screening, or perform a sub selection on features. 
 
 
 
