@@ -543,11 +543,12 @@ class VolcanoANOVA(object):
         td { color: blue; background-color: #cccccc; }"""
 
         try:
+            import mpld3
             tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
                 css=css)
             mpld3.plugins.connect(fig, tooltip)
         except:
-            pass
+            print("Issue with javascript version of the volcano plot. Skipped")
         self.scatter = scatter
         self.current_fig = fig
         # not sure is this is required. could be a memory leak here
@@ -577,11 +578,12 @@ class VolcanoANOVA(object):
                 text += "  "
                 axl.get_texts()[i].set_text(text)
             import mpld3
-            js_path1 = "https://raw.githubusercontent.com/CancerRxGene/" + \
-                    "gdsctools/master/share/data/javascript/d3.v3.min.js"
-            js_path2 = "https://raw.githubusercontent.com/CancerRxGene/" + \
-                    "gdsctools/master/share/data/javascript/mpld3.v0.2.js"
+            #js_path1 = "https://raw.githubusercontent.com/CancerRxGene/" + \
+            #        "gdsctools/master/share/data/javascript/d3.v3.min.js"
+            #js_path2 = "https://raw.githubusercontent.com/CancerRxGene/" + \
+            #        "gdsctools/master/share/data/javascript/mpld3.v0.2.js"
             htmljs = mpld3.fig_to_html(self.current_fig)
+
             #                d3_url=js_path1,
             #                mpld3_url=js_path2)
         except:
