@@ -259,22 +259,16 @@ class ANOVAReport(object):
         # a column, sort, and remove 'name' column afterwards
         df_count['name'] = df_count.index
         try:
-            df_count.sort_values(by=['total', 'name'], ascending=False,
-                                 inplace=True)
+            df_count.sort_values(by=['total', 'name'], 
+                    ascending=[False, True], inplace=True)
         except:
-            df_count.sort(columns=['total', 'name'], ascending=False,
-                          inplace=True)
+            df_count.sort(columns=['total', 'name'], 
+                    ascending=[False, True], inplace=True)
 
         df_count.drop('name', axis=1, inplace=True)
         return df_count
 
-    def drug_summary(self,  top=50, fontsize=15, filename=None):
-        """Return dataframe with significant drugs
-
-        :param fontsize:
-        :param top: max number of significant associations to show
-        :param filename: if provided, save the file in the directory
-        """
+    def get_drug_summary_data(self):
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -284,6 +278,17 @@ class ANOVAReport(object):
         df_count_resistant = self.resistant_df.groupby(colname).count()
 
         df_count = self._get_data(df_count_sensible, df_count_resistant)
+        return df_count
+
+    def drug_summary(self,  top=50, fontsize=15, filename=None):
+        """Return dataframe with significant drugs
+
+        :param fontsize:
+        :param top: max number of significant associations to show
+        :param filename: if provided, save the file in the directory
+        """
+
+        df_count = self.get_drug_summary_data()
 
         if len(df_count):
             self._plot(df_count, 'drug', top)
@@ -293,6 +298,14 @@ class ANOVAReport(object):
                     bbox_inches='tight')
         return df_count
 
+    def get_feature_summary_data(self):
+        # get sensible and resistant sub dataframes
+        self._set_sensible_df()
+        df_count_sensible = self.sensible_df.groupby('FEATURE').count()
+        df_count_resistant = self.resistant_df.groupby('FEATURE').count()
+        df_count = self._get_data(df_count_sensible, df_count_resistant)
+        return df_count
+
     def feature_summary(self, filename=None, top=50, fontsize=15):
         """Return dataframe with significant features
 
@@ -300,13 +313,7 @@ class ANOVAReport(object):
         :param top: max number of significant associations to show
         :param filename: if provided, save the file in the directory
         """
-        # get sensible and resistant sub dataframes
-        self._set_sensible_df()
-
-        df_count_sensible = self.sensible_df.groupby('FEATURE').count()
-        df_count_resistant = self.resistant_df.groupby('FEATURE').count()
-
-        df_count = self._get_data(df_count_sensible, df_count_resistant)
+        df_count = self.get_feature_summary_data()
 
         if len(df_count) > 0:
             self._plot(df_count, 'feature', top)
@@ -356,8 +363,14 @@ class ANOVAReport(object):
         self.labels = labels
         ax.set_yticks([x + 0.5 for x in ind])
         ax.set_yticklabels(labels, fontsize=12)
+
+        xticks = ax.get_xticks()
+        ax.set_xticklabels(
+                [int(x) if divmod(x,1)[1] == 0 else "" for x in xticks])
+
+
         pylab.grid()
-        pylab.title(r"Top %s %s most frequently " % (top, title_tag) + \
+        pylab.title(r"Top %s %s(s) most frequently " % (top, title_tag) + \
                     "\nassociated with drug  response",
                     fontsize=self.settings.fontsize/1.2)
         pylab.xlabel(r'Number of significant associations (FDR %s %s %s) '
