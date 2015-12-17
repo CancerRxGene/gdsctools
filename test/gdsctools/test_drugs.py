@@ -1,7 +1,9 @@
 from gdsctools.drugs import ChemSpiderSearch
+from nose.plugins.attrib import attr
 
 # Requires to use bioservices and a token for chemspider.
-def _test_chemspider():
+@attr('skip')
+def test_chemspider():
 
     cc = ChemSpiderSearch(['ZM447439'])
     cc.search_in_chemspider()

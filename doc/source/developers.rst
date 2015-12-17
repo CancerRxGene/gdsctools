@@ -4,13 +4,23 @@ For developers
 The GDSCTools test suite
 --------------------------
 
-* The entire GDSCTools packages is tested. Tests are in the ./test/gdsctools 
-  directory of the source code. 
+The GDSCTools package has a large set of tests in the ./test/gdsctools directory.  In version 0.10, about 80% of the functionalities are covered. If you add a 
+new module or function, please add a corresponding test file in
+  ./test/gdsctools directory.
 
-* As of version 0.3, about 80% of the code is covered. 
+The test suite uses the **nosetests** utility and is integrated within the
+  Travis continuous integration (see below).
 
-* If you add a new module, please add a corresponding test file in
-  ./test/gdsctools
+To run the tests locally, you will need nose and coverage packages::
+
+    pip install nose coverage
+
+Then, in the directory where is the **setup.py** file, type ::
+
+    python setup.py nosetests 
+
+You may also go directly in the ./tests/gdsctools directory  but some tests may
+required extra files or permission.
 
 Documentation
 ----------------
@@ -40,5 +50,8 @@ file **setup.py** and type::
     python setup.py upload_docs
 
 
-    
+Continuous Integration
+---------------------------
+
+This is based on Travis. The reports should be available here: https://travis-ci.org/CancerRxGene/gdsctools and the status is also reported in the main github page (https://github.com/CancerRxGene/gdsctools) as an icon (**build**)  that will be green or red depending  on the status of the build within Travis. 
 

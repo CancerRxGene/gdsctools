@@ -7,9 +7,22 @@ ChangeLog
 Version 0.10
 --------------------------
 
-Lots of changes in this version but for users the API should be very similar.
+.. rubrix:: 0.10.1
+
+* BUG FIXES: 
+    - Fixes #120 (javascript version of the volcano were not showing the
+      tooltips anymore).
+
+* CHANGES:
+    - Fixes #119 by adding more tests.
+
+
+
+
 
 .. rubric:: 0.10
+
+Lots of changes in this version but for users the API should be very similar.
 
 * NEW:
     - Add a new factor called MEDIA_FACTOR. If not provided, genomic
