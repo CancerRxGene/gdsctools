@@ -34,7 +34,7 @@ class ChemSpiderSearch(object):
         self._cs_find = self._cs.find
         self._cs_get = self._cs.GetExtendedCompoundInfo
 
-        self.drugs = sorted(set(drug_list))
+        self.drugs = sorted(drug_list)
 
     def find_chembl_ids(self):
         # don't know how to search for a chembl id given the drug name...
@@ -49,6 +49,8 @@ class ChemSpiderSearch(object):
         drugs = []
         chembl_ids = []
         chemspider_ids = []
+        smiles_c = []
+        smiles_cs = []
 
         for drug in self.drugs:
             try:
@@ -57,16 +59,29 @@ class ChemSpiderSearch(object):
                 ids = ",".join([x['chemblId'] for x in entry])
                 drugs.append(drug)
                 chembl_ids.append(ids)
+                ids = ",".join([str(x) for x in self.results[drug]])
             except:
                 print('skipping' + drug)
-                continue
-
-            ids = ",".join([str(x) for x in self.results[drug]])
+                ids = ",".join([drug, '', '', '', '', ''])
             chemspider_ids.append(ids)
 
+        for drug in self.drugs:
+            try:
+                smiles_c.append(",".join([x['smiles'] for x in
+                    self.results_chembl[drug]]))
+            except:
+                smiles_c.append('')
+            try:
+                smiles_cs.append(self.results_chemspider[drug]['smiles'])
+            except:
+                smiles_cs.append('')
+
+
         import pandas as pd
-        df = pd.DataFrame([drugs, chembl_ids, chemspider_ids],
-                index=['DRUG_NAME','CHEMBL_ID','CHEMSPIDER_ID'])
+        df = pd.DataFrame([drugs, chembl_ids, chemspider_ids, smiles_c,
+            smiles_cs],
+                index=['DRUG_NAME','CHEMBL_ID','CHEMSPIDER_ID', 'SMILE_CHEMBL',
+                    'SMILE_CHEMSPIDER'])
         df = df.T
         return df
 
@@ -91,6 +106,8 @@ class ChemSpiderSearch(object):
 
         pb= Progress(N)
         self.results_chembl = {}
+        self.results_chemspider = {}
+
         for i in range(0, N):
             drug = self.drugs[i]
             self.results_chembl[drug] = []
@@ -98,6 +115,7 @@ class ChemSpiderSearch(object):
             if self.results[drug]:
                 for chemspider_id in self.results[drug]:
                     chemspider_entry = self._cs_get(chemspider_id)
+                    self.results_chemspider[drug] = chemspider_entry 
                     smile = chemspider_entry['smiles']
                     # now search in chembl
                     res_chembl = self._chembl.get_compounds_by_SMILES(smile)

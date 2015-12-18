@@ -578,14 +578,9 @@ class VolcanoANOVA(object):
                 text += "  "
                 axl.get_texts()[i].set_text(text)
             import mpld3
-            #js_path1 = "https://raw.githubusercontent.com/CancerRxGene/" + \
-            #        "gdsctools/master/share/data/javascript/d3.v3.min.js"
-            #js_path2 = "https://raw.githubusercontent.com/CancerRxGene/" + \
-            #        "gdsctools/master/share/data/javascript/mpld3.v0.2.js"
-            htmljs = mpld3.fig_to_html(self.current_fig)
-
-            #                d3_url=js_path1,
-            #                mpld3_url=js_path2)
+            htmljs = mpld3.fig_to_html(self.current_fig,
+                            d3_url=js_path1,
+                            mpld3_url=js_path2)
         except:
             htmljs = ""
         return """<div class="jsimage"> """ + htmljs + "</div>"
