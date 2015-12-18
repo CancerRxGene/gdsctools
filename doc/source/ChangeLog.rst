@@ -10,12 +10,12 @@ Version 0.10
 .. rubrix:: 0.10.1
 
 * BUG FIXES: 
-    - Fixes #120 (javascript version of the volcano were not showing the
-      tooltips anymore).
+    - Fix set_cancer_type to accept lists of tissues again
 
 * CHANGES:
     - Fixes #119 by adding more tests.
-
+    - reactivate get_significant hits functions.
+    - rename ANOVAResults.get_significant_hits into get_html_table
 
 
 
