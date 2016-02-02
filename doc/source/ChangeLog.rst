@@ -7,7 +7,7 @@ ChangeLog
 Version 0.10
 --------------------------
 
-.. rubrix:: 0.10.1
+.. rubric:: 0.10.1
 
 * BUG FIXES: 
     - Fix set_cancer_type to accept lists of tissues again
