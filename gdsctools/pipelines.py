@@ -104,10 +104,6 @@ def anova_pipeline(args=None):
         print(an)
         return
 
-    if options.onweb is True:
-        from gdsctools import gdsctools_help
-        gdsctools_help()
-        return 
 
     if options.print_tissues is True:
         from gdsctools import anova
@@ -140,8 +136,6 @@ def anova_pipeline(args=None):
     # --------------------------------------------------- real analysis
     # -----------------------------------------------------------------
     # dispatcher to the functions according to the user parameters
-
-
     if options.drug is not None and options.feature is not None:
         print_color("ODOF mode", purple)
         anova_one_drug_one_feature(options)
@@ -183,7 +177,6 @@ def anova_one_drug(options):
     
     if options.feature:
         an.feature_names = options.features
-    print(an)
 
     results = an.anova_one_drug(options.drug)
 
@@ -212,10 +205,9 @@ def anova_all(options):
             low_memory=not options.fast)
     an.set_cancer_type(options.tissue)
 
-    #an = _set_settings(an, options)
+    an = _set_settings(an, options)
     if options.feature:
         an.feature_names = [options.feature]
-    print(an)
 
     # The analysis
     print(darkgreen("Starting the analysis"))
@@ -224,9 +216,10 @@ def anova_all(options):
     # HTML report
     if options.no_html is True:
         return
+
     r = ANOVAReport(an, results=df)
-    print("Creating all figure and html documents in %s" %
-            r.settings.directory)
+    print(darkgreen("Creating all figure and html documents in %s" %
+            r.settings.directory))
     r.create_html_pages(onweb=options.onweb)
 
 
@@ -285,7 +278,7 @@ class ANOVAOptions(argparse.ArgumentParser):
    in a browser. This can be very long (5 minutes to several hours) depending
    on the size of the files:
 
-    gdsctools_anova --input-ic50 <filename>  --onweb
+    gdsctools_anova --input-ic50 <filename> 
 
 2. on the same data as above, analyse only one association for a given
    drug <drug> and a given genomic features <feature>. The drug name should
@@ -294,11 +287,10 @@ class ANOVAOptions(argparse.ArgumentParser):
    the default file, one of the feature in the default file (e.g., BRAF_mut)
 
    gdsctools_anova --input-ic50 <filename> --drug <drug> --feature <feature>
-       --onweb
 
 3. on the same data as above, analyse one drug across all features.
 
-    gdsctools_anova --input-ic50 <filename> --onweb --drug <drug>
+    gdsctools_anova --input-ic50 <filename> --drug <drug>
 
 to obtain more help about the parameters, please type
 
@@ -355,10 +347,11 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            action="store_true",
                            help="verbose option.")
         
-        group.add_argument("--onweb", dest='onweb',
-                           action="store_true",
-                           help="same as -on-web")
-
+        group.add_argument( "--do-not-open-report", dest='onweb',
+                           action="store_false",
+                           help="""By default, opens the index.html page. 
+                           Set this option if you do not want to open the 
+                           html page automatically.""")
         # if one drug one feature only
         group.add_argument("-d", "--drug", dest="drug",
                            help="""The name of a valid drug identifier to be
@@ -418,6 +411,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            tests."""
                            )
 
+        
         group.add_argument('--license', dest='license',
                            action="store_true",
                            help="Print the current license"
@@ -429,10 +423,12 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            memory and should be 10-30%% faster. (1.2G for
                            265 drugs and 680 features)"""
                            )
+
         group.add_argument('--no-html', dest='no_html',
                            action="store_true",
                            help="""If set, no images or HTML are created. For
                            testing only""")
+
         group.add_argument('--version', dest='version',
                            action="store_true",
                            help="print current version of this application")
