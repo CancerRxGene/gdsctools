@@ -348,6 +348,7 @@ class IC50(Reader, CosmicRows):
 
         # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
         _cols = list(self.df.columns)
+
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
             warnings.warn("'COSMIC ID' column name is deprecated since " +
             "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
@@ -473,7 +474,7 @@ class GenomicFeatures(Reader, CosmicRows):
         - 'TISSUE_FACTOR'
         - 'MSI_FACTOR'
 
-    If this column is found, it is removed::
+    If this column is found, it is removed (old name)::
 
         - 'SAMPLE_NAME'
         - 'Sample Name'
@@ -865,8 +866,9 @@ class DrugDecode(Reader):
             'WEBRELEASE']
 
         #self.df.drop_duplicates(inplace=True)
-        try:self._interpret()
-        except:pass
+        #try:self._interpret()
+        #except:pass
+        self._interpret()
 
     def _interpret(self, filename=None):
         N = len(self.df)
@@ -882,13 +884,15 @@ class DrugDecode(Reader):
         if 'OWNED_BY' not in self.df.columns:
             self.df['OWNED_BY'] = [None] * N
 
+        for this in self.header[1:]:
         for this in self.header:
             msg = "Could not read the file with expected format. "
             msg += "It should be a comma separated file."
-            msg += " It should be made of 3 columns with this header"
+            msg += " This column was not found and may be an issue later on: "
             msg += "%s"
             if this not in self.df.columns and this != self.df.index.name:
-                raise ValueError(msg % this)
+                print('WARNING:' + msg % this )
+                #raise ValueError(msg % this)
 
         try:
             self.df.set_index('DRUG_ID', inplace=True)
