@@ -884,7 +884,7 @@ class DrugDecode(Reader):
         if 'OWNED_BY' not in self.df.columns:
             self.df['OWNED_BY'] = [None] * N
 
-        for this in self.header[1:]:
+        #for this in self.header[1:]:
         for this in self.header:
             msg = "Could not read the file with expected format. "
             msg += "It should be a comma separated file."
