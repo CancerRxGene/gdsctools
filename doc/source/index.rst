@@ -42,6 +42,10 @@ If you want to have a go, please download this
 :download:`IC50 example <../../share/data/test_IC50.csv>`, which is required as
 an input. 
 
+Another data set is used for the analysis but can be replaced by yours. The default data set contains a small set of genomic features and can be downladed: 
+:download:`GenomicFeature example <../../share/data/genomic_features.tsv.gz>`, and adapted to your needs. 
+
+
 .. seealso:: See :ref:`standalone` for more details about the 
     standalone application.
 
