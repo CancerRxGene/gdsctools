@@ -199,6 +199,7 @@ class ANOVA(object): #Logging):
                 self.settings.include_MSI_factor = False
         else:
             self.settings.include_MSI_factor = False
+            self.settings.analysis_type = 'feature_only'
 
     def _autoset_tissue_factor(self):
         # select tissue based on the features
@@ -446,7 +447,7 @@ class ANOVA(object): #Logging):
 
         # an alias to the indices
         indices = self.ic50_dict[drug_name]['indices']
-
+        dd.indices = indices
         # select only relevant tissues/msi/features
         if self.settings.low_memory is True:
             # This line takes 50% of the time
@@ -704,13 +705,18 @@ class ANOVA(object): #Logging):
 
             # example of computing null model ?
             # Example of computing pvalues ourself
+            # with 100 000 samples, we can get a smooth distribution
+            # that we can then fit with fitter. good distribution 
+            # for the raw data is uniform one but if we take the log10, 
+            # we have lots of possible distrob such as beta, exponweib, gamma,
+            #....
             """self.samples1 = []
             self.samples2 = []
             self.samples3 = []
             Y = odof.Y.copy()
-            pb = Progress(10000,20)
-            for i in range(0,10000):
-                #pylab.shuffle(Y)
+            pb = Progress(10000, 20)
+            for i in range(0, 10000):
+                pylab.shuffle(Y)
                 #data_lm = OLS(Y, df.values).fit()
                 data_lm = OLS(Y+0.3*pylab.randn(len(Y)), df.values).fit()
                 anova_pvalues = self._get_anova_summary(data_lm,
@@ -944,15 +950,15 @@ class ANOVA(object): #Logging):
             if self.settings.include_media_factor:
                 dd = {'tissue': F_pvalues[0],
                       'media': F_pvalues[1],
-                      'msi':F_pvalues[2],
-                      'feature':F_pvalues[3]}
+                      'msi': F_pvalues[2],
+                      'feature': F_pvalues[3]}
             else:
                 dd = {'tissue': F_pvalues[0],
                       'msi':F_pvalues[1],
                       'feature':F_pvalues[2]}
             return dd
         elif self.settings.include_MSI_factor is True:
-            return {'msi': F_pvalues[0], 'feature':F_pvalues[1]}
+            return {'msi': F_pvalues[0], 'feature': F_pvalues[1]}
         else:
             return {'feature': F_pvalues[0]}
 
@@ -969,8 +975,7 @@ class ANOVA(object): #Logging):
 
     def _test(self):
         # for drug1047 and featuer ABCB1_mut
-        print("""
-        Analysis of Variance Table
+        print("""Analysis of Variance Table
 
         Response: Y
         Df  Sum Sq Mean Sq F value  Pr(>F)
@@ -980,7 +985,6 @@ class ANOVA(object): #Logging):
         Residuals     817 1194.55  1.4621
         """)
 
-    #98% of time in  method anova_one_drug_one_feature
     def anova_one_drug(self, drug_id, animate=True, output='object'):
         """Computes ANOVA for a given drug across all features
 
@@ -989,7 +993,6 @@ class ANOVA(object): #Logging):
         :return: a dataframe
 
         Calls :meth:`anova_one_drug_one_feature` for each feature.
-
         """
         # some features can be dropped ??
 
@@ -1003,6 +1006,7 @@ class ANOVA(object): #Logging):
         shift = self.features.shift
 
         features = features[features.columns[shift:]]
+        # FIXME what about features with less than 3 zeros ?
         mask = features.sum(axis=0) >= 3
 
         # TODO: MSI, tissues, name must always be kept
@@ -1014,7 +1018,7 @@ class ANOVA(object): #Logging):
         N = len(selected_features.columns)
         pb = Progress(N, 10)
         res = {}
-        # note that we start at idnex 4 to drop sample name, tissue and MSI
+        # 
         for i, feature in enumerate(selected_features.columns):
             # production True, means we do not want to create a DataFrame
             # for each call to the anova_one_drug_one_feature function
