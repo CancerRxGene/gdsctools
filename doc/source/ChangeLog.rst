@@ -7,6 +7,14 @@ ChangeLog
 Version 0.10
 --------------------------
 
+.. rubric:: 0.10.2
+
+* BUG Fixes:
+
+  - Fixes issue #127 (If MSI factor missing, the anova still tries to use it)
+  - Fixes issue #126 (--out-directory ignored in gdsctools-anova pipeline)
+  - Fixes issue #125 and #124 (HTML report links broken)
+
 .. rubric:: 0.10.1
 
 * BUG FIXES: 
