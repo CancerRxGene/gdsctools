@@ -493,8 +493,8 @@ class VolcanoANOVA(object):
         def onpick(event):
             ind = event.ind[0]
             try:
-                title = data.ix[ind]['Drug'] + " / " + data.ix[ind].Feature
-                title += "\nFDR=" + str(data.ix[ind]['FDR'])
+                title = str(data.ix[ind]['Drug']) + " / " + str(data.ix[ind].Feature)
+                title += "\nFDR=" + "%.4e" % data.ix[ind]['FDR']
                 title_handler.set_text(title.replace("_","  "))
             except:
                 print('Failed to create new title on click')
