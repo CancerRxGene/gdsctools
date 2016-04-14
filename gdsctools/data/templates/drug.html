@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% set mode="Drug" %}
+
+{% block content %}
+
+      Go back to <a href="index.html">main page</a>.<br/>
+
+
+    <div class="contents local topic" id="contents">
+        <ul class="simple">
+            <li> 1 - <a class="reference internal" 
+                href="#{{ mode }}_details_and_screening_numbers" id="id1"> {{ mode }} details and screening numbers</a>
+</li>
+            <li> 2 - <a class="reference internal" href="#Individual_association_analysis" id="id2">  Individual association analysis</a></li>
+            <li> 3 - <a class="reference internal" href="#All-tests_volcano_plot" id="id3">  All-tests volcano plot</a></li>
+        </ul>
+    </div>
+    
+
+    <div class="section" id="{{ mode }}_details_and_screening_numbers">
+    <h2> 1 -  <a class="toc-backref" href="#id1">{{ mode }} details and screening numbers</a></h2>
+ 
+        Drug Name: {{ drug_name}}<br/>
+        Drug ID: {{ drug_id}} <br/>
+        Synonyms: {{ drug_synonyms }}<br/>
+        Brand name: {{ drug_brand_name }}<br/>
+        Owned by: {{ drug_owner }}<br/>
+        Target: {{ drug_target }}<br/>
+        <br/>
+        Number of cell lines screened: {{ n_cell_lines }}<br/>
+        Screening concentration range (2): {{ conc_min }} to {{ conc_max }} uM<br/>
+    </div>
+
+
+    <div class="section" id="Individual_association_analysis">
+    <h2> 2 -  <a class="toc-backref" href="#id2">
+        Individual association analysis</a></h2>
+    <p>Statistically significant associations identified = {{ n_hits }} </p>
+
+    {{ association_table }}
+
+    </div>
+
+ 
+    <div class="section" id="All-tests_volcano_plot">
+    <h2> 3 -  <a class="toc-backref" href="#id3">All-tests volcano plot</a></h2>
+    <a href="{{ image_filename }}.html"><img alt="volcano plot" src="{{ image_filename }}.png"></a>
+    <br/> <p>Possibly, a javascript version is available
+          <a href="{{ image_filename }}.html">here</a>. (or click on the image)
+          </p>
+    </div>
+
+    <br/>
+{% endblock %}

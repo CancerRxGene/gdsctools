@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+
+
+    <p>Drug Domain: <b>{{ collaborator }}</b> proprietary compounds and public
+    compounds.</p>
+    <hr>
+    <div class="section">
+    <h2> Individual ANOVAs Results Summary</h2>
+    {{ data_table }}
+    </div>
+
+
+
+{% endblock %}

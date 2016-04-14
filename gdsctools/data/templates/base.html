@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>GDSCTools report</title>
+    <link rel="stylesheet" href="css/gdsc.css" type="text/css" />
+    <script src="js/sorttable.js"></script>
+
+    <!-- Include required JS files -->
+    <link rel="stylesheet" href="css/github-gist.css">
+    <script src="js/highlight.pack.js"></script>
+   <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+
+<div class="document" id="unset">
+<h1 class="title">{{ title }}</h1>
+    <h2 class="subtitle">Report created with 
+        gdsctools (version {{ version }})</h2>
+    <p>See <a href="https://www.github.com/CancerRxGene/gdsctools"
+        target="_blank">GDSCTools github page</a> for downloads and the <a
+    href="http://gdsctools.readthedocs.org" target="_blank">online documentation</a> for details.</p>
+    <hr>
+    <p>Analysis Domain: <b>{{ analysis_domain }}</b> tissues/cancer cell type</p>
+    <hr>
+
+      {% block content %}{% endblock %}
+
+
+      <hr/>
+
+    <div class="footer">
+       <div class="logo">
+            <img src= ./images/sanger-logo.png  title=sanger-logo alt="sanger"/>
+            <img src= ./images/EBI_logo.png  title=sanger-logo alt="EBI"/>
+       </div>
+       
+      <div class="copyright">
+          {{ time_now }}
+           Please visit <a href="http://gdsctools.readthedocs.org">online</a>
+           documentation for details. 
+       </div>
+   </div>
+</div>
+</body>
+</html>

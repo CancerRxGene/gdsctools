@@ -1,0 +1,131 @@
+
+AN   Next free AC: CVCL_4U66
+_________________________________________________________________________
+ID   1-8
+AC   CVCL_T367
+DR   CLO; CLO_0050510
+DR   RCB; RCB1374
+RX   PubMed=8973332;
+OX   NCBI_TaxID=9534; ! Chlorocebus aethiops
+HI   CVCL_0229 ! CV-1
+SX   Male
+CA   Transformed cell line
+//
+ID   1-87
+AC   CVCL_D231
+DR   ChEMBL-Cells; CHEMBL3307800
+DR   ChEMBL-Targets; CHEMBL612272
+DR   Cosmic; 889083
+DR   Cosmic; 946049
+DR   Cosmic; 1066155
+DI   NCIt; C3512; Lung adenocarcinoma
+OX   NCBI_TaxID=9606; ! Homo sapiens
+CA   Cancer cell line
+//
+ID   1-LN
+AC   CVCL_L211
+SY   1LN; 1-LN-PC-3-1A
+DR   BTO; BTO:0005352
+RX   PubMed=4007233;
+CC   Derived from metastatic site: bone.
+DI   NCIt; C4863; Prostate carcinoma
+OX   NCBI_TaxID=9606; ! Homo sapiens
+HI   CVCL_0035 ! PC-3
+SX   Male
+CA   Cancer cell line
+//
+ID   1.1B4
+AC   CVCL_1778
+DR   ECACC; 00112811
+DR   ECACC; 10012801
+RX   Patent=US20040005702;
+RX   PubMed=21515691;
+CC   Discontinued: ECACC; 00112811; probable.
+OX   NCBI_TaxID=9606; ! Homo sapiens
+HI   CVCL_0480 ! PANC-1
+CA   Hybrid cell line
+//
+ID   1011-mel
+AC   CVCL_7942
+SY   1011-MEL; 1011 mel; 1011mel; 1011; Mel 1011
+DR   CGH-DB; 9292-4
+DR   Cosmic; 876687
+DR   Cosmic; 905206
+RX   PubMed=8081556;
+RX   PubMed=15467732;
+CC   Derived from metastatic site: not described.
+DI   NCIt; C3224; Melanoma
+OX   NCBI_TaxID=9606; ! Homo sapiens
+CA   Cancer cell line
+//
+ID   1013L
+AC   CVCL_4806
+DR   Cosmic; 721372
+RX   PubMed=14518029;
+WW   http://capcelllines.ca/details.asp?id=78
+DI   NCIt; C4863; Prostate carcinoma
+OX   NCBI_TaxID=9606; ! Homo sapiens
+SX   Male
+CA   Cancer cell line
+//
+ID   101A
+AC   CVCL_J815
+RX   PubMed=6189834;
+OX   NCBI_TaxID=10090; ! Mus musculus
+HI   CVCL_2155 ! P3/NS1/1-Ag4.1
+CA   Hybridoma
+//
+ID   103-LCL
+AC   CVCL_6751
+DR   CLO; CLO_0050492
+DR   BioSample; SAMN03472055
+DR   RCB; RCB2082
+DR   TKG; TKG 0614
+OX   NCBI_TaxID=9606; ! Homo sapiens
+CA   Transformed cell line
+//
+ID   10P8
+AC   CVCL_0E96
+DR   ATCC; CRL-2035
+RX   PubMed=2998805;
+CC   Discontinued: ATCC; CRL-2035; true.
+CC   Breed/subspecies: BALB/cAn.
+OX   NCBI_TaxID=10090; ! Mus musculus
+CA   Transformed cell line
+//
+ID   11-18
+AC   CVCL_A596
+DR   CGH-DB; 201-1
+DR   CGH-DB; 9163-4
+DR   Cosmic; 889084
+DR   Cosmic; 946048
+DR   Cosmic; 1066156
+DR   Cosmic; 1336877
+DR   Cosmic; 1656892
+DR   Cosmic; 1731372
+RX   PubMed=14581340;
+RX   PubMed=15746151;
+RX   PubMed=22313637;
+DI   NCIt; C3512; Lung adenocarcinoma
+OX   NCBI_TaxID=9606; ! Homo sapiens
+CA   Cancer cell line
+//
+ID   11-18-ER1-7
+AC   CVCL_D856
+SY   11-18/ER1-7
+DR   Cosmic; 1731373
+RX   PubMed=22815900;
+DI   NCIt; C3512; Lung adenocarcinoma
+OX   NCBI_TaxID=9606; ! Homo sapiens
+HI   CVCL_A596 ! 11-18
+CA   Cancer cell line
+//
+ID   11-18-ER2-1
+AC   CVCL_D857
+SY   11-18/ER2-1
+DR   Cosmic; 1731374
+RX   PubMed=22815900;
+DI   NCIt; C3512; Lung adenocarcinoma
+OX   NCBI_TaxID=9606; ! Homo sapiens
+HI   CVCL_A596 ! 11-18
+CA   Cancer cell line

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+    Go back to <a href="index.html">main page</a>.<br/>
+
+    <h2> <a class="toc-backref" href="#id3">Contents</a></h2>
+    <div class="contents local topic" id="contents">
+        <ul class="simple">
+            <li> 1 - <a class="reference internal" href="#Individual_association_analysis" id="id1"> Individual association analysis</a></li>
+            <li> 2 - <a class="reference internal" href="#Boxplots" id="id2"> Boxplots</a></li>
+        </ul>
+    </div>
+    
+    <div class="section" id="Individual_association_analysis">
+    <h2> 1 - <a class="toc-backref" href="#id1">Individual association analysis</a></h2>
+        {{ association_table }}
+    </div>
+
+
+    <div class="section" id="Boxplots">
+    <h2> 2 -  <a class="toc-backref" href="#id2">Boxplots</a></h2>
+        {{ boxplots }}
+    </div>
+
+{% endblock %}
