@@ -3,6 +3,29 @@ ChangeLog
 
 .. contents::
 
+Version 0.11 (April 2016)
+----------------------------
+
+.. rubric:: 0.11.0
+
+* NEWS:
+
+    - Elastic notebook and module implemented
+    - GenomicFeatures has now a compression method
+
+* CHANGES:
+
+    - anova module was split into modules + anova so that elastic_net module can
+      inherit from module
+    - all share/data moved to gdsctools data
+    - add scikit-learn dependencies
+
+* BUGS:
+
+    - Fix onevent picking in the volcano plot and use 4 digit for the FDR plot
+
+
+
 
 Version 0.10
 --------------------------
