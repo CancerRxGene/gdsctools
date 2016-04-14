@@ -988,7 +988,10 @@ class DrugDecode(Reader):
             pass
 
         # sort the columns
-        self.df = self.df[self.df.columns.sort_values()]
+        try:
+            self.df = self.df[self.df.columns.sort_values()]
+        except:
+            self.df = self.df[sorted(self.df.columns)]
 
     def _get_names(self):
         return list(self.df.DRUG_NAME.values)
