@@ -364,13 +364,13 @@ class ReportMAIN(object):
             for filename in ['sorttable.js', 'highlight.pack.js']:
                 target = os.sep.join([self.directory, 'js', filename ])
                 if os.path.isfile(target) is False:
-                    filename = gdsctools(filename)
+                    filename = gdsctools_data(filename)
                     shutil.copy(filename, target)
 
             for filename in ['EBI_logo.png', 'sanger-logo.png']:
                 target = os.sep.join([self.directory, 'images', filename ])
                 if os.path.isfile(target) is False:
-                    filename = gdsctools("images" + os.sep + filename)
+                    filename = gdsctools_data("images" + os.sep + filename)
                     shutil.copy(filename, target)
 
 
