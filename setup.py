@@ -54,7 +54,7 @@ if on_rtd is True:  # only import and set the theme if we're building docs
 else:
     install_requires = ['numpy', 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.5', 'scipy', "colormap>=0.9.7",
-        'mpld3', 'jinja2', 'statsmodels', "sklearn"],
+        'mpld3', 'jinja2', 'statsmodels', "scikit-learn"],
 
 
 packages = find_packages()
