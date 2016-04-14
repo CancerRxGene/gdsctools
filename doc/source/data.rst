@@ -134,7 +134,7 @@ course, you may provide your own. The :class:`~gdsctools.readers.GenomicFeatures
 Drug Decoder
 ----------------
 
-The :class:`~gdsctools.readers.DrugDecoder` class reads a CSV file that contains information about a drug and its target(s). It must contain 3 columns named as
+The :class:`~gdsctools.readers.DrugDecode` class reads a CSV file that contains information about a drug and its target(s). It must contain 3 columns named as
 follows::
 
     DRUG_ID,        DRUG_NAME,  DRUG_TARGET
@@ -145,14 +145,14 @@ An example can be read as follows:
 
 .. doctest::
 
-    >>> from gdsctools import DrugDecoder, datasets
+    >>> from gdsctools import DrugDecode, datasets
     >>> drug_filename = datasets.testing.drug_test_csv.location
-    >>> dd = DrugDecoder(drug_filename)
+    >>> dd = DrugDecode(drug_filename)
     >>> dd.get_name('Drug_1047_IC50')
     'Nutlin-3a'
 
 
-DrugDecoder files are not required for the analysis but are used by
+DrugDecode files are not required for the analysis but are used by
 :class:`gdsctools.anova_report.ANOVAReport` to fill the HTML reports.
 
 
