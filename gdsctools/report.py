@@ -18,6 +18,8 @@
 import os
 import shutil
 
+from gdsctools import gdsctools_data
+
 import easydev
 import pandas as pd
 from jinja2.environment import Environment
@@ -284,8 +286,7 @@ class ReportMAIN(object):
 
         # For jinja2 inheritance, we need to use the environment
         # to indicate where are the parents' templates
-        gdsctools_path = easydev.get_shared_directory_path('gdsctools')
-        template_directory = os.sep.join([gdsctools_path, 'data', 'templates'])
+        template_directory = gdsctools_data('templates')
 
         self.env = Environment()
         self.env.loader = FileSystemLoader(template_directory)
@@ -303,7 +304,7 @@ class ReportMAIN(object):
                 }
 
         if mode is None:
-            self._to_create = ['OUTPUT', 'INPUT', 'images', 'css', 
+            self._to_create = ['OUTPUT', 'INPUT', 'images', 'css',
                     'js', 'code']
         elif mode == 'summary':
             self._to_create = ['images', 'css', 'js',]
@@ -344,7 +345,7 @@ class ReportMAIN(object):
             if os.path.isdir(self.directory) is False:
                 print("Created directory {}".format(self.directory))
                 os.mkdir(self.directory)
-                
+
             # list of directories created in the constructor
             for this in self._to_create:
                 try:
@@ -357,23 +358,19 @@ class ReportMAIN(object):
             for filename in ['gdsc.css', 'github-gist.css']:
                 target = os.sep.join([self.directory, 'css', filename ])
                 if os.path.isfile(target) is False:
-                    filename = easydev.get_share_file("gdsctools", "data",
-                        filename)
+                    filename = gdsctools_data(filename)
                     shutil.copy(filename, target)
-            
+
             for filename in ['sorttable.js', 'highlight.pack.js']:
                 target = os.sep.join([self.directory, 'js', filename ])
                 if os.path.isfile(target) is False:
-                    filename = easydev.get_share_file("gdsctools", "data",
-                        filename)
+                    filename = gdsctools(filename)
                     shutil.copy(filename, target)
 
             for filename in ['EBI_logo.png', 'sanger-logo.png']:
                 target = os.sep.join([self.directory, 'images', filename ])
                 if os.path.isfile(target) is False:
-                    dire = 'data' + os.sep + 'images'
-                    filename = easydev.get_share_file("gdsctools", dire,
-                        filename)
+                    filename = gdsctools("images" + os.sep + filename)
                     shutil.copy(filename, target)
 
 
