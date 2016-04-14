@@ -14,6 +14,7 @@ Please See documentation on gdsctools.readthedocs.org
 
 """
 import pkg_resources
+import os
 import easydev
 
 try:
@@ -30,22 +31,11 @@ except:
     license = '3-clause ("Simplified" or "New") BSD'
 
 
-from gdsctools.readers import IC50, GenomicFeatures, DrugDecode
-from gdsctools.anova import ANOVA
-from gdsctools.anova_report import ANOVAReport 
-from gdsctools.anova_results import ANOVAResults
-from gdsctools.settings import ANOVASettings
-from gdsctools.volcano import VolcanoANOVA
-from gdsctools.datasets import *
-from gdsctools.cosmictools import COSMICInfo
-from gdsctools.tissues import TCGA
-from gdsctools.gdsc import GDSC
-
+# To be defined before importing any modules
 def gdsctools_data(filename, where=None):
     """Simple utilities to retrieve data sets from gdsctools/share directory"""
-    import os
-    share = easydev.get_shared_directory_path('gdsctools') 
-    share = os.sep.join([share, 'data'])
+    gdsctools_path = easydev.get_package_location('gdsctools')
+    share = os.sep.join([gdsctools_path, "gdsctools", 'data'])
     # in the code one may use / or \ 
     if where:
         filename = os.sep.join([share, where, filename])
@@ -54,6 +44,18 @@ def gdsctools_data(filename, where=None):
     if os.path.exists(filename) is False:
         raise Exception('unknown file %s' % filename)
     return filename
+
+
+from gdsctools.readers import IC50, GenomicFeatures, DrugDecode
+from gdsctools.anova import ANOVA
+from gdsctools.anova_report import ANOVAReport 
+from gdsctools.anova_results import ANOVAResults
+from gdsctools.settings import ANOVASettings
+from gdsctools.datasets import *
+from gdsctools.volcano import VolcanoANOVA
+from gdsctools.cosmictools import COSMICInfo
+from gdsctools.tissues import TCGA
+from gdsctools.gdsc import GDSC
 
 
 def gdsctools_help(name=None):
