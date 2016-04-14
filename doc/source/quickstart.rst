@@ -60,7 +60,7 @@ The IC50 input data
 Before starting, we first need to get a data file to play with. The only
 required data file is one that contains :term:`IC50`.  
 For now, we do not need to enter into the details of the expected data
-structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../share/data/test_IC50.csv>` file.
+structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../gdsctools/data/test_IC50.csv>` file.
 
 .. seealso:: More details about the data format can be found in the :ref:`data` section as well as links to retrieve IC50 data sets.
 
