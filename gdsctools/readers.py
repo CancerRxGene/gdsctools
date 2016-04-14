@@ -373,7 +373,7 @@ class IC50(Reader, CosmicRows):
             self.df = self.df[columns]
         # Otherwise, raise an error
         else:
-            raise ValueError("{0} could not be found".format(
+            raise ValueError("{0} column could not be found in the header".format(
                 self.cosmic_name))
 
     def _get_drugs(self):
@@ -474,7 +474,7 @@ class GenomicFeatures(Reader, CosmicRows):
         - 'TISSUE_FACTOR'
         - 'MSI_FACTOR'
 
-    If this column is found, it is removed (old name)::
+    If this column is found, it is removed (deprecated)::
 
         - 'SAMPLE_NAME'
         - 'Sample Name'
@@ -766,6 +766,54 @@ class GenomicFeatures(Reader, CosmicRows):
             Nt = '?'
         return "GenomicFeatures <Nc={0}, Nf={1}, Nt={2}>".format(Nc, Nf, Nt)
 
+
+    def compress_identical_features(self):
+        """Merge duplicated columns/features
+
+        Columns duplicated are merged as follows. Fhe first column is kept, 
+        others are dropped but to keep track of those dropped, the column name
+        is renamed by concatenating the columns's names. The separator is a
+        double underscore.
+
+        
+        :: 
+
+            gf = GenomicFeatures()
+            gf.compress_identical_features()
+            # You can now access to the column as follows (arbitrary example)
+            gf.df['ARHGAP26_mut__G3BP2_mut']
+        """
+
+        # let us identify the duplicates as True/False 
+        datatr = self.df.transpose()
+        duplicated_no_first = datatr[datatr.duplicated()]
+        duplicated = datatr[datatr.duplicated(keep=False)]
+
+        print(duplicated)
+        print(duplicated_no_first)
+
+        tokeep = [x for x in duplicated.index if x not in duplicated_no_first.index]
+
+        # Let us create a groupby strategy
+        groups = {}
+        print(tokeep)
+        # Let us now add the corrsponding duplicats
+        for feature in tokeep:
+            # Find all row identical to this feature
+            matches = (duplicated.ix[feature] == duplicated).all(axis=1)
+            groups[feature] = "__".join(duplicated.index[matches])
+
+
+        # This drops all duplicated columns (the first is kept, others are
+        # dropped)
+        self.df = self.df.transpose().drop_duplicates().transpose()
+        self.df.rename(columns=groups, inplace=True)
+        # We want to keep the column names informative that is if there were
+        # duplicates, we rename the column kept with the concatenation of all
+        # the corresponding duplicates
+        return groups
+
+
     def get_TCGA(self):
         from gdsctools.cosmictools import COSMICInfo
         c = COSMICInfo()
@@ -848,15 +896,41 @@ class Extra(Reader):
 class DrugDecode(Reader):
     """Reads a "drug decode" file
 
-    The format must be 3-columns comma-separated file.
-    ::
+    The format must be comma-separated file. There are 3 compulsary columns
+    called DRUG_ID, DRUG_NAME and DRUG_TARGET. Here is an example::
 
         DRUG_ID     ,DRUG_NAME   ,DRUG_TARGET
         999         ,Erlotinib   ,EGFR
         1039        ,SL 0101-1   ,"RSK, AURKB, PIM3"
 
     TSV file may also work out of the box. If a column name called
-    'PUTATIVE_TARGET' is found, it is renamed 'DRUG_TARGET'.
+    'PUTATIVE_TARGET' is found, it is renamed 'DRUG_TARGET' to be compatible with
+    earlier formats.
+
+    In addition, 3 extra columns may be provided::
+
+        - PUBCHEM_ID
+        - WEBRELEASE
+        - OWNED_BY
+
+    The OWNED_BY and WEBRELEASE may be required to create packages for each
+    company. If those columns are not provided, the internal dataframe is filled
+    with None.
+
+    Older version of DRUG_DECODE files used ID as ::
+
+        Drug_950_IC50
+
+    but internally, such identifiers are transformed as proper ID that is
+    (in this case), just the number::
+
+        950
+
+    Then, the data is accessible as a dataframe, the index being the DRUG_ID column::
+
+        data = DrugDecode('DRUG_DECODE.csv')
+        data.df.ix[999]
+
 
     """
     def __init__(self, filename=None):
@@ -864,6 +938,7 @@ class DrugDecode(Reader):
         super(DrugDecode, self).__init__(filename)
         self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET', 'OWNED_BY',
             'WEBRELEASE']
+        self.header_extra = ["PUBCHEM_ID", "CHEMSPIDER_ID"]
 
         #self.df.drop_duplicates(inplace=True)
         #try:self._interpret()
@@ -875,30 +950,48 @@ class DrugDecode(Reader):
         if N  == 0:
             return
 
-        self.df.rename(columns={'PUTATIVE_TARGET': 'DRUG_TARGET'},
+        self.df.rename(columns={
+                    'PUTATIVE_TARGET': 'DRUG_TARGET',
+                    'THERAPEUTIC_TARGET': 'DRUG_TARGET'},
                 inplace=True)
 
-        if 'WEBRELEASE' not in self.df.columns:
-            self.df['WEBRELEASE'] = [None] * N
-
-        if 'OWNED_BY' not in self.df.columns:
-            self.df['OWNED_BY'] = [None] * N
+        for column in ["WEBRELEASE", "OWNED_BY"] + self.header_extra:
+            if column not in self.df.columns:
+                self.df[column] = [np.nan] * N
 
         #for this in self.header[1:]:
         for this in self.header:
-            msg = "Could not read the file with expected format. "
-            msg += "It should be a comma separated file."
-            msg += " This column was not found and may be an issue later on: "
-            msg += "%s"
+            msg = " The column %s was not found and may be an issue later on."
             if this not in self.df.columns and this != self.df.index.name:
                 print('WARNING:' + msg % this )
-                #raise ValueError(msg % this)
 
+        # remove text to have pure int identifiers if possible
+        drug_ids = self.df['DRUG_ID'].values
+        to_replace = [("Drug_", ""), ("_IC50", "")]
+        for old, new in to_replace:
+            try:
+                drug_ids = [x.replace(old, new) for x in drug_ids]
+            except:
+                pass
+        # change text to int
+        try:
+            drug_ids =[int(x) for x in drug_ids]
+        except:
+            pass
+        self.df['DRUG_ID'] = drug_ids
+
+        # Finally, set the drug ids as the index.
         try:
             self.df.set_index('DRUG_ID', inplace=True)
         except:
             # could be done already
             pass
+
+        # sort the columns
+        try:
+            self.df = self.df[self.df.columns.sort_values()]
+        except:
+            self.df = self.df[sorted(self.df.columns)]
 
     def _get_names(self):
         return list(self.df.DRUG_NAME.values)
@@ -1007,4 +1100,52 @@ class DrugDecode(Reader):
         df['DRUG_TARGET'] = drug_target
         return df
 
-   
+    def __add__(self, other):
+        """
+        Fill missing values but do not overwrite existing fields even though
+        the field in the other DrugDecode instance is difference.
+        """
+        # Problably not efficient but will do for now
+        columns = list(self.df.columns)
+
+        dd = DrugDecode()
+        dd.df = self.df.copy()
+
+        # add missing entires
+        missing = [x for x in other.df.index if x not in self.df.index]
+        dd.df = dd.df.append(other.df.ix[missing])
+
+        # merge existing ones
+        for index, ts in other.df.iterrows():
+            # add the drug if not already present
+            if index in self.df.index:
+                # here it is found in the 2 instances but
+                # they may contain either complementary data, which
+                # could have been done with pandas.merge but we wish
+                # to check for incompatible data
+                for column in columns:
+                    a = dd.df.ix[index][column]
+                    b = ts[column]
+                    if pd.isnull(b) is True:
+                        # nothing to do if b is NULL
+                        pass
+                    elif pd.isnull(a) is True:
+                            # we can merge the content of b into a
+                            # that is the content of other into this instance
+                            dd.df.loc[index,column] = b
+                    else:
+                        # a and b are not null
+                        if a != b:
+                            print('WARNING: different fields in drug %s (%s %s %s)' %  (index, column, a, b))
+        return dd
+
+    def __eq__(self, other):
+        try:
+            return all(self.df.fillna(0) == other.df.fillna(0))
+        except:
+            return False
+
+
+
+
+

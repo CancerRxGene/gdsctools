@@ -32,11 +32,14 @@ or used in analysis:
 """
 # use underscore to hide from API
 import easydev
-from easydev import get_share_file as _gsf
 
 
 __all__ = ['Data', 'dataset', 'ic50_test', 'genomic_features', 'cosmic_info',
            "cosmic_builder_test", "cancer_cell_lines"]
+
+def _gsf(filename):
+    from gdsctools import gdsctools_data
+    return gdsctools_data(filename)
 
 
 class Data(object):
@@ -92,20 +95,20 @@ def dataset(dataname):
 
     d = Data()
     if dataname == 'ic50_test':
-        d.filename = _gsf('gdsctools', 'data', 'IC50_10drugs.tsv')
+        d.filename = _gsf('IC50_10drugs.tsv')
         d.description = 'IC50s for 10 public drugs across cell lines'
     elif dataname == 'genomic_features':
-        d.filename = _gsf('gdsctools', 'data', 'genomic_features.tsv.gz')
+        d.filename = _gsf('genomic_features.tsv.gz')
         d.descritption = 'Set of genomic features + tissue + sample name + msi'
     elif dataname == 'cancer_cell_lines':
-        d.filename = _gsf('gdsctools', 'data', 'cancer_cell_lines.csv')
+        d.filename = _gsf('cancer_cell_lines.csv')
         d.description = "List of cosmic identifiers with the corresponding "+\
             "name, tissue and sub tissue types"
     elif dataname == 'cosmic_builder_test':
-        d.filename = _gsf('gdsctools', 'data', 'cosmic_builder_test.txt')
+        d.filename = _gsf('cosmic_builder_test.txt')
         d.description = "An example of flat file to be read by COSMICFetcher"
     elif dataname == 'cosmic_info':
-        d.filename = _gsf('gdsctools', 'data', 'cosmic_info.csv.gz')
+        d.filename = _gsf('cosmic_info.csv.gz')
         d.description = "Information about 1001 cell lines including COSMIC ID"
 
     return d
@@ -133,47 +136,47 @@ cosmic_info = dataset("cosmic_info")
 def _build_testing():
     testing = easydev.AttrDict()
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_drug_decode.tsv')
+    d.filename = _gsf('test_drug_decode.tsv')
     d.description = 'drug_decode in TSV format'
     testing.drug_test_tsv = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_drug_decode.csv')
+    d.filename = _gsf('test_drug_decode.csv')
     d.description = 'drug_decode in CSV format'
     testing.drug_test_csv = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_ic50_11_50.csv')
+    d.filename = _gsf('test_ic50_11_50.csv')
     d.description = 'A 10drug/50 cell lines IC50 test file in CSV format'
     testing.ic50_test_csv = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_genomic_features.csv')
+    d.filename = _gsf('test_genomic_features.csv')
     d.description = 'A 50 cell lines by 20 features GenomicFeature in CSV format'
     testing.genomic_features_csv = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_IC50.csv')
+    d.filename = _gsf('test_IC50.csv')
     d.description = 'A 10drug/1000 cell lines IC50 test file in CSV format'
     testing.ic50_test = d
     
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_IC50_header2.csv')
+    d.filename = _gsf('test_IC50_header2.csv')
     d.description = 'An IC50 test (header with column without Drug_ prefix)'
     testing.ic50_test_header_no_drug_prefix = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_IC50_header1.csv')
+    d.filename = _gsf('test_IC50_header1.csv')
     d.description = 'An IC50 test (header with column with Drug_ prefix only)'
     testing.ic50_test_header_drug_prefix_only = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_IC50_header3.csv')
+    d.filename = _gsf('test_IC50_header3.csv')
     d.description = 'An IC50 test (header with mixed prefixes i.e. Drug_ or not)'
     testing.ic50_test_header_mixed_drug_prefix = d
 
     d = Data()
-    d.filename = _gsf('gdsctools', 'data', 'test_genomic_features_bare.csv')
+    d.filename = _gsf('test_genomic_features_bare.csv')
     d.description = "A 50 cell lines by 17 features without MSI/tissue/sample"
     testing.genomic_features_bare_csv = d
 

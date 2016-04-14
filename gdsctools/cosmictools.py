@@ -229,10 +229,6 @@ class COSMICInfo(object):
 
     def on_web(self, identifier):
         """Open a tab related to the COSMIC identifier (in your browser)"""
-        from easydev.browser import browse
+        from easydev import onweb
         url = self._get_url(identifier)
-        browse(url)
-
-
-
-
+        onweb(url)

@@ -19,6 +19,7 @@ from collections import OrderedDict
 
 import pandas as pd
 import numpy as np
+import pylab
 
 from colormap import cmap_builder
 
@@ -255,7 +256,12 @@ class ANOVAResults(object):
             doc="Returns the list of drug identifiers")
 
     def volcano(self):
-        """Calls :class:`VolcanoANOVA` on the results"""
+        """Calls :class:`VolcanoANOVA` on the results
+
+        x-value is sign(FEATURE_delta_MEAN_IC50) times FEATURE_IC50_effect_size
+        y-value is the FDR correction
+
+        """
         self.handle_volcano = VolcanoANOVA(self.df, settings=self.settings)
         self.handle_volcano.volcano_plot_all()
 
@@ -300,4 +306,22 @@ class ANOVAResults(object):
         html.df.columns = [x.replace("_", " ") for x in html.df.columns]
         return html.to_html(escape=escape, header=header, index=index,
                 collapse_table=collapse_table, justify='center')
+
+    def barplot_effect_size(self):
+
+        # barplot of the IC50 effect size
+        data = np.sign(self.df.FEATURE_delta_MEAN_IC50) * self.df.FEATURE_IC50_effect_size
+        data = data.sort_values()
+
+        n_green = len(data[data<0])
+        n_red = len(data[data>=0])
+
+        print(n_green, n_red)
+        data.plot(kind='barh', width=1, alpha=0.5, 
+            color=['green']*n_green + ['red'] * n_red)
+
+        pylab.xlabel("Effect size")
+        pylab.ylabel("Drug name")
+
+
 

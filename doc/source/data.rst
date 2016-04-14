@@ -17,7 +17,7 @@ So far, we have  3 types of input files (defined in the
 
 - :class:`~gdsctools.readers.IC50`
 - :class:`~gdsctools.readers.GenomicFeatures`
-- :class:`~gdsctools.readers.DrugDecoder`
+- :class:`~gdsctools.readers.DrugDecode`
 - **Concentrations** (not yet used).
 
 To be identified CSV/TSV files must have the proper extension that is **.csv** or **.tsv**; they may be compressed e.g., in gzip format but keep the **.csv** or **.tsv** extension in the name since it is interpreted to recognised the format of the file (e.g, ic50.csv.gz)
@@ -115,7 +115,7 @@ It can be saved and read as follows:
     >>> gf
     GenomicFeatures <Nc=2, Nf=2, Nt=2>
 
-In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../share/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). A more complex file will be provided in the future.
+In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../gdsctools/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). A more complex file will be provided in the future.
 
 By default, the creation of an ANOVA class we read that file automatically. Of
 course, you may provide your own. The :class:`~gdsctools.readers.GenomicFeatures` if created without input contains the default file mentionned here above::
@@ -134,7 +134,7 @@ course, you may provide your own. The :class:`~gdsctools.readers.GenomicFeatures
 Drug Decoder
 ----------------
 
-The :class:`~gdsctools.readers.DrugDecoder` class reads a CSV file that contains information about a drug and its target(s). It must contain 3 columns named as
+The :class:`~gdsctools.readers.DrugDecode` class reads a CSV file that contains information about a drug and its target(s). It must contain 3 columns named as
 follows::
 
     DRUG_ID,        DRUG_NAME,  DRUG_TARGET
@@ -145,14 +145,14 @@ An example can be read as follows:
 
 .. doctest::
 
-    >>> from gdsctools import DrugDecoder, datasets
+    >>> from gdsctools import DrugDecode, datasets
     >>> drug_filename = datasets.testing.drug_test_csv.location
-    >>> dd = DrugDecoder(drug_filename)
+    >>> dd = DrugDecode(drug_filename)
     >>> dd.get_name('Drug_1047_IC50')
     'Nutlin-3a'
 
 
-DrugDecoder files are not required for the analysis but are used by
+DrugDecode files are not required for the analysis but are used by
 :class:`gdsctools.anova_report.ANOVAReport` to fill the HTML reports.
 
 

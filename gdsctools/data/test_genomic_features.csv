@@ -1,4 +1,4 @@
-COSMIC ID,Tissue Factor Value,Sample Name,MS-instability Factor Value,ABCB1_mut,ABL2_mut,ACACA_mut,ACVR1B_mut,ACVR2A_mut,AFF4_mut,AHCTF1_mut,AHNAK_mut,AKAP9_mut,ALK_mut,ANK3_mut,APAF1_mut,APC_mut,AQR_mut,ARAP3_mut,ARFGAP3_mut,ARFGEF1_mut
+COSMIC_ID,TISSUE_FACTOR,Sample Name,MS-instability Factor Value,ABCB1_mut,ABL2_mut,ACACA_mut,ACVR1B_mut,ACVR2A_mut,AFF4_mut,AHCTF1_mut,AHNAK_mut,AKAP9_mut,ALK_mut,ANK3_mut,APAF1_mut,APC_mut,AQR_mut,ARAP3_mut,ARFGAP3_mut,ARFGEF1_mut
 1287381,lung_NSCLC,201T,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 924100,prostate,22RV1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 910924,stomach,23132-87,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

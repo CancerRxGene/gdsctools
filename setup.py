@@ -7,8 +7,8 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 10
-_MICRO               = 2 
+_MINOR               = 11
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -48,15 +48,17 @@ from distutils.core import setup, Extension
 
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
-
-# on rtd, pandas is 1.3.1 cannot use something better for now
+# on rtd, pandas is 1.3.1 cannot use something better for now (march 2016)
 if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev']
 else:
     install_requires = ['numpy', 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.5', 'scipy', "colormap>=0.9.7",
-        'mpld3', 'jinja2', 'statsmodels'],
+        'mpld3', 'jinja2', 'statsmodels', "scikit-learn"],
 
+
+packages = find_packages()
+packages = [this for this in packages if this not in ['test']]
 
 
 setup(
@@ -75,33 +77,27 @@ setup(
     download_url     = metainfo['download_url'],
     classifiers      = metainfo['classifiers'],
 
-    zip_safe=False,
-    packages = find_packages(),
-    include_package_data = True,
-
-    # tells discutils extra packages are under share/data
-    package_dir={'share.data': 'share/data'},
+    packages = packages,
 
     # here below '': pattern means include that pattern in all packages
     # so '' :['README.rst'] will include all README.rst recursively
     package_data = {
-        'share.data' : ['*.css', '*.js', '*.txt', '*.csv', '*.tsv', 
-            '*.gz', 'README.rst'],
-        '' : ['README.rst'],
-        'share.data.images' : ['*.png'],
-        'share.data.templates' : ['*.html'],
-        'share.data.javascript' : ['*.js'],
+        '': ["*css", "*js", "*txt", "*csv", "*tsv"],
+        'gdsctools.data' : ['*'],
+        'gdsctools.data.images' : ['*.png'],
+        'gdsctools.data.templates' : ['*.html'],
+        'gdsctools.data.javascript' : ['*.js'],
         },
 
     # comment the requirements otherwise RTD fails
     # but we then need a requirements.txt file !
     install_requires = install_requires,
+
+    zip_safe=False,
     entry_points = {
         'console_scripts': [
         'gdsctools_anova=gdsctools.pipelines:anova_pipeline',]
-        },
-
-
-    )
+    },
+)
 
 
