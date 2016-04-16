@@ -23,6 +23,12 @@ GDSCTools documentation
 |License|
 
 
+:Note: tested for Python 2.7, 3.3, 3.4
+:Contributions: Please join https://github.com/CancerRxGene/gdsctools project
+:Online documentation: `On ReadTheDocs <http://gdsctools.readthedocs.org/en/master>`_
+:Issues and bug reports: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
+
+
 
 **GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant associations between drugs and genomic features (e.g., gene mutation), however, it should be also of interest to a wider community involved in cancer projects.
 
