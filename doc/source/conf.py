@@ -36,6 +36,8 @@ project = 'GDSCTools'
 import easydev
 from easydev import get_path_sphinx_themes
 
+#import warnings
+#warnings.simplefilter("ignore","exceptions.Warning")
 
 # -- General configuration -----------------------------------------------------
 
@@ -162,12 +164,12 @@ html_short_title = "gdsctools"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "../../share/data/images/crx_logo.png"
+html_logo = "../../gdsctools/data/images/crx_logo.png"
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = "../../share/data/images/crx_logo.ico"
+html_favicon = "../../gdsctools/data/images/crx_logo.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
