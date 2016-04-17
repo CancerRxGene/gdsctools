@@ -23,7 +23,19 @@ The ANOVA results
     :members:
     :undoc-members:
 
+The ANOVA report
+~~~~~~~~~~~~~~~~~~~~~~~
 
+.. automodule:: gdsctools.anova_report
+    :members:
+    :undoc-members:
+
+GDSC report
+~~~~~~~~~~~~~~~~~
+
+.. automodule:: gdsctools.gdsc
+    :members:
+    :undoc-members:
 
 
 Statistical Tools

@@ -18,7 +18,6 @@ So far, we have  3 types of input files (defined in the
 - :class:`~gdsctools.readers.IC50`
 - :class:`~gdsctools.readers.GenomicFeatures`
 - :class:`~gdsctools.readers.DrugDecode`
-- **Concentrations** (not yet used).
 
 To be identified CSV/TSV files must have the proper extension that is **.csv** or **.tsv**; they may be compressed e.g., in gzip format but keep the **.csv** or **.tsv** extension in the name since it is interpreted to recognised the format of the file (e.g, ic50.csv.gz)
 
@@ -30,14 +29,16 @@ IC50
 ------
 
 The most important input data is what we call the IC50 file. It is
-simply a CSV (or TSV) file with a header and a set of rows. The header's column name must be labelled after each drug considered plus an additional column named **COSMIC_ID**. The order of the columns is not important. So each row contains a unique COSMIC identifier and a set of IC50s. Note that we speak of IC50s but one can populate the file with anything (e.g., AUCs).
+simply a CSV (or TSV) file with a header and a set of rows. The header's column name must be labelled after each drug considered plus an additional column named **COSMIC_ID**. The order of the columns is not important. Each row contains a unique COSMIC identifier and a set of IC50s. Note that we speak of IC50s but one can populate the file with anything (e.g., AUCs).
 
+Although the name in the header does not matter note that if one column's name
+starts with **Drug** then all column that do not start with **Drug** are ignored (except the special one that contains the COSMIC IDs). This feature was implemented to account for old data files that stores all Drug identifiers and also all genomic features within a single file.
 
-All columns that starts with **Drug** are interpreted as the IC50s for each drug considered (see note here below). Other columns are ignored. Here is a valid example::
+Here is an example of IC50 input::
 
-    COSMIC_ID, Drug_1_IC50, Drug_20_IC50
-    111111,    0.5,         0.8
-    222222,    1,           2
+    COSMIC_ID, Drug_1_IC50, Drug_20_IC50, Other
+    111111,    0.5,         0.8,          10
+    222222,    1,           2,            10
 
 If you save that example in a file, you can read it with the
 :class:`~gdsctools.readers.IC50` class as follows:
@@ -55,15 +56,10 @@ If you save that example in a file, you can read it with the
     all drug names and targets. The second reason is that many characteristics
     such as plate number and drug concentration may be associated with a drug
     identifier. This should be stored in a different table rather than in
-    the name. It can then be handled and interpreted using the DRUGDecoder
+    the name. It can then be handled and interpreted using the DrugDecode
     file (see below).
 
 .. note:: column without a name are ignored.
-.. note:: We encourage user to starts the column's name with the prefix
-    **Drug_**. However, would you decide to not follow that convention, the
-    IC50 reader will still work. Note, however, that if at least one column
-    starts  with **Drug_**, then all other columns will be ignored. This can be
-    useful to store IC50s and genomic features in the same file for example.
 
 
 .. seealso:: developers should look at the references for more
@@ -76,16 +72,15 @@ Genomic Features
 ---------------------
 
 The **ANOVA** analysis computes the associations between the Drug IC50s and
-genomic features. The mapping between these two data sets is performed on a common column named **COSMIC_ID**, which should contain same COSMIC identifiers.
-If not, only the intersection is kept.
+genomic features. The mapping between these two data sets is performed on a common column named **COSMIC_ID**, which should contain the same COSMIC identifiers. If not, only the intersection will be kept in sub-sequent analysis.
 
-In addition to the COSMIC identifiers, the following columns should be providedbut are not strictly speaking required::
+In addition to the COSMIC identifiers, the following columns may be provided but are not strictly speaking required::
 
     - TISSUE_FACTOR
     - MSI_FACTOR
     - MEDIA_FACTOR
 
-If not provided, the tissue, :term:`MSI` and :term:`MEDIA` factors will not be taken into account in the regression analysis (see :ref:`regression` for details).
+If not provided, the tissue, :term:`MSI` and :term:`MEDIA` factors will not be taken into account in the regression analysis (see :ref:`regression` for details). If the :term:`TCGA` tissue is not provided, it is created and set to *unidentified*.
 
 .. note::
     .. versionchanged:: 0.9.11
@@ -141,6 +136,18 @@ follows::
     Drug_999_IC50,  Erlotinib,  EGFR
     Drug_1039_IC50, SL 0101-1,  "RSK, AURKB, PIM3"
 
+
+This column will be used if provided::
+
+    - WEBRELEASE
+    - OWNED_BY
+
+In addition, these column may be populated for later use::
+
+    - CHEMSPIDER_ID
+    - PUBCHEM_ID
+    - CHEMBL_ID
+
 An example can be read as follows:
 
 .. doctest::
@@ -150,6 +157,16 @@ An example can be read as follows:
     >>> dd = DrugDecode(drug_filename)
     >>> dd.get_name('Drug_1047_IC50')
     'Nutlin-3a'
+    >>> dd.df.ix[999]
+    CHEMBL_ID              NaN
+    CHEMSPIDER_ID          NaN
+    DRUG_NAME        Erlotinib
+    DRUG_TARGET           EGFR
+    OWNED_BY               NaN
+    PUBCHEM_ID             NaN
+    WEBRELEASE             NaN
+    Name: 999, dtype: object
+
 
 
 DrugDecode files are not required for the analysis but are used by

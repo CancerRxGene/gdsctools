@@ -7,16 +7,18 @@ Quick Start
 
 There are currently 3 ways to use **GDSCTools**:
 
-- Typing commands in a **Python shell**. That method is for **developers and users** who want to have high flexibility and use the **GDSCTools** to the best advantage.
-- Re-using **IPython Notebooks** available within the source code.
+- From a **Python shell**, which is the recommended for **developers and users** for high flexibility and use the **GDSCTools** to its best advantage.
 - Using a **standalone application** (**gdsctools_anova**),
   which is the recommended version for **end-users**.
+- Re-using **IPython Notebooks** available within the source code.
 
 In this section we will focus on the first approach. This will also allow us to use IPython notebooks as explained in the :ref:`notebooks` section. The third approach is presented in the :ref:`standalone` section; it can be used to reproduce the following examples and is recommended to produce **data packages**. In the parlance of **GDSCTools**, a data package is the results of an analysis together with an HTML report (see :ref:`data_packages` section).
 
 
 We assume now that you have **gdsctools** installed together with **IPython**.
 If not, please go back to the :ref:`installation` section.
+
+.. index:: IPython
 
 .. note:: Instead of Python, we will use IPython, which is a more flexible 
     and interactive shell. To start IPython, just type this
@@ -57,19 +59,17 @@ If not, please go back to the :ref:`installation` section.
 The IC50 input data 
 -------------------------------
 
-Before starting, we first need to get a data file to play with. The only
-required data file is one that contains :term:`IC50`.  
-For now, we do not need to enter into the details of the expected data
-structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../gdsctools/data/test_IC50.csv>` file.
+Before starting, we first need to get a data file to play with. Although, 
+3 data files are required in general, only one is compulsary that is
+the one that contains the :term:`IC50`. For now, we do not need to enter into the details of the expected data structure; it should be a CSV or TSV file as in this :download:`IC50 example <../../gdsctools/data/test_IC50.csv>` file.
 
 .. seealso:: More details about the data format can be found in the :ref:`data` section as well as links to retrieve IC50 data sets.
 
-
-Although all functionalities could be imported using::
+Then, we need to import the **GDSCTools** functionalities. All og them can be imported using::
 
     from gdsctools import *
 
-we will be as explicit as possible in the following examples; we would rather use (for instance)::
+but we'll try to be as explicit as possible and would rather use (for instance)::
 
     from gdsctools import IC50
 
@@ -111,6 +111,7 @@ With **GDSCTools**, we also provide a convenience function called :func:`~gdscto
 that should open a new tab in a browser redirecting you to the HTML help version (on `ReadTheDoc website <gdsctools.readthedocs.org>`_) of a function or class (here the :class:`IC50` class).
 
 
+.. index:: anova, drug, cell lines, genomic features
     
 
 The ANOVA class
@@ -141,8 +142,10 @@ the dependent variable :math:`Y` and the explanatory variables denoted :math:`X`
 
 One can then repeat the ODOF analysis for the given drug across all features using the :meth:`~gdsctools.anova.ANOVA.anova_one_drug` method. This is also named One Drug All Feature case (ODAF). Finally we can even extend the analysis to All Drugs All Features (ADAF) using :meth:`~gdsctools.anova.ANOVA.anova_all`.
 
+.. index:: multiple testing
+
 .. note:: P-values reported by the :term:`ODOF` method need to be 
-    corrected with using multiple testing correction. This is done 
+    corrected using multiple testing correction. This is done 
     in the the :term:`ODAF` and :term:`ADAF` cases. 
     For more information, please see the 
     :meth:`gdsctools.stats.MultipleTesting` description.
@@ -157,6 +160,8 @@ Russian dolls.
 
 The computational time is therefore increasing with the number of drugs and
 features. Let us now perform the analysis for the 3 different cases.
+
+.. index:: ODOF
 
 One Drug One Feature (ODOF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -185,6 +190,8 @@ Finally, the third boxplot shows the impact of the :term:`MSI` factor. Here agai
 The output of an ODOF analysis is a time series that contains statistical information about the association found between the drug and the feature. See for :class:`gdsctools.anova_results.ANOVAResults` for more details.
 
 .. seealso:: :class:`gdsctools.anova` and :ref:`data_packages`.
+
+.. index:: ODAF, signed effects, cohens
 
 One Drug All Features (ODAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -231,6 +238,7 @@ In the volcano example, the default FDR threshold is 25%. Besides, as you can
 see there is no horizontal lines. This means that all FDRs are above 25% and
 that there is no significant hits.
 
+.. index:: ADAF
 
 All Drug All Features (ADAF)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -271,7 +279,7 @@ Learn more
 
 If you want to learn more, please follow one of those links:
 
-* Tune some of the :ref:`settings` of the analysis.
+* :ref:`settings` also covers how to set some parameters yourself.
 * Creating HTML reports from the analysis: :ref:`html`.
 * Learn more about the input :ref:`data` .
 * How to reproduce these analysis presented here above using the :ref:`standalone`.

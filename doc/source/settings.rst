@@ -1,12 +1,12 @@
 .. _settings:
 
-Settings
-===========
+The ANOVA analysis in details
+=================================
 
 .. contents::
 
-Overview
------------
+About the settings
+----------------------
 
 When using the :class:`~gdsctools.anova.ANOVA` instance or you 
 when using the :class:`~gdsctools.anova.ANOVAReport` to create an
@@ -22,18 +22,54 @@ This :attr:`settings` attribute is an instance of :class:`gdsctools.settings.ANO
 
 In previous sections, we have already seen a few of the settings. For example in the :ref:`HTML` section, we changed the default **directory** where HTML pages are saved to a user-defined value. 
 
-Let us introduce some of the most important concepts here below.
+It is also important to note that when calling AnovaReport, the first argument
+is an ANOVA instance that contains the settings. So, AnovaReport will use that
+settings automatically (may still be changed later). Consider this example::
+
+    >>> from gdsctools import ANOVA, ic50_test, AnovaReport
+    >>> gdsc = ANOVA(ic50_test)
+    >>> gdsc.settings.FDR_threshold = 15
+    >>> results = gdsc.anova_all()
+
+    >>> ar = AnovaReport(gdsc, results)
+    >>> ar.settings.FDR_threshold 
+    15
+
+Let us now introduce some of the most important settings.
 
 Regression analysis
 -----------------------
 
+
+By default, the regression uses a :term:`OLS` method. 4 Factors may be
+taken into account depending on the content of the 
+:class:`~gdsctools.readers.GenomicFeature` data set.
+
+Here, we will use R syntax for simplicity. Depending on the data and the
+:class:`gdsctools.anova.settings` one of the following formula will be used:
+
+
+.. math:: Y \sim C(tissue) + C(media) + C(MSI) + Feature
+
+.. math:: Y \sim C(tissue) + C(MSI) + Feature
+
+.. math:: Y \sim C(MSI) + Feature
+
+.. math:: Y \sim Feature
+
+
+
+
 The default regression method is the :term:`OLS` method. It is also the
 recommended method. However, you can use Elastic Net, Ridge or Lasso::
 
+    settings.regression.method = 'OLS'
     settings.regression.method = 'ElasticNet'
     settings.regression.method = 'Ridge'
     settings.regression.method = 'Lasso'
-    settings.regression.method = 'OLS'
+
+.. note:: Here the ElasticNet regression like the OLS one is made 
+    for one drug and one feature (ODOF)
 
 If you use anything else than OLS, you should then consider settings 1 or 2
 additional settings::
@@ -55,6 +91,11 @@ However, you may exclude it by setting its value to False::
     settings.include_MSI_factor
 
 If **MSI_FACTOR** column is not found in the Genomic Feature data set, the MSI factor will be excluded automatically and the parameter above set to False. 
+
+.. warning:: If you force the MSI factor to True wherease there 
+    is not enough data in the binary sets of the MSI factor, error
+    will be raised.
+
 
 MEDIA factor
 ~~~~~~~~~~~~~
@@ -121,19 +162,43 @@ to **feature_factor_threshold**.
 Mutiple testing corrections
 ------------------------------
 
-By default, the multiple testing correction  is based on Benjamini–Hochberg (BH)
-method and can be set to other methods using ::
+By default, the multiple testing correction  is based on 
+Benjamini–Hochberg (BH) method and can be set to other methods using ::
 
     settings.pval_correction_method
 
 .. seealso:: :class:`~gdsctools.stats.MultipleTesting` for details.
 
+The multiple testing is performed globally across all drugs and all cell
+lines.This parameter is stored in ::
+
+    settings.pvalue_correction_level
+
+By default it is set to *global*. Set it to *local* to keep the multiple
+correction at the drug level (ODAF).    
+
+.. index:: volcano
 
 volcano plots
 -----------------
 
 The volcano plots are one of the main results of the analysis and summarizes
-visually the significance of the different associations. Here are some
+visually the significance of the different associations. 
+
+It is part of the :class:`~gdsctools.anova_report.AnovaResults` class and is 
+returned either by an ODAF or ADAF analysis:
+
+.. plot::
+    :include-source:
+    :width: 80% 
+
+    from gdsctools import ANOVA, ic50_test
+    gdsc = ANOVA(ic50_test)
+    res = gdsc.anova_all()
+    res.volcano()
+
+
+Here are some
 parameters used to tune the plots and selection of significant events:
 
 - **pvalue_threshold** is used to select significant hits. See :class:`~gdsctools.anova_report.ANOVAReport`. 
@@ -145,6 +210,8 @@ parameters used to tune the plots and selection of significant events:
 - **volcano_additional_FDR_lines** : [0.01, 0.1, 10]
 
 .. seealso:: :class:`~gdsctools.volcano.VolcanoANOVA`.
+
+.. todo:: explain the effect of interpolation, link to the signed effects in the quickstart section
 
 others
 ----------

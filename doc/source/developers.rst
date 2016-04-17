@@ -6,11 +6,9 @@ The GDSCTools test suite
 --------------------------
 
 The GDSCTools package has a large set of tests in the ./test/gdsctools directory.  In version 0.10, about 80% of the functionalities are covered. If you add a 
-new module or function, please add a corresponding test file in
-  ./test/gdsctools directory.
+new module or function, please add a corresponding test file in ./test/gdsctools directory.
 
-The test suite uses the **nosetests** utility and is integrated within the
-  Travis continuous integration (see below).
+The test suite uses the **nosetests** utility and is integrated within the Travis continuous integration (see below).
 
 To run the tests locally, you will need nose and coverage packages::
 

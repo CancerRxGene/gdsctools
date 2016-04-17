@@ -5,10 +5,12 @@
 Installation
 ================
 
-**GDSCTools** is written in Python and depends on a set of established scientific libraries such as `Matplotlib <http://matplotlib.org/>`_ (visualisation) and `Pandas <http://pandas.pydata.org/>`_ (data manipulation) to cite just a few. We post releases on the Python repository and try to make use of the Python ecosystem to provide a robust software. We hope that the installation will work out of the box. Would you have any trouble, please see the :ref:`faqs` or fill an `issue/ticket <https://github.com/CancerRxGene/gdsctools/issues>`_ on github.
+**GDSCTools** is written in Python and depends on a set of established scientific libraries such as `Matplotlib <http://matplotlib.org/>`_ (visualisation) and `Pandas <http://pandas.pydata.org/>`_ (data manipulation) to cite just a few. We post releases on the `Python repository  <https://pypi.python.org/pypi/gdsctools>`_ and make use of the Python ecosystem to provide a robust software. Would you have any trouble, please see the :ref:`faqs` or fill an `issue/ticket <https://github.com/CancerRxGene/gdsctools/issues>`_ on github.
+
+.. todo:: mention bioconda
 
 
-Existing Python users and developers
+Python users and developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Releases of **GDSCTools** are available on `Pypi <https://pypi.python.org/pypi/gdsctools/0.2.0>`_. Therefore **GDSCTools**
 can be installed in a :term:`Terminal` using the **pip** command::
@@ -51,10 +53,11 @@ or::
     pip install ipython
 
 
-You have already installed gdsctools
+You have already installed GDSCTools
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In a terminal, using **pip** command, then just upgrade the package as follows::
+If you have already installed **GDSCTools** and want to get the latest
+release, use the **pip** as follows::
 
     pip install gdsctools --upgrade
 

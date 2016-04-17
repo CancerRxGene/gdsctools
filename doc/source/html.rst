@@ -22,10 +22,11 @@ drugs and features. See :class:`~gdsctools.anova_results.ANOVAResults` for the c
     >>> report = ANOVAReport(gdsc, results)
     >>> report.create_html_pages()
 
-To know more about the content of the HTML report, please see the
-:ref:`data_packages` section.
+The report creates a **Data Package**, which details can be found in the :ref:`data_packages` section.
 
-Some tunable settings are available in the :attr:`settings` (see :ref:`settings`). For instance, you can set the output directory::
+Images are created for each significant associations and may take a while.
+
+Some tunable settings are available in the :attr:`settings` (see :ref:`settings`). For instance, you can set the output directory to a user value instead of (html_gdsc_anova)::
 
     >>> report.settings.directory = 'BLCA'
 
