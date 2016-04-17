@@ -56,6 +56,7 @@ class BaseModels(object):
         to the analysis or visulation.
         """
         self.verbose = verbose
+        self._init_called = False
 
         # We first need to read the IC50 using a dedicated reader
         self.ic50 = readers.IC50(ic50)
@@ -187,6 +188,7 @@ class BaseModels(object):
             return
 
         if ctype == 'PANCAN':
+            # Nothing to do, keep everything
             return
 
         if isinstance(ctype, str):
@@ -284,11 +286,14 @@ class BaseModels(object):
         # reset the buffer.
         self.individual_anova = {}
 
-        for this in ['tissue', 'media', 'msi', 'feature']:
-            if this in self._get_analysis_mode():
-                print(this.upper() + " FACTOR : included")
-            else:
-                print(this.upper() + " FACTOR : NOT included")
+
+        if self.verbose and self._init_called is False:
+            for this in ['tissue', 'media', 'msi', 'feature']:
+                if this in self._get_analysis_mode():
+                    print(this.upper() + " FACTOR : included")
+                else:
+                    print(this.upper() + " FACTOR : NOT included")
+        self._init_called = True
 
     def _get_cosmics(self):
         return self.ic50.cosmicIds
