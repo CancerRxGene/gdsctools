@@ -199,6 +199,7 @@ class VolcanoANOVA(object):
             except:
                 pass
 
+
     def volcano_plot_all_features(self):
         """Create a volcano plot for each feature and save in PNG files
 
@@ -588,12 +589,14 @@ class VolcanoANOVA(object):
     def savefig_and_js(self, filename, size_inches=(10, 10)):
         # Save the PNG first. The savefig automatically set the size
         # to a defined set and back to original figsize.
+
         self.figtools.savefig(filename + '.png', size_inches=size_inches)
 
         # now the javascript. 
         fig = self.current_fig
         oldsize = fig.get_size_inches()
         fig.set_size_inches(size_inches)
+
         htmljs = self.mpld3_to_html()
         fh = open(self.settings.directory + os.sep + filename + ".html", "w")
         fh.write(htmljs)
