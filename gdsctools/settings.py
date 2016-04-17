@@ -113,9 +113,9 @@ class ANOVASettings(AttrDict):
     ======================= ========= =========================================
     regression_method       OLS       Regression method amongst OLS, Ridge
                                       Lasso, ElasticiNet.
-    regression_alpha        0         Fraction of penalty included. If 0,
+    regression_alpha        0.01      Fraction of penalty included. If 0,
                                       equivalent to OLS.
-    regression_L1_wt        0         Fraction of the penalty given to L1
+    regression_L1_wt        0.5       Fraction of the penalty given to L1
                                       penalty term. Must be between 0 and 1.
                                       If 0, equivalent to Ridge. If 1
                                       equivalent to Lasso
@@ -157,8 +157,8 @@ class ANOVASettings(AttrDict):
 
         # ----------------------- regression related
         self.regression_method = 'OLS' # can be ElasticNet, LAsso, Ridge
-        self.regression_alpha = 0
-        self.regression_L1_wt = 0
+        self.regression_alpha = 0.01
+        self.regression_L1_wt = 0.5
         # uses statsmodels package
         # The fraction of the penalty given to the L1 penalty term. Must be
         # between 0 and 1 (inclusive). If 0, the fit is ridge regression. If
@@ -167,7 +167,6 @@ class ANOVASettings(AttrDict):
 
         for k, v in kargs.items():
             self[k] = v
-
 
     def check(self):
         """Checks the values of the parameters
