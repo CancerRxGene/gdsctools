@@ -92,7 +92,6 @@ class Reader(object):
             >>> ic = IC50(ic50_test)
             >>> r = Reader(ic)
 
-
         """
         # input data
         if data is None:
@@ -350,11 +349,13 @@ class IC50(Reader, CosmicRows):
         _cols = list(self.df.columns)
 
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
-            warnings.warn("'COSMIC ID' column name is deprecated since " +
+            warnings.warn("'COSMIC ID2' column name is deprecated since " +
             "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
             self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID")
                     for x in self.df.columns]
         if "CL" in _cols and "COSMID_ID" not in self.df.columns:
+            warnings.warn("'CL column name is deprecated since " +
+            "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
             self.df.columns = [x.replace("CL", "COSMIC_ID")
                     for x in self.df.columns]
 
@@ -557,8 +558,8 @@ class GenomicFeatures(Reader, CosmicRows):
         # If tissue factor is not provided, we create and fill it with dummies.
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
-            warnings.warn("column named '%s' not found" % self.colnames.tissue,
-                    UserWarning)
+            warnings.warn("column named '%s' not found" 
+                    % self.colnames.tissue, UserWarning)
             self.df[self.colnames.tissue] = ['unspecified'] * len(self.df)
             self._special_names.append(self.colnames.tissue)
         else:
@@ -566,14 +567,13 @@ class GenomicFeatures(Reader, CosmicRows):
 
         self.found_msi = self.colnames.msi in self.df.columns
         if self.found_msi is False:
-            print("WARNING: column named '%s' not found" % self.colnames.msi)
+            warnings.warn("column named '%s' not found" % self.colnames.msi)
         else:
             self._special_names.append(self.colnames.msi)
 
         self.found_media = self.colnames.media in self.df.columns
         if self.found_media is False:
-            print("WARNING: column named '%s' not found" \
-                    % self.colnames.media)
+            warnings.warn("column named '%s' not found" % self.colnames.media)
         else:
             self._special_names.append(self.colnames.media)
 
@@ -695,14 +695,14 @@ class GenomicFeatures(Reader, CosmicRows):
             txt += 'No information about tissues\n'
 
         if self.found_msi:
-            txt +=  "MSI column: yes\n"
+            txt += "MSI column: yes\n"
         else:
-            txt +=  "MSI column: no\n"
+            txt += "MSI column: no\n"
 
         if self.found_media:
-            txt +=  "MEDIA column: yes\n"
+            txt += "MEDIA column: yes\n"
         else:
-            txt +=  "MEDIA column: no\n"
+            txt += "MEDIA column: no\n"
 
         # -3 since we have also the MSI, tissue, media columns
         # TODO should use shift attribute ?
@@ -766,7 +766,6 @@ class GenomicFeatures(Reader, CosmicRows):
             Nt = '?'
         return "GenomicFeatures <Nc={0}, Nf={1}, Nt={2}>".format(Nc, Nf, Nt)
 
-
     def compress_identical_features(self):
         """Merge duplicated columns/features
 
@@ -775,7 +774,6 @@ class GenomicFeatures(Reader, CosmicRows):
         is renamed by concatenating the columns's names. The separator is a
         double underscore.
 
-        
         :: 
 
             gf = GenomicFeatures()
@@ -789,20 +787,15 @@ class GenomicFeatures(Reader, CosmicRows):
         duplicated_no_first = datatr[datatr.duplicated()]
         duplicated = datatr[datatr.duplicated(keep=False)]
 
-        print(duplicated)
-        print(duplicated_no_first)
-
         tokeep = [x for x in duplicated.index if x not in duplicated_no_first.index]
 
         # Let us create a groupby strategy
         groups = {}
-        print(tokeep)
         # Let us now add the corrsponding duplicats
         for feature in tokeep:
             # Find all row identical to this feature
             matches = (duplicated.ix[feature] == duplicated).all(axis=1)
             groups[feature] = "__".join(duplicated.index[matches])
-
 
         # This drops all duplicated columns (the first is kept, others are
         # dropped)
@@ -811,8 +804,8 @@ class GenomicFeatures(Reader, CosmicRows):
         # We want to keep the column names informative that is if there were
         # duplicates, we rename the column kept with the concatenation of all
         # the corresponding duplicates
+        print("compressed %s groups of duplicates" % len(groups))
         return groups
-
 
     def get_TCGA(self):
         from gdsctools.cosmictools import COSMICInfo
@@ -870,7 +863,7 @@ class Extra(Reader):
         pylab.ylabel(r'\#')
 
     def scatter(self):
-        from biokit import scatter
+        from biokit.viz import scatter
         s = scatter.ScatterHist(self.dfCL)
         s.plot(kargs_histx={'color':'red', 'bins':20},
                 kargs_scatter={'alpha':0.9, 's':100, 'c':'b'},
@@ -938,12 +931,15 @@ class DrugDecode(Reader):
         super(DrugDecode, self).__init__(filename)
         self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET', 'OWNED_BY',
             'WEBRELEASE']
-        self.header_extra = ["PUBCHEM_ID", "CHEMSPIDER_ID"]
+        self.header_extra = ["PUBCHEM_ID", "CHEMBL_ID", "CHEMSPIDER_ID"]
 
-        #self.df.drop_duplicates(inplace=True)
-        #try:self._interpret()
-        #except:pass
-        self._interpret()
+        try:
+            # if the input data is already a DrugDecode instance, this should
+            # fail since the expected df will not have the DRUG_ID field, that
+            # should be the index
+            self._interpret()
+        except:
+            pass
 
     def _interpret(self, filename=None):
         N = len(self.df)
@@ -963,7 +959,7 @@ class DrugDecode(Reader):
         for this in self.header:
             msg = " The column %s was not found and may be an issue later on."
             if this not in self.df.columns and this != self.df.index.name:
-                print('WARNING:' + msg % this )
+                warnings.warn('WARNING:' + msg % this )
 
         # remove text to have pure int identifiers if possible
         drug_ids = self.df['DRUG_ID'].values
