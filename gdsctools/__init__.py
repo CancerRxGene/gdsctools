@@ -17,6 +17,9 @@ import pkg_resources
 import os
 import easydev
 
+import warnings
+warnings.simplefilter('ignore', DeprecationWarning)
+
 try:
     version = pkg_resources.require("gdsctools")[0].version
     __version__ = version
@@ -46,7 +49,7 @@ def gdsctools_data(filename, where=None):
     return filename
 
 
-from gdsctools.readers import IC50, GenomicFeatures, DrugDecode
+from gdsctools.readers import IC50, GenomicFeatures, DrugDecode, Reader
 from gdsctools.anova import ANOVA
 from gdsctools.anova_report import ANOVAReport 
 from gdsctools.anova_results import ANOVAResults
