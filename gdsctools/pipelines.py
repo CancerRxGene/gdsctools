@@ -136,18 +136,32 @@ def anova_pipeline(args=None):
     # --------------------------------------------------- real analysis
     # -----------------------------------------------------------------
     # dispatcher to the functions according to the user parameters
+
+
+    from gdsctools import ANOVA, ANOVAReport
+    anova = ANOVA(options.input_ic50, options.input_features,
+            options.input_drug,
+            low_memory=not options.fast)
+    anova = _set_settings(anova, options)
+
+
+    if options.drug and options.drug not in anova.ic50.df.columns:
+        print(red("Invalid Drug. Try --print-drug-names"))
+        sys.exit(1)
+
+
     if options.drug is not None and options.feature is not None:
         print_color("ODOF mode", purple)
-        anova_one_drug_one_feature(options)
+        anova_one_drug_one_feature(anova, options)
     elif options.drug is not None:
         print_color("ODAF mode", purple)
-        anova_one_drug(options)
+        anova_one_drug(anova, options)
     else: # analyse everything
         if options.feature is None:
             print_color("ADAF mode", purple)
         else:
             print_color("ADOF mode", purple)
-        anova_all(options)
+        anova_all(anova, options)
 
     if options.onweb is False and options.no_html is False:
         msg = "\nNote that a directory {} was created and files saved into it"
@@ -158,92 +172,85 @@ def anova_pipeline(args=None):
 def _set_settings(gdsc, options):
     if options.settings is not None:
         gdsc.settings.from_json(options.settings)
+
+    # by defaul MSI is included. It will be set to False automatically if
+    # there is not enough data. One can set it to False if provided but cannot
+    # be forced to True (may not be correct if there is not enough data) hence
+    # the condition here below
+    if options.include_msi is False:
+        gdsc.settings.include_MSI_factor = False
     gdsc.settings.directory = options.directory
-    gdsc.settings.include_MSI_factor = options.include_msi
     gdsc.settings.FDR_threshold = options.FDR_threshold
     gdsc.settings.check()
     return gdsc
 
 
-def anova_one_drug(options):
+def anova_one_drug(anova, options):
     """Analyse one specific drug"""
-    from gdsctools import ANOVA, ANOVAReport
-    an = ANOVA(options.input_ic50, options.input_features,
-            options.input_drug,
-            low_memory=not options.fast)
-    
-    an = _set_settings(an, options)
-    an.set_cancer_type(options.tissue)
+    from gdsctools import ANOVAReport
+    anova.set_cancer_type(options.tissue)
     
     if options.feature:
-        an.feature_names = options.features
+        anova.feature_names = options.features
 
-    results = an.anova_one_drug(options.drug)
+    results = anova.anova_one_drug(options.drug)
 
-    if len(results.df)==0:
-        print(red("\nNo valid associations tested. Please try another drug"))
+    print("\nFound %s associations" % len(results))
+    if len(results)==0:
+        print(red("\nPlease try with another drug or no --drug option"))
         return
 
     # ?? is this required ?
-    N = len(results.df)
+    N = len(results)
     results.df.insert(0, 'ASSOC_ID', range(1, N+1))
 
     if options.no_html is True:
         return
 
-    r = ANOVAReport(an, results=results)
+    r = ANOVAReport(anova, results=results)
     print(darkgreen("\nCreating all figure and html documents in %s" %
             r.settings.directory))
     r.create_html_pages(onweb=options.onweb)
 
 
-def anova_all(options):
+def anova_all(anova, options):
     """Analyse the entire data set. May be restricted to one feature"""
-    from gdsctools import ANOVA, ANOVAReport
-    an = ANOVA(options.input_ic50, options.input_features,
-            options.input_drug,
-            low_memory=not options.fast)
-    an.set_cancer_type(options.tissue)
-
-    an = _set_settings(an, options)
+    from gdsctools import ANOVAReport
     if options.feature:
-        an.feature_names = [options.feature]
+        anova.feature_names = [options.feature]
 
     # The analysis
     print(darkgreen("Starting the analysis"))
-    df = an.anova_all()
-
+    df = anova.anova_all()
+    if len(df) == 0:
+        print("Found no valid association ? Check your input files")
+        return
     # HTML report
     if options.no_html is True:
         return
 
-    r = ANOVAReport(an, results=df)
+    r = ANOVAReport(anova, results=df)
     print(darkgreen("Creating all figure and html documents in %s" %
             r.settings.directory))
     r.create_html_pages(onweb=options.onweb)
 
 
-def anova_one_drug_one_feature(options):
+def anova_one_drug_one_feature(anova, options):
     """Analyse the entire data set"""
-    from gdsctools import ANOVA, ANOVAReport, anova_report
-    gdsc = ANOVA(options.input_ic50, options.input_features,
-            options.input_drug,
-            low_memory=not options.fast)
-    gdsc = _set_settings(gdsc, options)
+    from gdsctools import anova_report
 
-    odof = anova_report.Association(gdsc,
+    if options.tissue is not None:
+        anova.set_cancer_type(options.tissue)
+
+    odof = anova_report.Association(anova,
             drug=options.drug,
             feature=options.feature)
-    #FIXME: are those 4-5 lines required ??
-    odof.factory.settings.include_MSI_factor = options.include_msi
-    odof.factory.settings.FDR_threshold = options.FDR_threshold
 
-    odof.factory.set_cancer_type(options.tissue)
-    odof.factory.settings.check()
-
+    #print(odof.settings)
     # for the HTML
     #odof.add_dependencies = True
     #odof.add_settings = True
+
     df = odof.run()
 
     if df.ix[1]['FEATURE_IC50_effect_size'] is None:
@@ -251,7 +258,6 @@ def anova_one_drug_one_feature(options):
               " MSI or positives for that features ? Try with "+\
               " --exclude-msi (you must then set a tissue with "+\
               " --tissue"
-
         print(red(msg % (options.drug, options.feature)))
     else:
         print(df.T)
@@ -376,7 +382,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument("-t", "--tissue", dest="tissue", type=str,
                            help="""The name of a specific cancer type
                           i.e., tissue to restrict the analysis
-                          to """)
+                          to. """)
 
         group.add_argument('--FDR-threshold', dest="FDR_threshold",
                             default=25, type=float,
