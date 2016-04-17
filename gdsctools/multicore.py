@@ -17,13 +17,15 @@
 """Multicore implementation of the ANOVA code"""
 import time
 from gdsctools.anova import ANOVA
+from easydev import MultiProcessing
 
 
 __all__ = ['multicore_anova']
 
 
 
-def multicore_anova(ic50, genomic_features, maxcpu=2):
+def multicore_anova(ic50, genomic_features, drug_decode=None, maxcpu=2,
+                    sampling=0):
     """Using 4 cores, the entire analysis took 15 minutes using
     4 CPUs (16 Oct 2015).
 
@@ -32,7 +34,7 @@ def multicore_anova(ic50, genomic_features, maxcpu=2):
 
     ::
 
-        from gdsctools.anova import multicore
+        from gdsctool qq qs.anova import multicore
         master = multicore(dataset, maxcpu=2)
         results = master.anova_all()
 
@@ -45,12 +47,12 @@ def multicore_anova(ic50, genomic_features, maxcpu=2):
     print("experimental code to run the analysis with several cores")
     print("May takes lots or resources and slow down your system")
     t1 = time.time()
-    master = ANOVA(ic50, genomic_features=genomic_features, 
-            low_memory=True)
+    master = ANOVA(ic50, genomic_features=genomic_features,
+                   drug_decode=drug_decode, low_memory=True)
+    master.sampling = sampling
 
     drugs = master.ic50.drugIds
 
-    from easydev import MultiProcessing
     t = MultiProcessing(maxcpu=maxcpu)
     # add all jobs (one per drug)
     for i, drug in enumerate(drugs):
