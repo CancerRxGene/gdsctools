@@ -283,7 +283,9 @@ class ANOVAResults(object):
         cmap_absmax = cmap_builder('green', 'white', 'red')
 
         columns = ANOVAResults().colnames_subset
-        df = self.df[self.colnames_subset]
+
+        # The copy is used because we'll change it afterwards
+        df = self.df[self.colnames_subset].copy()
 
         colname = 'ANOVA_FEATURE_FDR'
 

@@ -25,11 +25,10 @@ from statsmodels.formula.api import OLS
 
 from easydev import Progress, AttrDict
 
-
 from gdsctools.models import BaseModels
 
-from gdsctools.stats import MultipleTesting
-from gdsctools import readers
+#from gdsctools.stats import MultipleTesting
+#from gdsctools import readers
 from gdsctools.boxplots import BoxPlots
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
@@ -85,8 +84,6 @@ class ANOVA(BaseModels): #Logging):
         around :meth:`anova_one_drug_one_feature` to loop over all drugs, and
         loop over all drugs and all features, respectively.
 
-
-
     V17 : 
         gdsc.volcano_FDR_interpolation = False
         gdsc.settings.pvalue_correction_method = 'qvalue'
@@ -114,6 +111,8 @@ class ANOVA(BaseModels): #Logging):
             drug_decode=drug_decode, verbose=verbose, low_memory=low_memory,
             set_media_factor=set_media_factor)
 
+        self.sampling = 0
+        self.pvalues_features = {}
 
     def _get_one_drug_one_feature_data(self, drug_name, feature_name,
             diagnostic_only=False):
@@ -384,7 +383,7 @@ class ANOVA(BaseModels): #Logging):
             self.EV = df.values
             # The regression and anova summary are done here
             #
-            if self.settings.regression_method == 'ElasticNet':
+            """if self.settings.regression_method == 'ElasticNet':
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
                         alpha=self.settings.regression_alpha,
                         L1_wt=self.settings.regression_L1_wt)
@@ -398,7 +397,7 @@ class ANOVA(BaseModels): #Logging):
                 self.data_lm = OLS(odof.Y, df.values).fit_regularized(
                         alpha=self.settings.regression_alpha,
                         L1_wt=1)
-
+            """
             # example of computing null model ?
             # Example of computing pvalues ourself
             # with 100 000 samples, we can get a smooth distribution
@@ -406,23 +405,6 @@ class ANOVA(BaseModels): #Logging):
             # for the raw data is uniform one but if we take the log10, 
             # we have lots of possible distrob such as beta, exponweib, gamma,
             #....
-            """self.samples1 = []
-            self.samples2 = []
-            self.samples3 = []
-            Y = odof.Y.copy()
-            pb = Progress(10000, 20)
-            for i in range(0, 10000):
-                pylab.shuffle(Y)
-                #data_lm = OLS(Y, df.values).fit()
-                data_lm = OLS(Y+0.3*pylab.randn(len(Y)), df.values).fit()
-                anova_pvalues = self._get_anova_summary(data_lm,
-                    output='dict')
-                self.samples1.append(anova_pvalues['msi'])
-                self.samples2.append(anova_pvalues['feature'])
-                self.samples3.append(anova_pvalues['tissue'])
-                pb.animate(i)
-            """
-
         elif self.settings.include_MSI_factor is True:
             #self._mydata = pd.DataFrame({'Y': odof.Y,
             #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
@@ -432,16 +414,78 @@ class ANOVA(BaseModels): #Logging):
             df['C(msi)[T.1]'] = odof.masked_msi.values
             df['feature'] = odof.masked_features.values
             df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
-            self.data_lm = OLS(odof.Y, df.values).fit()
+            #self.data_lm = OLS(odof.Y, df.values).fit()
         else:
             df = pd.DataFrame()
             df['feature'] = odof.masked_features.values
             df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
-            self.data_lm = OLS(odof.Y, df.values).fit()
+            #self.data_lm = OLS(odof.Y, df.values).fit()
             #self._mydata = pd.DataFrame({'Y': odof.Y,
             #    'feature': odof.masked_features})
             #self.data_lm = ols('Y ~ feature',
             #    data=self._mydata).fit() #Specify C for Categorical
+
+        if self.settings.regression_method == 'ElasticNet':
+            self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                    alpha=self.settings.regression_alpha,
+                    L1_wt=self.settings.regression_L1_wt)
+        elif self.settings.regression_method == 'OLS':
+            self.data_lm = OLS(odof.Y, df.values).fit()
+        elif self.settings.regression_method == 'Ridge':
+            self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                    alpha=self.settings.regression_alpha,
+                    L1_wt=0)
+        elif self.settings.regression_method == 'Lasso':
+            self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                    alpha=self.settings.regression_alpha,
+                    L1_wt=1)
+
+
+
+
+        key = drug_id + "__" + feature_name
+        if self.sampling and key not in self.pvalues_features.keys():
+            # This can be computed for a drug once for all
+            # no need to redo it for each feature ?
+            # If the length of Y is too small (e.g., < 20) the results may not be
+            # great. This can be check zith the errors
+            self.samples1 = []
+            self.samples2 = []
+            self.samples3 = []
+            Y = odof.Y.copy()
+            N = self.sampling
+            pb = Progress(N, 20)
+            for i in range(0, N):
+
+                # To get the random distribution, shuffle Y
+                # and noise not required
+                # To get the noise effects, do not shuffle and set noise to
+                # something different from 0
+                noise = 0.0
+                pylab.shuffle(Y)
+                #data_lm = OLS(Y, df.values).fit()
+                data_lm = OLS(Y+noise*pylab.randn(len(Y)), df.values).fit()
+                anova_pvalues = self._get_anova_summary(data_lm,
+                    output='dict')
+                try:self.samples1.append(anova_pvalues['msi'])
+                except:pass
+                self.samples2.append(anova_pvalues['feature'])
+                try:self.samples3.append(anova_pvalues['tissue'])
+                except:pass
+                #pb.animate(i+1)
+            import fitter
+            ff = fitter.Fitter(-pylab.log10(self.samples2))
+            dist = "genexpon"
+            ff.distributions = [dist]
+            ff.fit()
+            self.pvalues_features[key] = {
+                'error': ff.df_errors.ix[dist].values[0],
+                'params': ff.fitted_param[dist],
+                'feature': feature_name,
+                'N':len(Y)
+            }
+            print(self.pvalues_features[key])
+
 
         self.anova_pvalues = self._get_anova_summary(self.data_lm,
                  output='dict')
@@ -658,8 +702,6 @@ class ANOVA(BaseModels): #Logging):
         else:
             return {'feature': F_pvalues[0]}
 
-        #return anova
-
     def _draft(self):
         # using sklearn
         #ols = linear_model.LinearRegression()
@@ -744,7 +786,6 @@ class ANOVA(BaseModels): #Logging):
             return df
         else:
             df = self.add_pvalues_correction(df)
-
             res = ANOVAResults(df)
             res.settings = ANOVASettings(**self.settings)
             return res
@@ -814,6 +855,8 @@ class ANOVA(BaseModels): #Logging):
         # feature. Now, we need to compute the multiple testing corrections
         if self.settings.pvalue_correction_level == 'global':
             df = self.add_pvalues_correction(df)
+        else:
+            pass
 
         # insert a unique identifier as first column
         df.insert(0, 'ASSOC_ID', range(1, len(df) + 1))
@@ -862,4 +905,44 @@ class ANOVA(BaseModels): #Logging):
         self.individual_anova = {}
 
 
+
+"""
+
+Script to compute the pvalues based on esti;ation of the pvalues distribution
+for a given drug and feature
+
+
+an = anova.ANOVA("IC50_v18.csv", "GF_BLCA.csv", "DRUG_DECODE.csv")
+an.sampling = 1000
+
+def get_data(an):
+    keys = an.pvalues_features.keys()
+    a = []
+    b = []
+    c = []
+    for key in keys:
+        drug, feature = key.split("__")
+        params = an.pvalues_features[key]['params'
+        ]
+        data =res.df.query("DRUG_ID==@drug and FEATURE==@feature"); pval = data["ANOVA_FEATURE_pval"]
+        pval_corr =  scipy.stats.genexpon.sf(-log10(pval), *params)
+        signed_effect = np.sign(data['FEATURE_delta_MEAN_IC50']) * data['FEATURE_IC50_effect_size']
+        a.append(-log10(pval_corr[0]))
+        b.append(signed_effect.values[0])
+    return b, a
+
+
+plot(get_data(an)[0], get_data(an)[1], 'o',  markersize=20, alpha=0.3, color='g')
+
+signed_effects = np.sign(res.df['FEATURE_delta_MEAN_IC50']).values *
+                        res.df['FEATURE_IC50_effect_size'].values
+pvalues = -log10(res.df["ANOVA_FEATURE_pval"])
+plot(signed_effects, pvalues, 'o',  markersize=20, alpha=0.3, color='r')
+
+
+
+
+
+
+"""
 

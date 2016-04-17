@@ -17,13 +17,7 @@
 """Code related to the ANOVA analysis to find associations between drug IC50s
 and genomic features"""
 import os
-import pandas as pd
-import pylab
-import numpy as np
-
-from easydev import Progress
-import easydev
-from colormap import cmap_builder
+import warnings
 
 from gdsctools.report import HTMLTable, ReportMAIN
 from gdsctools.tools import Savefig
@@ -32,6 +26,15 @@ from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.readers import DrugDecode
 from gdsctools.tools import get_drug_id
+
+import pandas as pd
+import pylab
+import numpy as np
+
+from easydev import Progress
+import easydev
+from colormap import cmap_builder
+
 
 __all__ = ['ANOVAReport']
 
@@ -90,8 +93,8 @@ class ANOVAReport(object):
         # so a user may have provide a file, in which case, we need
         # to update the content of the dur_decoder.
         if len(gdsc.drug_decode) == 0 and drug_decode is None:
-            print('\nWARNING no drug name or target will be populated')
-            print('You can read one if you wish using read_drug_decode')
+            warnings.warn("No drug name or target will be populated."
+                          "You may want to provide a DRUG_DECODE file.")
             self.drug_decode = DrugDecode()
         elif drug_decode is not None:
             # Read a file
@@ -459,7 +462,7 @@ class ANOVAReport(object):
         where association id is stored in :attr:`df`.
 
         """
-        print("\n\nCreating individual HTML pages for each association")
+        print("\nCreating individual HTML pages for each association")
         df = self.get_significant_set()
 
         drugs = df['DRUG_ID'].values
@@ -470,8 +473,7 @@ class ANOVAReport(object):
         N = len(df)
         pb = Progress(N)
 
-        html = Association(self, drug='dummy', feature='dummy',
-                fdr='dummy')
+        html = Association(self, drug='dummy', feature='dummy',  fdr='dummy')
 
         for i in range(N):
             html.drug = drugs[i]
@@ -487,7 +489,7 @@ class ANOVAReport(object):
         """Create an HTML page for each significant feature"""
         df = self.get_significant_set()
         groups = df.groupby('FEATURE')
-        print("\n\nCreating individual HTML pages for each feature")
+        print("\nCreating individual HTML pages for each feature")
         N = len(groups.indices.keys())
         pb = Progress(N)
         for i, feature in enumerate(groups.indices.keys()):
@@ -601,6 +603,7 @@ class HTMLPageMANOVA(ReportMAIN):
 class Association(ReportMAIN):
     def __init__(self, report, drug=None, feature=None,
             fdr=-1, assoc_id=-1):
+
         try:
             # here report is expected to be ANOVAReport
             # gdsctools interface from ipython
@@ -639,8 +642,10 @@ class Association(ReportMAIN):
 
         # Create the table and add it
         sign = ANOVAResults(df)
-        html_table = sign.get_html_table(escape=False, header=True, 
+
+        html_table = sign.get_html_table(escape=False, header=True,
                 index=False)
+
         self.jinja['association_table'] = html_table
 
         # Main boxplot always included
