@@ -8,7 +8,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 11
-_MICRO               = 0
+_MICRO               = 1
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -60,6 +60,7 @@ else:
 packages = find_packages()
 packages = [this for this in packages if this not in ['test']]
 
+print(packages)
 
 setup(
     name             = 'gdsctools',
@@ -83,8 +84,8 @@ setup(
     # so '' :['README.rst'] will include all README.rst recursively
     package_data = {
         '': ["*css", "*js", "*txt", "*csv", "*tsv"],
-        'gdsctools.data' : ['*'],
-        'gdsctools.data.images' : ['*.png'],
+        #'gdsctools.data' : ['*'],
+        'gdsctools.data.images' : ['*.png', '*.ico'],
         'gdsctools.data.templates' : ['*.html'],
         'gdsctools.data.javascript' : ['*.js'],
         },
