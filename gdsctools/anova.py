@@ -441,8 +441,6 @@ class ANOVA(BaseModels): #Logging):
                     L1_wt=1)
 
 
-
-
         key = drug_id + "__" + feature_name
         if self.sampling and key not in self.pvalues_features.keys():
             # This can be computed for a drug once for all

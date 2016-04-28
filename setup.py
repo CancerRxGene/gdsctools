@@ -83,7 +83,7 @@ setup(
     # here below '': pattern means include that pattern in all packages
     # so '' :['README.rst'] will include all README.rst recursively
     package_data = {
-        '': ["*css", "*js", "*txt", "*csv", "*tsv"],
+        '': ["*css", "*js", "*txt", "*csv", "*tsv", "*gz"],
         #'gdsctools.data' : ['*'],
         'gdsctools.data.images' : ['*.png', '*.ico'],
         'gdsctools.data.templates' : ['*.html'],
