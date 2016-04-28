@@ -14,8 +14,8 @@ GDSCTools
 .. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=Done
    :target: https://waffle.io/CancerRxGene/gdsctools
 
-.. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
-    :target: http://gdsctools.readthedocs.org/en/latest/?badge=master
+.. image:: https://readthedocs.io/projects/gdsctools/badge/?version=master
+    :target: http://gdsctools.readthedocs.io/en/latest/?badge=master
     :alt: Documentation Status
 
 |License|
@@ -23,7 +23,7 @@ GDSCTools
 :Note: tested for Python 2.7, 3.3, 3.4
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
 
-:Online documentation: `On ReadTheDocs <http://gdsctools.readthedocs.org/en/master>`_
+:Online documentation: `On ReadTheDocs <http://gdsctools.readthedocs.io/en/master>`_
 
 :Issues and bug reports: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
 
@@ -39,7 +39,7 @@ Installation
   pip install gdsctools
   
 For beginners, please visit the main documentation `Installation
-<http://gdsctools.readthedocs.org/en/master/installation.html>`_ section.
+<http://gdsctools.readthedocs.io/en/master/installation.html>`_ section.
 
 
 QuickStart
@@ -60,7 +60,7 @@ or as a script::
   an = ANOVA(ic50_test, features_filename)  # second arg is optional
   an.anova_all()
   
-More examples are provided in the `documentation on ReadThedoc <http://gdsctools.readthedocs.org/en/master/index.html>`_. You can for example select a specific drug, or a set of drugs instead of the entire screening, or perform a sub selection on features. 
+More examples are provided in the `documentation on ReadThedoc <http://gdsctools.readthedocs.io/en/master/index.html>`_. You can for example select a specific drug, or a set of drugs instead of the entire screening, or perform a sub selection on features. 
 
 .. note:: Version 1 (linear regression and ANOVA) was created based on https://github.com/francescojm/FI.GDSC.ANOVA repository.
 
