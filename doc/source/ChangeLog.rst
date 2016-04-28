@@ -6,6 +6,10 @@ ChangeLog
 Version 0.11 (April 2016)
 ----------------------------
 
+.. rubric:: 0.11.2
+
+* BUG: add missing file in the setup.py
+
 .. rubric:: 0.11.1
 
 * BUG: Fixes the missing data package in the setup for pip installation
