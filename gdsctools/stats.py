@@ -22,7 +22,7 @@ import numpy as np
 from gdsctools.qvalue import QValue
 
 
-__all__ = ['MultipleTesting', 'cohens']
+__all__ = ['MultipleTesting', 'cohens', "signed_effects"]
 
 
 def multiple_correction(pvalues, method='fdr'):
@@ -222,3 +222,13 @@ def glass(x, y):
     g2 = md / y.std(ddof=1)
 
     return g1, g2
+
+
+def signed_effects(df):
+    import numpy as np
+    _colname_deltas = 'FEATURE_delta_MEAN_IC50'
+    _colname_effect_size = 'FEATURE_IC50_effect_size'
+    deltas = df[_colname_deltas]
+    effects = df[_colname_effect_size]
+    signed_effects = list(np.sign(deltas) * effects)
+    return signed_effects

@@ -93,7 +93,7 @@ class ANOVASettings(AttrDict):
     fontsize                  25               Used in some plots for labels
     FDR_threshold             25               FDR threshold used in volcano
                                                plot and significant hits
-    pvalue_threshold          np.inf           Used to select significant hits see
+    pvalue_threshold          0.001            Used to select significant hits see
                                                :class:`~gdsctools.anova.ANOVAReport`
     directory                 html_gdsc_anova  Directory where images and HTML
                                                documents are saved.
@@ -124,6 +124,9 @@ class ANOVASettings(AttrDict):
     .. seealso:: :ref:`settings_filtering` or
         gdsctools.readthedocs.org/en/master/settings.html#filtering
 
+    .. versionchanged:: 0.11.3  pvalue_threshold is now set to 10e-3; this may
+        decrease the number of significant hits.
+
     """
     def __init__(self, **kargs):
         super(ANOVASettings, self).__init__(**kargs)
@@ -148,7 +151,7 @@ class ANOVASettings(AttrDict):
         # Visualisation and HTML related ---------------------
         self.fontsize = 25
         self.FDR_threshold = 25
-        self.pvalue_threshold = np.inf
+        self.pvalue_threshold = 0.001
         self.directory = 'html_gdsc_anova'
         self.savefig = False
         self.effect_threshold = 0 # use in volcano

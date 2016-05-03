@@ -48,7 +48,7 @@ class VolcanoANOVA(object):
         from gdsctools import ANOVA, ic50_test, VolcanoANOVA
         an = ANOVA(ic50_test)
 
-        # retrisct analysis to a tissue to speed up computation
+        # retrict analysis to a tissue to speed up computation
         an.set_cancer_type('lung_NSCLC')
 
         # Perform the entire analysis
@@ -75,6 +75,12 @@ class VolcanoANOVA(object):
             fh = open('volcano_doc.html', 'w')
             fh.write(htmljs)
             fh.close()
+
+    :Legend and color conventions: The green circles indicate significant hits
+        that are resistant while reds show sensitive hits. Circles are colored
+        if there are below the FDR_threshold AND below the pvalue_threshold AND
+        if the signed effect size is above the effect_threshold.
+
 
     There are 5 methods to plot volcano plots depending on what you want to see
 
@@ -333,15 +339,18 @@ class VolcanoANOVA(object):
         annotations = []
 
         # just an alias
+        # FIXME: why do we have a switch here for PANCAN ?
         FDR_threshold = self.settings.FDR_threshold
         if self.settings.analysis_type == 'PANCAN':
             for sign, qval, pval in zip(signed_effects, qvals, pvals):
                 if sign <= -self.settings.effect_threshold and \
-                        qval <= FDR_threshold:
+                        qval <= FDR_threshold and \
+                        pval <= self.settings.pvalue_threshold:
                     colors.append('green')
                     annotations.append(True)
                 elif sign >= self.settings.effect_threshold and \
-                        qval <= FDR_threshold:
+                        qval <= FDR_threshold and \
+                        pval <= self.settings.pvalue_threshold:
                     colors.append('red')
                     annotations.append(True)
                 else:
@@ -350,11 +359,13 @@ class VolcanoANOVA(object):
         else:
             for delta, qval, pval in zip(deltas, qvals, pvals):
                 if pval <= self.settings.pvalue_threshold and \
-                        qval <= FDR_threshold and delta < 0:
+                        qval <= FDR_threshold and delta < 0 and \
+                        pval <= self.settings.pvalue_threshold:
                     colors.append('green')
                     annotations.append(True)
                 elif pval <= self.settings.pvalue_threshold and \
-                        qval <= FDR_threshold and delta > 0:
+                        qval <= FDR_threshold and delta > 0 and \
+                        pval <= self.settings.pvalue_threshold:
                     colors.append('red')
                     annotations.append(True)
                 else:

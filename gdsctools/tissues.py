@@ -18,7 +18,7 @@ from easydev import AttrDict
 
 class TCGA(AttrDict):
     """A dictionary-like container to access to TCGA cancer types keywords
-    
+
     .. doctest::
 
         >>> from gdsctools import TCGA

@@ -38,7 +38,6 @@ __all__ = ['ANOVA']
 
 
 
-
 # Not that Logging is not used: it is not pickable and prevent
 # multicore analysis.
 class ANOVA(BaseModels): #Logging):

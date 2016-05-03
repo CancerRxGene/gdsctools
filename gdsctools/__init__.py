@@ -59,7 +59,7 @@ from gdsctools.volcano import VolcanoANOVA
 from gdsctools.cosmictools import COSMICInfo
 from gdsctools.tissues import TCGA
 from gdsctools.gdsc import GDSC
-
+from gdsctools.stats import signed_effects
 
 def gdsctools_help(name=None):
     if name is None:
