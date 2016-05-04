@@ -129,9 +129,16 @@ class Reader(object):
                 # and newer versions
                 try:
                     rawdf = pd.read_csv(filename, sep=",", comment="#")
+                    if sum([this.count('\t') for this in rawdf.columns])>2: # 2 is arbitrary
+                        print("Your input file does not seem to be comma"
+                            " separated. If tabulated, please rename with"
+                            " .tsv or .txt extension")
+                        1/0 # raise exception to try the \t case
                 except:
-                    rawdf = pd.read_csv(filename, sep="\t", comment="#",
+                    rawdf = pd.read_csv(filename, sep=",", comment="#",
                             compression='gzip')
+                # Sometimes, a user will provide a CSV, which is actually
+                # tab-delimited. This is wrong and diffcult to catch.
             except:
                 raise ValueError('Could not read %s' % filename)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
@@ -533,7 +540,7 @@ class GenomicFeatures(Reader, CosmicRows):
         self.df = self.df[[x for x in self.df.columns
             if x.startswith('Drug_') is False]]
 
-        for this in ['Sample Name', 'SAMPLE_NAME']:
+        for this in ['Sample Name', 'SAMPLE_NAME', 'Sample_Name']:
             if this in self.df.columns:
                 self.df.drop(this, axis=1, inplace=True)
 
@@ -572,11 +579,12 @@ class GenomicFeatures(Reader, CosmicRows):
             self._special_names.append(self.colnames.msi)
 
         self.found_media = self.colnames.media in self.df.columns
-        """if self.found_media is False:
-            warnings.warn("column named '%s' not found" % self.colnames.media)
+        if self.found_media is False:
+            pass
+            #warnings.warn("column named '%s' not found" % self.colnames.media)
         else:
             self._special_names.append(self.colnames.media)
-        """
+
         # order columns and index
         self._order()
 

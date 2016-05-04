@@ -3,7 +3,7 @@
 Data Packages
 =================
 
-Definition 
+Definition
 --------------
 
 A **Data Package** is a terminology used to speak about a directory that
@@ -24,7 +24,7 @@ data package.
 
 
 THe directory **css** and **js** contains resources required by the HTML
-documents. 
+documents.
 
 The **INPUT** directory contains 3 data files and the settings used during the
 analysis:
@@ -39,8 +39,8 @@ See section on :ref:`data` for details about the data format and the
 
 Finally, the **OUTPUT** directory contains::
 
-- drugs_summary.csv  
-- features_summary.csv  
+- drugs_summary.csv
+- features_summary.csv
 - results.csv
 
 The **images** directory contains a mix of images and HTML for each
@@ -49,9 +49,9 @@ significant associations.
 Create your own package
 -----------------------------
 
-In fact, we are already seen how to create a pacakge. This is covered in
-:ref:`html` when we used the :class:`ANOVAReport` class but let put the code
-again here below::
+In fact, we have already seen how to create a pacakge. This is covered in
+:ref:`html` when we used the :class:`ANOVAReport` class but let us look at
+ the code again::
 
     from gdsctools import ANOVA, ic50_test, ANOVAReport
     gdsc = ANOVA(ic50_test)
@@ -63,19 +63,20 @@ again here below::
 Here, we have not yet mentionned the type of cancers or tissues since we used a
 simple genomic feature file but one we need to repeat this analysis across man
 y different genomic features files. The :class:`gdsctools.gdsc.GDSC` class will
-help us for that purpose. 
+help us for that purpose.
 
-Create data packages across TCGA 
+Create data packages across TCGA
 --------------------------------------
 
 When we do a full GDSC analysis, the cell lines span a set of TCGA tissues
-(e.g., COREAD, BLCA) and generally we want to perform the analysis not on all 
+(e.g., COREAD, BLCA) and generally we want to perform the analysis not on all
 cellines at the same time but each type of tissues independently.
 
-Besides, you may then wish to have data packages not only for a given tissue but also for a given company (if your DrugDecode file is filled properly; see later).
+Besides, you may then wish to have data packages not only for a given TCGA
+tissue but also for a given company (if your DrugDecode file is filled properly; see later).
 
 The recommended way is to used the :class:`gdsctools.gdsc.GDSC` class that will
-help you in this task. 
+help you in this task.
 
 
 First, you need to prepare the input data. Create a directory and add these
@@ -108,7 +109,7 @@ The GDSC class will then loop over the TCGA cases and create data packages.
 
 
 This may take hours to finalise: the ANOVA and creation of all images will be
-done for each TCGA. 
+done for each TCGA.
 
 This may be parallelised since each input Genomic Feature analysis is
 independent::
@@ -153,7 +154,7 @@ Again this may be parallelised::
 
 
 
-    
+
 
 
 

@@ -286,7 +286,6 @@ class BaseModels(object):
         # reset the buffer.
         self.individual_anova = {}
 
-
         if self.verbose and self._init_called is False:
             for this in ['tissue', 'media', 'msi', 'feature']:
                 if this in self._get_analysis_mode():

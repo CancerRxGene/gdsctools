@@ -3,8 +3,29 @@ ChangeLog
 
 .. contents::
 
-Version 0.11 (April 2016)
+Version 0.11 (April-May 2016)
 ----------------------------
+
+.. rubric:: 0.11.3
+
+* CHANGES: 
+
+    - The parameter **pvalue_threshold** in the general settings was changed
+      from infinite to 10e-3. This has an effect on the numlber of significant
+      hits reported in the HTML reports and volvano plots. This should not have 
+      a strong impact on the number of hits but guarantees a reasonably low
+      pvalue before multiple testing
+    - If an input file named with .csv extension but the content is tabulated, 
+      there was no immediate error but lead to errors later (e.g. in ANOVA), which 
+      is difficult to debug. Now, in such cases, an error will occur immediately
+      when reading the file.
+    - The warnings about MEDIA factor is removed since most of the files do not
+      contain that column.
+
+* BUG
+
+    - The data packages were stored in the "ALL" directory, which may be a  TCGA
+      tissue by itself. This has been renamed into "tissue_packages".
 
 .. rubric:: 0.11.2
 

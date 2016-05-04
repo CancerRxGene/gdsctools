@@ -155,7 +155,7 @@ class GDSC(GDSCBase):
         # On v18, On an i7 core using 1 CPU this tqkes about 1 hour.30 minutes
         # THe PANCAN data set is the largest and takes about 1 hour itself
 
-    You should now have a directory called **ALL** with about 20 directories for
+    You should now have a directory called **tissue_packages** with about 20 directories for
     each TCGA GF file. Keep that in a safe place or you will have to restart
     the analysis
 
@@ -173,7 +173,7 @@ class GDSC(GDSCBase):
 
         from gdsctools.gdsc import GDSCDirectorySummary()
         gs = GDSCDirectorySummary()
-        gs.create_summary_pages('ALL')
+        gs.create_summary_pages('tissue_packages')
         for company in gg.companies:
             gs.create_summary_pages(company)
 
@@ -185,11 +185,12 @@ class GDSC(GDSCBase):
     """
     def __init__(self, ic50, drug_decode,
             genomic_feature_pattern="GF_*csv",
-            mode='standard'):
+            mode='standard', main_directory="tissue_packages"):
         super(GDSC, self).__init__(genomic_feature_pattern, verbose=True)
         self.debug = False
         self.ic50_filename = ic50
         self.dd_filename = drug_decode
+        self.main_directory = main_directory
 
         if mode == 'v18':
             self.ic50 = IC50Cluster(ic50)
@@ -211,7 +212,7 @@ class GDSC(GDSCBase):
         self.results = {}
 
     def run(self):
-        self.mkdir('ALL')
+        self.mkdir(self.main_directory)
         # First analyse all case of TCGA + PANCAN once for all and
         # store all results in a dictionary.
         self._analyse_all()
@@ -221,7 +222,7 @@ class GDSC(GDSCBase):
             tcga = gf_filename.split("_")[1].split('.')[0]
             print('================================ Analysing %s data' % tcga)
 
-            self.mkdir('ALL' + os.sep + tcga)
+            self.mkdir(self.main_directory + os.sep + tcga)
 
             # Computes the ANOVA
             an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode)
@@ -236,7 +237,7 @@ class GDSC(GDSCBase):
             print('Analysing %s data and creating images' % tcga)
             self.report = ANOVAReport(an, self.results[tcga])
             self.report.settings.savefig = True
-            self.report.settings.directory = 'ALL/' + tcga
+            self.report.settings.directory = self.main_directory + os.sep + tcga
             self.report.settings.analysis_type = tcga
             self.report.create_html_pages()
 
@@ -268,7 +269,7 @@ class GDSC(GDSCBase):
                 try:
                     results_df = self.results[tcga].df.copy()
                 except:
-                    results_path = "ALL/%s/OUTPUT/results.csv" % tcga
+                    results_path = "%s/%s/OUTPUT/results.csv" % (self.main_directory, tcga)
                     print("Downloading results from %s" % results_path)
                     results_df = ANOVAResults(results_path)
 
@@ -313,7 +314,7 @@ class GDSC(GDSCBase):
                     self.report.create_html_associations()
 
                     # For now, we just copy all DRUG images from 
-                    # the analysis made in ALL 
+                    # the analysis made in tissue_packages 
                     from easydev import shellcmd, Progress
                     print("\nCopying drug files")
                     drug_ids = results.df.DRUG_ID.unique()
@@ -321,13 +322,13 @@ class GDSC(GDSCBase):
                     for i, drug_id in enumerate(drug_ids):
                         # copy the HTML
                         filename = "%s.html" % drug_id
-                        source = "ALL%s%s%s" % (os.sep, tcga, os.sep)
+                        source = "%s%s%s%s" % (self.main_directory, os.sep, tcga, os.sep)
                         dest = "%s%s%s%s" % (company, os.sep, tcga, os.sep )
                         cmd = "cp %s%s %s" % (source, filename, dest )
                         shellcmd(cmd, verbose=False)
                         #copy the images
                         filename = "volcano_%s.*" % drug_id
-                        source = "ALL%s%s%simages%s" % (os.sep, tcga,
+                        source = "%s%s%s%simages%s" % (self.main_directory, os.sep, tcga,
                                 os.sep, os.sep)
                         dest = "%s%s%s%simages%s" % (company, os.sep,
                                 tcga, os.sep , os.sep)
@@ -343,8 +344,9 @@ class GDSC(GDSCBase):
         return [x for x in self.drug_decode.companies if x != 'Commercial']
     companies = property(_get_companies)
 
-    def create_summary_pages(self, main_directory='ALL'):
+    def create_summary_pages(self):
         # Read in ALL all directories
+        main_directory = self.main_directory
 
         # create directories and copy relevant files
         self.mkdir(main_directory + os.sep + 'images')
@@ -367,7 +369,7 @@ class GDSC(GDSCBase):
                 dire = 'data' + os.sep + 'images'
                 filename = gdsctools_data("images" + os.sep +filename)
                 shutil.copy(filename, target)
-        directories = glob.glob('ALL' + os.sep + '*')
+        directories = glob.glob(self.main_directory + os.sep + '*')
         directories = [x for x in directories if os.path.isdir(x)]
 
         summary = []
@@ -416,7 +418,7 @@ class GDSC(GDSCBase):
         # FIXME save in the proper directory
         output_dir = main_directory + os.sep + '..' + os.sep
         output_file = output_dir + os.sep + 'index.html'
-        self.html_page = ReportMAIN(directory='ALL', filename='index.html',
+        self.html_page = ReportMAIN(directory=self.main_directory, filename='index.html',
                 template_filename='datapack_summary.html' )
 
         # Let us use our HTMLTable to add the HTML references
@@ -435,7 +437,7 @@ class GDSC(GDSCBase):
         """Find the files results.csv in all TCGA directories"""
         for tcga in self.tcga:
             print(tcga)
-            self.results[tcga] = ANOVAResults('ALL' + os.sep + tcga + os.sep +
+            self.results[tcga] = ANOVAResults(self.main_directory + os.sep + tcga + os.sep +
                     'OUTPUT' + os.sep + 'results.csv')
 
 

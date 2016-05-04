@@ -41,7 +41,7 @@ class GDSCDirectorySummary(GDSCBase):
     def __init__(self, genomic_feature_pattern="GF_*csv"):
         super(GDSCDirectorySummary, self).__init__(genomic_feature_pattern)
 
-    def create_summary_pages(self, main_directory='ALL'):
+    def create_summary_pages(self, main_directory="tissue_packages"):
         # Read in ALL all directories
 
         # create directories and copy relevant files
