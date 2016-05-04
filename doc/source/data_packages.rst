@@ -51,7 +51,7 @@ Create your own package
 
 In fact, we have already seen how to create a pacakge. This is covered in
 :ref:`html` when we used the :class:`ANOVAReport` class but let us look at
- the code again::
+the code again::
 
     from gdsctools import ANOVA, ic50_test, ANOVAReport
     gdsc = ANOVA(ic50_test)
