@@ -1,6 +1,7 @@
 from gdsctools.anova import ANOVA
 from gdsctools.anova_report import ANOVAReport
 from gdsctools import ic50_test
+import numpy as np
 
 
 def test_html():
@@ -10,6 +11,8 @@ def test_html():
     features = features[features.columns[0:30]]
     an = ANOVA(ic50_test, features)
     #an.settings.include_media_factor = False
+
+    an.settings.pvalue_threshold = np.inf
     results = an.anova_all()
 
     assert len(results.df) == 302 

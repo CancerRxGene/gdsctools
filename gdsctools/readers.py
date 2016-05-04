@@ -572,11 +572,11 @@ class GenomicFeatures(Reader, CosmicRows):
             self._special_names.append(self.colnames.msi)
 
         self.found_media = self.colnames.media in self.df.columns
-        if self.found_media is False:
+        """if self.found_media is False:
             warnings.warn("column named '%s' not found" % self.colnames.media)
         else:
             self._special_names.append(self.colnames.media)
-
+        """
         # order columns and index
         self._order()
 

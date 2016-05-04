@@ -1,13 +1,19 @@
-from gdsctools import ANOVA
+from gdsctools import ANOVA, gdsctools_data, IC50
 from gdsctools import ANOVAReport
 from nose.plugins.attrib import attr
+from nose.tools import assert_almost_equal
 import numpy as np
 
 
 @attr('skip')
 def test_anova_brca():
 
-    an = ANOVA('ANOVA_input_brca.tsv', 'test_brca_features.tsv')
+    an1 = ANOVA(gdsctools_data('IC50_v17.csv.gz'))
+    an1.set_cancer_type('breast')
+
+
+
+    an = ANOVA(an1.ic50, gdsctools_data('GF_BRCA_v17.csv.gz'))
     dfori = an.anova_all()
 
     df = dfori.df.sum()
@@ -36,7 +42,7 @@ def test_anova_brca():
     for k, v in totest.items():
         if k in ['ANOVA_MEDIA_pval']:
             continue
-        assert v == exact[k]
+        assert_almost_equal(v, exact[k])
 
     # test part of the report (summary section)
     r = ANOVAReport(an, dfori)
