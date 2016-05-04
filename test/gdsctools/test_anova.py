@@ -1,4 +1,5 @@
 from gdsctools.anova import ANOVA
+from gdsctools import gdsctools_data
 import pandas as pd
 from easydev import assert_list_almost_equal
 from nose.tools import assert_almost_equal
@@ -122,7 +123,6 @@ def test_anova_summary():
 
 
 def test_set_cancer_type():
-    from gdsctools import *
     an = ANOVA(gdsctools_data("IC50_v17.csv.gz"))
     an.set_cancer_type("breast")
     an.ic50.df.sum()
