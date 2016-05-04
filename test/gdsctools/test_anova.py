@@ -104,7 +104,6 @@ def test_anova_summary():
     y = [3.210453608523738e-06, 0.14579091345305398, 0.5430736275249095, None]
     assert_list_almost_equal(x, y)
 
-    
     an.settings.analysis_type = 'COREAD' # something different from PANCAN
     df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
     x = an.anova_pvalues
@@ -119,7 +118,6 @@ def test_anova_summary():
     assert_list_almost_equal(x, y)
 
     assert (df.N_FEATURE_neg == 365).all()
-
 
 
 def test_set_cancer_type():

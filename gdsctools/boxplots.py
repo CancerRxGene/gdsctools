@@ -203,7 +203,14 @@ class BoxPlots(Logging):
         # counts items in each category and fill with NA
         counts = groups.count().unstack().fillna(0)
 
+
         # if positive or negative for a combo, is not>=2, drop it
+        # pandas 0.16.2
+        cc = (counts >= 2).all()
+        # create a groups structure 
+        categories = list(cc.unstack().columns[cc])
+        """
+        # Seems to be fixed (May 2016)
         try:
             # pandas 0.16.2
             cc = (counts >= 2).all()
@@ -212,6 +219,7 @@ class BoxPlots(Logging):
         except:
             # pandas 0.13 for the doc only
             categories = list(df.tissue.unique())[0:10]
+        """
 
         groups = df.query(mode + ' in @categories',
                 engine='python').groupby([mode, 'feature'])
@@ -220,16 +228,15 @@ class BoxPlots(Logging):
         # figure out the delta between pos and neg
         means = groups.mean().unstack(mode)
 
-
-        if len(means):
+        if len(means):  # need 2 values
             delta = means.ix[0] - means.ix[1]
             try:
                 # new pandas v0.17
                 delta.sort_values(inplace=True)
-            except:
-                # sort_values not in anaconda for py3.3
-                # FIXME does not work in readthedocs.
-                delta = delta.sort()
+            except Exception as err:
+                # conda for py3.3 is 0.16.2 where sort_values sdoes not exists
+                # Useful also for readthedocs
+                delta.sort()
 
             significance = {}
             data = []
