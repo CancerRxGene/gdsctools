@@ -16,6 +16,11 @@ import pandas as pd
 
 
 class IC50Cluster(IC50):
+    """
+
+    Used in v18 only
+
+    """
     def __init__(self, ic50, ratio_threshold=10, verbose=True):
         """
 
