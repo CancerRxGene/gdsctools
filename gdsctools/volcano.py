@@ -26,7 +26,7 @@ import pandas as pd
 import pylab
 import numpy as np
 import easydev
-
+from numpy import log10
 
 from easydev import Progress, AttrDict
 from gdsctools.tools import Savefig
@@ -204,7 +204,6 @@ class VolcanoANOVA(object):
                 mpld3.plugins.clear(self.current_fig)
             except:
                 pass
-
 
     def volcano_plot_all_features(self):
         """Create a volcano plot for each feature and save in PNG files
@@ -613,5 +612,142 @@ class VolcanoANOVA(object):
         fh.write(htmljs)
         fh.close()
         fig.set_size_inches(*oldsize)
+
+
+
+
+
+class VolcanoANOVA2(VolcanoANOVA):
+    def __init__(self, data, sep="\t", settings=None):
+        super(VolcanoANOVA2, self).__init__(data, sep, settings)
+    
+    def render_drug(self, name):
+        self.data = self._get_volcano_sub_data("DRUG_ID", name)
+        return self._render_data(name)
+
+    def render_feature(self, name):
+        self.data = self._get_volcano_sub_data("FEATURE", name)
+        return self._render_data(name)
+    
+    def render_all(self):
+        self.data = self._get_volcano_sub_data("ALL")
+        return self._render_data()
+
+    def _render_data(self, name="all associations"):
+
+        self.data['log10pvalue'] = -log10(self.data['pvalue'])
+
+        self.data['color'] = self.data['color'].apply(lambda x: 
+                x.replace("black", "not_significant"))
+        self.data['color'] = self.data['color'].apply(lambda x: 
+                x.replace("green", "sensitive"))
+        self.data['color'] = self.data['color'].apply(lambda x: 
+                x.replace("red", "resistant"))
+
+        # Need to figure out what are the colors' order. the JS requires
+        # the color to be provided and ar picked up according to the data
+        # so this is not robust. Here, we populate the color dynamically
+        # based on the content of the data
+        colors = []
+        for k,v in self.data.color.drop_duplicates().iteritems():
+            if v == "resistant":
+                colors.append("rgba(205,0,0,0.5)")  # red
+            elif v == "sensitive":
+                colors.append("rgba(0,205,0,0.5)")  # green
+            elif v == "not_significant":
+                colors.append("rgba(0,0,0,0.5)")  # black
+
+
+        import jinja2
+        from jinja2 import Environment, PackageLoader
+        env = Environment()
+
+        from easydev import get_package_location
+
+        env.loader = jinja2.FileSystemLoader(
+                        get_package_location("gdsctools")
+                        + "/gdsctools/data/templates/")
+        template = env.get_template("volcano.html")
+
+        jinja = {}
+
+        jinja["colors"] = colors
+        jinja["Group"] = list(self.data['color'].values)
+        jinja['vars'] = list(self.data["Drug"].values)
+
+        """
+        # does not work in the JS somehow some points do not appear
+        # disabled for now
+        markersize = self.data['markersize']
+        markersize -= markersize.min()
+        markersize /= markersize.max()
+        markersize = (3*markersize).round()
+        #markersize[markersize == 0] = 1
+
+        FC = list(markersize.astype(int).astype(str))
+        jinja['FC'] = FC
+        """
+
+        #First value is Y, second is X, following will be used in the 
+        jinja['data'] = self.data[["signed_effect", "log10pvalue"]].round(2).values.tolist()
+        jinja['title'] = '"%s"' % name
+
+        fdrs = self.get_fdr_ypos()
+        jinja['fdr1'] = fdrs[0]
+        jinja['fdr2'] = fdrs[1]
+        jinja['fdr3'] = fdrs[2]
+        jinja['fdr4'] = fdrs[3]
+
+        m = abs(self.data.signed_effect.min())
+        M = abs(self.data.signed_effect.max())
+        jinja['minX'] = -max([m, M]) * 1.1
+        jinja['maxX'] =  max([m, M]) * 1.1
+        jinja['maxY'] = self.data["log10pvalue"].max() * 1.2
+        if max(fdrs) > jinja['maxY']:
+            jinja['maxY'] = max(fdrs) * 1.2
+
+
+        self.html = template.render(jinja)
+        return self.html
+
+    def get_fdr_ypos(self):
+
+        fdr = self.settings.FDR_threshold
+        fdrs = sorted(self.settings.volcano_additional_FDR_lines)
+        fdrs = fdrs[::-1] # reverse sorting
+        if self.settings.volcano_FDR_interpolation is True:
+            get_pvalue_from_fdr = self._get_pvalue_from_fdr_interp
+        else:
+            get_pvalue_from_fdr = self._get_pvalue_from_fdr
+
+        pvalue = get_pvalue_from_fdr(fdr)
+        #ax.axhline(-np.log10(pvalue), linestyle='--', lw=2,
+        #    color='red', alpha=1, label="FDR %s " %  fdr + " \%")
+
+        pvalues = [-log10(pvalue)]
+        for i, this in enumerate(fdrs):
+            if this < self.df[self._colname_qvalue].min() or\
+                this > self.df[self._colname_qvalue].max():
+                    pvalues.append(3)
+            pvalue = get_pvalue_from_fdr(this)
+            pvalues.append(-np.log10(pvalue))
+
+        # we must have 3 values. If not, just repeat the last values
+
+
+        return pvalues
+
+
+    # window.CanvasXPress.references
+    # Working stuff:
+    # window.CanvasXpress.references[0].setHeight(400)
+    #
+    # window.CanvasXpress.references[0].data.d.line[0].color = 'green'
+    # window.CanvasXpress.references[0].redraw()
+    
+
+    
+    # window.CanvasXpress.references[0].redraw()
+
 
 
