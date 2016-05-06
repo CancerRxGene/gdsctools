@@ -3,15 +3,26 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>GDSCTools report</title>
+    <link rel="stylesheet" href="./css/canvasXpress.css" type="text/css"/>
     <link rel="stylesheet" href="css/gdsc.css" type="text/css" />
     <script src="js/sorttable.js"></script>
 
     <!-- Include required JS files -->
     <link rel="stylesheet" href="css/github-gist.css">
     <script src="js/highlight.pack.js"></script>
-   <script>hljs.initHighlightingOnLoad();</script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+
+    <script type="text/javascript" src="js/canvasXpress.min.js"></script>
+
+
+    {{ volcano_jsdata }}
+
+
 </head>
-<body>
+
+
+<body onload="loadVolcano();"> 
 
 <div class="document" id="unset">
 <h1 class="title">{{ title }}</h1>
