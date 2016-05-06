@@ -22,6 +22,7 @@ import warnings
 from gdsctools.report import HTMLTable, ReportMAIN
 from gdsctools.tools import Savefig
 from gdsctools.volcano import VolcanoANOVA
+from gdsctools.volcano import VolcanoANOVA2
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.readers import DrugDecode
@@ -703,8 +704,12 @@ class HTMLOneFeature(ReportMAIN):
         except:
             pass
 
+    def create_pictures2(self):
+        v = VolcanoANOVA2(self.df, settings=self.settings)
+        html = v.render_feature(self.feature)
+        return html
+
     def _create_report(self, onweb=True):
-        self.create_pictures()
 
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf) > 0:
@@ -715,6 +720,10 @@ class HTMLOneFeature(ReportMAIN):
 
         # image section
         self.jinja['image_filename'] = "images/volcano_{0}".format(self.feature)
+        self.jinja['volcano_jsdata'] =  self.create_pictures2()
+        #self.create_pictures()
+
+
 
 
 class HTMLOneDrug(ReportMAIN):
@@ -779,8 +788,13 @@ class HTMLOneDrug(ReportMAIN):
         except:
             pass
 
+    def create_pictures2(self):
+        v = VolcanoANOVA2(self.df, settings=self.settings)
+        html = v.render_drug(self.drug)
+        return html
+
     def _create_report(self, onweb=True):
-        self.create_pictures()
+        #self.create_pictures()
 
         # add the table
         self.jinja['synonyms'] = ''
@@ -798,6 +812,7 @@ class HTMLOneDrug(ReportMAIN):
 
         # image section
         self.jinja['image_filename'] = "images/volcano_{0}".format(self.drug)
+        self.jinja['volcano_jsdata'] =  self.create_pictures2()
 
 
 class HTMLPageMain(ReportMAIN):
@@ -823,14 +838,17 @@ class HTMLPageMain(ReportMAIN):
         self.jinja['summary'] = txt
 
         print('Creating volcano plots')
+        """
+        As of version 0.13, we will use Javascript directly. 
+        
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
         v = VolcanoANOVA(self.report.df, settings=self.settings)
-        v.selector(v.df, 1500, 1500, inplace=True)
+        #v.selector(v.df, 1500, 1500, inplace=True)
         v.volcano_plot_all()
         v.savefig_and_js("volcano_all_js")
 
-        self.jinja['volcano'] = """
+        self.jinja['volcano'] = '''
             <h3></h3>
             <a href="volcano_all_js.html">
                 <img alt="volcano plot for all associations"
@@ -840,7 +858,10 @@ class HTMLPageMain(ReportMAIN):
             <p> A javascript version is available
                 <a href="volcano_all_js.html">here</a> (
                 or click on the image).</p>
+        '''
         """
+        v = VolcanoANOVA2(self.report.df, settings=self.settings)
+        self.jinja['volcano'] = v.render_all()
 
         # MANOVA link
         N = len(self.report.get_significant_set())
