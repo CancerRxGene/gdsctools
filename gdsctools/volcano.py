@@ -215,7 +215,7 @@ class VolcanoANOVA(object):
         pb = Progress(len(features), 1)
         for i, feature in enumerate(features):
             self.volcano_plot_one_feature(feature)
-            self.savefig_and_js("volcano_%s.png" % feature, 
+            self.savefig_and_js("volcano_%s.png" % feature,
                     size_inches=(10, 10))
             pb.animate(i+1)
 
@@ -602,7 +602,7 @@ class VolcanoANOVA(object):
 
         self.figtools.savefig(filename + '.png', size_inches=size_inches)
 
-        # now the javascript. 
+        # now the javascript.
         fig = self.current_fig
         oldsize = fig.get_size_inches()
         fig.set_size_inches(size_inches)
@@ -620,7 +620,7 @@ class VolcanoANOVA(object):
 class VolcanoANOVA2(VolcanoANOVA):
     def __init__(self, data, sep="\t", settings=None):
         super(VolcanoANOVA2, self).__init__(data, sep, settings)
-    
+
     def render_drug(self, name):
         self.data = self._get_volcano_sub_data("DRUG_ID", name)
         return self._render_data(name)
@@ -628,7 +628,7 @@ class VolcanoANOVA2(VolcanoANOVA):
     def render_feature(self, name):
         self.data = self._get_volcano_sub_data("FEATURE", name)
         return self._render_data(name)
-    
+
     def render_all(self):
         self.data = self._get_volcano_sub_data("ALL")
         return self._render_data()
@@ -637,26 +637,25 @@ class VolcanoANOVA2(VolcanoANOVA):
 
         self.data['log10pvalue'] = -log10(self.data['pvalue'])
 
-        self.data['color'] = self.data['color'].apply(lambda x: 
+        self.data['color'] = self.data['color'].apply(lambda x:
                 x.replace("black", "not_significant"))
-        self.data['color'] = self.data['color'].apply(lambda x: 
+        self.data['color'] = self.data['color'].apply(lambda x:
                 x.replace("green", "sensitive"))
-        self.data['color'] = self.data['color'].apply(lambda x: 
+        self.data['color'] = self.data['color'].apply(lambda x:
                 x.replace("red", "resistant"))
 
-        # Need to figure out what are the colors' order. the JS requires
-        # the color to be provided and ar picked up according to the data
-        # so this is not robust. Here, we populate the color dynamically
-        # based on the content of the data
+        # We have 3 colors but sometimes you may have only one or 2.
+        # This may be an issue with canvasXpress. It seems essential 
+        # to sort the color column so that names are sorted alphabetically
+        # and to include colors that are present in the sale order
+        self.data.sort_values(by='color', inplace=True)
         colors = []
-        for k,v in self.data.color.drop_duplicates().iteritems():
-            if v == "resistant":
-                colors.append("rgba(205,0,0,0.5)")  # red
-            elif v == "sensitive":
-                colors.append("rgba(0,205,0,0.5)")  # green
-            elif v == "not_significant":
-                colors.append("rgba(0,0,0,0.5)")  # black
-
+        if "not_significant" in self.data.color.values:
+            colors.append("rgba(0,0,0,0.5)")  # black
+        if "resistant" in self.data.color.values:
+            colors.append("rgba(205,0,0,0.5)")  # black
+        if "sensitive" in self.data.color.values:
+            colors.append("rgba(0,205,0,0.5)")  # black
 
         import jinja2
         from jinja2 import Environment, PackageLoader
@@ -687,9 +686,11 @@ class VolcanoANOVA2(VolcanoANOVA):
         FC = list(markersize.astype(int).astype(str))
         jinja['FC'] = FC
         """
+        self.data.markersize /= (self.data.markersize.max()/3.)
 
-        #First value is Y, second is X, following will be used in the 
-        jinja['data'] = self.data[["signed_effect", "log10pvalue"]].round(2).values.tolist()
+        #First value is Y, second is X, following will be used in the
+        jinja['data'] = self.data[["signed_effect", "log10pvalue", 
+            "markersize"]].round(3).values.tolist()
         jinja['title'] = '"%s"' % name
 
         fdrs = self.get_fdr_ypos()
@@ -705,7 +706,6 @@ class VolcanoANOVA2(VolcanoANOVA):
         jinja['maxY'] = self.data["log10pvalue"].max() * 1.2
         if max(fdrs) > jinja['maxY']:
             jinja['maxY'] = max(fdrs) * 1.2
-
 
         self.html = template.render(jinja)
         return self.html
@@ -729,6 +729,7 @@ class VolcanoANOVA2(VolcanoANOVA):
             if this < self.df[self._colname_qvalue].min() or\
                 this > self.df[self._colname_qvalue].max():
                     pvalues.append(3)
+                    continue
             pvalue = get_pvalue_from_fdr(this)
             pvalues.append(-np.log10(pvalue))
 
@@ -744,9 +745,9 @@ class VolcanoANOVA2(VolcanoANOVA):
     #
     # window.CanvasXpress.references[0].data.d.line[0].color = 'green'
     # window.CanvasXpress.references[0].redraw()
-    
 
-    
+
+
     # window.CanvasXpress.references[0].redraw()
 
 
