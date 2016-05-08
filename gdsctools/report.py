@@ -69,8 +69,8 @@ class ReportMAIN(Report):
     """
 
     def __init__(self, filename='index.html', directory='report',
-                 overwrite=True, verbose=True,
-                template_filename='index.html', mode=None):
+                 overwrite=True, verbose=True, template_filename='index.html', 
+                 mode=None, init_report=True):
         """.. rubric:: Constructor
 
         :param filename: default to **index.html**
@@ -97,7 +97,7 @@ class ReportMAIN(Report):
         super(ReportMAIN, self).__init__(searchpath, filename=filename,
             template_filename=template_filename, directory=directory,
             extra_css_list=extra_css_list,
-            extra_js_list=extra_js_list)
+            extra_js_list=extra_js_list, init_report=init_report)
 
         self.jinja['dependencies'] = self.get_table_dependencies("gdsctools").to_html()
         self.jinja['analysis'] = 'anova'
@@ -105,17 +105,18 @@ class ReportMAIN(Report):
         self.jinja['version'] = version
         self.jinja['title'] = 'ANOVA analysis summary'
         self.jinja["analysis_domain"] = "PANCAN"
+        self.jinja['resource_path'] = "."
 
         self._directory = directory
         self._filename = filename
 
         if mode is None:
             self._to_create = ['OUTPUT', 'INPUT', 'images', 'css',
-                    'js', 'code']
+                    'js', 'code', 'associations']
         elif mode == 'summary':
             self._to_create = ['images', 'css', 'js',]
-
-        self._init_report()
+        if init_report:
+            self._init_report()
 
     def show(self):
         """Opens a tab in a browser to see the document"""

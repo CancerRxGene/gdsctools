@@ -583,13 +583,14 @@ class HTMLPageMANOVA(ReportMAIN):
         be changes (default is manova.html)
         """
         super(HTMLPageMANOVA, self).__init__(filename='manova.html',
-                directory=gdsc.settings.directory,
-                template_filename='manova.html')
+                directory=gdsc.settings.directory+os.sep+"associations",
+                template_filename='manova.html', init_report=False)
 
         html = ANOVAResults(df).get_html_table(collapse_table=False)
 
         self.jinja['manova'] = html
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
+        self.jinja['resource_path'] = ".."
 
 
 ##############################################################################
@@ -682,14 +683,16 @@ class HTMLOneFeature(ReportMAIN):
 
         filename = "{0}.html".format(self.feature)
         super(HTMLOneFeature, self).__init__(
-                directory=report.settings.directory,
-                filename=filename, template_filename='feature.html')
+                directory=report.settings.directory + os.sep + "associations",
+                filename=filename, template_filename='feature.html',
+                init_report=False)
         self.title = 'Single Feature analysis (%s)' % self.feature
 
         self.jinja['n_cell_lines'] = report.gdsc.features.df[feature].sum()
         self.jinja['feature_name'] = feature
         self.jinja['analysis_domaiin'] = report.settings.analysis_type
         self.jinja['n_hits'] = self.n_hits
+        self.jinja['resource_path'] = ".."
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
@@ -719,7 +722,7 @@ class HTMLOneFeature(ReportMAIN):
             self.jinja['association_table'] = html
 
         # image section
-        self.jinja['image_filename'] = "images/volcano_{0}".format(self.feature)
+        #self.jinja['image_filename'] = "images/volcano_{0}".format(self.feature)
         self.jinja['volcano_jsdata'] =  self.create_pictures2()
         #self.create_pictures()
 
@@ -744,8 +747,9 @@ class HTMLOneDrug(ReportMAIN):
 
         filename = "{0}.html".format(self.drug)
         super(HTMLOneDrug, self).__init__(
-                directory=report.settings.directory,
-                filename=filename, template_filename='drug.html')
+                directory=report.settings.directory + os.sep + "associations",
+                filename=filename, template_filename='drug.html',
+                init_report=False)
         self.title = 'Single Drug analysis (%s)' % self.drug
 
 
@@ -774,6 +778,7 @@ class HTMLOneDrug(ReportMAIN):
             pass
         self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['n_hits'] = self.nhits
+        self.jinja['resource_path'] = ".."
 
     def create_pictures(self):
         v = VolcanoANOVA(self.df, settings=self.settings)
@@ -811,7 +816,7 @@ class HTMLOneDrug(ReportMAIN):
             self.jinja['association_table'] = html
 
         # image section
-        self.jinja['image_filename'] = "images/volcano_{0}".format(self.drug)
+        #self.jinja['image_filename'] = "images/volcano_{0}".format(self.drug)
         self.jinja['volcano_jsdata'] =  self.create_pictures2()
 
 
@@ -861,7 +866,7 @@ class HTMLPageMain(ReportMAIN):
         '''
         """
         v = VolcanoANOVA2(self.report.df, settings=self.settings)
-        self.jinja['volcano'] = v.render_all()
+        self.jinja['volcano_jsdata'] = v.render_all()
 
         # MANOVA link
         N = len(self.report.get_significant_set())
@@ -921,7 +926,7 @@ class HTMLPageMain(ReportMAIN):
 
         # add another set of drug_id but sorted in alpha numerical order
         table = HTMLTable(df, 'drugs')
-        table.add_href('DRUG_ID')
+        table.add_href('DRUG_ID', url="associations", suffix=".html")
         table.df.columns = [x.replace('ANOVA_FEATURE_FDR',
             'mean FEATURE ANOVA FDR') for x in table.df.columns]
         table.add_bgcolor('hits', mode='max',
@@ -949,7 +954,7 @@ class HTMLPageMain(ReportMAIN):
 
         table = HTMLTable(df, 'features')
         table.sort('hits', ascending=False)
-        table.add_href('FEATURE')
+        table.add_href('FEATURE', url="associations/", suffix=".html")
         table.add_bgcolor('hits', mode='max',
                 cmap=cmap_builder('white', 'orange', 'red'))
         self.jinja['feature_table'] = table.to_html(escape=False,
