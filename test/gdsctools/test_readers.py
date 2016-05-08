@@ -112,3 +112,14 @@ def test_drugs():
     r2 = DrugDecode(testing.drug_test_tsv)
     r2.drugIds
     assert r1 == r2
+
+
+def test_readers_tabs():
+    # If the files ends in csv but its content is tsv, this may be an issue
+    try:
+        IC50(gdsctools_data("test_IC50_tabs.csv"))
+        assert False
+    except:
+        assert True
+
+
