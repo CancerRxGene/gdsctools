@@ -936,12 +936,11 @@ class DrugDecode(Reader):
     company. If those columns are not provided, the internal dataframe is filled
     with None.
 
-    Older version of DRUG_DECODE files used ID as ::
+    Note that older version of identifiers such as::
 
         Drug_950_IC50
 
-    but internally, such identifiers are transformed as proper ID that is
-    (in this case), just the number::
+    are transformed as proper ID that is (in this case), just the number::
 
         950
 
@@ -1044,7 +1043,7 @@ class DrugDecode(Reader):
     def get_target(self, drug_id):
         return self._get_row(drug_id, 'DRUG_TARGET')
 
-    def get_public(self, drug_id):
+    def is_public(self, drug_id):
         return self._get_row(drug_id, 'WEBRELEASE')
 
     def check(self):
@@ -1154,3 +1153,12 @@ class DrugDecode(Reader):
             return all(self.df.fillna(0) == other.df.fillna(0))
         except:
             return False
+
+
+    def get_public_and_one_company(self, company):
+
+        drug_decode_company = self.df.query(
+               "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company)
+        # Transform into a proper DrugDecode class for safety
+        return DrugDecode(drug_decode_company)
+

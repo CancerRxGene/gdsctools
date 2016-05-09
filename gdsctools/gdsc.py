@@ -154,11 +154,10 @@ class GDSC(GDSCBase):
         gg = GDSC('IC50_v18.csv', 'DRUG_DECODE.txt',
             genomic_feature_pattern='GF*csv')
         # identifies all genomic features GF* that contains specific TCGA GF
-        gg.run() # This will take hours depending on the number of drugs.
+        gg.analysis() # This may take a while (1 hour) depending on the number of drugs.
 
-
-        # On v18, On an i7 core using 1 CPU this tqkes about 1 hour.30 minutes
-        # THe PANCAN data set is the largest and takes about 1 hour itself
+        # On v18, On an i7 core using 1 CPU this takes about 1 hour.30 minutes
+        # The PANCAN data set is the largest and takes about 1 hour itself
 
     You should now have a directory called **tissue_packages** with about 20 directories for
     each TCGA GF file. Keep that in a safe place or you will have to restart
@@ -176,15 +175,10 @@ class GDSC(GDSCBase):
 
     Third, create some summary pages::
 
-        from gdsctools.gdsc import GDSCDirectorySummary()
-        gs = GDSCDirectorySummary()
-        gs.create_summary_pages('tissue_packages')
-        for company in gg.companies:
-            gs.create_summary_pages(company)
+        gg.create_summary_pages()
 
-    The last step is fast but the whole process of analyse and image
-    creation is very long.
-
+    The last step is fast (a few seconds) and create index.html in the
+    tissue_package directory and each proprietary directory.
 
 
     """
@@ -216,14 +210,16 @@ class GDSC(GDSCBase):
         # figure out the cancer types:
         self.results = {}
 
-    def run(self):
+        self.company_directory="company_packages"
+
+    def analyse(self):
         """Launch ANOVA analysis and creating data package for each tissue.
 
 
         """
         self.mkdir(self.main_directory)
-        # First analyse all case of TCGA + PANCAN once for all and
-        # store all results in a dictionary.
+        # First analyse all TCGA cases + PANCAN once for all and
+        # store all the results in a dictionary.
         self._analyse_all()
 
     def _analyse_all(self):
@@ -232,36 +228,33 @@ class GDSC(GDSCBase):
             print('================================ Analysing %s data' % tcga)
 
             self.mkdir(self.main_directory + os.sep + tcga)
-            status = "good"
             try:
                 # Computes the ANOVA
-                an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode)
+                an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode,
+                    verbose=False)
+ 
+                an.features.df = an.features.df[an.features.df.columns[0:20]]
+
                 self.an = an
                 an.settings = ANOVASettings(**self.settings)
-                an.init() # reset the analysis_type automatically
+                an.settings.analysis_type = tcga
+                an.init() # This reset the directory
                 results = an.anova_all()
+                an.settings.directory = self.main_directory + os.sep + tcga
                 # Store the results
                 self.results[tcga] = results
 
+                print('Analysing %s data and creating images' % tcga)
+                self.report = ANOVAReport(an, results)
+                self.report.settings.savefig = True
+
+                self.report.create_html_pages()
             except Exception as err:
-                status = "bad"
                 print("GDSCTools error in %s while running ANOVA. Continuing" % tcga)
                 print(err)
+                raise ValueError(err)
 
-            if status is good:
-                try:
-                    print('Analysing %s data and creating images' % tcga)
-                    self.report = ANOVAReport(an, self.results[tcga])
-                    self.report.settings.savefig = True
-                    self.report.settings.directory = self.main_directory + os.sep + tcga
-                    self.report.settings.analysis_type = tcga
-                    self.report.create_html_pages()
-                except Exception as err:
-                    print("GDSCTools error in %s while creating the data package." % tcga)
-                    print(err)
-
-    def create_data_packages_for_companies(self, companies=None,
-            company_directory="company_packages"):
+    def create_data_packages_for_companies(self, companies=None):
         ##########################################################
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
         #                                                        #
@@ -276,13 +269,13 @@ class GDSC(GDSCBase):
         if companies is None:
             companies = self.companies
 
-        self.mkdir(company_directory)
+        self.mkdir(self.company_directory)
 
         Ncomp = len(companies)
         for ii, company in enumerate(companies):
             print("\n\n========= Analysing company %s out of %s (%s)" %
                     (ii+1, Ncomp, company))
-            self.mkdir(company_directory + os.sep + company)
+            self.mkdir(self.company_directory + os.sep + company)
             for gf_filename in sorted(self.gf_filenames):
                 tcga = gf_filename.split("_")[1].split('.')[0]
                 print("---------------- for TCGA %s" % tcga)
@@ -305,16 +298,7 @@ class GDSC(GDSCBase):
 
                 # Filter the results to keep only public drugs and that
                 # company.
-
-                # The DRUG_DECODE index is made of the DRUG_ID, that are
-                # forced to be integer. Yet, the ANOVA_results DRUG_ID may not
-                # be. One case is when DRUG_IDs are formated as Drug_ID_IC50
-
-                def clean_name(x):
-                    return x.replace("Drug_","").replace("DRUG_","").replace("_IC50", "")
-
-                results.df['DRUG_ID'] = results.df['DRUG_ID'].apply(
-                                            lambda x: clean_name(x))
+                # Make sure this is integers
                 results.df["DRUG_ID"] = results.df["DRUG_ID"].astype(int)
 
                 mask = [True if x in drug_decode_company.df.index else False
@@ -329,16 +313,17 @@ class GDSC(GDSCBase):
                 an = ANOVA(self.ic50_filename, gf_filename, drug_decode_company,
                     verbose=False)
 
-                an.ic50.df.columns = [int(clean_name(x)) for x in an.ic50.df.columns]
+                #an.ic50.df.columns = [int(clean_name(x)) for x in an.ic50.df.columns]
 
                 def drug_to_keep(drug):
                     to_keep = drug in drug_decode_company.df.index
                     return to_keep
                 an.ic50.df = an.ic50.df.select(drug_to_keep, axis=1)
 
+                print("%s drugs selected" %  (len(an.ic50.df.columns)))
                 an.settings = ANOVASettings(**self.settings)
                 an.init()
-                an.settings.directory = company_directory + os.sep + company + os.sep + tcga
+                an.settings.directory = self.company_directory + os.sep + company + os.sep + tcga
                 an.settings.analysis_type = tcga
                 self.report = ANOVAReport(an, results)
                 self.report.settings.analysis_type = tcga
@@ -358,10 +343,11 @@ class GDSC(GDSCBase):
                     pb = Progress(len(drug_ids))
                     for i, drug_id in enumerate(drug_ids):
                         # copy the HTML
-                        filename = "%s.html" % drug_id
+                        filename = "drug_%s.html" % drug_id
                         source = "%s%s%s%sassociations%s" % (self.main_directory,
                             os.sep, tcga, os.sep , os.sep)
-                        dest = "%s%s%s%s" % (company, os.sep, tcga, os.sep )
+                        dest = os.sep.join([self.company_directory, company, tcga, "associations"]) 
+                        dest += os.sep
                         cmd = "cp %s%s %s" % (source, filename, dest )
                         shellcmd(cmd, verbose=False)
                         #copy the images
@@ -382,41 +368,27 @@ class GDSC(GDSCBase):
         return [x for x in self.drug_decode.companies if x != 'Commercial']
     companies = property(_get_companies)
 
-    def create_summary_pages(self):
-        # Read in ALL all directories
-        main_directory = self.main_directory
 
-        # create directories and copy relevant files
-        self.mkdir(main_directory + os.sep + 'images')
-        self.mkdir(main_directory + os.sep + 'css')
-        self.mkdir(main_directory + os.sep + 'js')
-        from gdsctools import gdsctools_data
-        for filename in ['gdsc.css', 'github-gist.css']:
-            target = os.sep.join([main_directory, 'css', filename ])
-            if os.path.isfile(target) is False:
-                filename = gdsctools_data(filename)
-                shutil.copy(filename, target)
-        for filename in ['highlight.pack.js']:
-            target = os.sep.join([main_directory, 'js', filename ])
-            if os.path.isfile(target) is False:
-                filename = gdsctools_data(filename)
-                shutil.copy(filename, target)
-        for filename in ['EBI_logo.png', 'sanger-logo.png']:
-            target = os.sep.join([main_directory, 'images', filename ])
-            if os.path.isfile(target) is False:
-                dire = 'data' + os.sep + 'images'
-                filename = gdsctools_data("images" + os.sep +filename)
-                shutil.copy(filename, target)
-        directories = glob.glob(self.main_directory + os.sep + '*')
-        directories = [x for x in directories if os.path.isdir(x)]
+    def create_summary_pages(self):
+
+        # First for the main directory (tissue_packages):
+        self._create_summary_pages(self.main_directory)
+
+        # Then for all companies:
+        for company in self.companies:
+            self._create_summary_pages(self.company_directory + os.sep + company)
+        
+
+    def _create_summary_pages(self, main_directory):
+        # Read all directories in tissue_packages
+
+        directories = glob.glob(main_directory + os.sep + '*')
 
         summary = []
         for directory in sorted(directories):
-
-            tcga = directory.split(os.sep)[1]
-            if tcga in ['css', 'images']:
+            tcga = directory.split(os.sep)[-1]
+            if tcga not in self.tcga:
                 continue
-
             # number of hits
             path = directory + os.sep + 'OUTPUT' + os.sep
             try:
@@ -426,11 +398,11 @@ class GDSC(GDSCBase):
                 continue
             total_hits = hits.total.sum()
 
-            drug_involved = get_drug_id(hits['Unnamed: 0'].unique())
+            drug_involved = hits['Unnamed: 0'].unique()
 
             results = ANOVAResults(path + 'results.csv')
             if len(results)>0:
-                drug_ids = get_drug_id(results.df.DRUG_ID.unique())
+                drug_ids = results.df.DRUG_ID.unique()
             else:
                 drug_ids = []
 
@@ -442,21 +414,21 @@ class GDSC(GDSCBase):
             drug_inv_public = sum(webrelease == 'Y')
             drug_inv_prop = sum(webrelease != 'Y')
 
-
             summary.append([tcga, total_hits,
                 drug_inv_prop, info['N_prop'],
                 drug_inv_public, info['N_public']])
+
         df = pd.DataFrame(summary)
+
         df.columns = ['Analysis name', 'Number of hits',
             'Number of involved proprietary compounds', 'out of',
             'Number of involved public', 'out of']
-
 
         # FIXME include css and images of logo
         # FIXME save in the proper directory
         output_dir = main_directory + os.sep + '..' + os.sep
         output_file = output_dir + os.sep + 'index.html'
-        self.html_page = ReportMAIN(directory=self.main_directory, filename='index.html',
+        self.html_page = ReportMAIN(directory=main_directory, filename='index.html',
                 template_filename='datapack_summary.html' )
 
         # Let us use our HTMLTable to add the HTML references

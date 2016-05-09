@@ -86,6 +86,9 @@ class ANOVA(BaseModels): #Logging):
         gdsc.volcano_FDR_interpolation = False
         gdsc.settings.pvalue_correction_method = 'qvalue'
 
+    V18 :
+        gdsc.settings.FDR_threshold = 35
+
     """
     def __init__(self, ic50, genomic_features=None,
             drug_decode=None, verbose=True, low_memory=True,
@@ -261,7 +264,7 @@ class ANOVA(BaseModels): #Logging):
             a dictionary. This is to speed up analysis when scanning
             the drug across all features.
 
-        .. note:: **for developer** this is the core of tha analysis
+        .. note:: **for developer** this is the core of the analysis
             and should be kept as fast as possible. 95% of the time is spent
             here.
 

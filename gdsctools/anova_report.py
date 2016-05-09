@@ -342,7 +342,7 @@ class ANOVAReport(object):
                 if title_tag == 'drug':
                     name = self.drug_decode.get_name(label)
                     if name is not None:
-                        labels[i] = labels[i] + " - " + name
+                        labels[i] = "{}-{}".format(labels[i], name)
                 else:
                     pass
 
@@ -896,7 +896,7 @@ class HTMLPageMain(ReportMAIN):
         df_drugs = self.report.drug_summary(filename="drug_summary.png")
         get_name = self.report.drug_decode.get_name
         if len(self.report.drug_decode.df) > 0:
-            df_drugs.index = [x + "-" + get_name(x) for x in df_drugs.index]
+            df_drugs.index = ["%s-%s".format(x, get_name(x)) for x in df_drugs.index]
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
 

@@ -112,8 +112,10 @@ class BoxPlots(Logging):
         pylab.clf()  # or close ?
         data, names, significance = results
         N = len(names)
-        if N<=2: # msi or 2 tissues
+        if N <= 2: # msi or 2 tissues
             fontsize = self.fontsize
+        elif N>=2:
+            fontsize = max(4, int(self.fontsize /1.8))
         else:
             fontsize = max(4, int(self.fontsize - (N-2.)/(self.fontsize-4.)))
 
@@ -143,7 +145,7 @@ class BoxPlots(Logging):
             filename = self.directory + os.sep
             filename += 'ODOF_{}_DRUG_{}____{}'.format(mode,
                     self.odof.drug_name, self.odof.feature_name)
-            fig.set_size_inches(12, 14)
+            fig.set_size_inches(14, 16)
             pylab.savefig(filename + '.png', bbox_inches='tight')
             fig.set_size_inches(oldsize)
             fig.canvas.draw()
