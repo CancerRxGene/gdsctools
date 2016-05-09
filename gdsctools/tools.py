@@ -80,8 +80,6 @@ class Savefig(object):
         fig.canvas.draw()
 
 
-
-
 def extract_drug_identifiers(drug_lists):
 
     if isinstance(drug_lists, str):

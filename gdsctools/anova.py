@@ -67,8 +67,7 @@ class ANOVA(BaseModels): #Logging):
         an = ANOVA(ic)
         # This is to select a specific tissue
         an.set_cancer_type('breast')
-        df = an.anova_one_drug_one_feature('Drug_1047_IC50',
-            'TP53_mut', show=True)
+        df = an.anova_one_drug_one_feature(1047, 'TP53_mut', show=True)
 
     :Details about the anova analysis: In the example above, we perform a
         regression/anova test based on OLS regression. This is done for
@@ -439,8 +438,7 @@ class ANOVA(BaseModels): #Logging):
                     alpha=self.settings.regression_alpha,
                     L1_wt=1)
 
-
-        key = drug_id + "__" + feature_name
+        key = str(drug_id) + "__" + feature_name
         if self.sampling and key not in self.pvalues_features.keys():
             # This can be computed for a drug once for all
             # no need to redo it for each feature ?

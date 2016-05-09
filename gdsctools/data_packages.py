@@ -11,22 +11,6 @@ import pandas as pd
 from gdsctools.gdsc import GDSCBase
 
 
-class DataPackagesSummary(object):
-    """Scan a set of data packages and create a summary report.
-
-
-    In a given directory, identifies data packages and create a summary page
-
-    What are the initial files ?
-    gf = GenomicFeatures('ANOVA_input.txt')
-
-    """
-
-    def __init__(self, collaborator=None, directories=None,
-            directory='.'):
-        pass
-        # Identify all companies
-        # r.df.groupby("OWNED_BY").groups.keys()
 
 
 class GDSCDirectorySummary(GDSCBase):

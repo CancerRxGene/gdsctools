@@ -79,7 +79,7 @@ def anova_pipeline(args=None):
         print('Testing mode:')
         from gdsctools import ANOVA, ic50_test
         an = ANOVA(ic50_test)
-        df = an.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+        df = an.anova_one_drug_one_feature(1047, 'TP53_mut')
 
         assert df.loc[1,'N_FEATURE_pos'] == 554, \
             "N_feature_pos must be equal to 554"
@@ -92,7 +92,7 @@ def anova_pipeline(args=None):
         an = ANOVA(ic50_test)
         an.settings.to_json(options.save_settings)
         print('Save a default parameter set in %s' % options.save_settings)
-        return 
+        return
 
     if options.license is True:
         print(gdsctools.license)
@@ -103,7 +103,6 @@ def anova_pipeline(args=None):
         an = anova.ANOVA(options.input_ic50, options.input_features)
         print(an)
         return
-
 
     if options.print_tissues is True:
         from gdsctools import anova
@@ -119,10 +118,7 @@ def anova_pipeline(args=None):
         return
 
     if options.print_drugs is True:
-        from gdsctools import anova
-        gdsc = anova.ANOVA(options.input_ic50, options.input_features)
-        import textwrap
-        print("\n".join(textwrap.wrap(" , ".join(gdsc.drugIds))))
+        print_drugs(options)
         return
 
     if options.print_features is True:
@@ -136,19 +132,18 @@ def anova_pipeline(args=None):
     # --------------------------------------------------- real analysis
     # -----------------------------------------------------------------
     # dispatcher to the functions according to the user parameters
-
-
     from gdsctools import ANOVA, ANOVAReport
     anova = ANOVA(options.input_ic50, options.input_features,
             options.input_drug,
-            low_memory=not options.fast)
+            low_memory=True)
     anova = _set_settings(anova, options)
 
+    options.drug = int(options.drug)
 
     if options.drug and options.drug not in anova.ic50.df.columns:
-        print(red("Invalid Drug. Try --print-drug-names"))
+        print(red("Invalid Drug. Try one of those"))
+        print_drugs(options)
         sys.exit(1)
-
 
     if options.drug is not None and options.feature is not None:
         print_color("ODOF mode", purple)
@@ -159,9 +154,10 @@ def anova_pipeline(args=None):
     else: # analyse everything
         if options.feature is None:
             print_color("ADAF mode", purple)
+            anova_all(anova, options)
         else:
-            print_color("ADOF mode", purple)
-        anova_all(anova, options)
+            print("You provided --feature but can be used only with --drug")
+            sys.exit(0)
 
     if options.onweb is False and options.no_html is False:
         msg = "\nNote that a directory {} was created and files saved into it"
@@ -189,18 +185,18 @@ def anova_one_drug(anova, options):
     """Analyse one specific drug"""
     from gdsctools import ANOVAReport
     anova.set_cancer_type(options.tissue)
-    
+
     if options.feature:
         anova.feature_names = options.features
 
-    results = anova.anova_one_drug(options.drug)
+    results = anova.anova_one_drug(int(options.drug))
 
-    print("\nFound %s associations" % len(results))
+    print("\nFound %s possible associations" % len(results))
     if len(results)==0:
         print(red("\nPlease try with another drug or no --drug option"))
         return
 
-    # ?? is this required ?
+    # ?? is this required ? It looks like (May 2016)
     N = len(results)
     results.df.insert(0, 'ASSOC_ID', range(1, N+1))
 
@@ -237,20 +233,20 @@ def anova_all(anova, options):
 
 def anova_one_drug_one_feature(anova, options):
     """Analyse the entire data set"""
+
     from gdsctools import anova_report
+    from gdsctools.report import ReportMAIN
 
     if options.tissue is not None:
         anova.set_cancer_type(options.tissue)
+    
+
+    # just to create the directory
+    ReportMAIN(directory=options.directory)
 
     odof = anova_report.Association(anova,
-            drug=options.drug,
+            drug=int(options.drug),
             feature=options.feature)
-
-    #print(odof.settings)
-    # for the HTML
-    #odof.add_dependencies = True
-    #odof.add_settings = True
-
     df = odof.run()
 
     if df.ix[1]['FEATURE_IC50_effect_size'] is None:
@@ -284,7 +280,7 @@ class ANOVAOptions(argparse.ArgumentParser):
    in a browser. This can be very long (5 minutes to several hours) depending
    on the size of the files:
 
-    gdsctools_anova --input-ic50 <filename> 
+    gdsctools_anova --input-ic50 <filename>
 
 2. on the same data as above, analyse only one association for a given
    drug <drug> and a given genomic features <feature>. The drug name should
@@ -352,11 +348,11 @@ http://github.com/CancerRxGene/gdsctools/issues """
         group.add_argument( "--verbose", dest='verbose',
                            action="store_true",
                            help="verbose option.")
-        
+
         group.add_argument( "--do-not-open-report", dest='onweb',
                            action="store_false",
-                           help="""By default, opens the index.html page. 
-                           Set this option if you do not want to open the 
+                           help="""By default, opens the index.html page.
+                           Set this option if you do not want to open the
                            html page automatically.""")
         # if one drug one feature only
         group.add_argument("-d", "--drug", dest="drug",
@@ -394,14 +390,14 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            help="Include msi factor in the analysis")
 
         group.add_argument("--save-settings", dest="save_settings",
-                            type=str, 
+                            type=str,
                             help="Save settings into a json file")
 
         group.add_argument("--read-settings", dest="settings",
                             type=str,
                             help="""Read settings from a json file. Type
                             --save-settings <filename.json> to create
-                            an example. Note that the FDR-threshold 
+                            an example. Note that the FDR-threshold
                             and include_MSI_factor will be replaced if
                             --exclude-msi or fdr-threshold are used.""")
 
@@ -417,17 +413,10 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            tests."""
                            )
 
-        
+
         group.add_argument('--license', dest='license',
                            action="store_true",
                            help="Print the current license"
-                           )
-
-        group.add_argument('--fast', dest='fast',
-                           action="store_true",
-                           help="""If provided, the code will use more
-                           memory and should be 10-30%% faster. (1.2G for
-                           265 drugs and 680 features)"""
                            )
 
         group.add_argument('--no-html', dest='no_html',
@@ -442,4 +431,8 @@ http://github.com/CancerRxGene/gdsctools/issues """
 
 
 
-
+def print_drugs(options):
+    from gdsctools import anova
+    import textwrap
+    gdsc = anova.ANOVA(options.input_ic50, options.input_features)
+    print("\n".join(textwrap.wrap(" , ".join([str(x) for x in gdsc.drugIds]))))

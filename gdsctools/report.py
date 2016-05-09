@@ -136,7 +136,8 @@ class ReportMAIN(Report):
         try:
             # some parent zill have that method implemented
             self._create_report()
-        except:
+        except Exception as err:
+            print(err)
             pass
         self.write()
         if onweb is True:

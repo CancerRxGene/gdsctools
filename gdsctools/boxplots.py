@@ -43,10 +43,9 @@ class BoxPlots(Logging):
         gdsc = ANOVA(ic50_test)
 
         # Perform the entire analysis
-        odof = gdsc._get_one_drug_one_feature_data('Drug_1047_IC50', 
-            'TP53_mut')
+        odof = gdsc._get_one_drug_one_feature_data(1047, 'TP53_mut')
 
-        # Plot volcano plot of pvalues versus signed effect size 
+        # Plot volcano plot of pvalues versus signed effect size
         bx = BoxPlots(odof)
         bx.boxplot_association()
 
@@ -55,15 +54,15 @@ class BoxPlots(Logging):
     additional plots can  be created using :meth:`boxplot_pancan`.
 
 
-    Note that :attr:`odof` in the example above is a dictionary 
+    Note that :attr:`odof` in the example above is a dictionary
     with the following keys:
 
     - drug_name
     - feature_name
-    - masked_tissue: a dataframe with cosmic ids as index and 1 column of 
+    - masked_tissue: a dataframe with cosmic ids as index and 1 column of
       tissues names.
-    - Y: list with the IC50s 
-    - masked_features: a dataframe with cosmic ids as index and 1 column of 
+    - Y: list with the IC50s
+    - masked_features: a dataframe with cosmic ids as index and 1 column of
       masked feature  (1/0)
     - masked_msi: same as masked_features
     - negatives: subset of the IC50s corresponding to positive feature
@@ -83,7 +82,7 @@ class BoxPlots(Logging):
 
         #: fontsize for the plots
         self.fontsize = fontsize
-        
+
         #: boolean to save figure
         self.savefig = savefig
 
@@ -100,7 +99,7 @@ class BoxPlots(Logging):
 
         """
         assert mode in ['tissue', 'msi']
-        drug_name = self.odof.drug_name.replace("_", " ")
+        drug_name = self.odof.drug_name
 
         results = self._get_boxplot_data(mode)
         if results is None:
@@ -114,7 +113,7 @@ class BoxPlots(Logging):
         data, names, significance = results
         N = len(names)
         if N<=2: # msi or 2 tissues
-            fontsize = self.fontsize 
+            fontsize = self.fontsize
         else:
             fontsize = max(4, int(self.fontsize - (N-2.)/(self.fontsize-4.)))
 
@@ -133,7 +132,7 @@ class BoxPlots(Logging):
         self.ax = ax.twinx()
         self.ax.set_ylim(common_ylim)
         self.ax.set_yticks(common_ticks)
-        self.ax.set_yticklabels([str(len(this))+" " for this in data], 
+        self.ax.set_yticklabels([str(len(this))+" " for this in data],
                 fontsize=fontsize/1.4)
         try:
             pylab.tight_layout()
@@ -142,7 +141,7 @@ class BoxPlots(Logging):
 
         if self.savefig is True:
             filename = self.directory + os.sep
-            filename += 'ODOF_{}_{}____{}'.format(mode,
+            filename += 'ODOF_{}_DRUG_{}____{}'.format(mode,
                     self.odof.drug_name, self.odof.feature_name)
             fig.set_size_inches(12, 14)
             pylab.savefig(filename + '.png', bbox_inches='tight')
@@ -152,13 +151,13 @@ class BoxPlots(Logging):
 
     def boxplot_association(self, fignum=1):
         """Boxplot of the association (negative versus positive)
-        
-        :param fignum: number of the figure 
+
+        :param fignum: number of the figure
         """
         pylab.figure(fignum)
         pylab.clf()
         # aliases
-        drug_name = self.odof.drug_name.replace("_", " ")
+        drug_name = self.odof.drug_name
         feature_name = self.odof.feature_name.replace("_", " ")
 
         # the plot itself
@@ -176,7 +175,7 @@ class BoxPlots(Logging):
 
         if self.savefig is True:
             filename = self.directory + os.sep
-            filename += 'ODOF_all_{}____{}'.format(self.odof.drug_name,
+            filename += 'ODOF_all_DRUG_{}____{}'.format(self.odof.drug_name,
                     self.odof.feature_name)
             pylab.savefig(filename + '.png', bbox_inches='tight')
 
@@ -207,14 +206,14 @@ class BoxPlots(Logging):
         # if positive or negative for a combo, is not>=2, drop it
         # pandas 0.16.2
         cc = (counts >= 2).all()
-        # create a groups structure 
+        # create a groups structure
         categories = list(cc.unstack().columns[cc])
         """
         # Seems to be fixed (May 2016)
         try:
             # pandas 0.16.2
             cc = (counts >= 2).all()
-            # create a groups structure 
+            # create a groups structure
             categories = list(cc.unstack().columns[cc])
         except:
             # pandas 0.13 for the doc only

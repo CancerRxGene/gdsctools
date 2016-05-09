@@ -155,7 +155,7 @@ class ANOVAResults(object):
         self.mapping = OrderedDict()
         self.mapping['ASSOC_ID'] =  np.dtype('int64')
         self.mapping['FEATURE'] = np.dtype('O')
-        self.mapping['DRUG_ID'] = np.dtype('O')
+        self.mapping['DRUG_ID'] = np.dtype('int64')
         self.mapping['DRUG_NAME'] = np.dtype('O')
         self.mapping['DRUG_TARGET'] = np.dtype('O')
         self.mapping['N_FEATURE_neg'] = np.dtype('int64')
@@ -293,8 +293,10 @@ class ANOVAResults(object):
 
         html = HTMLTable(self.df, 'notused')
         # Those columns should be links
-        for this in ['FEATURE', 'DRUG_ID', 'ASSOC_ID']:
-            html.add_href(this)
+        html.add_href("FEATURE")
+        html.add_href("ASSOC_ID", url="a", suffix=".html") # here url works like a prefix
+        html.add_href("DRUG_ID", url="drug_", suffix=".html") # here url works like a prefix
+        
 
         for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
                 'FEATURE_pos_Glass_delta']:

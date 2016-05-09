@@ -106,16 +106,16 @@ class BoxSwarm(object):
         self.hold = hold
         self.title = title
         self.lw = lw
-        self.markersize = 12
+        self.markersize = 10
 
     def beeswarm(self, data, position, ratio=2.):
-        r"""Naive plotting of the data points 
+        r"""Naive plotting of the data points
 
         We assume gaussian distribution so we expect fewers dots
         far from the mean/median. We'd like those dots to be close to the
-        axes. conversely, we expect lots of dots centered around the mean, in 
+        axes. conversely, we expect lots of dots centered around the mean, in
         which case, we'd like them to be spread in the box. We uniformly
-        distribute position using 
+        distribute position using
 
         .. math::
 
@@ -127,9 +127,9 @@ class BoxSwarm(object):
 
             factor = 1 - \arctan( \dfrac{X - \mu }{\pi/2})
 
-        The farther the data is from the mean :math:`\mu`, 
+        The farther the data is from the mean :math:`\mu`,
         the closest it is to the axes that goes through the box.
-        
+
         """
         N = len(data)
         m = np.median(data)
@@ -159,7 +159,7 @@ class BoxSwarm(object):
                 X, Y = self.beeswarm(vector, i+1), vector
             else:
                 X, Y = vector, self.beeswarm(vector, i+1)
-            
+
             pylab.plot(X, Y,
                 'o', markersize=self.markersize, markerfacecolor=color,
                 markeredgewidth=1, alpha=alpha)
@@ -171,7 +171,7 @@ class BoxSwarm(object):
                 positions=range(1, len(ordered_data)+1),
             showmeans=True, showfliers=False)
         except:
-            # ReadTheDocs uses matplotlib 1.3.1 for now, so 
+            # ReadTheDocs uses matplotlib 1.3.1 for now, so
             # need this without showmeans parameter
             d = pylab.boxplot(ordered_data, widths=self.widths,
                vert=vert, patch_artist=True,

@@ -495,7 +495,7 @@ class VolcanoANOVA(object):
         #self.axx.set_ylabel('FDR \%', fontsize=self.settings.fontsize)
 
         # For the static version
-        title_handler = pylab.title("%s" % title.replace("_","  "),
+        title_handler = pylab.title("%s" % str(title).replace("_","  "),
                 fontsize=self.settings.fontsize/1.2)
         labels = []
 
@@ -504,7 +504,7 @@ class VolcanoANOVA(object):
         def onpick(event):
             ind = event.ind[0]
             try:
-                title = str(data.ix[ind]['Drug']) + " / " + str(data.ix[ind].Feature)
+                title = str(str(data.ix[ind]['Drug'])) + " / " + str(data.ix[ind].Feature)
                 title += "\nFDR=" + "%.4e" % data.ix[ind]['FDR']
                 title_handler.set_text(title.replace("_","  "))
             except:
@@ -645,7 +645,7 @@ class VolcanoANOVA2(VolcanoANOVA):
                 x.replace("red", "resistant"))
 
         # We have 3 colors but sometimes you may have only one or 2.
-        # This may be an issue with canvasXpress. It seems essential 
+        # This may be an issue with canvasXpress. It seems essential
         # to sort the color column so that names are sorted alphabetically
         # and to include colors that are present in the sale order
         self.data.sort_values(by='color', inplace=True)
@@ -672,7 +672,14 @@ class VolcanoANOVA2(VolcanoANOVA):
 
         jinja["colors"] = colors
         jinja["Group"] = list(self.data['color'].values)
-        jinja['vars'] = list(self.data["Drug"].values)
+
+        text = []
+        for x,y,z in zip(self.data['Drug'].values,
+            self.data['Feature'].values,
+            self.data['FDR'].values):
+
+            text.append("<b>Drug:</b>%s <br><b>Feature:</b>%s <br><b>FDR:</b>%s" % (x,y,z))
+        jinja['vars'] = text
 
         """
         # does not work in the JS somehow some points do not appear
@@ -689,7 +696,7 @@ class VolcanoANOVA2(VolcanoANOVA):
         self.data.markersize /= (self.data.markersize.max()/3.)
 
         #First value is Y, second is X, following will be used in the
-        jinja['data'] = self.data[["signed_effect", "log10pvalue", 
+        jinja['data'] = self.data[["signed_effect", "log10pvalue",
             "markersize"]].round(3).values.tolist()
         jinja['title'] = '"%s"' % name
 
@@ -745,8 +752,6 @@ class VolcanoANOVA2(VolcanoANOVA):
     #
     # window.CanvasXpress.references[0].data.d.line[0].color = 'green'
     # window.CanvasXpress.references[0].redraw()
-
-
 
     # window.CanvasXpress.references[0].redraw()
 
