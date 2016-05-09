@@ -48,7 +48,7 @@ If you save that example in a file, you can read it with the
     >>> from gdsctools import IC50
     >>> r = IC50('source/ic50_tiny.csv')
     >>> r.drugIds
-    ['Drug_1_IC50', 'Drug_20_IC50']
+    [1, 20]
 
 
 .. note:: the columns' names should be identifiers (not drug names). There
@@ -80,13 +80,12 @@ In addition to the COSMIC identifiers, the following columns may be provided but
     - MSI_FACTOR
     - MEDIA_FACTOR
 
-If not provided, the tissue, :term:`MSI` and :term:`MEDIA` factors will not be taken into account in the regression analysis (see :ref:`regression` for details). If the :term:`TCGA` tissue is not provided, it is created and set to *unidentified*.
+If not provided, the tissue, :term:`MSI` and :term:`MEDIA` factors will not be taken into account in the regression analysis. If the :term:`TCGA` tissue is not provided, it is created and set to *unidentified*.
 
 .. note::
     .. versionchanged:: 0.9.11
         A column called 'Sample Name' was interpreted if found. This is not
-        the case anymore. It is actually removed now to not be interepreted as
-        a feature.
+        the case anymore. It is actually removed now.
 
 
 All remaining columns are assumed to be genomic features.
@@ -110,7 +109,7 @@ It can be saved and read as follows:
     >>> gf
     GenomicFeatures <Nc=2, Nf=2, Nt=2>
 
-In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../gdsctools/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). A more complex file will be provided in the future.
+In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../gdsctools/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). A more complex file tagged v17 it also provided with about 600 features :download:`v17 genomic feature <../../gdsctools/data/genomic_features_v17.csv.gz>`.
 
 By default, the creation of an ANOVA class we read that file automatically. Of
 course, you may provide your own. The :class:`~gdsctools.readers.GenomicFeatures` if created without input contains the default file mentionned here above::
@@ -155,7 +154,7 @@ An example can be read as follows:
     >>> from gdsctools import DrugDecode, datasets
     >>> drug_filename = datasets.testing.drug_test_csv.location
     >>> dd = DrugDecode(drug_filename)
-    >>> dd.get_name('Drug_1047_IC50')
+    >>> dd.get_name(1047)
     'Nutlin-3a'
     >>> dd.df.ix[999]
     CHEMBL_ID              NaN

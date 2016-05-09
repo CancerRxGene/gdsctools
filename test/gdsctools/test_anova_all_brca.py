@@ -11,8 +11,6 @@ def test_anova_brca():
     an1 = ANOVA(gdsctools_data('IC50_v17.csv.gz'))
     an1.set_cancer_type('breast')
 
-
-
     an = ANOVA(an1.ic50, gdsctools_data('GF_BRCA_v17.csv.gz'))
     dfori = an.anova_all()
 

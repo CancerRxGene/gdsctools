@@ -44,8 +44,7 @@ In the following example, we provide a short Python snippet on how to use **GDSC
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
     gdsc.set_cancer_type('breast')
-    df = gdsc.anova_one_drug_one_feature('Drug_1047_IC50',
-        'TP53_mut', show=True)
+    df = gdsc.anova_one_drug_one_feature(1047, 'TP53_mut', show=True)
 
 
 .. plot::
@@ -54,8 +53,7 @@ In the following example, we provide a short Python snippet on how to use **GDSC
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
     gdsc.set_cancer_type('breast')
-    df = gdsc.anova_one_drug_one_feature('Drug_1047_IC50',
-        'TP53_mut', show=True)
+    df = gdsc.anova_one_drug_one_feature(1047, 'TP53_mut', show=True)
 
 The :attr:`df` is a dataframe that contains information explained in :ref:`regression`.
 
@@ -81,9 +79,7 @@ the code remains simple, nevertheless, we also provide a standalone
 application called **gdsctools_anova**, which can be used within a
 standard :term:`Terminal` (same output as in the previous example)::
 
-    gdsctools_anova
-        --input-ic50 <ic50 filename>
-        --drug Drug_1047_IC50
+    gdsctools_anova --input-ic50 <ic50 filename> --drug 1047  
         --feature TP53_mut --onweb
 
 
