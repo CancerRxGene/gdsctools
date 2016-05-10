@@ -81,7 +81,11 @@ class Savefig(object):
 
 
 def extract_drug_identifiers(drug_lists):
+    """
 
+    .. deprecated:: 0.12 Used in IC50Cluster (version 18) for now but should be
+        removed
+    """
     if isinstance(drug_lists, str):
         drug_lists = [drug_lists]
         string = True

@@ -63,11 +63,11 @@ class ANOVAReport(object):
 
     :Significant association: an association is significant if one of those
         conditions is fulfilled:
-         - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
-         - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
-         - The field *FEATURE_delta_MEAN_IC50* must be < 0 (sensible) or
-           >= 0 (resistant)
-        It can be **resistant** or **sensitive**.
+          - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
+          - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
+          - The field *FEATURE_delta_MEAN_IC50* must be < 0 (sensible) or
+            >= 0 (resistant)
+        
 
     """
     def __init__(self, gdsc, results, sep="\t", drug_decode=None):

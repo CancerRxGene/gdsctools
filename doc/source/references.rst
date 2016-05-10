@@ -37,13 +37,6 @@ GDSC report
     :members:
     :undoc-members:
 
-Data Packages
-~~~~~~~~~~~~~~~~
-
-.. automodule:: gdsctools.data_packages
-    :members:
-    :undoc-members:
-
 Statistical Tools
 -------------------
 .. automodule:: gdsctools.stats

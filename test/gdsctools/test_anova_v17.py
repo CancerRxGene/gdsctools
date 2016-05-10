@@ -47,7 +47,7 @@ def test_skcm():
 
     assert os.path.exists("skin/index.html")
     assert os.path.exists("skin/associations/manova.html")
-    assert os.path.exists("skin/associations/1.html")
+    assert os.path.exists("skin/associations/a1.html")
     assert os.path.exists("skin/associations/BRAF_mut.html")
     assert os.path.exists("skin/associations/drug_1047.html")
 

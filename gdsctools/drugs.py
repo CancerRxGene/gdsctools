@@ -14,11 +14,12 @@ __all__ = ["ChemSpiderSearch"]
 class ChemSpiderSearch(object):
     """This class uses ChemSpider and ChEMBL to identify drug name
 
+    ::
 
-    c = ChemSpiderSearch()
-    c.search_in_chemspider()
-    c.search_from_smile_inchembl()
-    df = c.find_chembl_ids()
+        c = ChemSpiderSearch()
+        c.search_in_chemspider()
+        c.search_from_smile_inchembl()
+        df = c.find_chembl_ids()
 
     It happends that most of public names can be found
     and almost none of non-public are not found. As expected.
@@ -31,7 +32,6 @@ class ChemSpiderSearch(object):
             if no identifier found, the search if DROPPED
             if 1 identifier found, we keep going using the SMILE identifier
             If more than 1 identifier found, this is AMBIGUOUS.
-
 
 
     If chembl and pubchem, check with unichem
