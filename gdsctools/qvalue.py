@@ -74,19 +74,19 @@ class QValue(object):
             self.pv = pv.copy()
         except:
             self.pv = np.array(pv)
-        assert(pv.min() >= 0 and pv.max() <= 1), \
+        assert(self.pv.min() >= 0 and self.pv.max() <= 1), \
             "p-values should be between 0 and 1"
 
         if lambdas is None:
             epsilon = 1e-8
             lambdas = scipy.arange(0,0.9+1e-8,0.05)
 
-        if len(lambdas>1) and len(lambdas)<4:
+        if len(lambdas)>1 and len(lambdas)<4:
             raise ValueError("""if length of lambda greater than 1, you need at least 4 values""")
 
-        if len(lambdas) >= 1 and (min(lambdas<0) or max(lambdas)>=1):
+        if len(lambdas) >= 1 and (min(lambdas)<0 or max(lambdas)>=1):
             raise ValueError("lambdas must be in the range[0, 1[")
-        self.m = float(len(pv))
+        self.m = float(len(self.pv))
 
         self.df = df 
         self.lambdas = lambdas

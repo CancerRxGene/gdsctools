@@ -1,0 +1,12 @@
+# As exported from the GDSC database. 
+"DRUG_ID","DRUG_NAME","OWNED_BY","PUTATIVE_TARGET","WEBRELEASE"
+1,"Erlotinib",NA,"EGFR","Y"
+3,"Rapamycin",NA,"mTOR","Y"
+5,"Sunitinib",NA,"PDGFRA, PDGFRB, KDR, KIT, FLT3","Y"
+6,"PHA-665752",NA,"MET","Y"
+9,"MG-132",NA,"Proteasome","Y"
+11,"Paclitaxel",NA,"Microtubules","Y"
+17,"Cyclopamine",NA,"SMO","Y"
+26,"Whatever","ME","PI3K alpha","N"
+29,"AZ628","ME","BRAF","Y"
+30,"Sorafenib","ME","PDGFRA, PDGFRB, KDR, KIT, FLT3","Y"

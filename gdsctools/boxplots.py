@@ -114,10 +114,10 @@ class BoxPlots(Logging):
         N = len(names)
         if N <= 2: # msi or 2 tissues
             fontsize = self.fontsize
-        elif N>=2:
-            fontsize = max(4, int(self.fontsize /1.8))
-        else:
+        elif N<=14:
             fontsize = max(4, int(self.fontsize - (N-2.)/(self.fontsize-4.)))
+        else:
+            fontsize = max(4, int(self.fontsize /1.4))
 
         bb = boxswarm.BoxSwarm(data, names, fontsize=fontsize)
 

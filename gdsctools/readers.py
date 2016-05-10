@@ -477,14 +477,14 @@ class IC50(Reader, CosmicRows):
         Nd = len(self.drugIds)
         return "IC50 object <Nd={0}, Nc={1}>".format(Nd, Nc)
 
-    def __add__(self, other):
+    """def __add__(self, other):
         print("Experimantal. combines IC50 via COSMIC IDs")
         df = pd.concat([self.df, other.df], ignore_index=True)
         df = df.drop_duplicates(cols=[self.cosmic_name])
         return df
-
+    """
     def copy(self):
-        new = IC50(self, drug_prefix=self.drug_prefix)
+        new = IC50(self)
         return new
 
 
