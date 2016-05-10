@@ -392,9 +392,10 @@ class IC50(Reader, CosmicRows):
                 self.cosmic_name))
 
         def clean_name(x):
-            if isinstance(x, int):
+            try:
+                return x.replace("Drug_","").replace("DRUG_","").replace("_IC50", "")
+            except:
                 return x
-            return x.replace("Drug_","").replace("DRUG_","").replace("_IC50", "")
         self.df.columns = [clean_name(x) for x in self.df.columns]
         self.df.columns = self.df.columns.astype(int)
 
