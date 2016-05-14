@@ -101,8 +101,6 @@ class ANOVASettings(AttrDict):
     effect_threshold          0                Used in the volcano plot. See
                                                :class:`~gdsctools.volcano.VolcanoPlot`
 
-    low_memory                False            Faster (20%) if set to false but
-                                               uses about 1Gb per run
     ========================= ================ ========================================
 
 
@@ -146,7 +144,6 @@ class ANOVASettings(AttrDict):
         self.equal_var_ttest = True
         self.minimum_nonna_ic50 = 6
 
-        self.low_memory = False # False means this will be 10-20 faster
 
         # Visualisation and HTML related ---------------------
         self.fontsize = 25
