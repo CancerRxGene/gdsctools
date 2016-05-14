@@ -45,17 +45,16 @@ def multicore_anova(ic50, genomic_features, drug_decode=None, maxcpu=2,
     .. warning:: experimental. Seems to work but sometimes hangs forever.
     """
     print("experimental code to run the analysis with several cores")
-    print("May takes lots or resources and slow down your system")
     t1 = time.time()
     master = ANOVA(ic50, genomic_features=genomic_features,
-                   drug_decode=drug_decode, low_memory=True)
+                   drug_decode=drug_decode)
     master.sampling = sampling
 
     drugs = master.ic50.drugIds
 
     t = MultiProcessing(maxcpu=maxcpu)
     # add all jobs (one per drug)
-    for i, drug in enumerate(drugs):
+    for i, drug in enumerate(master.ic50.drugIds):
         t.add_job(analyse_one_drug, master, drug)
     t.run()
 
@@ -70,7 +69,9 @@ def multicore_anova(ic50, genomic_features, drug_decode=None, maxcpu=2,
 
 
 def analyse_one_drug(master, drug):
-    res = master.anova_one_drug(drug_id=drug, animate=False)
+    res = master.anova_one_drug(drug_id=drug, animate=False, output="dataframe")
     return (drug, res)
+
+
 
 
