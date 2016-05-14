@@ -33,6 +33,8 @@ from gdsctools.boxplots import BoxPlots
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 
+from easydev import MultiProcessing
+
 
 __all__ = ['ANOVA']
 
@@ -91,7 +93,7 @@ class ANOVA(BaseModels): #Logging):
 
     """
     def __init__(self, ic50, genomic_features=None,
-            drug_decode=None, verbose=True, low_memory=True,
+            drug_decode=None, verbose=True, 
             set_media_factor=False):
         """.. rubric:: Constructor
 
@@ -109,7 +111,7 @@ class ANOVA(BaseModels): #Logging):
         to the analysis or visulation.
         """
         super(ANOVA, self).__init__(ic50, genomic_features,
-            drug_decode=drug_decode, verbose=verbose, low_memory=low_memory,
+            drug_decode=drug_decode, verbose=verbose, 
             set_media_factor=set_media_factor)
 
         self.sampling = 0
@@ -153,11 +155,13 @@ class ANOVA(BaseModels): #Logging):
         indices = self.ic50_dict[drug_name]['indices']
         dd.indices = indices
         # select only relevant tissues/msi/features
-        if self.settings.low_memory is True:
-            # This line takes 50% of the time
-            dd.masked_features = self.features.df.loc[indices, feature_name]
-        else:
-            dd.masked_features = self.features_dict[drug_name][feature_name]
+
+        # Thisa is 5-6 times slower to use loc than the 2 lines of
+        # code that follows, the creation of this masked_features was
+        # taking 99% of the time in this function and now takes about 50%
+        #dd.masked_features = self.features.df.loc[indices, feature_name].values
+        real_indices = self.ic50_dict[drug_name]['real_indices']
+        dd.masked_features = self.features.df[feature_name].values[real_indices]
 
         dd.masked_tissue = self.tissue_dict[drug_name]
         if self.features.found_msi:
@@ -169,7 +173,7 @@ class ANOVA(BaseModels): #Logging):
             dd.masked_media = self.media_dict[drug_name]
 
         # compute length of pos/neg features and MSI
-        dd.positive_feature = dd.masked_features.values.sum()
+        dd.positive_feature = dd.masked_features.sum()
         dd.negative_feature = len(dd.masked_features) - dd.positive_feature
 
         # Some validity tests to run the analysis or not
@@ -189,8 +193,8 @@ class ANOVA(BaseModels): #Logging):
         # numpy. We could also use the glass and cohens functions from the
         # stats module but the following code is much faster because it
         # factorises the computations of mean and variance
-        dd.positives = dd.Y[dd.masked_features.values == 1]
-        dd.negatives = dd.Y[dd.masked_features.values == 0]
+        dd.positives = dd.Y[dd.masked_features == 1]
+        dd.negatives = dd.Y[dd.masked_features == 0]
         dd.Npos = len(dd.positives)
         dd.Nneg = len(dd.negatives)
 
@@ -378,7 +382,7 @@ class ANOVA(BaseModels): #Logging):
                 df = df.drop(todrop, axis=1)
 
             df['C(msi)[T.1]'] = odof.masked_msi.values
-            df['feature'] = odof.masked_features.values
+            df['feature'] = odof.masked_features
 
             self.Y = odof.Y
             self.EV = df.values
@@ -413,12 +417,12 @@ class ANOVA(BaseModels): #Logging):
             #    data=self._mydata).fit() #Specify C for Categorical
             df = pd.DataFrame()
             df['C(msi)[T.1]'] = odof.masked_msi.values
-            df['feature'] = odof.masked_features.values
+            df['feature'] = odof.masked_features
             df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
             #self.data_lm = OLS(odof.Y, df.values).fit()
         else:
             df = pd.DataFrame()
-            df['feature'] = odof.masked_features.values
+            df['feature'] = odof.masked_features
             df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
             #self.data_lm = OLS(odof.Y, df.values).fit()
             #self._mydata = pd.DataFrame({'Y': odof.Y,
@@ -788,7 +792,7 @@ class ANOVA(BaseModels): #Logging):
             res.settings = ANOVASettings(**self.settings)
             return res
 
-    def anova_all(self, animate=True, drugs=None):
+    def anova_all(self, animate=True, drugs=None, multicore=None):
         """Run all ANOVA tests for all drugs and all features.
 
         :param drugs: you may select a subset of drugs
@@ -822,19 +826,24 @@ class ANOVA(BaseModels): #Logging):
 
         pb = Progress(len(drug_names), 1)
         drug_names = list(drug_names)
-        pylab.shuffle(drug_names)
+        pylab.shuffle(drug_names) # ? why 
+
         if animate is True:
             pb.animate(0)
 
-        for i, drug_name in enumerate(drug_names):
-            if drug_name in self.individual_anova.keys():
-                pass
-            else:
-                res = self.anova_one_drug(drug_name, animate=False,
+        if multicore:
+            multicore_analysis(self, drug_names, multicore)
+        else:
+
+            for i, drug_name in enumerate(drug_names):
+                if drug_name in self.individual_anova.keys():
+                    pass
+                else:
+                    res = self.anova_one_drug(drug_name, animate=False,
                                           output='dataframe')
-                self.individual_anova[drug_name] = res
-            if animate is True:
-                pb.animate(i+1)
+                    self.individual_anova[drug_name] = res
+                if animate is True:
+                    pb.animate(i+1)
         print("\n")
         if len(self.individual_anova) == 0:
             return ANOVAResults()
@@ -904,43 +913,24 @@ class ANOVA(BaseModels): #Logging):
 
 
 
-"""
-
-Script to compute the pvalues based on esti;ation of the pvalues distribution
-for a given drug and feature
-
-
-an = anova.ANOVA("IC50_v18.csv", "GF_BLCA.csv", "DRUG_DECODE.csv")
-an.sampling = 1000
-
-def get_data(an):
-    keys = an.pvalues_features.keys()
-    a = []
-    b = []
-    c = []
-    for key in keys:
-        drug, feature = key.split("__")
-        params = an.pvalues_features[key]['params'
-        ]
-        data =res.df.query("DRUG_ID==@drug and FEATURE==@feature"); pval = data["ANOVA_FEATURE_pval"]
-        pval_corr =  scipy.stats.genexpon.sf(-log10(pval), *params)
-        signed_effect = np.sign(data['FEATURE_delta_MEAN_IC50']) * data['FEATURE_IC50_effect_size']
-        a.append(-log10(pval_corr[0]))
-        b.append(signed_effect.values[0])
-    return b, a
+def analyse_one_drug(master, drug):
+    res = master.anova_one_drug(drug_id=drug, animate=False,
+        output="dataframe")
+    return (drug, res)
 
 
-plot(get_data(an)[0], get_data(an)[1], 'o',  markersize=20, alpha=0.3, color='g')
+def multicore_analysis(anova, drugs, maxcpu=2):
+    t = MultiProcessing(maxcpu=maxcpu)
+    for i, drug in enumerate(drugs):
+        t.add_job(analyse_one_drug, anova, drug)
+    t.run()
 
-signed_effects = np.sign(res.df['FEATURE_delta_MEAN_IC50']).values *
-                        res.df['FEATURE_IC50_effect_size'].values
-pvalues = -log10(res.df["ANOVA_FEATURE_pval"])
-plot(signed_effects, pvalues, 'o',  markersize=20, alpha=0.3, color='r')
+    # populate the ANOVA instance with the results
+    for this in t.results:
+        drug = this[0]
+        result = this[1]
+        anova.individual_anova[drug] = result
+    return anova
 
 
-
-
-
-
-"""
 
