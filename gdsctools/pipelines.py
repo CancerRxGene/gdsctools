@@ -134,8 +134,7 @@ def anova_pipeline(args=None):
     # dispatcher to the functions according to the user parameters
     from gdsctools import ANOVA, ANOVAReport
     anova = ANOVA(options.input_ic50, options.input_features,
-            options.input_drug,
-            low_memory=True)
+            options.input_drug)
     anova = _set_settings(anova, options)
 
     options.drug = int(options.drug)
