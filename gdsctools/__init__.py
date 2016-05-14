@@ -58,7 +58,7 @@ from gdsctools.datasets import *
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.cosmictools import COSMICInfo
 from gdsctools.tissues import TCGA
-from gdsctools.gdsc import GDSC
+from gdsctools.gdsc import GDSC, IC50Cluster
 from gdsctools.stats import signed_effects
 from gdsctools.elastic_net import ElasticNet
 

@@ -6,7 +6,6 @@ import shutil
 from gdsctools.anova import ANOVA
 from gdsctools.readers import IC50
 from gdsctools.readers import DrugDecode
-from gdsctools.tools import get_drug_id
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.anova_report import ANOVAReport
 from gdsctools.settings import ANOVASettings
@@ -15,17 +14,38 @@ from gdsctools.anova_report import ReportMAIN
 import pandas as pd
 
 
+__all__ = ["IC50Cluster", "GDSC"]
+
+
 class IC50Cluster(IC50):
     """
 
-    Used in v18 only
+    .. todo:: doc
+
+    Used in v18 only to cluster the DRUG columns with same drug Identifiers.
+
+    The convention in v18 should not be used again. Ze keep this function for
+    book-keeping.
+
+    This class merges drug names (not identifiers) but duplicated identifiers
+    may appear. 
+
+
+    ::
+
+        ic50 = IC50Cluster(gdsctools_data("test_v18_clustering.tsv"))
+
+        # This may not work if there are duplicated drug identifiers
+        IC50(ic50)
+
+ 
 
     """
     def __init__(self, ic50, ratio_threshold=10, verbose=True):
         """
 
         """
-        super(IC50Cluster, self).__init__(ic50)
+        super(IC50Cluster, self).__init__(ic50, v18=True)
         self.verbose = verbose
         self.ratio_threshold = ratio_threshold
 
@@ -44,11 +64,20 @@ class IC50Cluster(IC50):
             return []
     to_cluster = property(_get_to_cluster)
 
+    def _clean_name(self, x):
+        try:
+            res = x.replace("Drug_","").replace("DRUG_","")
+            res = res.split("_")[0]
+            res = int(res)
+            return res
+        except:
+            return x
+
     def _get_mapping(self):
         from collections import defaultdict
         mapping = defaultdict(list)
 
-        drug_ids = get_drug_id(self.df.columns)
+        drug_ids = [self._clean_name(x) for x in self.df.columns]
         for drug_id, colname in zip(drug_ids, self.df.columns):
             mapping[drug_id].append(colname)
         return mapping
@@ -104,13 +133,29 @@ class IC50Cluster(IC50):
 
         for identifier in to_cluster:
             drug_names = mapping[identifier]
-            new_drug_name = str(identifier) + "_" + \
-                    "_".join([x.split("_",1)[1] for x in  drug_names])
+
+            # Let us keep only the first concentration for now
+            new_drug_name = drug_names[0]
             # add new column with new name and mean of the columns with same
             # drug id
             self.df[new_drug_name] = self.df[drug_names].mean(axis=1)
             # Remove the individual columns
             self.df.drop(drug_names, axis=1, inplace=True)
+
+    def cleanup(self):
+        # Need to transform column names in proper identifiers (integer)
+        # and makes sure identifiers are unique. If not, we add +10000
+        # Also, for later we keep track of the original mame in a dictionary
+        self.extra_mapping = {}
+        new_columns = []
+        for col in self.df.columns:
+            identifier = self._clean_name(col)
+            while identifier in new_columns:
+                identifier += 10000 # not robust but would do for now
+                # We use a while since ids may occur 3 times 
+            self.extra_mapping[identifier] = col 
+            new_columns.append(identifier) 
+        self.df.columns = new_columns
 
 
 class GDSCBase(object):

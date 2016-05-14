@@ -275,9 +275,6 @@ class IC50(Reader, CosmicRows):
     If at least one column starts with "Drug_", all other columns will be
     ignored. This was implemented for back compatibility.
 
-    If no columns start with "Drug_", that prefix will be added to all column
-    names.
-
     The order of the columns is not important.
 
     Here is a simple example of a valid TSV file::
@@ -317,7 +314,7 @@ class IC50(Reader, CosmicRows):
 
     and set the drugs, which means other will be removed::
 
-        r.drugsIds = ['Drug_1_IC50', 'Drug_1000_IC50']
+        r.drugsIds = [1, 1000]
 
     .. versionchanged:: 0.9.10
         The column **COSMIC ID** should now be **COSMIC_ID**.
@@ -326,7 +323,7 @@ class IC50(Reader, CosmicRows):
     """
     cosmic_name = 'COSMIC_ID'
 
-    def __init__(self, filename):
+    def __init__(self, filename, v18=False):
         """.. rubric:: Constructor
 
         :param filename: input filename of IC50s. May also be an instance
@@ -337,14 +334,15 @@ class IC50(Reader, CosmicRows):
         """
         super(IC50, self).__init__(filename)
         # interpret the raw data and check some of its contents
-        self._interpret()
-        self.check()
+        self._v18 = v18
+
+        if len(self.df) > 0:
+            self._interpret()
+            self.check()
 
     def _interpret(self):
         # if there is at least one column that starts with Drug or drug or
         # DRUG or variant then all other columns are dropped except "COSMIC ID"
-        if len(self.df) == 0:
-            return
 
         # For back compatibility with data that mixes Drug identifiers and
         # genomic features:
@@ -353,7 +351,6 @@ class IC50(Reader, CosmicRows):
         for this in _cols:
             if this.startswith("Drug_"):
                 drug_prefix = "Drug" 
-            
 
         _cols = [str(x) for x in self.df.columns]
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
@@ -367,7 +364,6 @@ class IC50(Reader, CosmicRows):
             self.df.columns = [x.replace("CL", "COSMIC_ID")
                     for x in self.df.columns]
 
-
         # If the data has not been interpreted, COSMIC column should be
         # found in the column and set as the index
         _cols = [str(x) for x in self.df.columns]
@@ -377,7 +373,7 @@ class IC50(Reader, CosmicRows):
             if drug_prefix:
                 columns = [x for x in _cols if x.startswith(drug_prefix)]
                 self.df = self.df[columns]
-            
+
         # If already interpreted, COSMIC name should be the index already.
         elif self.df.index.name == self.cosmic_name:
             _cols = [str(x) for x in self.df.columns]
@@ -391,9 +387,19 @@ class IC50(Reader, CosmicRows):
             raise ValueError("{0} column could not be found in the header".format(
                 self.cosmic_name))
 
+        # In v18, the drug ids may be duplicated 
+        if self._v18 is True:
+            return
+
         def clean_name(x):
             try:
-                return x.replace("Drug_","").replace("DRUG_","").replace("_IC50", "")
+                # We want to remove the prefix Drug_ 
+                # We also want to remove suffix _IC50 but in v18, we have names
+                # such as Drug_1_0.33_IC50 to provide the concentration.
+                # So, we should remove the string after the second _
+                res = x.replace("Drug_","").replace("DRUG_","")
+                res = res.split("_")[0]
+                return res
             except:
                 return x
         self.df.columns = [clean_name(x) for x in self.df.columns]
