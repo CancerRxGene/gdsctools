@@ -46,7 +46,7 @@ def test_anova_one_drug():
 
 def test_anova_all():
     an = ANOVA(ic50_test)
-    # slow, let us cut the features to keep only tenish
+    # slow, let us cut the features to keep only ten-ish values 
     # this is a trick but would be nice to have this in the API
     features = an.features.df
     features = features[features.columns[0:12]]
@@ -69,7 +69,7 @@ def test_odof_with_without_media():
     dd1 = gdsc._get_anova_summary(gdsc.data_lm, output='dict')
     assert_list_almost_equal([dd1['feature'], dd1['msi'], dd1['tissue']], 
         [1.5750735472022118e-58,  0.025902887791637515, 
-            5.541879283763767e-44])
+            5.541879283763767e-44], 7)
 
     gdsc = ANOVA(ic50_test, set_media_factor=True)
     _res = gdsc.anova_one_drug_one_feature(1047, 'TP53_mut')
@@ -124,4 +124,13 @@ def test_set_cancer_type():
 
 
 
+def test_multicore():
 
+
+    an = ANOVA(ic50_test)
+    results = an.anova_all()
+
+    an2 = ANOVA(ic50_test)
+    results2 = an2.anova_all(multicore=4)
+
+    all(results.df.fillna(0) == results2.df.fillna(0))

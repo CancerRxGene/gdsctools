@@ -1,9 +1,10 @@
-from gdsctools import GDSC, gdsctools_data
+from gdsctools import GDSC, gdsctools_data, ANOVA
 from gdsctools.gdsc import IC50Cluster
 
 
 def test_IC50Cluster():
-    ic50 = IC50Cluster(gdsctools_data("test_v18_clustering.tsv"))
+    dataset = gdsctools_data("test_v18_clustering.tsv")
+    ic50 = IC50Cluster(dataset)
 
     # there are still 6 duplicared drugs not clustered because they 
     # have lots of valid data in each
@@ -20,3 +21,11 @@ def test_IC50Cluster():
     assert 1211 in ic50.df.columns
     assert 11211 in ic50.df.columns
     assert 21211 in ic50.df.columns
+
+    assert len(ic50.drugIds) == 860
+    assert len(ic50.df) == 50
+
+
+    an = ANOVA(ic50, dataset)
+    an.diagnostics()['feasible_tests'] == 65026
+
