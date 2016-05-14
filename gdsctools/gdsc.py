@@ -136,11 +136,13 @@ class IC50Cluster(IC50):
 
             # Let us keep only the first concentration for now
             new_drug_name = drug_names[0]
+            if len(drug_names)>1:
+                todrop = drug_names[1:]
             # add new column with new name and mean of the columns with same
             # drug id
             self.df[new_drug_name] = self.df[drug_names].mean(axis=1)
             # Remove the individual columns
-            self.df.drop(drug_names, axis=1, inplace=True)
+            self.df.drop(todrop, axis=1, inplace=True)
 
     def cleanup(self):
         # Need to transform column names in proper identifiers (integer)
@@ -229,27 +231,24 @@ class GDSC(GDSCBase):
     """
     def __init__(self, ic50, drug_decode,
             genomic_feature_pattern="GF_*csv",
-            mode='standard', main_directory="tissue_packages"):
+            main_directory="tissue_packages"):
+        """
+
+        ic50 must be a filename (not IC50 instance) because it will be used for
+        each genomic features file
+        """
         super(GDSC, self).__init__(genomic_feature_pattern, verbose=True)
         self.debug = False
+        assert isinstance(ic50, str)
         self.ic50_filename = ic50
         self.dd_filename = drug_decode
         self.main_directory = main_directory
 
-        if mode == 'v18':
-            self.ic50 = IC50Cluster(ic50)
-        else:
-            self.ic50 = IC50(ic50)
+        self.settings = ANOVASettings()
 
         self.drug_decode = DrugDecode(drug_decode)
-        self.settings = ANOVASettings()
-        self.settings.low_memory = True
 
-        if mode == 'v18':
-            self.settings.FDR_threshold = 35
-
-        print("Those settings will be used (note that low_memory is set "
-              "to True and check the value of FDR_threshold (set to 35 in v18)")
+        print("Those settings will be used (check FDR_threshold)")
         print(self.settings)
 
         # figure out the cancer types:
@@ -257,47 +256,52 @@ class GDSC(GDSCBase):
 
         self.company_directory="company_packages"
 
-    def analyse(self):
+    def analyse(self, onweb=False):
         """Launch ANOVA analysis and creating data package for each tissue.
 
+        :param bool onweb: By default, reports are created
+            but HTML pages not shown. Set to True if you wish to open
+            the HTML pages.
 
         """
         self.mkdir(self.main_directory)
         # First analyse all TCGA cases + PANCAN once for all and
         # store all the results in a dictionary.
-        self._analyse_all()
+        self._analyse_all(onweb=onweb)
 
-    def _analyse_all(self):
+    def _analyse_all(self, onweb):
         for gf_filename in sorted(self.gf_filenames):
             tcga = gf_filename.split("_")[1].split('.')[0]
             print('================================ Analysing %s data' % tcga)
 
             self.mkdir(self.main_directory + os.sep + tcga)
+            # Computes the ANOVA
             try:
-                # Computes the ANOVA
-                an = ANOVA(self.ic50_filename, gf_filename, self.drug_decode,
-                    verbose=False)
+                self.ic50 = IC50(self.ic50_filename)
+            except:
+                print("Clustering IC50 (v18 released data ?)")
+                self.ic50 = IC50Cluster(self.ic50_filename, verbose=False)
+                self.ic50.cleanup()
+            an = ANOVA(self.ic50, gf_filename, self.drug_decode,
+                verbose=False)
  
-                an.features.df = an.features.df[an.features.df.columns[0:20]]
+            #an.features.df = an.features.df[an.features.df.columns[0:20]]
 
-                self.an = an
-                an.settings = ANOVASettings(**self.settings)
-                an.settings.analysis_type = tcga
-                an.init() # This reset the directory
-                results = an.anova_all()
-                an.settings.directory = self.main_directory + os.sep + tcga
-                # Store the results
-                self.results[tcga] = results
+            self.an = an
+            an.settings = ANOVASettings(**self.settings)
+            an.settings.analysis_type = tcga
+            an.init() # This reset the directory
 
-                print('Analysing %s data and creating images' % tcga)
-                self.report = ANOVAReport(an, results)
-                self.report.settings.savefig = True
+            results = an.anova_all()
+            an.settings.directory = self.main_directory + os.sep + tcga
+            # Store the results
+            self.results[tcga] = results
 
-                self.report.create_html_pages()
-            except Exception as err:
-                print("GDSCTools error in %s while running ANOVA. Continuing" % tcga)
-                print(err)
-                raise ValueError(err)
+            print('Analysing %s data and creating images' % tcga)
+            self.report = ANOVAReport(an, results)
+            self.report.settings.savefig = True
+
+            self.report.create_html_pages(onweb=onweb)
 
     def create_data_packages_for_companies(self, companies=None):
         ##########################################################
@@ -473,7 +477,8 @@ class GDSC(GDSCBase):
         # FIXME save in the proper directory
         output_dir = main_directory + os.sep + '..' + os.sep
         output_file = output_dir + os.sep + 'index.html'
-        self.html_page = ReportMAIN(directory=main_directory, filename='index.html',
+        self.html_page = ReportMAIN(directory=main_directory, 
+                filename='index.html',
                 template_filename='datapack_summary.html' )
 
         # Let us use our HTMLTable to add the HTML references
@@ -492,8 +497,8 @@ class GDSC(GDSCBase):
         """Find the files results.csv in all TCGA directories"""
         for tcga in self.tcga:
             print(tcga)
-            self.results[tcga] = ANOVAResults(self.main_directory + os.sep + tcga + os.sep +
-                    'OUTPUT' + os.sep + 'results.csv')
+            self.results[tcga] = ANOVAResults(self.main_directory + os.sep 
+                    + tcga + os.sep + 'OUTPUT' + os.sep + 'results.csv')
 
 
 
