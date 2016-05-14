@@ -127,7 +127,7 @@ class ElasticNet(BaseModels):
 
         """
         super(ElasticNet, self).__init__(ic50, genomic_features,
-            drug_decode=drug_decode, verbose=verbose, low_memory=True,
+            drug_decode=drug_decode, verbose=verbose, 
             set_media_factor=set_media_factor)
 
     def _get_one_drug_data(self, name, scale=True):
