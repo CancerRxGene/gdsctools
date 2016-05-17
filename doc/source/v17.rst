@@ -1,0 +1,73 @@
+Notes about v17 data
+======================
+
+Following the report of the v17 data sets, which can be found on the 
+`CancerRxGene <http://www.cancerrxgene.org/gdsc1000/Pharmacogenomic_interactions.html>`_ page, we will reproduce the reports and ANOVA results posted in the link aforementionned. 
+
+In the link, input data may be either PANCAN or tissue specific. Let us
+reproduce the BRCA tissue case. First, we need to get the data::
+
+    wget http://www.cancerrxgene.org/gdsc1000//Data/anova/BRCA/DATA/INPUT/ANOVA_input.txt
+
+
+Note that in v17 all IC50 and genomic features are together in one file.
+although GDSCTools request one IC50 file qnd one genomic features, it will
+understandif we provide the file twice::
+
+    from gdsctools import ANOVA
+    an = ANOVA(ic50="ANOVA_input.txt", genomic_feature="ANOVA_input.txt")
+
+Note that in the later statement, we specificied the names of the parameters but
+one could write::
+
+    an = ANOVA("ANOVA_input.txt", "ANOVA_input.txt")
+
+Just keep in mind that if you have two separate files (IC50 and 
+Genomic Feature), you need to keep the order (first the IC50)::
+
+    an = ANOVA(ic50, features)
+
+In v17, there are two parameters that are not the current default values that
+must be set to reproduce the results::
+
+    an.setttings.pvalue_correction_method = "qvalue"
+    an.settings.equal_var_ttest = False 
+
+The later parameter is used in some plots for annotation but is not essential.
+The first parameter is important since it sets the method used for multiple
+testing correction. It will also define the number of associations that are
+significant. 
+
+
+If not PANCAN analysis, the tissue is unspecified (there is just one). 
+So, the name of the tissue is unknown and one should set it manually. This is
+not important for the analysis but is used to name the output of the directory
+where one can create the HTML report::
+
+    report = ANOVAReport(an)
+    report.settings.directory = "BLCA"
+    report.create_html_pages()
+
+Note that the multiple corrected values reported by GDSCTools and found on the
+website are different by 2-3 %. This is due to a different implementation of the
+qvalue method, in particular the smoothing function. However, the number of
+tests and the ANOVA_FEATURE_pval column (pvalues of the FEATURE factor) should
+agree perfectly. 
+
+Finally note that because the number of significant associations is based on a
+threshold of 25 (default) for the multiple testing correction, the number of
+association may differe slighlty. 
+
+As for the PANCAN case, results will be different in terms of pvalues (and
+therefore FDR corrected q-values) because the ANVAO_input file does not contain
+the MEDIA factor wherease it was used in the analysis. 
+
+
+
+
+
+
+Takes about ZZ to analyse the data for each v17 tissue incluging HTML pages
+
+
+

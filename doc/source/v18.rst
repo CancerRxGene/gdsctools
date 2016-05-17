@@ -1,0 +1,24 @@
+Notes about v18
+====================
+
+In V18, the IC50 may have duplicated columns for a given drug. Some drugs are
+clustered together. The algorithm was implemented in GDSCTools in IC50Cluster
+class. It should used as follow::
+
+IC50 must be read with the IC50Cluster class as follows::
+
+    from gdsctools import *
+    ic50 = IC50Cluster("v18_data")
+    ic50.cleanup()
+
+This will ensure alos that the drug identifiers are unique. Indeed, 
+in v18 data sets, columns for a given DRUG ID may be duplicated 
+(for different drug concentration).
+
+Then, as usual::
+
+    an = ANOVA(ic50, "GF.csv", "DRUG_DECODE.csv")
+
+All default parameters were used except for the FDR threshold::
+
+    report.settings.FDR_threshold = 35
