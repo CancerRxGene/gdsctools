@@ -3,6 +3,9 @@
 Data Packages
 =================
 
+.. warning:: Only one IC50 files should be provided. It is be cut 
+    according to the GF file.
+
 Definition
 --------------
 

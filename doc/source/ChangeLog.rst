@@ -6,27 +6,38 @@ ChangeLog
 Version 0.12 (9th May 2016)
 -------------------------------
 
+
+
 .. rubric:: 0.12
 
 * CHANGES:
 
-    - Data packages have been refactored. The major difference concerns the HTML
-      layout (most HTML files are now in the sub-directory called associations).
-      Besides, the volcano PNG files are not created anymore. Instead, a JS is
-      provided, which can be exported manually. The consequences is that the
-      creation of data packages is 10 times faster.
-    - GDSC.run  uses try/except to loop over all TCGA, skipping errors allowing 
-      the entire analysis to be run even though errors are encountered.
-    - pipelines --feature (alone) is removed  as well as --fast options
-    - To simplify the code, avoid regression bug and consistency, DRUG ID are
-      handled as proper identifiers that is integer numbers. For back
+    - SPEEDUP: 
+      - tissue specific analysis speed decrease by 50% by dropping the creation
+        of dataframe and using a simple numpy array.
+      - Creation of volcano plots uses pure javascript for the data packages
+        and the creation of the volcano plots was dramatacally sped up by a
+        factor of 10 or more. One can still create volcano plot manually 
+        in pure matplotlib.
+    - Data packages have been refactored. The major difference concerns 
+      the HTML layout (most HTML files are now in the sub-directory 
+      called associations) so that is it cleaner at the top level. The volcano
+      plots are not in PNG format anymore but pure HTML/JS, which can be 
+      exported manually. The consequences is that the creation of data 
+      packages is 10 times faster.
+    - The standalone application had 2 option removed: --feature (alone) 
+      and --fast options
+    - Drug Identifier are now handled as pure integer. For back
       compatibility, old files that mix up IC50 and Genomic Features (e.g. v17
-      data) are still interpreted; the DRUG ID inb that case are written as
-      Drug_ID_IC50 and will be transformed as just <ID> everywhere. 
-    - associationbs output were named 1.html, 2.html... and are now named
+      data) are still interpreted; the DRUG ID in that case are written as
+      Drug_ID_IC50 and are transformed as just <ID> everywhere. 
+    - associations output were named 1.html, 2.html... and are now named
       a1.html, a2.html...
     - Because DRUG_ID are now integer, the naming of the boxplots has been
-      slightly changed adding "Drug" in befor the DRUG ID
+      slightly changed adding "Drug" added before the DRUG ID
+    - Report now accepts only one argument (the anova isntance). Second
+      argument (results) is now optional
+    - Multicore module removed but ANOVA.anova_all has multicore option 
 
 
 Version 0.11 (April-May 2016)

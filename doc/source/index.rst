@@ -112,6 +112,7 @@ Contents
     data_packages.rst
     notebooks.rst
     standalone.rst
+    releases.rst
     references.rst
     developers.rst
 
