@@ -20,8 +20,8 @@ def test_volcano_plot():
     v.settings.savefig = False
 
     # some of the plotting
-    v.volcano_plot_all_drugs()
-    v.volcano_plot_all_features()
+    #v.volcano_plot_all_drugs()
+    #v.volcano_plot_all_features()
     v.volcano_plot_all()
 
 

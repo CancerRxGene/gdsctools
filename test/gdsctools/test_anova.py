@@ -131,6 +131,6 @@ def test_multicore():
     results = an.anova_all()
 
     an2 = ANOVA(ic50_test)
-    results2 = an2.anova_all(multicore=4)
+    results2 = an2.anova_all(multicore=2)
 
     all(results.df.fillna(0) == results2.df.fillna(0))
