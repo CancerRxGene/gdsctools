@@ -32,7 +32,7 @@ from easydev import Progress, AttrDict
 from gdsctools.tools import Savefig
 
 
-__all__ = ['VolcanoANOVA']
+__all__ = ['VolcanoANOVA', "VolcanoANOVAJS"]
 
 
 class VolcanoANOVA(object):
@@ -82,14 +82,6 @@ class VolcanoANOVA(object):
         if the signed effect size is above the effect_threshold.
 
 
-    There are 5 methods to plot volcano plots depending on what you want to see
-
-    - :meth:`volcano_plot_all` as above plots all associations
-    - :meth:`volcano_plot_all_drugs` creates a volcano plot for each drug and
-      save it into a PNG file. This method calls :meth:`volcano_plot_one_drug`.
-    - :meth:`volcano_plot_all_features` creates a volcano plot for each feature
-      and save it into a PNG file. This method calls
-      :meth:`volcano_plot_one_feature`.
 
     """
     _colname_pvalue = 'ANOVA_FEATURE_pval'
@@ -194,16 +186,8 @@ class VolcanoANOVA(object):
         pb = Progress(len(drugs), 1)
         for i, drug in enumerate(drugs):
             self.volcano_plot_one_drug(drug)
-            self.savefig_and_js("volcano_%s.png" % drug, size_inches=(10, 10))
+            self.savefig("volcano_%s.png" % drug, size_inches=(10, 10))
             pb.animate(i+1)
-
-            # This prevent memory leak.
-            self.current_fig.canvas.mpl_disconnect(self.cid)
-            try:
-                import mpld3
-                mpld3.plugins.clear(self.current_fig)
-            except:
-                pass
 
     def volcano_plot_all_features(self):
         """Create a volcano plot for each feature and save in PNG files
@@ -215,17 +199,9 @@ class VolcanoANOVA(object):
         pb = Progress(len(features), 1)
         for i, feature in enumerate(features):
             self.volcano_plot_one_feature(feature)
-            self.savefig_and_js("volcano_%s.png" % feature,
+            self.savefig("volcano_%s.png" % feature,
                     size_inches=(10, 10))
             pb.animate(i+1)
-
-            # This prevent memory leak.
-            self.current_fig.canvas.mpl_disconnect(self.cid)
-            try:
-                import mpld3
-                mpld3.plugins.clear(self.current_fig)
-            except:
-                pass
 
     def volcano_plot_all(self):
         """Create an overall volcano plot for all associations
@@ -417,11 +393,6 @@ class VolcanoANOVA(object):
         # !! There is a memory leak in this function due to matplotlib
         # This is not easy to track down.
 
-        # You have to call clf() to make sure the content is erase.
-        # One reason for the memory leak is that it is called in the
-        # Report to loop over all drugs and then all featuers.
-        # To see the memory leak, you will need to call the
-        # volcano_plot_all_drugs function (or volcano_plot_all_features).
         colors = list(data['color'].values)
         pvalues = data['pvalue'].values
         signed_effects = data['signed_effect'].values
@@ -596,30 +567,16 @@ class VolcanoANOVA(object):
             htmljs = ""
         return """<div class="jsimage"> """ + htmljs + "</div>"
 
-    def savefig_and_js(self, filename, size_inches=(10, 10)):
+    def savefig(self, filename, size_inches=(10, 10)):
         # Save the PNG first. The savefig automatically set the size
         # to a defined set and back to original figsize.
-
         self.figtools.savefig(filename + '.png', size_inches=size_inches)
 
-        # now the javascript.
-        fig = self.current_fig
-        oldsize = fig.get_size_inches()
-        fig.set_size_inches(size_inches)
-
-        htmljs = self.mpld3_to_html()
-        fh = open(self.settings.directory + os.sep + filename + ".html", "w")
-        fh.write(htmljs)
-        fh.close()
-        fig.set_size_inches(*oldsize)
 
 
-
-
-
-class VolcanoANOVA2(VolcanoANOVA):
+class VolcanoANOVAJS(VolcanoANOVA):
     def __init__(self, data, sep="\t", settings=None):
-        super(VolcanoANOVA2, self).__init__(data, sep, settings)
+        super(VolcanoANOVAJS, self).__init__(data, sep, settings)
 
     def render_drug(self, name):
         self.data = self._get_volcano_sub_data("DRUG_ID", name)
@@ -741,18 +698,14 @@ class VolcanoANOVA2(VolcanoANOVA):
             pvalues.append(-np.log10(pvalue))
 
         # we must have 3 values. If not, just repeat the last values
-
-
         return pvalues
 
 
     # window.CanvasXPress.references
     # Working stuff:
     # window.CanvasXpress.references[0].setHeight(400)
-    #
     # window.CanvasXpress.references[0].data.d.line[0].color = 'green'
     # window.CanvasXpress.references[0].redraw()
-
     # window.CanvasXpress.references[0].redraw()
 
 
