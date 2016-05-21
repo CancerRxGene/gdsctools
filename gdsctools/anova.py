@@ -33,12 +33,14 @@ from gdsctools.boxplots import BoxPlots
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 
-from easydev import MultiProcessing
+from easydev import MultiProcessing, do_profile
 
 
 __all__ = ['ANOVA']
 
 
+class DummyDF(object):
+    values = None
 
 # Not that Logging is not used: it is not pickable and prevent
 # multicore analysis.
@@ -415,15 +417,26 @@ class ANOVA(BaseModels): #Logging):
             #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
             #self.data_lm = ols('Y ~ C(msi) + feature',
             #    data=self._mydata).fit() #Specify C for Categorical
-            df = pd.DataFrame()
+            df = DummyDF()
+            df.values = np.ones((3, odof.Npos + odof.Nneg))
+            """df = pd.DataFrame()
             df['C(msi)[T.1]'] = odof.masked_msi.values
             df['feature'] = odof.masked_features
-            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
+            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))"""
+            df.values[1] = odof.masked_msi.values
+            df.values[2] = odof.masked_features
+            #df.values[0] = [1] * (odof.Npos + odof.Nneg)
+            df.values = df.values.T
             #self.data_lm = OLS(odof.Y, df.values).fit()
         else:
-            df = pd.DataFrame()
-            df['feature'] = odof.masked_features
-            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
+            df = DummyDF()
+            df.values = np.ones((2, odof.Npos + odof.Nneg))
+            df.values[1] = odof.masked_features
+            df.values = df.values.T
+
+            #df = pd.DataFrame()
+            #df['feature'] = odof.masked_features
+            #df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
             #self.data_lm = OLS(odof.Y, df.values).fit()
             #self._mydata = pd.DataFrame({'Y': odof.Y,
             #    'feature': odof.masked_features})
@@ -525,7 +538,6 @@ class ANOVA(BaseModels): #Logging):
                 boxplot.boxplot_pancan(fignum=2, mode='tissue')
             if self.settings.include_MSI_factor:
                 boxplot.boxplot_pancan(fignum=3, mode='msi')
-
         results = {'FEATURE': feature_name,
                 'DRUG_ID': drug_id,
                 'DRUG_NAME': drug_name,
@@ -547,7 +559,7 @@ class ANOVA(BaseModels): #Logging):
                 'FEATURE_IC50_T_pval': odof.ttest # pvalues is in index 1
                 }
 
-        # 12% of the time here
+        # about 30% of the time spent in creating the DataFrame...
         if production is True:
             return results
         else:
@@ -826,12 +838,13 @@ class ANOVA(BaseModels): #Logging):
 
         pb = Progress(len(drug_names), 1)
         drug_names = list(drug_names)
-        pylab.shuffle(drug_names) # ? why 
+        #pylab.shuffle(drug_names) # ? why 
 
         if animate is True:
             pb.animate(0)
 
         if multicore:
+            # Note that here, we do not use the buffer
             multicore_analysis(self, drug_names, multicore)
         else:
 
@@ -914,15 +927,19 @@ class ANOVA(BaseModels): #Logging):
 
 
 def analyse_one_drug(master, drug):
-    res = master.anova_one_drug(drug_id=drug, animate=False,
-        output="dataframe")
+    if drug in master.individual_anova.keys():
+        res = master.individual_anova[drug]
+    else:
+        res = master.anova_one_drug(drug_id=drug, animate=False,
+            output="dataframe")
     return (drug, res)
 
 
 def multicore_analysis(anova, drugs, maxcpu=2):
     t = MultiProcessing(maxcpu=maxcpu)
     for i, drug in enumerate(drugs):
-        t.add_job(analyse_one_drug, anova, drug)
+        if drug not in anova.individual_anova.keys():
+            t.add_job(analyse_one_drug, anova, drug)
     t.run()
 
     # populate the ANOVA instance with the results

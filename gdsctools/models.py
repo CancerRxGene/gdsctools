@@ -98,7 +98,7 @@ class BaseModels(object):
         unknowns = set(self.ic50.cosmicIds).difference(
                 set(self.features.cosmicIds))
 
-        if len(unknowns) > 0:
+        if len(unknowns) > 0 and self.verbose:
             print("WARNING: " +
                 "%s cosmic identifiers in your IC50 " % len(unknowns) +
                 "could not be found in the genomic feature matrix. "+
@@ -272,8 +272,6 @@ class BaseModels(object):
         # drop first feature in the tissues that seems to be used as a
         # reference in the regression
         tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
-
-        return
 
         self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
 

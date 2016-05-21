@@ -106,7 +106,7 @@ class BoxSwarm(object):
         self.hold = hold
         self.title = title
         self.lw = lw
-        self.markersize = 10
+        self.markersize = 6
 
     def beeswarm(self, data, position, ratio=2.):
         r"""Naive plotting of the data points
@@ -234,7 +234,7 @@ class BoxSwarm(object):
         else:
             pylab.xlabel(self.xlabel, fontsize=self.fontsize)
             if len(X) > 20:
-                pylab.yticks(X, Y, fontsize=self.fontsize/1.5, rotation=00)
+                pylab.yticks(X, Y, fontsize=self.fontsize/1.6, rotation=00)
             else:
                 pylab.yticks(X, Y, fontsize=self.fontsize, rotation=00)
 

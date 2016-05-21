@@ -13,6 +13,8 @@ from gdsctools.anova_report import ReportMAIN
 
 import pandas as pd
 
+from easydev.console import purple, brown, red
+from easydev import do_profile
 
 __all__ = ["IC50Cluster", "GDSC"]
 
@@ -175,7 +177,7 @@ class GDSCBase(object):
             os.mkdir(name)
         except:
             if self.verbose:
-                print("directory %s already exists" % name)
+                print("Note that directory %s already exists" % name)
 
 
 class GDSC(GDSCBase):
@@ -231,21 +233,20 @@ class GDSC(GDSCBase):
     """
     def __init__(self, ic50, drug_decode,
             genomic_feature_pattern="GF_*csv",
-            main_directory="tissue_packages"):
+            main_directory="tissue_packages", verbose=True):
         """
 
         ic50 must be a filename (not IC50 instance) because it will be used for
         each genomic features file
         """
-        super(GDSC, self).__init__(genomic_feature_pattern, verbose=True)
-        self.debug = False
+        super(GDSC, self).__init__(genomic_feature_pattern, verbose=verbose)
         assert isinstance(ic50, str)
         self.ic50_filename = ic50
         self.dd_filename = drug_decode
         self.main_directory = main_directory
 
         self.settings = ANOVASettings()
-
+        self.settings.animate = False
         self.drug_decode = DrugDecode(drug_decode)
 
         print("Those settings will be used (check FDR_threshold)")
@@ -256,23 +257,27 @@ class GDSC(GDSCBase):
 
         self.company_directory="company_packages"
 
-    def analyse(self, onweb=False):
+        # quick test on 15 features
+        self.test = False
+
+    def analyse(self, onweb=False, multicore=None):
         """Launch ANOVA analysis and creating data package for each tissue.
 
         :param bool onweb: By default, reports are created
             but HTML pages not shown. Set to True if you wish to open
             the HTML pages.
+        :param multicore: number of cpu to use (1 by default)
 
         """
         self.mkdir(self.main_directory)
         # First analyse all TCGA cases + PANCAN once for all and
         # store all the results in a dictionary.
-        self._analyse_all(onweb=onweb)
+        self._analyse_all(onweb=onweb, multicore=multicore)
 
-    def _analyse_all(self, onweb):
+    def _analyse_all(self, onweb, multicore=None):
         for gf_filename in sorted(self.gf_filenames):
             tcga = gf_filename.split("_")[1].split('.')[0]
-            print('================================ Analysing %s data' % tcga)
+            print(purple('======================== Analysing %s data' % tcga))
 
             self.mkdir(self.main_directory + os.sep + tcga)
             # Computes the ANOVA
@@ -284,21 +289,22 @@ class GDSC(GDSCBase):
                 self.ic50.cleanup()
             an = ANOVA(self.ic50, gf_filename, self.drug_decode,
                 verbose=False)
- 
-            #an.features.df = an.features.df[an.features.df.columns[0:20]]
+
+            if self.test is True:
+                an.features.df = an.features.df[an.features.df.columns[0:15]]
 
             self.an = an
             an.settings = ANOVASettings(**self.settings)
             an.settings.analysis_type = tcga
             an.init() # This reset the directory
 
-            results = an.anova_all()
+            results = an.anova_all(multicore=multicore)
             an.settings.directory = self.main_directory + os.sep + tcga
             # Store the results
             self.results[tcga] = results
 
             print('Analysing %s data and creating images' % tcga)
-            self.report = ANOVAReport(an, results)
+            self.report = ANOVAReport(an)
             self.report.settings.savefig = True
 
             self.report.create_html_pages(onweb=onweb)
@@ -312,42 +318,54 @@ class GDSC(GDSCBase):
         #                                                        #
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
         ##########################################################
+
+        # companies must be just one name (one string) or a list of strings
+        # By default, takes all companies found in DrugDecode
         if isinstance(companies, str):
             companies = [companies]
 
         if companies is None:
             companies = self.companies
 
+        if len(companies) == 0:
+            raise ValueError("Could not find any companies in the DrugDecode file")
+
+        # The main directory
         self.mkdir(self.company_directory)
 
+        # Loop over all companies, retrieving information built
+        # in analyse() method, selecting for each TCGA all information
+        # for that company only (and public drugs)
         Ncomp = len(companies)
         for ii, company in enumerate(companies):
-            print("\n\n========= Analysing company %s out of %s (%s)" %
-                    (ii+1, Ncomp, company))
+            print(purple("\n=========== Analysing company %s out of %s (%s)" %
+                    (ii+1, Ncomp, company)))
             self.mkdir(self.company_directory + os.sep + company)
+
+            # Handle each TCGA case separately
             for gf_filename in sorted(self.gf_filenames):
                 tcga = gf_filename.split("_")[1].split('.')[0]
-                print("---------------- for TCGA %s" % tcga)
+                print(brown("  ------- building TCGA %s sub directory" % tcga))
 
-                # Read the results previously computed
+                # Read the results previously computed either
                 try:
                     results_df = self.results[tcga].df.copy()
                 except:
                     results_path = "%s/%s/OUTPUT/results.csv" % (self.main_directory, tcga)
-                    print("Loading results from %s" % results_path)
                     results_df = ANOVAResults(results_path)
 
+                # MAke sure the results are formatted correctly
                 results = ANOVAResults(results_df)
 
-                # Get a DrugDecode for that company
+                # Get the DrugDecode information for that company only
                 drug_decode_company = self.drug_decode.df.query(
                         "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company)
+
                 # Transform into a proper DrugDecode class for safety
                 drug_decode_company = DrugDecode(drug_decode_company)
 
                 # Filter the results to keep only public drugs and that
-                # company.
-                # Make sure this is integers
+                # company. Make sure this is integers
                 results.df["DRUG_ID"] = results.df["DRUG_ID"].astype(int)
 
                 mask = [True if x in drug_decode_company.df.index else False
@@ -355,59 +373,58 @@ class GDSC(GDSCBase):
 
                 results.df = results.df.ix[mask]
 
-                # Just to create an instance with the subset of drug_decode
-                # and correct settings. This is also used to store
-                # the entire input data set. So, we must remove all drugs
-                # not relevant for the analysis of this company
-                an = ANOVA(self.ic50_filename, gf_filename, drug_decode_company,
-                    verbose=False)
+                # We read the IC50 again
+                try:
+                    self.ic50 = IC50(self.ic50_filename)
+                except:
+                    self.ic50 = IC50Cluster(self.ic50_filename, verbose=False)
+                    self.ic50.cleanup()
 
-                #an.ic50.df.columns = [int(clean_name(x)) for x in an.ic50.df.columns]
+                # And create an ANOVA instance. This is not to do the analyse
+                # again but to hold various information
+                an = ANOVA(self.ic50, gf_filename, drug_decode_company,
+                    verbose=False)
 
                 def drug_to_keep(drug):
                     to_keep = drug in drug_decode_company.df.index
                     return to_keep
                 an.ic50.df = an.ic50.df.select(drug_to_keep, axis=1)
 
-                print("%s drugs selected" %  (len(an.ic50.df.columns)))
                 an.settings = ANOVASettings(**self.settings)
                 an.init()
                 an.settings.directory = self.company_directory + os.sep + company + os.sep + tcga
                 an.settings.analysis_type = tcga
-                self.report = ANOVAReport(an, results)
+
+                # Now we create the report
+                self.report = ANOVAReport(an, results, verbose=self.verbose)
                 self.report.settings.analysis_type = tcga
                 self.report.create_html_main(False)
                 self.report.create_html_manova(False)
+                self.report.create_html_features()
+                self.report.create_html_associations()
 
-                if self.debug is False:
-                    # This takes lots of time
-                    self.report.create_html_features()
-                    self.report.create_html_associations()
+                # Volcano plot for a given drug (ODAF)
+                # do not need to be recomputed. If already done,
+                # we just need to copy it (faster)
+                # Although, names of the brand may not appear correctly
+                from easydev import shellcmd, Progress
+                drug_ids = results.df.DRUG_ID.unique()
+                print("Copying drug HTML files")
+                pb = Progress(len(drug_ids))
+                for i, drug_id in enumerate(drug_ids):
+                    # copy the HTML
+                    filename = "drug_%s.html" % drug_id
+                    source = "%s%s%s%sassociations%s" % (self.main_directory,
+                        os.sep, tcga, os.sep , os.sep)
+                    dest = os.sep.join([self.company_directory, company, tcga, "associations"]) 
+                    dest += os.sep
+                    cmd = "cp %s%s %s" % (source, filename, dest )
+                    shellcmd(cmd, verbose=False)
+                    #copy the images
 
-                    # For now, we just copy all DRUG images from
-                    # the analysis made in tissue_packages
-                    from easydev import shellcmd, Progress
-                    print("\nCopying drug files")
-                    drug_ids = results.df.DRUG_ID.unique()
-                    pb = Progress(len(drug_ids))
-                    for i, drug_id in enumerate(drug_ids):
-                        # copy the HTML
-                        filename = "drug_%s.html" % drug_id
-                        source = "%s%s%s%sassociations%s" % (self.main_directory,
-                            os.sep, tcga, os.sep , os.sep)
-                        dest = os.sep.join([self.company_directory, company, tcga, "associations"]) 
-                        dest += os.sep
-                        cmd = "cp %s%s %s" % (source, filename, dest )
-                        shellcmd(cmd, verbose=False)
-                        #copy the images
-                        """filename = "volcano_%s.*" % drug_id
-                        source = "%s%s%s%simages%s" % (self.main_directory, os.sep, tcga,
-                                os.sep, os.sep)
-                        dest = "%s%s%s%simages%s" % (company, os.sep,
-                                tcga, os.sep , os.sep)
-                        cmd = "cp %s%s %s" % (source, filename, dest )
-                        shellcmd(cmd, verbose=False)"""
+                    if self.settings.animate:
                         pb.animate(i+1)
+                if self.settings.animate:print("\n")
 
     def _get_tcga(self):
         return [x.split("_")[1].split(".")[0] for x in self.gf_filenames]
@@ -417,7 +434,6 @@ class GDSC(GDSCBase):
         return [x for x in self.drug_decode.companies if x != 'Commercial']
     companies = property(_get_companies)
 
-
     def create_summary_pages(self):
 
         # First for the main directory (tissue_packages):
@@ -426,7 +442,6 @@ class GDSC(GDSCBase):
         # Then for all companies:
         for company in self.companies:
             self._create_summary_pages(self.company_directory + os.sep + company)
-        
 
     def _create_summary_pages(self, main_directory):
         # Read all directories in tissue_packages
@@ -438,6 +453,7 @@ class GDSC(GDSCBase):
             tcga = directory.split(os.sep)[-1]
             if tcga not in self.tcga:
                 continue
+            print(directory, tcga)
             # number of hits
             path = directory + os.sep + 'OUTPUT' + os.sep
             try:
@@ -450,11 +466,13 @@ class GDSC(GDSCBase):
             drug_involved = hits['Unnamed: 0'].unique()
 
             results = ANOVAResults(path + 'results.csv')
-            if len(results)>0:
+            if len(results) > 0:
                 drug_ids = results.df.DRUG_ID.unique()
             else:
                 drug_ids = []
 
+            # where to find the DRUG DECODE file. Should
+            # have been copied
             path = directory + os.sep + 'INPUT' + os.sep
             drug_decode = DrugDecode(path + 'DRUG_DECODE.csv')
             info = drug_decode.get_info()
@@ -466,7 +484,7 @@ class GDSC(GDSCBase):
             summary.append([tcga, total_hits,
                 drug_inv_prop, info['N_prop'],
                 drug_inv_public, info['N_public']])
-
+        print(summary)
         df = pd.DataFrame(summary)
 
         df.columns = ['Analysis name', 'Number of hits',
