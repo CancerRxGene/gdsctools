@@ -4,7 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>GDSCTools report</title>
 
-    
+
    <link rel="stylesheet" href="{{ resource_path }}/css/canvasXpress.css" type="text/css"/>
    <link rel="stylesheet" href="{{ resource_path }}/css/gdsc.css" type="text/css" />
    <script src="{{ resource_path }}/js/sorttable.js"></script>
@@ -16,16 +16,37 @@
     <script type="text/javascript" src="{{ resource_path }}/js/canvasXpress.min.js"></script>
 
     {{ volcano_jsdata }}
+    {{ boxplot_all_jsdata }}
+    {{ boxplot_tissue_jsdata }}
+    {{ boxplot_msi_jsdata }}
+    {{ boxplot_media_jsdata }}
+
+    <script language="javascript">
+    function loadFunctions(){
+    {% if volcano_jsdata %}
+        loadVolcano();
+    {% endif %}
+    {% if boxplot_all_jsdata %}
+        loadBoxplotAssociation();
+    {% endif %}
+    {% if boxplot_msi_jsdata %}
+        loadBoxplotMSI();
+    {% endif %}
+    {% if boxplot_tissue_jsdata %}
+        loadBoxplotTissue();
+    {% endif %}
+    }
+    </script>
 
 
 </head>
 
 
-<body onload="loadVolcano();"> 
+<body onload="loadFunctions()">
 
 <div class="document" id="unset">
 <h1 class="title">{{ title }}</h1>
-    <h2 class="subtitle">Report created with 
+    <h2 class="subtitle">Report created with
         gdsctools (version {{ version }})</h2>
     <p>See <a href="https://www.github.com/CancerRxGene/gdsctools"
         target="_blank">GDSCTools github page</a> for downloads and the <a
@@ -44,11 +65,11 @@
             <img src="{{ resource_path }}/images/sanger-logo.png"  title=sanger-logo alt="sanger"/>
             <img src="{{ resource_path }}/images/EBI_logo.png"  title=sanger-logo alt="EBI"/>
        </div>
-       
+
       <div class="copyright">
           {{ time_now }}
            Please visit <a href="http://gdsctools.readthedocs.org">online</a>
-           documentation for details. 
+           documentation for details.
        </div>
    </div>
 </div>

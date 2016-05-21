@@ -1,0 +1,43 @@
+{% block content %}
+
+<script id="boxplot_association">
+
+var loadBoxplotAssociation = function() {
+    var cx = new CanvasXpress("canvasBoxplotAssociation",
+      {
+        "x" : {
+          "Factor1" : {{ factor}},
+          "Subject" : {{ subject }}
+        },
+        "y" : {
+          "vars" : ["Variable1"],
+          "smps" : {{ smps }},
+          "data" : [{{ data }}],
+          "desc" : [{{ ylabel }}]
+        }
+      },
+      {"axisTitleFontStyle": "italic",
+       "graphType": "Boxplot",
+        "boxplotDataPointRatio": 1.4,
+        "boxplotDataPointTransparency": 0.6,
+        "boxplotMedianColor": "rgb(255,0,0)",
+        "boxplotMedianWidth": 3,
+       "colorBy": "Factor1",
+       "jitter": true,
+       "legendInside": true,
+       "legendPosition": "right",
+       "graphOrientation": "vertical",
+       "showBoxplotOriginalData": true,
+       "subtitle": "{{ subtitle }}",
+       "title": "{{ title }}",
+       "showLegend": false,
+      }
+    );
+    cx.groupSamples(["Factor1"]);
+// "colorBy":"FactorName"
+// "connectBy": "Subject",
+// "graphOrientation": "vertical",
+
+  }
+</script>
+{% endblock %}
