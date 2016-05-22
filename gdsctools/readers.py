@@ -26,10 +26,13 @@ Provides readers to read
 """
 import warnings
 
+from gdsctools.errors import GDSCToolsDuplicatedDrugError
+
 import pandas as pd
 import pylab
 import numpy as np
 import easydev
+
 
 
 __all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecode']
@@ -138,8 +141,9 @@ class Reader(object):
                             compression='gzip')
                 # Sometimes, a user will provide a CSV, which is actually
                 # tab-delimited. This is wrong and diffcult to catch.
-            except:
-                raise ValueError('Could not read %s' % filename)
+            except Exception as err:
+                print('Could not read %s' % filename)
+                raise(err)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         elif ".tsv" in filename or '.txt' in filename: # txt not supported
             # officialy but txt file from previous run were interepreted as tsv
@@ -227,8 +231,7 @@ class Reader(object):
             columns = list(self.df.columns)
             for this in columns:
                 if columns.count(this) > 1:
-                    msg ='Found identical named columns (%s)' % this
-                    raise ValueError(msg)
+                    raise GDSCToolsDuplicatedDrugError(this)
 
     def __eq__(self, other):
         return all(self.df.fillna(0) == other.df.fillna(0))
@@ -391,19 +394,21 @@ class IC50(Reader, CosmicRows):
         if self._v18 is True:
             return
 
-        def clean_name(x):
-            try:
-                # We want to remove the prefix Drug_ 
-                # We also want to remove suffix _IC50 but in v18, we have names
-                # such as Drug_1_0.33_IC50 to provide the concentration.
-                # So, we should remove the string after the second _
-                res = x.replace("Drug_","").replace("DRUG_","")
-                res = res.split("_")[0]
-                return res
-            except:
-                return x
-        self.df.columns = [clean_name(x) for x in self.df.columns]
+        self.df.columns = [self.drug_name_to_int(x) for x in self.df.columns]
         self.df.columns = self.df.columns.astype(int)
+
+    def drug_name_to_int(self, name):
+        # We want to remove the prefix Drug_ 
+        # We also want to remove suffix _IC50 but in v18, we have names
+        # such as Drug_1_0.33_IC50 to provide the concentration.
+        # So, we should remove the string after the second _
+        try:
+            res = name.replace("Drug_", "").replace("DRUG_", "")
+            res = res.split("_")[0]
+            res = int(res)
+            return res
+        except:
+            return int(name)
 
     def _get_drugs(self):
         return list(self.df.columns)
