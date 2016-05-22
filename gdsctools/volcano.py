@@ -62,20 +62,6 @@ class VolcanoANOVA(object):
         on a circle and the title will be updated
         with the name of the drug/feature and FDR value.
 
-    .. note:: (**for developers**) A javascript version is also
-        created on the fly using mpld3 library. It is used in the
-        creation of the HTML report but one can use it as well in an
-        ipython notebook::
-
-            # The **v** instance is as created in the example above
-            # Then, type the following code to create an HTML with the
-            # javascript plot embedded.
-            import mpld3
-            htmljs = mpld3.fig_to_html(v.current_fig)
-            fh = open('volcano_doc.html', 'w')
-            fh.write(htmljs)
-            fh.close()
-
     :Legend and color conventions: The green circles indicate significant hits
         that are resistant while reds show sensitive hits. Circles are colored
         if there are below the FDR_threshold AND below the pvalue_threshold AND
@@ -387,12 +373,9 @@ class VolcanoANOVA(object):
         # It creates a volcano plot, which is the easy part
         # Then, it creates tooltips for the user interface in an IPython
         # shell using a callback to 'onpick' function coded here below
-        # finally, it creates a Javascript connection using mpld3 that
-        # will allow the creation of a JS version of the plot.
-
-        # !! There is a memory leak in this function due to matplotlib
-        # This is not easy to track down.
-
+        # !! There seem to bes a memory leak in this function due to matplotlib
+        # This is not easy to track down and should have no impact now that
+        # ANOVAReport using JS instead of matplotlib 
         colors = list(data['color'].values)
         pvalues = data['pvalue'].values
         signed_effects = data['signed_effect'].values
@@ -518,54 +501,11 @@ class VolcanoANOVA(object):
             #label = row.to_frame()
             #label.columns = ['Row {0}'.format(i)]
             #labels.append(str(label.to_html(header=False)))
-        css = """
-        svg.mpld3-figure { border: 2px black solid;margin:10px;}
-        table{  font-size:0.8em;  }
-        th {  color: #ffffff;  background-color: #aaaaaa;  }
-        td { color: blue; background-color: #cccccc; }"""
-
-        try:
-            import mpld3
-            tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
-                css=css)
-            mpld3.plugins.connect(fig, tooltip)
-        except:
-            print("Issue with javascript version of the volcano plot. Skipped")
         self.scatter = scatter
         self.current_fig = fig
         # not sure is this is required. could be a memory leak here
         import gc
         gc.collect()
-
-    def mpld3_to_html(self):
-        """This require to call a plotting figure before hand"""
-        from gdsctools import gdsctools_data
-        # This copy the full path and therefore HTML cannot
-        # be moved in another directory. to be fixed.
-        js_path1 = gdsctools_data('d3.v3.min.js', where='javascript')
-        js_path2 = gdsctools_data('mpld3.v0.2.js', where='javascript')
-        try:
-            # mpld3 is great but there are a couple of issues
-            # 1 - legend zorder is not used so dots may be below the legend,
-            #     hence we set the framealpha =0.5
-            # 2 - % character even though there well interpreted in matploltib
-            #     using \%, they are not once parsed by mpld3. So, here
-            #     we remove the \ character
-            axl = pylab.legend(loc='best', framealpha=0.8, borderpad=1)
-            axl.set_zorder(10) # in case there is a circle behind the legend.
-            texts = [this.get_text() for this in axl.get_texts()]
-
-            for i, text in enumerate(texts):
-                text = text.replace("\\%", "%")
-                text += "  "
-                axl.get_texts()[i].set_text(text)
-            import mpld3
-            htmljs = mpld3.fig_to_html(self.current_fig,
-                            d3_url=js_path1,
-                            mpld3_url=js_path2)
-        except:
-            htmljs = ""
-        return """<div class="jsimage"> """ + htmljs + "</div>"
 
     def savefig(self, filename, size_inches=(10, 10)):
         # Save the PNG first. The savefig automatically set the size
