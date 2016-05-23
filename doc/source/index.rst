@@ -114,6 +114,7 @@ Contents
     settings.rst
     results.rst
     data_packages.rst
+    omnibem.rst
     notebooks.rst
     standalone.rst
     references.rst
