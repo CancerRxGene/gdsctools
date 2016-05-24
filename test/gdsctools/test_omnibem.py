@@ -1,13 +1,36 @@
-from gdsctools.omnibem import OmniBEM
+from gdsctools.omnibem import OmniBEMBuilder
+from gdsctools import gdsctools_data
 
-"""
-test_ga = ".."
-test_gene_list = "..."
-test_expected_filtered_output = "..."
+omnibem_data = gdsctools_data("test_omnibem_genomic_alteration.csv.gz")
+omnibem_genes = gdsctools_data("test_omnibem_genes.txt")
+
 
 def test_omnibem():
-    o = OmniBEM(test_ga)
-    results = o.filter(test_gene_list)
-    expected = CSV2DF(test_expected_filtered_output)
-    assert results == expected
-"""
+    ob = OmniBEMBuilder(omnibem_data)
+    ob.filter_by_gene_list(omnibem_genes)
+    mobem = ob.get_mobem()
+    assert mobem[mobem.columns[3:]].sum().sum() == 4971
+
+    #
+    ob.plot_number_alteration_by_tissue()
+    ob.plot_alterations_per_cellline()
+    ob.get_significant_genes()
+
+
+    ob = OmniBEMBuilder(omnibem_data)
+    ob.filter_by_gene_list(omnibem_genes)
+    ob.filter_by_type_list(["Methylation"])
+    mobem = ob.get_mobem()
+    assert mobem[mobem.columns[3:]].sum().sum() == 127
+
+    ob = OmniBEMBuilder(omnibem_data)
+    ob.filter_by_gene_list(omnibem_genes)
+    ob.filter_by_tissue_list(["HNSC"])
+    mobem = ob.get_mobem()
+    assert mobem[mobem.columns[3:]].sum().sum() == 115
+
+    ob = OmniBEMBuilder(omnibem_data)
+    ob.filter_by_gene_list(omnibem_genes)
+    ob.filter_by_sample_list(["SNU-423"])
+    #mobem = ob.get_mobem()
+    #assert mobem[mobem.columns[3:]].sum().sum() == 4971
