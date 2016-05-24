@@ -60,6 +60,7 @@ from gdsctools.cosmictools import COSMICInfo
 from gdsctools.tissues import TCGA
 from gdsctools.gdsc import GDSC
 from gdsctools.stats import signed_effects
+from gdsctools.omnibem import OmniBEMBuilder
 
 def gdsctools_help(name=None):
     if name is None:
