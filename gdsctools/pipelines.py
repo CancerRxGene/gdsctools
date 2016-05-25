@@ -25,7 +25,7 @@ import warnings
 # ignore pandas warning
 warnings.simplefilter(action="ignore", category=FutureWarning)
 # ignore mpld3 warning
-warnings.simplefilter(action="ignore", category=UserWarning)
+#warnings.simplefilter(action="ignore", category=UserWarning)
 
 
 __all__ = ['anova_pipeline', 'ANOVAOptions']
