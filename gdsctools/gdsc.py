@@ -1,7 +1,5 @@
 import glob
 import os
-import easydev
-import shutil
 
 from gdsctools.anova import ANOVA
 from gdsctools.readers import IC50
@@ -14,7 +12,9 @@ from gdsctools.anova_report import ReportMAIN
 import pandas as pd
 
 from easydev.console import purple, brown, red
-from easydev import do_profile
+from easydev import Progress
+
+from reports import HTMLTable
 
 __all__ = ["IC50Cluster", "GDSC"]
 
@@ -24,13 +24,12 @@ class IC50Cluster(IC50):
 
     .. todo:: doc
 
-    Used in v18 only to cluster the DRUG columns with same drug Identifiers.
+    Used in v18 onwards to cluster the DRUG columns with same drug Identifiers.
 
-    The convention in v18 should not be used again. Ze keep this function for
-    book-keeping.
+    The convention in v18 is not great. Drug ids should be unique anyway.
 
     This class merges drug names (not identifiers) but duplicated identifiers
-    may appear. 
+    may appear.
 
 
     ::
@@ -39,8 +38,6 @@ class IC50Cluster(IC50):
 
         # This may not work if there are duplicated drug identifiers
         IC50(ic50)
-
- 
 
     """
     def __init__(self, ic50, ratio_threshold=10, verbose=True):
@@ -54,43 +51,35 @@ class IC50Cluster(IC50):
         if self.verbose:
             print(self)
         self.cluster()
+        self.cleanup()
         if self.verbose:
             print(self)
 
     def _get_to_cluster(self):
-        info = self.info()
-        if len(info)> 0:
+        info = self._info()
+        if len(info) > 0:
             to_cluster = info[info.ratio < 10].DRUG_ID.values
             return list(to_cluster)
         else:
             return []
     to_cluster = property(_get_to_cluster)
 
-    def _clean_name(self, x):
-        try:
-            res = x.replace("Drug_","").replace("DRUG_","")
-            res = res.split("_")[0]
-            res = int(res)
-            return res
-        except:
-            return x
-
     def _get_mapping(self):
         from collections import defaultdict
         mapping = defaultdict(list)
 
-        drug_ids = [self._clean_name(x) for x in self.df.columns]
+        drug_ids = [self.drug_name_to_int(x) for x in self.df.columns]
         for drug_id, colname in zip(drug_ids, self.df.columns):
             mapping[drug_id].append(colname)
         return mapping
 
     def _get_duplicated(self):
         mapping = self._get_mapping()
-        duplicated = [key for key in mapping.keys() if len(mapping[key])>1]
+        duplicated = [key for key in mapping.keys() if len(mapping[key]) > 1]
         return duplicated
     duplicated = property(_get_duplicated)
 
-    def info(self):
+    def _info(self):
         mapping = self._get_mapping()
         duplicated = self.duplicated
 
@@ -108,9 +97,9 @@ class IC50Cluster(IC50):
             # dummies (NA) when required:
             individuals += [None] * (max_ids - len(individuals))
 
-            common = sum(df.count(axis=1)>=2)
+            common = sum(df.count(axis=1) >= 2)
             result = [drug_id] + individuals + [total, common,
-                    100*common/float(total)]
+                    100 * common/float(total)]
             results.append(result)
 
         df = pd.DataFrame(results)
@@ -124,7 +113,9 @@ class IC50Cluster(IC50):
         # get list of drug identifiers to cluster
 
         to_cluster = self.to_cluster
+        self.clustered = to_cluster[:]
         mapping = self._get_mapping()
+        self.mapped = {}
 
         if self.verbose:
             print('Found  %s non unique drug identifiers ' %
@@ -138,7 +129,7 @@ class IC50Cluster(IC50):
 
             # Let us keep only the first concentration for now
             new_drug_name = drug_names[0]
-            if len(drug_names)>1:
+            if len(drug_names) > 1:
                 todrop = drug_names[1:]
             # add new column with new name and mean of the columns with same
             # drug id
@@ -153,12 +144,12 @@ class IC50Cluster(IC50):
         self.extra_mapping = {}
         new_columns = []
         for col in self.df.columns:
-            identifier = self._clean_name(col)
+            identifier = self.drug_name_to_int(col)
             while identifier in new_columns:
                 identifier += 10000 # not robust but would do for now
-                # We use a while since ids may occur 3 times 
-            self.extra_mapping[identifier] = col 
-            new_columns.append(identifier) 
+                # We use a while since ids may occur 3 times
+            self.extra_mapping[identifier] = col
+            new_columns.append(identifier)
         self.df.columns = new_columns
 
 
@@ -255,7 +246,7 @@ class GDSC(GDSCBase):
         # figure out the cancer types:
         self.results = {}
 
-        self.company_directory="company_packages"
+        self.company_directory = "company_packages"
 
         # quick test on 15 features
         self.test = False
@@ -286,7 +277,6 @@ class GDSC(GDSCBase):
             except:
                 print("Clustering IC50 (v18 released data ?)")
                 self.ic50 = IC50Cluster(self.ic50_filename, verbose=False)
-                self.ic50.cleanup()
             an = ANOVA(self.ic50, gf_filename, self.drug_decode,
                 verbose=False)
 
@@ -378,7 +368,6 @@ class GDSC(GDSCBase):
                     self.ic50 = IC50(self.ic50_filename)
                 except:
                     self.ic50 = IC50Cluster(self.ic50_filename, verbose=False)
-                    self.ic50.cleanup()
 
                 # And create an ANOVA instance. This is not to do the analyse
                 # again but to hold various information
@@ -416,7 +405,7 @@ class GDSC(GDSCBase):
                     filename = "drug_%s.html" % drug_id
                     source = "%s%s%s%sassociations%s" % (self.main_directory,
                         os.sep, tcga, os.sep , os.sep)
-                    dest = os.sep.join([self.company_directory, company, tcga, "associations"]) 
+                    dest = os.sep.join([self.company_directory, company, tcga, "associations"])
                     dest += os.sep
                     cmd = "cp %s%s %s" % (source, filename, dest )
                     shellcmd(cmd, verbose=False)
@@ -435,15 +424,74 @@ class GDSC(GDSCBase):
     companies = property(_get_companies)
 
     def create_summary_pages(self):
+        """
+
+        Once the main analyis is done (:meth:`analyse`), and the company
+        packages have been created (:meth:`create_data_packages_for_companies`),
+        you can run this method that will creade a summary HTML page
+        (index.html) for the tissue, and a similar summary HTML page for the
+        tissues of each company. Finally, an HTML summary page for the companies
+        is also created. 
+
+        The final tree direcorty looks like::
+
+
+            |-- index.html
+            |-- company_packages
+            |   |-- Company1
+            |   |   |-- Tissue1
+            |   |   |-- Tissue2
+            |   |   |-- index.html
+            |   |-- Company2
+            |   |   |-- Tissue1
+            |   |   |-- Tissue2
+            |   |   |-- index.html
+            |-- tissue_packages
+            |   |-- Tissue1
+            |   |-- Tissue2
+            |   |-- index.html
+
+
+
+
+        """
 
         # First for the main directory (tissue_packages):
-        self._create_summary_pages(self.main_directory)
+        print(purple("Creating summary index.html for the tissues"))
+        self._create_summary_pages(self.main_directory, verbose=False)
 
-        # Then for all companies:
-        for company in self.companies:
-            self._create_summary_pages(self.company_directory + os.sep + company)
+        # Then for each companies:
+        print(purple("Creating summary index.html for each company"))
+        pb = Progress(len(self.companies))
+        for i, company in enumerate(self.companies):
+            try:
+                self._create_summary_pages(self.company_directory + os.sep +
+                    company, verbose=False, company=company)
+            except Exception as err:
+                print(red("Issue with %s. Continue with other companies" % company))
+                print(err)
+            pb.animate(i+1)
 
-    def _create_summary_pages(self, main_directory):
+        # Finally, an index towards each company
+        self._create_main_index()
+
+    def _create_main_index(self):
+        # We could also add a column with number of association ?
+        companies = self.companies[:]
+        df = pd.DataFrame({"Company": companies})
+        html_page = ReportMAIN(directory=".",
+                filename='index.html',
+                template_filename='main_summary.html' )
+        html_table = HTMLTable(df)
+        html_table.add_href('Company', newtab=True, url="company_packages/",
+                suffix="/index.html")
+        html_page.jinja['data_table'] =  html_table.to_html(collapse_table=False)
+        html_page.jinja['analysis_domain'] =  "All companies / All "
+        html_page.jinja['tissue_directory'] = self.main_directory
+        html_page.write()
+
+    def _create_summary_pages(self, main_directory, verbose=True, 
+            company=None):
         # Read all directories in tissue_packages
 
         directories = glob.glob(main_directory + os.sep + '*')
@@ -453,7 +501,8 @@ class GDSC(GDSCBase):
             tcga = directory.split(os.sep)[-1]
             if tcga not in self.tcga:
                 continue
-            print(directory, tcga)
+            if verbose:
+                print(directory, tcga)
             # number of hits
             path = directory + os.sep + 'OUTPUT' + os.sep
             try:
@@ -484,39 +533,38 @@ class GDSC(GDSCBase):
             summary.append([tcga, total_hits,
                 drug_inv_prop, info['N_prop'],
                 drug_inv_public, info['N_public']])
-        print(summary)
         df = pd.DataFrame(summary)
 
         df.columns = ['Analysis name', 'Number of hits',
             'Number of involved proprietary compounds', 'out of',
             'Number of involved public', 'out of']
 
-        # FIXME include css and images of logo
-        # FIXME save in the proper directory
+        try:
+            df.sort_values(by="Number of hits", ascending=False, inplace=True)
+        except:
+            pass
+
         output_dir = main_directory + os.sep + '..' + os.sep
         output_file = output_dir + os.sep + 'index.html'
-        self.html_page = ReportMAIN(directory=main_directory, 
+        self.html_page = ReportMAIN(directory=main_directory,
                 filename='index.html',
                 template_filename='datapack_summary.html' )
 
         # Let us use our HTMLTable to add the HTML references
-        from gdsctools.report import HTMLTable
         self.html_table = HTMLTable(df)
         self.html_table.add_href('Analysis name', newtab=True, url=None,
                 suffix='/index.html')
-        #html_table.add_bgcolor('Number of hits')
+        self.html_table.add_bgcolor('Number of hits')
 
-        self.html_page.jinja['data_table'] = self.html_table.to_html()
+        self.html_page.jinja['data_table'] =  self.html_table.to_html(
+                collapse_table=False)
+        if company:
+            self.html_page.jinja["collaborator"] = company
+
         self.html_page.write()
 
         return df
 
-    def load_results(self):
-        """Find the files results.csv in all TCGA directories"""
-        for tcga in self.tcga:
-            print(tcga)
-            self.results[tcga] = ANOVAResults(self.main_directory + os.sep 
-                    + tcga + os.sep + 'OUTPUT' + os.sep + 'results.csv')
 
 
 
