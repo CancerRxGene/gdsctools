@@ -25,6 +25,16 @@ class OmniBEMBuilder(object):
         bem.unified.sort_values(by="IDENTIFIER", ascending=False).head(20)
 
 
+        bem = OmniBEMBuilder(gdsctools_data("test_omnibem_genomic_alterations.csv.gz"))
+        bem.filter_by_type_list(["Methylation"])
+        mobem = bem.get_mobem()
+        mobem.columns = [x.replace("TISSUE_TYPE", "TISSUE_FACTOR") for x in mobem.columns]
+        mobem[[x for x in mobem.columns if x!="SAMPLE"]]
+        gf = GenomicFeatures(mobem[[x for x in mobem.columns if x!="SAMPLE"]])
+        an = ANOVA(ic50_test, gf)
+        results = an.anova_all()
+        results.volcano()
+
     You can filter by, gene, cosmic identifiers, sample name, type of
     alterations.
 
@@ -55,14 +65,14 @@ class OmniBEMBuilder(object):
         df.columns = ['total', 'grouped', 'fraction']
         self.summary = df
 
-    def get_mobem(self, minimum_gene=3):
+    def get_mobem(self):
         # Select gene that appear at least a minimum number of times
-        agg = self.unified.groupby("GENE")["GENE"].count()
-        self.selection = agg[agg>=minimum_gene]
+        #agg = self.unified.groupby("GENE")["GENE"].count()
+        #self.selection = agg[agg>=minimum_gene]
 
         # keep only gene in the selection
-        df = self.unified.query("GENE in @self.selection.index")
-
+        #df = self.unified.query("GENE in @self.selection.index")
+        df = self.unified
         this = pd.crosstab(df['GENE'], columns=[
             df["COSMIC_ID"], df['TISSUE_TYPE'], df["SAMPLE"]])
         this = this.T
@@ -73,7 +83,7 @@ class OmniBEMBuilder(object):
         df = self.unified.groupby("GENE")["GENE"]
         return df.count().sort_values(ascending=False).head(N)
 
-    def filter_by_gene_list(self, genes):
+    def filter_by_gene_list(self, genes, minimum_gene=3):
         """
 
         :param genes: a list of genes or a filename
@@ -85,7 +95,12 @@ class OmniBEMBuilder(object):
             genes = df.GENE.values.tolist()
         self.df = self.df.query("GENE in @genes")
         # Update unified matrix
-        self._update_unified()
+        agg = self.unified.groupby("GENE")["GENE"].count()
+        self.selection = agg[agg>=minimum_gene]
+
+        # keep only gene in the selection
+        self.unified = self.unified.query("GENE in @self.selection.index")
+        #self._update_unified()
 
     def filter_by_tissue_list(self, tissue_list):
         self.df = self.df.query("TISSUE_TYPE in @tissue_list")
