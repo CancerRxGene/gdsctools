@@ -105,7 +105,7 @@ class BoxPlots(object):
 
         results = self._get_boxplot_data(mode)
         if results is None:
-            self.logging.info("INFO: no tissue with at least 2 pos and 2 neg found. " + "No image created.")
+            print("WARNING: No tissue with at least 2 pos and 2 neg found (no image created).")
             return
 
         fig = pylab.figure(fignum)
@@ -336,8 +336,7 @@ class BoxPlotsJS(BoxPlots):
 
         data = self._get_boxplot_data("tissue")
         if data is None:
-            return "<p>Not enough data to plot the boxplot</p>"
-            print("##################")
+            return ""
         # Show from bottom to top
         labels = data[1][::-1]
         data = data[0][::-1]
