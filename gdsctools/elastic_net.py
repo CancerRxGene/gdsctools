@@ -363,7 +363,11 @@ class ElasticNet(BaseModels):
         pylab.clf()
         self.elastic_net(drug_name, alpha=alpha)
         df = pd.DataFrame({'name': self.X.columns, 'weight': self.en.coef_})
-        df = df.set_index("name").sort_values("weight")
+        try:
+            df = df.set_index("name").sort_values("weight")
+        except:
+            df = df.set_index("name").sort("weight")
+
         df.plot(kind="bar",  width=1, lw=1, ax=pylab.gca())
 
         pylab.figure(2)
