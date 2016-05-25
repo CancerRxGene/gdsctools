@@ -819,7 +819,11 @@ class GenomicFeatures(Reader, CosmicRows):
         # let us identify the duplicates as True/False
         datatr = self.df.transpose()
         duplicated_no_first = datatr[datatr.duplicated()]
-        duplicated = datatr[datatr.duplicated(keep=False)]
+        try:
+            duplicated = datatr[datatr.duplicated(keep=False)]
+        except:
+            # pandas 0.16
+            duplicated = datatr[datatr.duplicated(take_last=False)]
 
         tokeep = [x for x in duplicated.index if x not in duplicated_no_first.index]
 
