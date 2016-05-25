@@ -373,10 +373,16 @@ class ElasticNet(BaseModels):
         pylab.figure(2)
         pylab.clf()
         df = abs(df)
-        df.sort_values("weight").plot(kind="bar", width=1, lw=1,
+
+        try:
+            df.sort_values("weight", inplace=True)
+        except:
+            df.sort("weight", inplace=True)
+
+        df.plot(kind="bar", width=1, lw=1,
                                       title='importance plot', ax=pylab.gca())
 
-        return df.sort_values('weight')
+        return df
 
     def elastic_net_cv(self, drug_name, l1_ratio=0.5, alphas=None, n_folds=10):
 
@@ -448,9 +454,12 @@ class ElasticNet(BaseModels):
         (self.df1 == 0).sum().plot()
         (self.df2 == 0).sum().plot()
 
-
-        self.indices1 = (self.df1 == 0).sum().sort_values().ix[0:nfeat]
-        self.indices2 = (self.df2 == 0).sum().sort_values().ix[0:nfeat]
+        try:
+            self.indices1 = (self.df1 == 0).sum().sort_values().ix[0:nfeat]
+            self.indices2 = (self.df2 == 0).sum().sort_values().ix[0:nfeat]
+        except:
+            self.indices1 = (self.df1 == 0).sum().sort().ix[0:nfeat]
+            self.indices2 = (self.df2 == 0).sum().sort().ix[0:nfeat]
         names1 = self.indices1.index
         names2 = self.indices2.index
         print(names2)
