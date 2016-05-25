@@ -134,7 +134,7 @@ class ReportMAIN(Report):
 
     def create_report(self, onweb=True):
         try:
-            # some parent zill have that method implemented
+            # some parent will have that method implemented
             self._create_report()
         except Exception as err:
             print(err)
