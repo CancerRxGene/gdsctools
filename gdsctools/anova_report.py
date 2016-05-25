@@ -765,18 +765,12 @@ class HTMLOneDrug(ReportMAIN):
 
         self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[self.drug].dropna())
         self.jinja['drug_id'] = self.drug
+
         self.jinja['drug_name'] = report.drug_decode.get_name(self.drug)
         self.jinja['drug_target'] = report.drug_decode.get_target(self.drug)
-        try:
-            self.jinja['drug_synonyms'] = \
-                report.drug_decode._get_row(drug_id, 'SYNONYMS')
-        except:
-            pass
-        try:
-            self.jinja['drug_owner'] = \
-                report.drug_decode._get_row(drug_id, 'OWNED_BY')
-        except:
-            pass
+        #self.jinja['drug_synonyms'] = report.drug_decode._get_row(self.drug, 'SYNONYMS')
+        self.jinja['drug_owner'] = report.drug_decode._get_row(self.drug, 'OWNED_BY')
+
         self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['n_hits'] = self.nhits
         self.jinja['resource_path'] = ".."
@@ -856,11 +850,7 @@ class HTMLPageMain(ReportMAIN):
 
         # MANOVA link
         N = len(self.report.get_significant_set())
-        self.jinja['manova'] = """
-        There were %(N)s significant associations found.
-        All significant associations have been gathered
-        in the following link: <br/><a href="./associations/manova.html">manova results</a>.
-        """ % {'N': N}
+        self.jinja['manova'] = str(N)
 
         # feature summary
         df_features = self.report.feature_summary("feature_summary.png")
@@ -882,7 +872,7 @@ class HTMLPageMain(ReportMAIN):
         df_drugs = self.report.drug_summary(filename="drug_summary.png")
         get_name = self.report.drug_decode.get_name
         if len(self.report.drug_decode.df) > 0:
-            df_drugs.index = ["%s-%s".format(x, get_name(x)) for x in df_drugs.index]
+            df_drugs.index = ["{}-{}".format(x, get_name(x)) for x in df_drugs.index]
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
 
