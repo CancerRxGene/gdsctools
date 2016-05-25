@@ -52,7 +52,7 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev']
 else:
-    install_requires = ['numpy', 'matplotlib>=1.4.3',
+    install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.18', 'scipy', "colormap>=0.9.7",
         'jinja2', 'statsmodels', "scikit-learn", "reports>=0.1.8"],
 

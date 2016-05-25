@@ -106,7 +106,10 @@ class IC50Cluster(IC50):
         if len(df):
             df.columns = ['DRUG_ID'] + [str(x) for x in range(1, max_ids+1)] +\
                 ['total', 'common', 'ratio']
-            df.sort_values(by='ratio', ascending=False, inplace=True)
+            try:
+                df.sort_values(by='ratio', ascending=False, inplace=True)
+            except:
+                df.sort(by='ratio', ascending=False, inplace=True)
         return df
 
     def cluster(self):
