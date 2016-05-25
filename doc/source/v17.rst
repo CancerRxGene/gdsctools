@@ -1,31 +1,30 @@
-Notes about v17 data
-======================
+Notes to reproduce v17a results (GDSC1000 Cell paper)
+=========================================================
 
-Following the report of the v17 data sets, which can be found on the 
+:Reference:
+
+Following the report of the **v17a** data sets, which can be found on the 
 `CancerRxGene <http://www.cancerrxgene.org/gdsc1000/Pharmacogenomic_interactions.html>`_ page, we will reproduce the reports and ANOVA results posted in the link aforementionned. 
 
-In the link, input data may be either PANCAN or tissue specific. Let us
-reproduce the BRCA tissue case. First, we need to get the data::
+First, we need to download the data. For example, let us retrieve the BRCA
+tissue specific data set using **wget** command::
 
-    wget http://www.cancerrxgene.org/gdsc1000//Data/anova/BRCA/DATA/INPUT/ANOVA_input.txt
+    wget http://www.cancerrxgene.org/gdsc1000/Data/anova/BRCA/DATA/INPUT/ANOVA_input.txt
 
 
-Note that in v17 all IC50 and genomic features are together in one file.
-although GDSCTools request one IC50 file qnd one genomic features, it will
-understandif we provide the file twice::
+.. warning:: in v17, the input file **ANOVA_input.txt** contains all IC50s and
+    genomic features altogether. This is not recommended and we now expect
+    the IC50s and genomic_features to be in two different files. For back
+    compatibility, GDSCTools is able to extract the IC50 alone, or the 
+    genomic features alone. See hereafter and :ref:`data` section for details.
+
+
+Once downloaded, create an ANOVA instance as follows::
 
     from gdsctools import ANOVA
-    an = ANOVA(ic50="ANOVA_input.txt", genomic_feature="ANOVA_input.txt")
-
-Note that in the later statement, we specificied the names of the parameters but
-one could write::
-
     an = ANOVA("ANOVA_input.txt", "ANOVA_input.txt")
 
-Just keep in mind that if you have two separate files (IC50 and 
-Genomic Feature), you need to keep the order (first the IC50)::
-
-    an = ANOVA(ic50, features)
+Here, we provide the filename twice. Internally, the first argument extracts te IC50s and the second one extracts the genomic features.
 
 In v17, there are two parameters that are not the current default values that
 must be set to reproduce the results::
@@ -36,38 +35,26 @@ must be set to reproduce the results::
 The later parameter is used in some plots for annotation but is not essential.
 The first parameter is important since it sets the method used for multiple
 testing correction. It will also define the number of associations that are
-significant. 
+significant. The FDR threshold that defines the significant associations was set to 25.
 
 
-If not PANCAN analysis, the tissue is unspecified (there is just one). 
-So, the name of the tissue is unknown and one should set it manually. This is
-not important for the analysis but is used to name the output of the directory
-where one can create the HTML report::
+In the case of a tissue specific analysis (here BRCA), the name of the tissue is unknown (not specified anywhere inside the file) and so one should provide the information. This is not important for the analysis itself but is used for instance to name the output of the directory where HTML reports are stored::
 
     report = ANOVAReport(an)
     report.settings.directory = "BLCA"
     report.create_html_pages()
 
 Note that the multiple corrected values reported by GDSCTools and found on the
-website are different by 2-3 %. This is due to a different implementation of the
-qvalue method, in particular the smoothing function. However, the number of
+website are different by 2-3 %. This is known and due to a different implementation of the qvalue method (smoothing function). However, the number of
 tests and the ANOVA_FEATURE_pval column (pvalues of the FEATURE factor) should
-agree perfectly. 
+agree perfectly. Finally, note that because the value of the FDR (corrected
+values) differ, the number of significant associations below that threshold may
+also slightly differ slighlty.
 
-Finally note that because the number of significant associations is based on a
-threshold of 25 (default) for the multiple testing correction, the number of
-association may differe slighlty. 
+As for the PANCAN case, results are currently different between GDSCTools and
+what is posted within the link at the top of the page because there is currently a mismatch between the ANOVA_input file provided and the results provided (one has the MEDIA factor while there other has not)
 
-As for the PANCAN case, results will be different in terms of pvalues (and
-therefore FDR corrected q-values) because the ANVAO_input file does not contain
-the MEDIA factor wherease it was used in the analysis. 
-
-
-
-
-
-
-Takes about ZZ to analyse the data for each v17 tissue incluging HTML pages
-
+For information, on an intel i7 core, the analysis of the PANCAN data set (265
+drugs and about 1000 features) takes about 20 minutes to finish. Tissue specific data files takes a few minutes or less in general.
 
 

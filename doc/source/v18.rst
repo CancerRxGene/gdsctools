@@ -1,15 +1,12 @@
-Notes about v18
-====================
+Notes about v18 onwards
+=========================
 
-In V18, the IC50 may have duplicated columns for a given drug. Some drugs are
-clustered together. The algorithm was implemented in GDSCTools in IC50Cluster
-class. It should used as follow::
+In V18 onwards (May 2016), the IC50 may have duplicated columns for a given drug. So some drugs are clustered together. The algorithm was implemented in GDSCTools in IC50Cluster class. It should used as follow::
 
 IC50 must be read with the IC50Cluster class as follows::
 
     from gdsctools import *
     ic50 = IC50Cluster("v18_data")
-    ic50.cleanup()
 
 This will ensure alos that the drug identifiers are unique. Indeed, 
 in v18 data sets, columns for a given DRUG ID may be duplicated 
