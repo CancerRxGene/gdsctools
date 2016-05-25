@@ -71,9 +71,9 @@ class QValue(object):
         .. seealso:: :class:`gdsctools.stats.MultipleTesting`
         """
         try:
-            self.pv = pv.copy()
-        except:
             self.pv = np.array(pv)
+        except:
+            self.pv = pv.copy()
         assert(self.pv.min() >= 0 and self.pv.max() <= 1), \
             "p-values should be between 0 and 1"
 

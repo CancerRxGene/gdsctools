@@ -47,6 +47,7 @@ Version 0.12 (9th May 2016)
       practice but that the format of e.g. v18, v19 IC50 files. A class
       IC50Cluster was created to interepret those files. ANOVA will switch to
       IC50Cluster automatically if there are duplicated files.
+    - Settings: low_memory option has been removed
 
 
 Version 0.11 (April-May 2016)
