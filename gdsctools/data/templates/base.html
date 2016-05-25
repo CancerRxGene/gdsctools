@@ -15,11 +15,11 @@
 
     <script type="text/javascript" src="{{ resource_path }}/js/canvasXpress.min.js"></script>
 
-    {{ volcano_jsdata }}
-    {{ boxplot_all_jsdata }}
-    {{ boxplot_tissue_jsdata }}
-    {{ boxplot_msi_jsdata }}
-    {{ boxplot_media_jsdata }}
+{{ volcano_jsdata }}
+{{ boxplot_all_jsdata }}
+{{ boxplot_tissue_jsdata }}
+{{ boxplot_msi_jsdata }}
+{{ boxplot_media_jsdata }}
 
     <script language="javascript">
     function loadFunctions(){
@@ -37,8 +37,6 @@
     {% endif %}
     }
     </script>
-
-
 </head>
 
 
@@ -46,17 +44,12 @@
 
 <div class="document" id="unset">
 <h1 class="title">{{ title }}</h1>
-    <h2 class="subtitle">Report created with
-        gdsctools (version {{ version }})</h2>
-    <p>See <a href="https://www.github.com/CancerRxGene/gdsctools"
-        target="_blank">GDSCTools github page</a> for downloads and the <a
-    href="http://gdsctools.readthedocs.org" target="_blank">online documentation</a> for details.</p>
+    <h2 class="subtitle">Report and analysis created with
+        <a target="_blank" href="https://gdsctools.readthedocs.io">GDSCTools</A>,  (version {{ version }})</h2>
     <hr>
     <p>Analysis Domain: <b>{{ analysis_domain }}</b> tissues/cancer cell type</p>
     <hr>
-
       {% block content %}{% endblock %}
-
 
       <hr/>
 
@@ -68,7 +61,7 @@
 
       <div class="copyright">
           {{ time_now }}
-           Please visit <a href="http://gdsctools.readthedocs.org">online</a>
+           Please visit <a href="http://gdsctools.readthedocs.io">online</a>
            documentation for details.
        </div>
    </div>

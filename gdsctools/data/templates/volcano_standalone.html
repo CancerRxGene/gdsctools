@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>GDSCTools report</title>
+
+
+   <link rel="stylesheet" href="{{ resource_path }}/css/canvasXpress.css" type="text/css"/>
+   <link rel="stylesheet" href="{{ resource_path }}/css/gdsc.css" type="text/css" />
+   <script src="{{ resource_path }}/js/sorttable.js"></script>
+    <!-- Include required JS files -->
+    <link rel="stylesheet" href="{{ resource_path }}/css/github-gist.css">
+    <script src="{{ resource_path }}/js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+    <script type="text/javascript" src="{{ resource_path }}/js/canvasXpress.min.js"></script>
+
+{{ volcano_jsdata }}
+
+</head>
+
+
+<body onload="loadVolcano()">
+
+<div class="document" id="unset">
+
+     <div class="wrap">
+         <div class="content">
+         <center>
+             <canvas id='canvasVolcano' width='640'  height='540'></canvas>
+         </center>
+         </div>
+         <div class="clear">&nbsp;</div>
+     </div>
+
+    
+</div>
+</body>
+</html>
