@@ -22,10 +22,11 @@ import warnings
 from gdsctools.report import HTMLTable, ReportMAIN
 from gdsctools.tools import Savefig
 from gdsctools.volcano import VolcanoANOVA
+from gdsctools.volcano import VolcanoANOVAJS
+from gdsctools.boxplots import BoxPlotsJS
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.readers import DrugDecode
-from gdsctools.tools import get_drug_id
 
 import pandas as pd
 import pylab
@@ -63,23 +64,30 @@ class ANOVAReport(object):
 
     :Significant association: an association is significant if one of those
         conditions is fulfilled:
-         - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
-         - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
-         - The field *FEATURE_delta_MEAN_IC50* must be < 0 (sensible) or
-           >= 0 (resistant)
-        It can be **resistant** or **sensitive**.
+          - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
+          - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
+          - The field *FEATURE_delta_MEAN_IC50* must be < 0 (sensible) or
+            >= 0 (resistant)
+
 
     """
-    def __init__(self, gdsc, results, sep="\t", drug_decode=None):
+    def __init__(self, gdsc, results=None, sep="\t", drug_decode=None, 
+            verbose=True):
         """.. rubric:: Constructor
 
         :param gdsc: the instance with which you created the results to report
         :param results: the results returned by :meth:`ANOVA.anova_all`
 
         """
-        self.figtools = Savefig()
+        self.verbose = verbose
+        self.figtools = Savefig(verbose=False)
         self.gdsc = gdsc
+
+        if results is None:
+            results = gdsc.anova_all()
         self.df = ANOVAResults(results).df # this does a copy and sanity check
+        # Make sure the DRUG are integers
+        self.df.DRUG_ID = self.df.DRUG_ID.astype(int)
 
         self.settings = ANOVASettings()
         for k, v in gdsc.settings.items():
@@ -108,7 +116,7 @@ class ANOVAReport(object):
         self._set_sensible_df()
 
         # just to create the directory
-        ReportMAIN(directory=self.settings.directory)
+        ReportMAIN(directory=self.settings.directory, verbose=self.verbose)
 
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
@@ -332,7 +340,7 @@ class ANOVAReport(object):
         if top > len(df_count):
             top = len(df_count)
 
-        df = df_count.ix[0:top][[u'sens assoc', u'res assoc']]
+        df = df_count.iloc[0:top][[u'sens assoc', u'res assoc']]
         labels = list(df.index)
         # add drug name
         if len(self.drug_decode) > 0:
@@ -340,11 +348,11 @@ class ANOVAReport(object):
                 if title_tag == 'drug':
                     name = self.drug_decode.get_name(label)
                     if name is not None:
-                        labels[i] = labels[i] + " - " + name
+                        labels[i] = "{}-{}".format(labels[i], name)
                 else:
                     pass
 
-        labels = [x.replace('_', ' ') for x in labels]
+        labels = [str(x).replace('_', ' ') for x in labels]
         # restrict size to first 30 characters
         labels = [x[0:30] for x in labels]
         ind = range(0, len(labels))
@@ -462,7 +470,8 @@ class ANOVAReport(object):
         where association id is stored in :attr:`df`.
 
         """
-        print("\nCreating individual HTML pages for each association")
+        if self.verbose:
+            print("Creating individual HTML pages for each significant association")
         df = self.get_significant_set()
 
         drugs = df['DRUG_ID'].values
@@ -478,18 +487,24 @@ class ANOVAReport(object):
         for i in range(N):
             html.drug = drugs[i]
             html.feature = features[i]
-            html._filename = str(assocs[i]) + '.html'
+            if str(assocs[i]).startswith("a"):
+                html._filename = str(assocs[i]) + '.html'
+            else:
+                html._filename = "a" + str(assocs[i]) + '.html'
             html.fdr = fdrs[i]
             html.assoc_id = assocs[i]
-            html._init_report() # since we have one shared instance
+            #html._init_report() # since we have one shared instance
             html.create_report(onweb=False)
-            pb.animate(i+1)
+            if self.settings.animate:
+                pb.animate(i+1)
+        if self.settings.animate: print("\n")
 
     def create_html_features(self):
         """Create an HTML page for each significant feature"""
         df = self.get_significant_set()
         groups = df.groupby('FEATURE')
-        print("\nCreating individual HTML pages for each feature")
+        if self.verbose:
+            print("Creating individual HTML pages for each feature")
         N = len(groups.indices.keys())
         pb = Progress(N)
         for i, feature in enumerate(groups.indices.keys()):
@@ -497,7 +512,9 @@ class ANOVAReport(object):
             subdf = groups.get_group(feature)
             html = HTMLOneFeature(self, self.df, subdf, feature)
             html.create_report(onweb=False)
-            pb.animate(i+1)
+            if self.settings.animate:
+                pb.animate(i+1)
+        if self.settings.animate: print("\n")
 
     def create_html_drugs(self):
         """Create an HTML page for each drug"""
@@ -506,11 +523,11 @@ class ANOVAReport(object):
 
         df = self.get_significant_set()
         groups = df.groupby('DRUG_ID')
-        print("\n\nCreating individual HTML pages for each drug")
+        if self.verbose:
+            print("Creating individual HTML pages for each drug")
         N = len(groups.indices.keys())
         N = len(all_drugs)
         pb = Progress(N)
-        #all_drugs = list(df.DRUG_ID) + ['Drug_1050_IC50']
         for i, drug in enumerate(all_drugs):
             # enumerate(groups.indices.keys()):
             # get the indices and therefore subgroup
@@ -521,12 +538,15 @@ class ANOVAReport(object):
 
             html = HTMLOneDrug(self, self.df, subdf, drug)
             html.create_report(onweb=False)
-            pb.animate(i+1)
+            if self.settings.animate:
+                pb.animate(i+1)
+        if self.settings.animate: print("\n")
 
     def create_html_main(self, onweb=False):
         """Create HTML main document (summary)"""
         self._set_sensible_df()
-        print("\n\nCreating main HTML page in directory %s" %
+        if self.verbose:
+            print("Creating main HTML page in directory %s" %
                 (self.settings.directory))
         buffer_ = self.settings.savefig
         self.settings.savefig = True
@@ -548,10 +568,10 @@ class ANOVAReport(object):
     def create_html_pages(self, onweb=True):
         """Create all HTML pages"""
         self.create_html_main(onweb=onweb)
+        self.create_html_manova(onweb=False)
         self.create_html_drugs()
         self.create_html_features()
         self.create_html_associations()
-        self.create_html_manova(onweb=False)
 
     def onweb(self):
         from easydev import onweb
@@ -582,14 +602,17 @@ class HTMLPageMANOVA(ReportMAIN):
         be changes (default is manova.html)
         """
         super(HTMLPageMANOVA, self).__init__(filename='manova.html',
-                directory=gdsc.settings.directory,
-                template_filename='manova.html')
+                directory=gdsc.settings.directory+os.sep+"associations",
+                template_filename='manova.html', init_report=False)
 
         html = ANOVAResults(df).get_html_table(collapse_table=False)
 
         self.jinja['manova'] = html
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
+        self.jinja['resource_path'] = ".."
 
+    def _create_report(self):
+        pass # used to avoid warning
 
 ##############################################################################
 #                                                                            #
@@ -623,15 +646,17 @@ class Association(ReportMAIN):
                 self.feature.replace(" ", "_"))
 
         super(Association, self).__init__(
-                directory=report.settings.directory,
-                filename=filename, template_filename='association.html')
+                directory=report.settings.directory + os.sep + "associations",
+                filename=filename, template_filename='association.html',
+                init_report=False)
         self.jinja['analysis_domain'] = report.settings.analysis_type
+        self.jinja['resource_path'] = ".."
 
     def run(self):
         # to keep . Used in the standalone version
         df = self.factory.anova_one_drug_one_feature(self.drug,
-                self.feature, show=True,
-                directory=self.directory + os.sep + 'images')
+                self.feature, show=False,
+                directory=self.directory)
         df['ASSOC_ID'] = self.assoc_id
         df['ANOVA_FEATURE_FDR'] = self.fdr
         return df
@@ -639,6 +664,8 @@ class Association(ReportMAIN):
     def _create_report(self, onweb=True):
         # generated pictures and results
         df = self.run()
+        odof = self.factory._get_one_drug_one_feature_data(self.drug, 
+                self.feature)
 
         # Create the table and add it
         sign = ANOVAResults(df)
@@ -648,19 +675,16 @@ class Association(ReportMAIN):
 
         self.jinja['association_table'] = html_table
 
-        # Main boxplot always included
-        prefix = 'images/ODOF_all'
-        tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
-        section = '<img alt="association {0}" src="{0}">\n'.format(tag)
+        # Javascript version
+        bx = BoxPlotsJS(odof)
+        self.jinja["boxplot_all_jsdata"] = bx.get_html_association()
 
+        section = ""
         if self.factory.settings.include_MSI_factor:
-            prefix = 'ODOF_msi'
-            tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
-            section += '<img alt="association {0}" src="{0}">\n'.format(tag)
+            self.jinja["boxplot_msi_jsdata"] = bx.get_html_msi()
         if self.factory.settings.analysis_type == 'PANCAN':
-            prefix = 'ODOF_tissue'
-            tag = "{0}_{1}____{2}.png".format(prefix, self.drug, self.feature)
-            section += '<img alt="association {0}" src="{0}">\n'.format(tag)
+            self.jinja["boxplot_tissue_jsdata"] = bx.get_html_tissue()
+
         self.jinja['boxplots'] = section
 
 
@@ -681,30 +705,23 @@ class HTMLOneFeature(ReportMAIN):
 
         filename = "{0}.html".format(self.feature)
         super(HTMLOneFeature, self).__init__(
-                directory=report.settings.directory,
-                filename=filename, template_filename='feature.html')
+                directory=report.settings.directory + os.sep + "associations",
+                filename=filename, template_filename='feature.html',
+                init_report=False)
         self.title = 'Single Feature analysis (%s)' % self.feature
 
         self.jinja['n_cell_lines'] = report.gdsc.features.df[feature].sum()
         self.jinja['feature_name'] = feature
         self.jinja['analysis_domaiin'] = report.settings.analysis_type
         self.jinja['n_hits'] = self.n_hits
+        self.jinja['resource_path'] = ".."
 
     def create_pictures(self):
-        v = VolcanoANOVA(self.df, settings=self.settings)
-        v.volcano_plot_one_feature(self.feature)
-        v.savefig_and_js('images/volcano_{}'.format(self.feature))
-
-        # See https://github.com/CancerRxGene/gdsctools/issues/79
-        v.current_fig.canvas.mpl_disconnect(v.cid)
-        try:
-            import mpld3
-            mpld3.plugins.clear(v.current_fig)
-        except:
-            pass
+        v = VolcanoANOVAJS(self.df, settings=self.settings)
+        html = v.render_feature(self.feature)
+        return html
 
     def _create_report(self, onweb=True):
-        self.create_pictures()
 
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf) > 0:
@@ -712,9 +729,7 @@ class HTMLOneFeature(ReportMAIN):
             html = sign.get_html_table(escape=False, 
                     header=True, index=False)
             self.jinja['association_table'] = html
-
-        # image section
-        self.jinja['image_filename'] = "images/volcano_{0}".format(self.feature)
+        self.jinja['volcano_jsdata'] =  self.create_pictures()
 
 
 class HTMLOneDrug(ReportMAIN):
@@ -730,15 +745,15 @@ class HTMLOneDrug(ReportMAIN):
         """
         self.df = data
         self.subdf = subdata
-        self.drug = drug
+        self.drug = int(drug)
         self.settings = report.settings
 
-        filename = "{0}.html".format(self.drug)
+        filename = "drug_{0}.html".format(self.drug)
         super(HTMLOneDrug, self).__init__(
-                directory=report.settings.directory,
-                filename=filename, template_filename='drug.html')
+                directory=report.settings.directory + os.sep + "associations",
+                filename=filename, template_filename='drug.html',
+                init_report=False)
         self.title = 'Single Drug analysis (%s)' % self.drug
-
 
         self.nhits = 0
         if len(report.resistant_df):
@@ -748,39 +763,25 @@ class HTMLOneDrug(ReportMAIN):
             self.nhits += sum([True for x in report.sensible_df.DRUG_ID
                 if x == drug])
 
-        drug_id = get_drug_id(drug)
-        self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[drug].dropna())
-        self.jinja['drug_id'] = drug_id
-        self.jinja['drug_name'] = report.drug_decode.get_name(drug_id)
-        self.jinja['drug_target'] = report.drug_decode.get_target(drug_id)
-        try:
-            self.jinja['drug_synonyms'] = \
-                report.drug_decode._get_row(drug_id, 'SYNONYMS')
-        except:
-            pass
-        try:
-            self.jinja['drug_owner'] = \
-                report.drug_decode._get_row(drug_id, 'OWNED_BY')
-        except:
-            pass
+        self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[self.drug].dropna())
+        self.jinja['drug_id'] = self.drug
+
+        self.jinja['drug_name'] = report.drug_decode.get_name(self.drug)
+        self.jinja['drug_target'] = report.drug_decode.get_target(self.drug)
+        #self.jinja['drug_synonyms'] = report.drug_decode._get_row(self.drug, 'SYNONYMS')
+        self.jinja['drug_owner'] = report.drug_decode._get_row(self.drug, 'OWNED_BY')
+
         self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['n_hits'] = self.nhits
+        self.jinja['resource_path'] = ".."
 
     def create_pictures(self):
-        v = VolcanoANOVA(self.df, settings=self.settings)
-        v.volcano_plot_one_drug(self.drug)
-        v.savefig_and_js('images/volcano_{}'.format(self.drug), size_inches=(10,10))
-
-        # See https://github.com/CancerRxGene/gdsctools/issues/79
-        v.current_fig.canvas.mpl_disconnect(v.cid)
-        try:
-            import mpld3
-            mpld3.plugins.clear(v.current_fig)
-        except:
-            pass
+        v = VolcanoANOVAJS(self.df, settings=self.settings)
+        html = v.render_drug(self.drug)
+        return html
 
     def _create_report(self, onweb=True):
-        self.create_pictures()
+        #self.create_pictures()
 
         # add the table
         self.jinja['synonyms'] = ''
@@ -790,14 +791,14 @@ class HTMLOneDrug(ReportMAIN):
 
         # Table section
         self.jinja['N_hits'] = len(self.subdf)
-        if len(self.subdf)>0:
+        if len(self.subdf) > 0:
             sign = ANOVAResults(self.subdf)
             html = sign.get_html_table(escape=False, 
                     header=True, index=False)
             self.jinja['association_table'] = html
 
         # image section
-        self.jinja['image_filename'] = "images/volcano_{0}".format(self.drug)
+        self.jinja['volcano_jsdata'] =  self.create_pictures()
 
 
 class HTMLPageMain(ReportMAIN):
@@ -822,15 +823,17 @@ class HTMLPageMain(ReportMAIN):
                 txt += row.text + ": " +  str(row.value) + "<br/>"
         self.jinja['summary'] = txt
 
-        print('Creating volcano plots')
+        """
+        As of version 0.13, we will use Javascript directly. 
+
         # this can be pretty slow. so keep only 1000 most relevant
         # values and 1000 random ones to get an idea of the distribution
         v = VolcanoANOVA(self.report.df, settings=self.settings)
-        v.selector(v.df, 1500, 1500, inplace=True)
+        #v.selector(v.df, 1500, 1500, inplace=True)
         v.volcano_plot_all()
-        v.savefig_and_js("volcano_all_js")
+        v.savefig("volcano_all_js")
 
-        self.jinja['volcano'] = """
+        self.jinja['volcano'] = '''
             <h3></h3>
             <a href="volcano_all_js.html">
                 <img alt="volcano plot for all associations"
@@ -840,15 +843,14 @@ class HTMLPageMain(ReportMAIN):
             <p> A javascript version is available
                 <a href="volcano_all_js.html">here</a> (
                 or click on the image).</p>
+        '''
         """
+        v = VolcanoANOVAJS(self.report.df, settings=self.settings)
+        self.jinja['volcano_jsdata'] = v.render_all()
 
         # MANOVA link
         N = len(self.report.get_significant_set())
-        self.jinja['manova'] = """
-        There were %(N)s significant associations found.
-        All significant associations have been gatherered
-        in the following link: <br/><a href="manova.html">manova results</a>.
-        """ % {'N': N}
+        self.jinja['manova'] = str(N)
 
         # feature summary
         df_features = self.report.feature_summary("feature_summary.png")
@@ -870,7 +872,7 @@ class HTMLPageMain(ReportMAIN):
         df_drugs = self.report.drug_summary(filename="drug_summary.png")
         get_name = self.report.drug_decode.get_name
         if len(self.report.drug_decode.df) > 0:
-            df_drugs.index = [x + "-" + get_name(x) for x in df_drugs.index]
+            df_drugs.index = ["{}-{}".format(x, get_name(x)) for x in df_drugs.index]
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
 
@@ -900,7 +902,7 @@ class HTMLPageMain(ReportMAIN):
 
         # add another set of drug_id but sorted in alpha numerical order
         table = HTMLTable(df, 'drugs')
-        table.add_href('DRUG_ID')
+        table.add_href('DRUG_ID', url="associations/drug_", suffix=".html")
         table.df.columns = [x.replace('ANOVA_FEATURE_FDR',
             'mean FEATURE ANOVA FDR') for x in table.df.columns]
         table.add_bgcolor('hits', mode='max',
@@ -928,7 +930,7 @@ class HTMLPageMain(ReportMAIN):
 
         table = HTMLTable(df, 'features')
         table.sort('hits', ascending=False)
-        table.add_href('FEATURE')
+        table.add_href('FEATURE', url="associations/", suffix=".html")
         table.add_bgcolor('hits', mode='max',
                 cmap=cmap_builder('white', 'orange', 'red'))
         self.jinja['feature_table'] = table.to_html(escape=False,

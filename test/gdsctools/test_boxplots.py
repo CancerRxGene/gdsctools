@@ -5,7 +5,7 @@ from gdsctools.boxplots import BoxPlots
 
 def test_get_boxplot_data():
     an = ANOVA(ic50_test)
-    odof = an._get_one_drug_one_feature_data('Drug_1047_IC50','TP53_mut')
+    odof = an._get_one_drug_one_feature_data(1047,'TP53_mut')
 
     bb = BoxPlots(odof)
 

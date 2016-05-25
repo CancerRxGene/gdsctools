@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 
-    Go back to <a href="index.html">main page</a>.<br/>
+    Go back to <a href="../index.html">main page</a>.<br/>
 
     <h2> <a class="toc-backref" href="#id3">Contents</a></h2>
     <div class="contents local topic" id="contents">
@@ -20,6 +20,21 @@
     <div class="section" id="Boxplots">
     <h2> 2 -  <a class="toc-backref" href="#id2">Boxplots</a></h2>
         {{ boxplots }}
+
+       <div class="wrap">
+         <div class="content">
+            <center>
+           <canvas id='canvasBoxplotAssociation' width='640' height='540'></canvas>
+           <canvas id='canvasBoxplotMSI' width='640' height='540'></canvas>
+           <canvas id='canvasBoxplotTissue' width='640' height='800'></canvas>
+           </center>
+         </div>
+         <div class="clear">&nbsp;</div>
+      </div>
     </div>
+
+
+
+
 
 {% endblock %}

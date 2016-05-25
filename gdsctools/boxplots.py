@@ -21,15 +21,16 @@ import pandas as pd
 import scipy
 import pylab
 
-from easydev import Logging
-
 from gdsctools import boxswarm
 
+import jinja2
+from jinja2 import Environment, PackageLoader
+from easydev import get_package_location
 
-__all__ = ['BoxPlots']
+__all__ = ['BoxPlots', 'BoxPlotsJS']
 
 
-class BoxPlots(Logging):
+class BoxPlots(object):
     """Box plot for a given association of drug versus genomic feature
 
 
@@ -43,10 +44,9 @@ class BoxPlots(Logging):
         gdsc = ANOVA(ic50_test)
 
         # Perform the entire analysis
-        odof = gdsc._get_one_drug_one_feature_data('Drug_1047_IC50', 
-            'TP53_mut')
+        odof = gdsc._get_one_drug_one_feature_data(1047, 'TP53_mut')
 
-        # Plot volcano plot of pvalues versus signed effect size 
+        # Plot volcano plot of pvalues versus signed effect size
         bx = BoxPlots(odof)
         bx.boxplot_association()
 
@@ -55,15 +55,15 @@ class BoxPlots(Logging):
     additional plots can  be created using :meth:`boxplot_pancan`.
 
 
-    Note that :attr:`odof` in the example above is a dictionary 
+    Note that :attr:`odof` in the example above is a dictionary
     with the following keys:
 
     - drug_name
     - feature_name
-    - masked_tissue: a dataframe with cosmic ids as index and 1 column of 
+    - masked_tissue: a dataframe with cosmic ids as index and 1 column of
       tissues names.
-    - Y: list with the IC50s 
-    - masked_features: a dataframe with cosmic ids as index and 1 column of 
+    - Y: list with the IC50s
+    - masked_features: a dataframe with cosmic ids as index and 1 column of
       masked feature  (1/0)
     - masked_msi: same as masked_features
     - negatives: subset of the IC50s corresponding to positive feature
@@ -72,18 +72,16 @@ class BoxPlots(Logging):
     .. seealso:: :class:`gdsctools.boxswarm.BoxSwarm`
 
     """
-    def __init__(self, odof, fontsize=20, savefig=False, directory='.',
-            verbose='INFO'):
+    def __init__(self, odof, fontsize=20, savefig=False, directory='.'):
         """.. rubric:: Constructor
 
         """
-        super(BoxPlots, self).__init__(level=verbose)
         #: dictionary as returned by ANOVA._get_one_drug_one_feature_data
         self.odof = odof
 
         #: fontsize for the plots
         self.fontsize = fontsize
-        
+
         #: boolean to save figure
         self.savefig = savefig
 
@@ -93,6 +91,10 @@ class BoxPlots(Logging):
         #: linewidth used in the plots
         self.lw = 3
 
+        self.drug = self.odof.drug_name
+        self.feature = self.odof.feature_name.replace("_", " ")
+
+
     def boxplot_pancan(self, mode, fignum=1, title_prefix=''):
         """Create boxplot related to the MSI factor or Tissue factor
 
@@ -100,11 +102,10 @@ class BoxPlots(Logging):
 
         """
         assert mode in ['tissue', 'msi']
-        drug_name = self.odof.drug_name.replace("_", " ")
 
         results = self._get_boxplot_data(mode)
         if results is None:
-            self.logging.info("INFO: no tissue with at least 2 pos and 2 neg found. " + "No image created.")
+            print("WARNING: No tissue with at least 2 pos and 2 neg found (no image created).")
             return
 
         fig = pylab.figure(fignum)
@@ -113,14 +114,16 @@ class BoxPlots(Logging):
         pylab.clf()  # or close ?
         data, names, significance = results
         N = len(names)
-        if N<=2: # msi or 2 tissues
-            fontsize = self.fontsize 
-        else:
+        if N <= 2: # msi or 2 tissues
+            fontsize = self.fontsize
+        elif N<=14:
             fontsize = max(4, int(self.fontsize - (N-2.)/(self.fontsize-4.)))
+        else:
+            fontsize = max(4, int(self.fontsize/1.4))
 
         bb = boxswarm.BoxSwarm(data, names, fontsize=fontsize)
 
-        bb.xlabel = r'%s log(IC50)' % drug_name
+        bb.xlabel = r'%s log(IC50)' % self.drug
         if mode == 'tissue':
             bb.title = 'FEATURE/Cancer-type interactions'
         else:
@@ -133,7 +136,7 @@ class BoxPlots(Logging):
         self.ax = ax.twinx()
         self.ax.set_ylim(common_ylim)
         self.ax.set_yticks(common_ticks)
-        self.ax.set_yticklabels([str(len(this))+" " for this in data], 
+        self.ax.set_yticklabels([str(len(this))+" " for this in data],
                 fontsize=fontsize/1.4)
         try:
             pylab.tight_layout()
@@ -142,9 +145,9 @@ class BoxPlots(Logging):
 
         if self.savefig is True:
             filename = self.directory + os.sep
-            filename += 'ODOF_{}_{}____{}'.format(mode,
-                    self.odof.drug_name, self.odof.feature_name)
-            fig.set_size_inches(12, 14)
+            filename += 'ODOF_{}_DRUG_{}____{}'.format(mode,
+                    self.drug, self.feature)
+            fig.set_size_inches(14, 16)
             pylab.savefig(filename + '.png', bbox_inches='tight')
             fig.set_size_inches(oldsize)
             fig.canvas.draw()
@@ -152,23 +155,20 @@ class BoxPlots(Logging):
 
     def boxplot_association(self, fignum=1):
         """Boxplot of the association (negative versus positive)
-        
-        :param fignum: number of the figure 
+
+        :param fignum: number of the figure
         """
         pylab.figure(fignum)
         pylab.clf()
-        # aliases
-        drug_name = self.odof.drug_name.replace("_", " ")
-        feature_name = self.odof.feature_name.replace("_", " ")
 
         # the plot itself
         boxswarm.boxswarm(
                 {'pos': self.odof.positives, 'neg': self.odof.negatives},
                 lw=self.lw, fontsize=self.fontsize)
 
-        pylab.title('Individual association\n {0} versus {1}'.format(drug_name,
-            feature_name), fontsize=self.fontsize)
-        pylab.ylabel("{0} logIC50".format(drug_name),
+        pylab.title('Individual association\n {0} versus {1}'.format(self.drug,
+            self.feature), fontsize=self.fontsize)
+        pylab.ylabel("{0} logIC50".format(self.drug),
                 fontsize=self.fontsize)
 
         try:pylab.tight_layout()
@@ -176,8 +176,8 @@ class BoxPlots(Logging):
 
         if self.savefig is True:
             filename = self.directory + os.sep
-            filename += 'ODOF_all_{}____{}'.format(self.odof.drug_name,
-                    self.odof.feature_name)
+            filename += 'ODOF_all_DRUG_{}____{}'.format(self.drug,
+                    self.feature)
             pylab.savefig(filename + '.png', bbox_inches='tight')
 
     def _get_boxplot_data(self, mode='tissue'):
@@ -187,6 +187,7 @@ class BoxPlots(Logging):
         assert mode in ['tissue', 'msi']
 
         # Let us use Pandas, this will be easier
+
         df = pd.DataFrame(
             {'tissue': self.odof.masked_tissue.values,
              'ic50': self.odof.Y,
@@ -207,14 +208,14 @@ class BoxPlots(Logging):
         # if positive or negative for a combo, is not>=2, drop it
         # pandas 0.16.2
         cc = (counts >= 2).all()
-        # create a groups structure 
+        # create a groups structure
         categories = list(cc.unstack().columns[cc])
         """
         # Seems to be fixed (May 2016)
         try:
             # pandas 0.16.2
             cc = (counts >= 2).all()
-            # create a groups structure 
+            # create a groups structure
             categories = list(cc.unstack().columns[cc])
         except:
             # pandas 0.13 for the doc only
@@ -271,3 +272,93 @@ class BoxPlots(Logging):
             return (data, names, significance)
         else:
             return None
+
+
+class BoxPlotsJS(BoxPlots):
+    def __init__(self, odof, fontsize=20, savefig=False, directory='.'):
+        super(BoxPlotsJS, self).__init__(odof, fontsize=fontsize,
+                savefig=savefig, directory=directory)
+
+    def get_html_association(self):
+        env = Environment()
+        env.loader = jinja2.FileSystemLoader(
+                       get_package_location("gdsctools")
+                       + "/gdsctools/data/templates/")
+        template = env.get_template("boxplot_association.html")
+
+        jinja = {}
+        N = len(self.odof.negatives) + len(self.odof.positives)
+        jinja["title"] = "Individual Association"
+        jinja["subtitle"] = "%s versus %s" % (self.drug, self.feature)
+        jinja['factor'] = ["neg"] * len(self.odof.negatives) + ["pos"] * len(self.odof.positives)
+        jinja["data"] = self.odof.negatives.tolist() + self.odof.positives.tolist()
+        jinja["smps"] = [str(this) for this in self.odof.indices]
+        jinja["subject"] = [str(this) for this in self.odof.indices]
+
+        jinja['ylabel'] = '"logIC50"'
+
+        html = template.render(jinja)
+        return html
+
+    def get_html_msi(self):
+        env = Environment()
+        env.loader = jinja2.FileSystemLoader(
+                       get_package_location("gdsctools")
+                       + "/gdsctools/data/templates/")
+        template = env.get_template("boxplot_msi.html")
+
+        data = self._get_boxplot_data("msi")
+        # Show from bottom to top
+        labels = data[1][::-1]
+        data = data[0][::-1]
+
+        jinja = {}
+        N = len(self.odof.negatives) + len(self.odof.positives)
+        jinja["title"] = "FEATURE/MS-instability interactions"
+        jinja["subtitle"] = "%s versus %s" % (self.drug, self.feature)
+        factor = []
+        for i, thisdata in enumerate(data):
+            factor.extend( [labels[i]] * len(thisdata))
+        jinja['sign'] = [x.split()[1] for  x in factor]
+        jinja['status'] = [x.split()[0] for  x in factor]
+        jinja["data"] = list(pylab.flatten([list(this) for this in data]))
+        jinja['xlabel'] = '"logIC50"'
+
+        html = template.render(jinja)
+        return html
+
+    def get_html_tissue(self):
+        env = Environment()
+        env.loader = jinja2.FileSystemLoader(
+                       get_package_location("gdsctools")
+                       + "/gdsctools/data/templates/")
+        template = env.get_template("boxplot_tissue.html")
+
+        data = self._get_boxplot_data("tissue")
+        if data is None:
+            return ""
+        # Show from bottom to top
+        labels = data[1][::-1]
+        data = data[0][::-1]
+
+        jinja = {}
+        N = len(self.odof.negatives) + len(self.odof.positives)
+        jinja["title"] = "FEATURE/MS-instability interactions"
+        jinja["subtitle"] = "%s versus %s" % (self.drug, self.feature)
+        factor = []
+        for i, thisdata in enumerate(data):
+            factor.extend( [labels[i]] * len(thisdata))
+        jinja['sign'] = [x.split()[1] for  x in factor]
+        jinja['status'] = [x.split()[0] for  x in factor]
+        jinja["data"] = list(pylab.flatten([list(this) for this in data]))
+        jinja['xlabel'] = '"logIC50"'
+
+        if len(labels)/2 >= 10:
+            jinja["minTextSize"] = 10
+
+        html = template.render(jinja)
+        return html
+
+    
+
+

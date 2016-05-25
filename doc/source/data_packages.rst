@@ -3,6 +3,9 @@
 Data Packages
 =================
 
+.. warning:: Only one IC50 files should be provided. It is be cut 
+    according to the GF file.
+
 Definition
 --------------
 
@@ -105,7 +108,7 @@ The GDSC class will then loop over the TCGA cases and create data packages.
 
     from gdsctools import GDSC
     gg = GDSC("IC50.csv", "DrugDecode.csv", "GF_*.csv")
-    gg.run()
+    gg.anaalyse()
 
 
 This may take hours to finalise: the ANOVA and creation of all images will be
@@ -115,14 +118,19 @@ This may be parallelised since each input Genomic Feature analysis is
 independent::
 
     gg_blca = GDSC("IC50.csv", "DrugDecode.csv", "GF_BLCA.csv")
-    gg_blca.run()
+    gg_blca.analyse()
 
     gg_coread = GDSC("IC50.csv", "DrugDecode.csv", "GF_COREAD.csv")
-    gg_coread.run()
+    gg_coread.analyse()
 
 
-Once donem you should have all data packages locally in the directoty where you
-run the scripts
+In an error occurs for one Genomic Feature file, the analysis we jump to the
+next file. You may need to check re-run the specific TCGA tissue analysis your
+self when an error occured (meaning you do not need to re-run everything).
+
+
+Once done, you should have all data packages locally in the directory where you
+ran the scripts.
 
 
 The next step is to read back all those results and create data pacakges
@@ -143,16 +151,24 @@ For now, it is important to run this in the same directory where previous
 pacakges were created.
 
 
-Again this may be parallelised::
+Again thiis may be parallelised::
 
-    for each company in gg.compamies:
+    for each company in gg.companies:
         single = GDSC("IC50.csv", "DrugDecode.csv", "GF_*.csv")
         single.create_data_packages_for_companies([company])
 
 
+Create summary pages
+-----------------------
+
+Following the creating of the "all" TCGA packages and the dedicated packages for
+all companies, you end up with quite a few directories. This command will create
+summary HTML page to ease your life::
+
+    gg.create_summary_pages()
 
 
-
+This must be called after :meth:`analyse` and :meth:`create_data_packages_for_companies`.
 
 
 

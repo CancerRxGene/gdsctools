@@ -17,17 +17,14 @@
 """Code related to the ANOVA analysis to find associations between drug IC50s
 and genomic features"""
 import pandas as pd
-import scipy
-import pylab
-import numpy as np
 
-from easydev import Progress, AttrDict
-
+from easydev import Progress
 
 from gdsctools.stats import MultipleTesting
 from gdsctools import readers
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
+from gdsctools.errors import GDSCToolsDuplicatedDrugError
 
 __all__ = ['BaseModels']
 
@@ -38,7 +35,7 @@ class BaseModels(object):
 
     """
     def __init__(self, ic50, genomic_features=None,
-            drug_decode=None, verbose=True, low_memory=True,
+            drug_decode=None, verbose=True, 
             set_media_factor=False):
         """.. rubric:: Constructor
 
@@ -59,16 +56,17 @@ class BaseModels(object):
         self._init_called = False
 
         # We first need to read the IC50 using a dedicated reader
-        self.ic50 = readers.IC50(ic50)
+        try:
+            # Simple one without duplicated
+            self.ic50 = readers.IC50(ic50)
+        except GDSCToolsDuplicatedDrugError:  
+            print("duplicated error")
+            try:
+                from gdsctools.gdsc import IC50Cluster
+                self.ic50 = IC50Cluster(ic50)
+            except Exception as err:
+                raise(err)
 
-        # Create a dictionary version of the data
-        # to be accessed per drug where NA have already been
-        # removed. Each drug is a dictionary with 2 keys:
-        # Y for the data and indices for the cosmicID where
-        # there is an IC50 measured.
-        ic50_parse = self.ic50.df.copy().unstack().dropna()
-        self.ic50_dict = dict([(d, {'indices': ic50_parse.ix[d].index,
-            'Y':ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
 
         # Reads features if provided, otherwise use a default data set
         if genomic_features is None:
@@ -82,7 +80,6 @@ class BaseModels(object):
             if self.verbose:
                 print('Populating MEDIA Factor in the Genomic Feature matrix')
             self.features.fill_media_factor()
-
 
         #: a CSV with 3 columns used in the report
         self.read_drug_decode(drug_decode)
@@ -99,10 +96,10 @@ class BaseModels(object):
         unknowns = set(self.ic50.cosmicIds).difference(
                 set(self.features.cosmicIds))
 
-        if len(unknowns) > 0:
+        if len(unknowns) > 0 and self.verbose:
             print("WARNING: " +
                 "%s cosmic identifiers in your IC50 " % len(unknowns) +
-                "could not be found in the genomic feature matrix. "+
+                "could not be found in the genomic feature matrix. " +
                 "They will be dropped. Consider using a user-defined " +
                 "genomic features matrix")
 
@@ -112,7 +109,6 @@ class BaseModels(object):
 
         #: an instance of :class:`~gdsctools.settings.ANOVASettings`
         self.settings = ANOVASettings()
-        self.settings.low_memory = low_memory
 
         # alias to all column names to store results
         # cast to list (Python3).
@@ -212,10 +208,20 @@ class BaseModels(object):
         # Some preprocessing to speed up data access
         ic50_parse = self.ic50.df.copy().unstack().dropna()
         # for each drug, we store the IC50s (Y) and corresponding indices
-        # of cosmic identifiers
+        # of cosmic identifiers + since v0.13 the real indices
+        # Create a dictionary version of the data
+        # to be accessed per drug where NA have already been
+        # removed. Each drug is a dictionary with 2 keys:
+        # Y for the data and indices for the cosmicID where
+        # there is an IC50 measured.
         self.ic50_dict = dict([
             (d, {'indices': ic50_parse.ix[d].index,
              'Y': ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
+        cosmicIds = list(self.ic50.df.index)
+        for key in self.ic50_dict.keys():
+            indices = [cosmicIds.index(this) for this in
+                self.ic50_dict[key]['indices']]
+            self.ic50_dict[key]['real_indices'] = indices
 
         # save the tissues
         self._autoset_tissue_factor()
@@ -227,20 +233,12 @@ class BaseModels(object):
         self._autoset_media_factor()
 
         # dictionaries to speed up code.
-        self.features_dict = {}
         self.msi_dict = {}
         self.tissue_dict = {}
         self.media_dict = {}
         # fill the dictionaries for each drug once for all
         for drug_name in self.ic50.drugIds:
             indices = self.ic50_dict[drug_name]['indices']
-            # if we were to store all drugs /features, this takes
-            # 1Gb of memory for 265 drugs and 680 features. This is
-            # therefore not scalable, especially for multiprocessing.
-            if self.settings.low_memory is True:
-                pass
-            else:
-                self.features_dict[drug_name] = self.features.df.ix[indices]
 
             # MSI, media and tissue are not large data files and can be store
             if self.features.found_msi:
@@ -277,6 +275,7 @@ class BaseModels(object):
         # drop first feature in the tissues that seems to be used as a
         # reference in the regression
         tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
+
         self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
 
         if self.settings.include_media_factor:

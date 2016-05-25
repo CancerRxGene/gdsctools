@@ -22,20 +22,22 @@ This :attr:`settings` attribute is an instance of :class:`gdsctools.settings.ANO
 
 In previous sections, we have already seen a few of the settings. For example in the :ref:`HTML` section, we changed the default **directory** where HTML pages are saved to a user-defined value. 
 
-It is also important to note that when calling AnovaReport, the first argument
-is an ANOVA instance that contains the settings. So, AnovaReport will use that
+It is also important to note that when calling ANOVAReport, the first argument
+is an ANOVA instance that contains the settings. So, ANOVAReport will use that
 settings automatically (may still be changed later). Consider this example::
 
-    >>> from gdsctools import ANOVA, ic50_test, AnovaReport
+    >>> from gdsctools import ANOVA, ic50_test, ANOVAReport
     >>> gdsc = ANOVA(ic50_test)
     >>> gdsc.settings.FDR_threshold = 15
     >>> results = gdsc.anova_all()
 
-    >>> ar = AnovaReport(gdsc, results)
+    >>> ar = ANOVAReport(gdsc, results)
     >>> ar.settings.FDR_threshold 
     15
 
 Let us now introduce some of the most important settings.
+
+.. _regression:
 
 Regression analysis
 -----------------------
@@ -61,15 +63,19 @@ Here, we will use R syntax for simplicity. Depending on the data and the
 
 
 The default regression method is the :term:`OLS` method. It is also the
-recommended method. However, you can use Elastic Net, Ridge or Lasso::
+recommended method::
 
     settings.regression.method = 'OLS'
+
+Future version will include other regression methods such as  Elastic Net, Ridge or Lasso::
+
     settings.regression.method = 'ElasticNet'
     settings.regression.method = 'Ridge'
     settings.regression.method = 'Lasso'
 
-.. note:: Here the ElasticNet regression like the OLS one is made 
-    for one drug and one feature (ODOF)
+.. note:: Here the ElasticNet/Ridge/Lasso regression like the OLS one is made 
+    for one drug and one feature (ODOF). The module :mod:`gdsctools.elastic_net` 
+    uses a different set of input data using all features for one drug.
 
 If you use anything else than OLS, you should then consider settings 1 or 2
 additional settings::
@@ -159,7 +165,7 @@ the number of IC50s corresponding to positive and negative feature is or equal
 to **feature_factor_threshold**.
 
 
-Mutiple testing corrections
+Multiple testing corrections
 ------------------------------
 
 By default, the multiple testing correction  is based on 
@@ -176,6 +182,23 @@ lines.This parameter is stored in ::
 
 By default it is set to *global*. Set it to *local* to keep the multiple
 correction at the drug level (ODAF).    
+
+When you perform an ANOVA analysis, the multiple correction method is used to 
+populate the results column named ANOVA_FEATURE_FDR. 
+
+If you change your mind and wish to run the analysis with another method, 
+you do not need to re-run the entire analysis. Instead, simply change the
+method's name and call :meth:`anova_all` again. Only the multiple testing computation is
+performed, skipping ANOVA testing, which have already been done.
+
+::
+
+    results = an.anova_all()
+    an.settings.pvalue_correction_method = 'qvalue'
+    results = an.anova_all()
+
+
+
 
 .. index:: volcano
 

@@ -37,14 +37,24 @@
     <div class="section" id="Volcano_plot">
     <h2> 2 -  <a class="toc-backref" href="#id2">Volcano Plot</a></h2>
     
-    {{ volcano }}
 
+      <div class="wrap">
+         <div class="content">
+              <center>
+                  <canvas id='canvasVolcano' width='640' height='540'></canvas>
+             </center>
+         </div>
+         <div class="clear">&nbsp;</div>
+      </div>
     </div>
-
 
     <div class="section" id="Explore_all_significant_results">
     <h2> 3 -  <a class="toc-backref" href="#id3">Explore all significant results</a></h2>
-    {{ manova }}
+
+    <p>There were {{ manova }} significant associations found.
+     All significant associations have been gathered
+     the following link: </p><p><a
+         href="./associations/manova.html">MANOVA results</a></p>
     </div>
 
 
@@ -78,7 +88,7 @@
     </div>
 
 
-    <div class="section" id="Feature_wise_associations_">
+    <div class="section" id="Feature_wise_associations">
     <h2> 7 - <a class="toc-backref" href="#id6"> Feature wise associations</a></h2>
     <p> The following table provides links to dedicated pages for
                each feature that has been tested. Some features may be missing
@@ -117,7 +127,7 @@
     <p>The settings are in the <a href="INPUT">INPUT</a> directory and here below:</p>
     {{ settings_table }}
     <br>
-    The input files are in the <a href="INPUT">INPUT</a> directoty and here below:<br>
+    The input files are in the <a href="INPUT">INPUT</a> directory and here below:<br>
 
     <ul>
         <li> Get <a href="{{ ic50_file }}">IC50</a> file. </li>

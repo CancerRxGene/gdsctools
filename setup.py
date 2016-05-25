@@ -7,8 +7,8 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 11
-_MICRO               = 3
+_MINOR               = 12
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -52,9 +52,9 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev']
 else:
-    install_requires = ['numpy', 'matplotlib>=1.4.3',
-        'pandas>=0.16.2', 'easydev>=0.9.5', 'scipy', "colormap>=0.9.7",
-        'mpld3', 'jinja2', 'statsmodels', "scikit-learn", "reports>=0.1.8"],
+    install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
+        'pandas>=0.16.2', 'easydev>=0.9.18', 'scipy', "colormap>=0.9.7",
+        'jinja2', 'statsmodels', "scikit-learn", "reports>=0.1.8"],
 
 
 packages = find_packages()

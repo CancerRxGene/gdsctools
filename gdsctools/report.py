@@ -17,6 +17,8 @@
 """Base classes to create HTML reports easily"""
 import os
 import shutil
+import glob
+sepjoin = os.sep.join
 
 from gdsctools import gdsctools_data
 
@@ -67,8 +69,8 @@ class ReportMAIN(Report):
     """
 
     def __init__(self, filename='index.html', directory='report',
-                 overwrite=True, verbose=True,
-                template_filename='index.html', mode=None):
+                 overwrite=True, verbose=True, template_filename='index.html', 
+                 mode=None, init_report=True):
         """.. rubric:: Constructor
 
         :param filename: default to **index.html**
@@ -83,73 +85,38 @@ class ReportMAIN(Report):
             directories are created: js, css, images, code
 
         """
-        #: name of the analysis added in the title
-        self.analysis = 'anova'
-        self.pkgname = 'gdsctools'
+        gdsctools_path = easydev.get_package_location('gdsctools')
+        extra_css_path = sepjoin([gdsctools_path, "gdsctools", "data", "css"])
+        extra_js_path = sepjoin([gdsctools_path, "gdsctools", "data", "javascript"])
 
+        extra_css_list = glob.glob(extra_css_path + os.sep + "*css")
+        extra_js_list = glob.glob(extra_js_path + os.sep + "*js")
+
+        searchpath = sepjoin([gdsctools_path, "gdsctools", "data", "templates"])
+
+        super(ReportMAIN, self).__init__(searchpath, filename=filename,
+            template_filename=template_filename, directory=directory,
+            extra_css_list=extra_css_list,
+            extra_js_list=extra_js_list, init_report=init_report)
+
+        self.jinja['dependencies'] = self.get_table_dependencies("gdsctools").to_html()
+        self.jinja['analysis'] = 'anova'
         from gdsctools import version
-        #: version added in the sub title
-        self.version = version
+        self.jinja['version'] = version
+        self.jinja['title'] = 'ANOVA analysis summary'
+        self.jinja["analysis_domain"] = "PANCAN"
+        self.jinja['resource_path'] = "."
 
         self._directory = directory
         self._filename = filename
-
-        # This contains the sections and their names when
-        # method add_section is used
-        self.sections = []
-        self.section_names = []
-
-        #: flag to add dependencies
-        self.add_dependencies = False
-
-        self.title = 'ANOVA analysis summary'
-        self.analysis_type = "PANCAN"
-
-        # For jinja2 inheritance, we need to use the environment
-        # to indicate where are the parents' templates
-        template_directory = gdsctools_data('templates')
-
-        self.env = Environment()
-        self.env.loader = FileSystemLoader(template_directory)
-
-        # use template provided inside gdsctools
-        self.template = self.env.get_template(template_filename)
-
-        self.jinja = {
-                'time_now': self.get_time_now(),
-                "analysis": self.analysis,
-                "version": self.version,
-                "title": self.title,
-                "analysis_domain": self.analysis_type,
-                'dependencies': self.get_table_dependencies().to_html(),
-                }
 
         if mode is None:
             self._to_create = ['OUTPUT', 'INPUT', 'images', 'css',
-                    'js', 'code']
+                    'js', 'code', 'associations']
         elif mode == 'summary':
             self._to_create = ['images', 'css', 'js',]
-
-        self._init_report()
-
-    def _get_filename(self):
-        return self._filename
-    def _set_filename(self, filename):
-        self._filename = filename
-    filename = property(_get_filename, _set_filename,
-        doc="The filename of the HTML document")
-
-    def _get_directory(self):
-        return self._directory
-    def _set_directory(self, directory):
-        self._directory = directory
-    directory = property(_get_directory, _set_directory,
-            doc="The directory where to save the HTML document")
-
-    def _get_abspath(self):
-        return self.directory + os.sep + self.filename
-    abspath = property(_get_abspath,
-            doc="The absolute path of the document (read only)")
+        if init_report:
+            self._init_report()
 
     def show(self):
         """Opens a tab in a browser to see the document"""
@@ -157,97 +124,22 @@ class ReportMAIN(Report):
         bs(self.abspath)
 
     def _init_report(self):
-        """create the report directory and return the directory name"""
-        self.sections = []
-        self.section_names = []
-        # if the directory already exists, print a warning
+        super(ReportMAIN, self)._init_report()
 
-        try:
-            if os.path.isdir(self.directory) is False:
-                print("Created directory {}".format(self.directory))
-                os.mkdir(self.directory)
-
-            # list of directories created in the constructor
-            for this in self._to_create:
-                try:
-                    os.mkdir(self.directory + os.sep + this)
-                except:
-                    pass # already created ?
-        except Exception:
-            pass
-        finally:
-            for filename in ['gdsc.css', 'github-gist.css']:
-                target = os.sep.join([self.directory, 'css', filename ])
-                if os.path.isfile(target) is False:
-                    filename = gdsctools_data(filename)
-                    shutil.copy(filename, target)
-
-            for filename in ['sorttable.js', 'highlight.pack.js']:
-                target = os.sep.join([self.directory, 'js', filename ])
-                if os.path.isfile(target) is False:
-                    filename = gdsctools_data(filename)
-                    shutil.copy(filename, target)
-
-            for filename in ['EBI_logo.png', 'sanger-logo.png']:
-                target = os.sep.join([self.directory, 'images', filename ])
-                if os.path.isfile(target) is False:
-                    filename = gdsctools_data("images" + os.sep + filename)
-                    shutil.copy(filename, target)
-
-
-    def to_html(self):
-        self.jinja['time_now'] = self.get_time_now()
-        return self.template.render(self.jinja)
-
-    def write(self):
-        with open(self.abspath, "w") as fh:
-            data = self.to_html()
-            fh.write(data)
-
-    def onweb(self):
-        """Open the HTML document in a browser"""
-        from easydev import onweb
-        onweb(self.abspath)
+        for filename in ['EBI_logo.png', 'sanger-logo.png']:
+            target = os.sep.join([self.directory, 'images', filename ])
+            if os.path.isfile(target) is False:
+                filename = gdsctools_data("images" + os.sep + filename)
+                shutil.copy(filename, target)
 
     def create_report(self, onweb=True):
         try:
-            # some parent zill have that method implemented
+            # some parent will have that method implemented
             self._create_report()
-        except:
+        except Exception as err:
+            print(err)
             pass
         self.write()
         if onweb is True:
             self.onweb()
 
-    def get_time_now(self):
-        """Returns a time stamp"""
-        import datetime
-        import getpass
-        username = getpass.getuser()
-        # this is not working on some systems: os.environ["USERNAME"]
-        timenow = str(datetime.datetime.now())
-        timenow = timenow.split('.')[0]
-        msg = '<div class="date">Created on ' + timenow
-        msg += " by " + username +'</div>'
-        return msg
-
-    def get_table_dependencies(self):
-        """Returns dependencies of the pipeline as an HTML/XML table
-
-        The dependencies are the python dependencies as returned by
-        pkg_resource module.
-
-        """
-        dependencies = easydev.get_dependencies(self.pkgname)
-        # TODO: Could re-use new method in HTMLTable for adding href
-        # but needs some extra work in the add_href method.
-        names = [x.project_name for x in dependencies]
-        versions = [x.version for x in dependencies]
-        links = ["""https://pypi.python.org/pypi/%s""" % p for p in names]
-        df = pd.DataFrame({
-            'package': ["""<a href="%s">%s</a>""" % (links[i], p)
-                for i, p in enumerate(names)],
-            'version': versions})
-        table = HTMLTable(df, name="dependencies", escape=False)
-        table.sort('package')
-        return table

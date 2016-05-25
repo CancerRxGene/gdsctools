@@ -15,6 +15,7 @@ def test_qvalue():
     # Note that here we enforce the pi0 value to be the same as in R
     # If not, this particular fails because pi0 is negative...
     # qvalue not very robust.
+    qv = qvalue.QValue(list(pvalues), pi0=0.1109898)
     qv = qvalue.QValue(pvalues, pi0=0.1109898)
 
     assert_list_almost_equal(qv.qvalue(),
@@ -24,9 +25,23 @@ def test_qvalue():
                 7.89483504e-09,   8.88043662e-10,  1.33187760e-10]))
 
 
-
     try:
         qv = qvalue.QValue(pvalues)
+        assert False
+    except:
+        assert True
+    try:
+        qv = qvalue.QValue(pvalues, pi0=0.1109898, lambdas=[0,.5,0.7])
+        assert False
+    except:
+        assert True
+    try:
+        qv = qvalue.QValue(pvalues, pi0=0.1109898, lambdas=[0,.5,0.7,.9,500])
+        assert False
+    except:
+        assert True
+    try:
+        qv = qvalue.QValue(pvalues, pi0=0.1109898, lambdas=[-10,.5,0.7,.9])
         assert False
     except:
         assert True

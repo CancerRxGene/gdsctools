@@ -10,7 +10,7 @@ def test_anova_one_drug_one_feature():
     an = ANOVA(ic50_test)
 
     # test 1 drug
-    drug_id = 'Drug_999_IC50'
+    drug_id = 999
     df = an.anova_one_drug_one_feature(
         drug_id=drug_id,
         feature_name='ABCB1_mut', show=True)
@@ -41,12 +41,12 @@ def test_anova_one_drug_one_feature():
 def test_anova_one_drug():
     # test entire drug across all fearures
     an = ANOVA(ic50_test)
-    df = an.anova_one_drug('Drug_999_IC50')
+    df = an.anova_one_drug(999)
 
 
 def test_anova_all():
     an = ANOVA(ic50_test)
-    # slow, let us cut the features to keep only tenish
+    # slow, let us cut the features to keep only ten-ish values 
     # this is a trick but would be nice to have this in the API
     features = an.features.df
     features = features[features.columns[0:12]]
@@ -65,21 +65,18 @@ def test_anova_all():
 def test_odof_with_without_media():
 
     gdsc = ANOVA(ic50_test)
-    _res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+    _res = gdsc.anova_one_drug_one_feature(1047, 'TP53_mut')
     dd1 = gdsc._get_anova_summary(gdsc.data_lm, output='dict')
     assert_list_almost_equal([dd1['feature'], dd1['msi'], dd1['tissue']], 
         [1.5750735472022118e-58,  0.025902887791637515, 
-            5.541879283763767e-44])
+            5.541879283763767e-44], 7)
 
     gdsc = ANOVA(ic50_test, set_media_factor=True)
-    _res = gdsc.anova_one_drug_one_feature('Drug_1047_IC50', 'TP53_mut')
+    _res = gdsc.anova_one_drug_one_feature(1047, 'TP53_mut')
     dd2 = gdsc._get_anova_summary(gdsc.data_lm, output='dict')
     assert_list_almost_equal([dd2['feature'], dd2['media'], dd2['msi'],
     dd2['tissue']], [ 2.9236500715529455e-58, 0.7762487502315283,
          0.023777744527686766, 1.5729157319290974e-44])
-
-
-
 
 
 def test_odof():
@@ -91,12 +88,10 @@ def test_odof():
     #ANOVA_MSI_pval                  0.720394
 
 
-
-
 def test_anova_summary():
     an = ANOVA(ic50_test)
     # by default  regression includes + msi + feature
-    drug_id = 'Drug_999_IC50'
+    drug_id = 999
 
     df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
 
@@ -129,4 +124,13 @@ def test_set_cancer_type():
 
 
 
+def test_multicore():
 
+
+    an = ANOVA(ic50_test)
+    results = an.anova_all()
+
+    an2 = ANOVA(ic50_test)
+    results2 = an2.anova_all(multicore=2)
+
+    all(results.df.fillna(0) == results2.df.fillna(0))

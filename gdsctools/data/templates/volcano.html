@@ -1,0 +1,71 @@
+{% block content %}
+
+<script id="volcano">
+
+var loadVolcano = function() {
+    var cx = new CanvasXpress("canvasVolcano",
+    {
+    "z": {
+        //"FC" : ["3", "2","1", "0"], Somehow this does not work
+        // Many data points are not show when combined with sizeBy
+        // "sizeBy": "FC",
+        //   "sizes": [4, 10, 12, 18],
+        // "FC" : {{ FC }},
+        "Group" : {{ Group }}
+        },
+    "y" : {
+            "smps" : ["Signed Effect Size",  "-log10(pvalue)"],
+            "vars": {{ vars }},
+            "data": {{ data }}
+        },
+    "d": {
+            "line": [
+                {"color" : "black",  "width" : 2, "x": 0.5, "y": -3},
+                {"color" : "black",   "width" : 2, "x": -0.5},
+                {"color" : "grey", "width" : 1, "x": 0},
+                {"color" : "red", "width" : 1, "type": "dashed", "y": {{ fdr1 }} },
+                {"color" : "red", "width" : 2, "type": "dashed", "y": {{ fdr2 }} },
+                {"color" : "red", "width" : 3, "type": "dotted", "y": {{ fdr3 }} },
+                {"color" : "red", "width" : 4, "type": "dashed", "y": {{ fdr4 }} },
+                {"color" : "blue", "width" : 2, "type": "dashed", "y": 3},
+
+                ]
+            }
+        },
+
+          {"axisAlgorithm": "rPretty",
+           "backgroundType": "window",
+           "backgroundWindow": "rgb(220,220,220)",
+           "colorBy": "Group",
+           "colors": {{ colors }} ,
+           "graphType": "Scatter2D",
+           "legendBackgroundColor": "rgb(250,250,250)",
+           "legendBoxColor": "rgb(0,0,10)",
+           "legendInside": false,
+           "legendPosition": "Bottom",
+           "showDecorations": true,
+           //"decorationsBackgroundColor": "rgb(220,220,220)",
+           //"decorationsBoxColor": "rgb(0,0,0)",
+          // "decorationsPosition": "bottomRight",
+           //"sizeBy": "SignedEffect",
+           "sizes": [20, 20, 25, 30],
+           "title": {{ title }},
+           "xAxis": ["Signed Effect Size"],
+            "setMinX": {{ minX }},
+            "setMaxX": {{ maxX }},
+            "setMaxY": {{ maxY }},
+            "setMinY": 0,
+            "axisExtension": 0.,  // margin around min/max/x/y
+           "xAxisTickColor": "rgb(255,255,255)",
+           "yAxis": ["-log10(pvalue)"],
+           "yAxisTickColor": "rgb(255,255,255)",
+          }
+        );
+
+
+      }
+</script>
+
+
+
+{% endblock %}

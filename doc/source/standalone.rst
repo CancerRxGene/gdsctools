@@ -6,7 +6,7 @@ Standalone applications
 ==========================
 
 Although we would encourage you to use the Python shell to have as much
-flexibility as possible, we also provide a standalone application called **gdsctools_anova**. This standalone application should be installed with **GDSCTools** and covers lots of the functionalities available including the HTML reports 
+flexibility as possible, we also provide a standalone application called **gdsctools_anova**. This standalone application should be installed with **GDSCTools** automatically. It focuses on the ANOVA analysis only, and can be used to analysis one set of IC50 and genomic feature at a time. 
 
 
 You can obtain the help by typing::

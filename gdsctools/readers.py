@@ -26,10 +26,13 @@ Provides readers to read
 """
 import warnings
 
+from gdsctools.errors import GDSCToolsDuplicatedDrugError
+
 import pandas as pd
 import pylab
 import numpy as np
 import easydev
+
 
 
 __all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecode']
@@ -133,14 +136,14 @@ class Reader(object):
                         print("Your input file does not seem to be comma"
                             " separated. If tabulated, please rename with"
                             " .tsv or .txt extension")
-                        1/0 # raise exception to try the \t case
                 except:
                     rawdf = pd.read_csv(filename, sep=",", comment="#",
                             compression='gzip')
                 # Sometimes, a user will provide a CSV, which is actually
                 # tab-delimited. This is wrong and diffcult to catch.
-            except:
-                raise ValueError('Could not read %s' % filename)
+            except Exception as err:
+                print('Could not read %s' % filename)
+                raise(err)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
         elif ".tsv" in filename or '.txt' in filename: # txt not supported
             # officialy but txt file from previous run were interepreted as tsv
@@ -157,9 +160,12 @@ class Reader(object):
                 msg = 'Could not read %s' % filename
                 raise ValueError(msg)
             rawdf.rename(columns=lambda x: x.strip(), inplace=True)
+        elif ".RData" in filename:
+            return
         else:
             raise ValueError("Only file ending in .csv or .csv.gz or .tsv"+
                 " or .tsv.gz will be interpreted.")
+
 
         # let us drop columns that are unnamed and print information
         columns = [x for x in rawdf.columns if x.startswith('Unnamed')]
@@ -225,8 +231,7 @@ class Reader(object):
             columns = list(self.df.columns)
             for this in columns:
                 if columns.count(this) > 1:
-                    msg ='Found identical named columns (%s)' % this
-                    raise ValueError(msg)
+                    raise GDSCToolsDuplicatedDrugError(this)
 
     def __eq__(self, other):
         return all(self.df.fillna(0) == other.df.fillna(0))
@@ -273,9 +278,6 @@ class IC50(Reader, CosmicRows):
     If at least one column starts with "Drug_", all other columns will be
     ignored. This was implemented for back compatibility.
 
-    If no columns start with "Drug_", that prefix will be added to all column
-    names.
-
     The order of the columns is not important.
 
     Here is a simple example of a valid TSV file::
@@ -315,7 +317,7 @@ class IC50(Reader, CosmicRows):
 
     and set the drugs, which means other will be removed::
 
-        r.drugsIds = ['Drug_1_IC50', 'Drug_1000_IC50']
+        r.drugsIds = [1, 1000]
 
     .. versionchanged:: 0.9.10
         The column **COSMIC ID** should now be **COSMIC_ID**.
@@ -323,9 +325,8 @@ class IC50(Reader, CosmicRows):
 
     """
     cosmic_name = 'COSMIC_ID'
-    drug_prefix = 'Drug'
 
-    def __init__(self, filename, drug_prefix=''):
+    def __init__(self, filename, v18=False):
         """.. rubric:: Constructor
 
         :param filename: input filename of IC50s. May also be an instance
@@ -336,27 +337,27 @@ class IC50(Reader, CosmicRows):
         """
         super(IC50, self).__init__(filename)
         # interpret the raw data and check some of its contents
-        self._interpret()
-        self.check()
+        self._v18 = v18
+
+        if len(self.df) > 0:
+            self._interpret()
+            self.check()
 
     def _interpret(self):
         # if there is at least one column that starts with Drug or drug or
         # DRUG or variant then all other columns are dropped except "COSMIC ID"
-        if len(self.df) == 0:
-            return
 
-        columns = []
-        drug_prefix = ''
-        for col in self.df.columns:
-            if col.startswith(self.drug_prefix + "_"):
-                drug_prefix = self.drug_prefix
-        self.drug_prefix = drug_prefix
+        # For back compatibility with data that mixes Drug identifiers and
+        # genomic features:
+        _cols = [str(x) for x in self.df.columns]
+        drug_prefix = None
+        for this in _cols:
+            if this.startswith("Drug_"):
+                drug_prefix = "Drug" 
 
-        # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
-        _cols = list(self.df.columns)
-
+        _cols = [str(x) for x in self.df.columns]
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
-            warnings.warn("'COSMIC ID2' column name is deprecated since " +
+            warnings.warn("'COSMIC ID' column name is deprecated since " +
             "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
             self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID")
                     for x in self.df.columns]
@@ -368,21 +369,46 @@ class IC50(Reader, CosmicRows):
 
         # If the data has not been interpreted, COSMIC column should be
         # found in the column and set as the index
+        _cols = [str(x) for x in self.df.columns]
         if self.cosmic_name in self.df.columns:
             self.df.set_index(self.cosmic_name, inplace=True)
-            columns = [x for x in self.df.columns
-                    if x.startswith(self.drug_prefix)]
-            self.df = self.df[columns]
+            _cols = [str(x) for x in self.df.columns]
+            if drug_prefix:
+                columns = [x for x in _cols if x.startswith(drug_prefix)]
+                self.df = self.df[columns]
+
         # If already interpreted, COSMIC name should be the index already.
         elif self.df.index.name == self.cosmic_name:
-            columns = [x for x in self.df.columns
-                    if x.startswith(self.drug_prefix)]
-            columns = list(set(columns))
-            self.df = self.df[columns]
+            _cols = [str(x) for x in self.df.columns]
+            if drug_prefix:
+                columns = [x for x in _cols if x.startswith(drug_prefix)]
+                columns = self.df.columns
+                assert len(columns) == len(set(columns))
+                self.df = self.df[columns]
         # Otherwise, raise an error
         else:
             raise ValueError("{0} column could not be found in the header".format(
                 self.cosmic_name))
+
+        # In v18, the drug ids may be duplicated 
+        if self._v18 is True:
+            return
+
+        self.df.columns = [self.drug_name_to_int(x) for x in self.df.columns]
+        self.df.columns = self.df.columns.astype(int)
+
+    def drug_name_to_int(self, name):
+        # We want to remove the prefix Drug_ 
+        # We also want to remove suffix _IC50 but in v18, we have names
+        # such as Drug_1_0.33_IC50 to provide the concentration.
+        # So, we should remove the string after the second _
+        try:
+            res = name.replace("Drug_", "").replace("DRUG_", "")
+            res = res.split("_")[0]
+            res = int(res)
+            return res
+        except:
+            return int(name)
 
     def _get_drugs(self):
         return list(self.df.columns)
@@ -462,14 +488,14 @@ class IC50(Reader, CosmicRows):
         Nd = len(self.drugIds)
         return "IC50 object <Nd={0}, Nc={1}>".format(Nd, Nc)
 
-    def __add__(self, other):
+    """def __add__(self, other):
         print("Experimantal. combines IC50 via COSMIC IDs")
         df = pd.concat([self.df, other.df], ignore_index=True)
         df = df.drop_duplicates(cols=[self.cosmic_name])
         return df
-
+    """
     def copy(self):
-        new = IC50(self, drug_prefix=self.drug_prefix)
+        new = IC50(self)
         return new
 
 
@@ -550,7 +576,7 @@ class GenomicFeatures(Reader, CosmicRows):
                     'MS-instability Factor Value': 'MSI_FACTOR',
                     'COSMIC ID': 'COSMIC_ID'}.items():
             if old in self.df.columns:
-                warnings.warn("'%s' column name is deprecated " % old + 
+                warnings.warn("'%s' column name is deprecated " % old +
                     " since 0.9.10. Please replace with '%s'" %  new,
                     DeprecationWarning)
                 self.df.columns = [x.replace(old, new)
@@ -565,7 +591,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # If tissue factor is not provided, we create and fill it with dummies.
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
-            warnings.warn("column named '%s' not found" 
+            warnings.warn("column named '%s' not found"
                     % self.colnames.tissue, UserWarning)
             self.df[self.colnames.tissue] = ['unspecified'] * len(self.df)
             self._special_names.append(self.colnames.tissue)
@@ -777,12 +803,12 @@ class GenomicFeatures(Reader, CosmicRows):
     def compress_identical_features(self):
         """Merge duplicated columns/features
 
-        Columns duplicated are merged as follows. Fhe first column is kept, 
+        Columns duplicated are merged as follows. Fhe first column is kept,
         others are dropped but to keep track of those dropped, the column name
         is renamed by concatenating the columns's names. The separator is a
         double underscore.
 
-        :: 
+        ::
 
             gf = GenomicFeatures()
             gf.compress_identical_features()
@@ -790,10 +816,14 @@ class GenomicFeatures(Reader, CosmicRows):
             gf.df['ARHGAP26_mut__G3BP2_mut']
         """
 
-        # let us identify the duplicates as True/False 
+        # let us identify the duplicates as True/False
         datatr = self.df.transpose()
         duplicated_no_first = datatr[datatr.duplicated()]
-        duplicated = datatr[datatr.duplicated(keep=False)]
+        try:
+            duplicated = datatr[datatr.duplicated(keep=False)]
+        except:
+            # pandas 0.16
+            duplicated = datatr[datatr.duplicated(take_last=False)]
 
         tokeep = [x for x in duplicated.index if x not in duplicated_no_first.index]
 
@@ -827,9 +857,12 @@ class PANCAN(Reader):
 
     will be removed. Used to read original data in R format but
     will provide the data as CSV or TSV
+
+    .. deprecated:: since v0.12
     """
     def __init__(self, filename=None):
-        if filename is None:
+        print('deprecated')
+        """if filename is None:
             filename = easydev.get_share_file('gdsctools', 'data',
                             'PANCAN_simple_MOBEM.rdata')
         super(PANCAN, self).__init__(filename)
@@ -838,11 +871,12 @@ class PANCAN(Reader):
         self.session = RSession()
         self.session.run('load("%s")' %self._filename)
         self.df = self._read_matrix_from_r('MoBEM')
-
+        """
 
 class Extra(Reader):
     def __init__(self, filename="djvIC50v17v002-nowWithRMSE.rdata"):
         super(Extra, self).__init__(filename)
+        print("Deprecated since v0.12")
         # Remove R dependencies
         from biokit.rtools import RSession
         self.session = RSession()
@@ -918,12 +952,11 @@ class DrugDecode(Reader):
     company. If those columns are not provided, the internal dataframe is filled
     with None.
 
-    Older version of DRUG_DECODE files used ID as ::
+    Note that older version of identifiers such as::
 
         Drug_950_IC50
 
-    but internally, such identifiers are transformed as proper ID that is
-    (in this case), just the number::
+    are transformed as proper ID that is (in this case), just the number::
 
         950
 
@@ -933,6 +966,7 @@ class DrugDecode(Reader):
         data.df.ix[999]
 
 
+    .. note:: the DRUG_ID column must be made of integer
     """
     def __init__(self, filename=None):
         """.. rubric:: Constructor"""
@@ -969,21 +1003,6 @@ class DrugDecode(Reader):
             if this not in self.df.columns and this != self.df.index.name:
                 warnings.warn('WARNING:' + msg % this )
 
-        # remove text to have pure int identifiers if possible
-        drug_ids = self.df['DRUG_ID'].values
-        to_replace = [("Drug_", ""), ("_IC50", "")]
-        for old, new in to_replace:
-            try:
-                drug_ids = [x.replace(old, new) for x in drug_ids]
-            except:
-                pass
-        # change text to int
-        try:
-            drug_ids =[int(x) for x in drug_ids]
-        except:
-            pass
-        self.df['DRUG_ID'] = drug_ids
-
         # Finally, set the drug ids as the index.
         try:
             self.df.set_index('DRUG_ID', inplace=True)
@@ -991,11 +1010,13 @@ class DrugDecode(Reader):
             # could be done already
             pass
 
+        self.df.index = self.df.index.astype(int)
+
         # sort the columns
         try:
-            self.df = self.df[self.df.columns.sort_values()]
+            self.df.sort_index(inplace=True)
         except:
-            self.df = self.df[sorted(self.df.columns)]
+            self.df = self.df.ix[sorted(self.df.index)]
 
     def _get_names(self):
         return list(self.df.DRUG_NAME.values)
@@ -1018,7 +1039,7 @@ class DrugDecode(Reader):
                 drug_id = int(drug_id.split("_")[1])
             except:
                 print("DRUG ID %s not recognised" % drug_id)
-                return None
+                return
             if drug_id in self.df.index:
                 return self.df[colname].ix[drug_id]
         elif "_" in str(drug_id):
@@ -1026,11 +1047,11 @@ class DrugDecode(Reader):
                 drug_id = int(drug_id.split("_")[0])
             except:
                 print("DRUG ID %s not recognised" % drug_id)
-                return None
+                return
             if drug_id in self.df.index:
                 return self.df[colname].ix[drug_id]
         else:
-            return None
+            return
 
     def get_name(self, drug_id):
         return self._get_row(drug_id, 'DRUG_NAME')
@@ -1038,7 +1059,7 @@ class DrugDecode(Reader):
     def get_target(self, drug_id):
         return self._get_row(drug_id, 'DRUG_TARGET')
 
-    def get_public(self, drug_id):
+    def is_public(self, drug_id):
         return self._get_row(drug_id, 'WEBRELEASE')
 
     def check(self):
@@ -1084,7 +1105,7 @@ class DrugDecode(Reader):
 
     def drug_annotations(self, df):
         """Populate the drug_name and drug_target field if possible
-   
+
         :param df: input dataframe as given by e.g., :meth:`anova_one_drug`
         :return df: same as input but with the FDR column populated
         """
@@ -1150,6 +1171,10 @@ class DrugDecode(Reader):
             return False
 
 
+    def get_public_and_one_company(self, company):
 
-
+        drug_decode_company = self.df.query(
+               "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company)
+        # Transform into a proper DrugDecode class for safety
+        return DrugDecode(drug_decode_company)
 

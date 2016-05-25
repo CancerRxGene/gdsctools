@@ -1,7 +1,7 @@
-from gdsctools.readers import GenomicFeatures, IC50, PANCAN, DrugDecode
+from gdsctools.readers import GenomicFeatures, IC50, DrugDecode
 from gdsctools.readers import Reader
 from easydev import TempFile
-from gdsctools import ic50_test
+from gdsctools import ic50_test, gdsctools_data
 import pandas as pd
  
 from gdsctools.datasets import testing
@@ -28,7 +28,16 @@ def test_read_ic50():
     # we can also instanciate from a valid dataframe
     r = IC50(r)
 
+    # test repr
+    r
+
+    # and print statement 
     print(r)
+
+    # the copy method
+    assert r == r.copy()
+
+
     r.hist()
     r.plot_ic50_count()
     r.cosmicIds
@@ -39,7 +48,7 @@ def test_read_ic50():
 
     # columns may be duplicated
     r = IC50(ic50_test)
-    df = pd.concat([r.df, r.df['Drug_999_IC50']], axis=1)
+    df = pd.concat([r.df, r.df[999]], axis=1)
     # create new instance that should raise an error
     try:
         IC50(df)
@@ -58,13 +67,13 @@ def test_read_ic50():
     #assert ic.df.shape == (2,2)
     #assert all(ic.df.columns == ['1','2'])
     ic = IC50(testing['ic50_test_header_no_drug_prefix'].location)
-    assert ic.drugIds == ['1', '2']
+    assert ic.drugIds == [1, 2]
 
     ic = IC50(testing['ic50_test_header_drug_prefix_only'].location)
-    assert ic.drugIds == ['Drug_1_IC50', 'Drug_2_IC50']
+    assert ic.drugIds == [1, 2]
 
     ic = IC50(testing['ic50_test_header_mixed_drug_prefix'].location)
-    assert ic.drugIds == ['Drug_1_IC50', 'Drug_2_IC50']
+    assert ic.drugIds == [1, 2]
 
 
 def test_read_gf():
@@ -77,6 +86,10 @@ def test_read_gf():
     # we can also instanciate from a valid dataframe
     r = GenomicFeatures(r.df)
 
+    # test repr 
+    r
+
+    # and print statement
     print(r)
     r.features
     r.tissues
@@ -101,10 +114,12 @@ def test_read_gf():
     gf = GenomicFeatures(testing.genomic_features_bare_csv)
     assert gf.shift == 1
 
-def _test_pancan_reader_rdata():
-    r = PANCAN()
-    len(r.df)
 
+    gf.get_TCGA()
+
+def test_gf_compress():
+    gf = GenomicFeatures() 
+    gf.compress_identical_features() 
 
 def test_drugs():
     r1 = DrugDecode(testing.drug_test_csv)
@@ -112,3 +127,30 @@ def test_drugs():
     r2 = DrugDecode(testing.drug_test_tsv)
     r2.drugIds
     assert r1 == r2
+
+    # r1.get_info() this example fails because all webrelease are NAN
+    assert len(r1) == 11
+
+    
+
+    dd = DrugDecode(gdsctools_data("test_drug_decode_comp.csv"))
+    assert dd.companies == ["ME"]
+    assert dd.is_public(5) == 'Y'
+    dd.check()
+    assert dd.get_info()['N_prop'] == 1
+    # test repr and print
+    print(dd)
+    dd
+    # test __add__
+    assert dd + dd == dd
+    assert len(dd.get_public_and_one_company("ME")) == 10
+
+def test_readers_tabs():
+    # If the files ends in csv but its content is tsv, this may be an issue
+    try:
+        IC50(gdsctools_data("test_IC50_tabs.csv"))
+        assert False
+    except:
+        assert True
+
+

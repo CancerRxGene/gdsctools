@@ -42,27 +42,20 @@ class TestPipeline(object):
 
     def test_odaf(self):
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
-            '--drug', 'Drug_1047_IC50', '--no-html'])
-
-    def test_odaf_fast(self):
-        pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
-            '--drug', 'Drug_1047_IC50', '--no-html', '--fast'])
+            '--drug', '1047', '--no-html'])
 
     def test_odof(self):
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
-            '--drug', 'Drug_1047_IC50', '--no-html', '--feature', 'TP53_mut'])
+            '--drug', '1047', '--no-html', '--feature', 'TP53_mut'])
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
-            '--drug', 'Drug_1047_IC50', '--feature', 'TP53_mut'])
-    
-    def test_adof(self):
-        pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
-            '--no-html', '--feature', 'TP53_mut'])
-   
+            '--drug', '1047', '--feature', 'TP53_mut'])
+
+
+    # slow takes about 30-60 seconds
     @attr('skip')
     def test_adaf(self):
         pipelines.anova_pipeline([self.prog, '--input-ic50', self.filename,
             '--no-html'])
-
 
     def test_license(self):
         pipelines.anova_pipeline([self.prog, '--license'])

@@ -33,10 +33,10 @@ __all__ = ['ANOVAResults']
 class ANOVAResults(object):
     """Class to handle results of the ANOVA analysis
 
-    The :class:`ANOVA` performs the regression and ANOVA analysis and 
-    returns an :class:`ANOVAResults` instance (e.g., when you call 
+    The :class:`ANOVA` performs the regression and ANOVA analysis and
+    returns an :class:`ANOVAResults` instance (e.g., when you call
     :meth:`gdsctools.anova.ANOVA.anova_all` method). The :class:`ANOVAResults`
-    contains a dataframe with all results in :attr:`df`. 
+    contains a dataframe with all results in :attr:`df`.
 
     The columns of the dataframe are defined as follows:
 
@@ -155,7 +155,7 @@ class ANOVAResults(object):
         self.mapping = OrderedDict()
         self.mapping['ASSOC_ID'] =  np.dtype('int64')
         self.mapping['FEATURE'] = np.dtype('O')
-        self.mapping['DRUG_ID'] = np.dtype('O')
+        self.mapping['DRUG_ID'] = np.dtype('int64')
         self.mapping['DRUG_NAME'] = np.dtype('O')
         self.mapping['DRUG_TARGET'] = np.dtype('O')
         self.mapping['N_FEATURE_neg'] = np.dtype('int64')
@@ -169,12 +169,12 @@ class ANOVAResults(object):
         self.mapping['FEATURE_neg_IC50_sd'] = np.dtype('float64')
         self.mapping['FEATURE_pos_IC50_sd'] = np.dtype('float64')
         self.mapping['FEATURE_IC50_T_pval'] = np.dtype('float64')
-       
+
         self.mapping['ANOVA_FEATURE_pval'] = np.dtype('float64')
         self.mapping['ANOVA_TISSUE_pval'] = np.dtype('float64')
         self.mapping['ANOVA_MSI_pval'] = np.dtype('float64')
         self.mapping['ANOVA_MEDIA_pval'] = np.dtype('float64')
-  
+
         self.mapping['ANOVA_FEATURE_FDR'] = np.dtype('float64')
 
         # before gdsctools, columns names were a bit different.
@@ -194,7 +194,9 @@ class ANOVAResults(object):
             'FEATURE_ANOVA_pval': 'ANOVA_FEATURE_pval',
             'ANOVA FEATURE FDR %': 'ANOVA_FEATURE_FDR',
             'MSI_ANOVA_pval': 'ANOVA_MSI_pval',
-            'Tissue_ANOVA_pval': 'TISSUE_ANOVA_pval',
+            'Tissue_ANOVA_pval': 'ANOVA_TISSUE_pval',
+            'MEDIA_ANOVA_pval': 'ANOVA_MEDIA_pval',
+            'TISSUE_ANOVA_pval': 'ANOVA_TISSUE_pval',
             'Drug name': 'DRUG_NAME', 'A':'B'}, inplace=True)
 
         self.colnames_subset = [
@@ -266,16 +268,16 @@ class ANOVAResults(object):
         self.handle_volcano.volcano_plot_all()
 
     def __str__(self):
-        txt = 'Total number of ANOVA tests performed: %s ' % len(self.df) 
-        return txt 
-    
+        txt = 'Total number of ANOVA tests performed: %s ' % len(self.df)
+        return txt
+
     def __repr__(self):
-        txt = 'ANOVAResults (%s tests): ' % len(self.df) 
-        return txt 
+        txt = 'ANOVAResults (%s tests): ' % len(self.df)
+        return txt
 
     def copy(self):
         a = ANOVAResults(self.df.copy())
-        return 
+        return
 
     def get_html_table(self, collapse_table=False, clip_threshold=2,
             index=False, header=True, escape=False):
@@ -289,12 +291,19 @@ class ANOVAResults(object):
 
         colname = 'ANOVA_FEATURE_FDR'
 
-        df.loc[self.df[colname] < 0.01, colname] = '<0.01'
+        df.loc[df[colname] < 0.01, colname] = '<0.01'
+        # In the assoc column, we remove the first "a" letter so that
+        # the column is properly sorted by Id but the link should be with the
+        # "a" as prefix
+        df.ASSOC_ID = df.ASSOC_ID.apply(lambda x: int(str(x).replace("a", "")))
 
-        html = HTMLTable(self.df, 'notused')
+
+        html = HTMLTable(df, 'notused')
         # Those columns should be links
-        for this in ['FEATURE', 'DRUG_ID', 'ASSOC_ID']:
-            html.add_href(this)
+        html.add_href("FEATURE")
+        html.add_href("ASSOC_ID", url="a", suffix=".html") # here url works like a prefix
+        html.add_href("DRUG_ID", url="drug_", suffix=".html") # here url works like a prefix
+
 
         for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
                 'FEATURE_pos_Glass_delta']:
@@ -319,7 +328,7 @@ class ANOVAResults(object):
         n_red = len(data[data>=0])
 
         print(n_green, n_red)
-        data.plot(kind='barh', width=1, alpha=0.5, 
+        data.plot(kind='barh', width=1, alpha=0.5,
             color=['green']*n_green + ['red'] * n_red)
 
         pylab.xlabel("Effect size")

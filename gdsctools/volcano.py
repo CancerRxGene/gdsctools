@@ -26,13 +26,13 @@ import pandas as pd
 import pylab
 import numpy as np
 import easydev
-
+from numpy import log10
 
 from easydev import Progress, AttrDict
 from gdsctools.tools import Savefig
 
 
-__all__ = ['VolcanoANOVA']
+__all__ = ['VolcanoANOVA', "VolcanoANOVAJS"]
 
 
 class VolcanoANOVA(object):
@@ -62,34 +62,12 @@ class VolcanoANOVA(object):
         on a circle and the title will be updated
         with the name of the drug/feature and FDR value.
 
-    .. note:: (**for developers**) A javascript version is also
-        created on the fly using mpld3 library. It is used in the
-        creation of the HTML report but one can use it as well in an
-        ipython notebook::
-
-            # The **v** instance is as created in the example above
-            # Then, type the following code to create an HTML with the
-            # javascript plot embedded.
-            import mpld3
-            htmljs = mpld3.fig_to_html(v.current_fig)
-            fh = open('volcano_doc.html', 'w')
-            fh.write(htmljs)
-            fh.close()
-
     :Legend and color conventions: The green circles indicate significant hits
         that are resistant while reds show sensitive hits. Circles are colored
         if there are below the FDR_threshold AND below the pvalue_threshold AND
         if the signed effect size is above the effect_threshold.
 
 
-    There are 5 methods to plot volcano plots depending on what you want to see
-
-    - :meth:`volcano_plot_all` as above plots all associations
-    - :meth:`volcano_plot_all_drugs` creates a volcano plot for each drug and
-      save it into a PNG file. This method calls :meth:`volcano_plot_one_drug`.
-    - :meth:`volcano_plot_all_features` creates a volcano plot for each feature
-      and save it into a PNG file. This method calls
-      :meth:`volcano_plot_one_feature`.
 
     """
     _colname_pvalue = 'ANOVA_FEATURE_pval'
@@ -194,17 +172,8 @@ class VolcanoANOVA(object):
         pb = Progress(len(drugs), 1)
         for i, drug in enumerate(drugs):
             self.volcano_plot_one_drug(drug)
-            self.savefig_and_js("volcano_%s.png" % drug, size_inches=(10, 10))
+            self.savefig("volcano_%s.png" % drug, size_inches=(10, 10))
             pb.animate(i+1)
-
-            # This prevent memory leak.
-            self.current_fig.canvas.mpl_disconnect(self.cid)
-            try:
-                import mpld3
-                mpld3.plugins.clear(self.current_fig)
-            except:
-                pass
-
 
     def volcano_plot_all_features(self):
         """Create a volcano plot for each feature and save in PNG files
@@ -216,17 +185,9 @@ class VolcanoANOVA(object):
         pb = Progress(len(features), 1)
         for i, feature in enumerate(features):
             self.volcano_plot_one_feature(feature)
-            self.savefig_and_js("volcano_%s.png" % feature, 
+            self.savefig("volcano_%s.png" % feature,
                     size_inches=(10, 10))
             pb.animate(i+1)
-
-            # This prevent memory leak.
-            self.current_fig.canvas.mpl_disconnect(self.cid)
-            try:
-                import mpld3
-                mpld3.plugins.clear(self.current_fig)
-            except:
-                pass
 
     def volcano_plot_all(self):
         """Create an overall volcano plot for all associations
@@ -412,17 +373,9 @@ class VolcanoANOVA(object):
         # It creates a volcano plot, which is the easy part
         # Then, it creates tooltips for the user interface in an IPython
         # shell using a callback to 'onpick' function coded here below
-        # finally, it creates a Javascript connection using mpld3 that
-        # will allow the creation of a JS version of the plot.
-
-        # !! There is a memory leak in this function due to matplotlib
-        # This is not easy to track down.
-
-        # You have to call clf() to make sure the content is erase.
-        # One reason for the memory leak is that it is called in the
-        # Report to loop over all drugs and then all featuers.
-        # To see the memory leak, you will need to call the
-        # volcano_plot_all_drugs function (or volcano_plot_all_features).
+        # !! There seem to bes a memory leak in this function due to matplotlib
+        # This is not easy to track down and should have no impact now that
+        # ANOVAReport using JS instead of matplotlib 
         colors = list(data['color'].values)
         pvalues = data['pvalue'].values
         signed_effects = data['signed_effect'].values
@@ -496,7 +449,7 @@ class VolcanoANOVA(object):
         #self.axx.set_ylabel('FDR \%', fontsize=self.settings.fontsize)
 
         # For the static version
-        title_handler = pylab.title("%s" % title.replace("_","  "),
+        title_handler = pylab.title("%s" % str(title).replace("_","  "),
                 fontsize=self.settings.fontsize/1.2)
         labels = []
 
@@ -505,7 +458,7 @@ class VolcanoANOVA(object):
         def onpick(event):
             ind = event.ind[0]
             try:
-                title = str(data.ix[ind]['Drug']) + " / " + str(data.ix[ind].Feature)
+                title = str(str(data.ix[ind]['Drug'])) + " / " + str(data.ix[ind].Feature)
                 title += "\nFDR=" + "%.4e" % data.ix[ind]['FDR']
                 title_handler.set_text(title.replace("_","  "))
             except:
@@ -548,70 +501,152 @@ class VolcanoANOVA(object):
             #label = row.to_frame()
             #label.columns = ['Row {0}'.format(i)]
             #labels.append(str(label.to_html(header=False)))
-        css = """
-        svg.mpld3-figure { border: 2px black solid;margin:10px;}
-        table{  font-size:0.8em;  }
-        th {  color: #ffffff;  background-color: #aaaaaa;  }
-        td { color: blue; background-color: #cccccc; }"""
-
-        try:
-            import mpld3
-            tooltip = mpld3.plugins.PointHTMLTooltip(scatter, labels=labels,
-                css=css)
-            mpld3.plugins.connect(fig, tooltip)
-        except:
-            print("Issue with javascript version of the volcano plot. Skipped")
         self.scatter = scatter
         self.current_fig = fig
         # not sure is this is required. could be a memory leak here
         import gc
         gc.collect()
 
-    def mpld3_to_html(self):
-        """This require to call a plotting figure before hand"""
-        from gdsctools import gdsctools_data
-        # This copy the full path and therefore HTML cannot
-        # be moved in another directory. to be fixed.
-        js_path1 = gdsctools_data('d3.v3.min.js', where='javascript')
-        js_path2 = gdsctools_data('mpld3.v0.2.js', where='javascript')
-        try:
-            # mpld3 is great but there are a couple of issues
-            # 1 - legend zorder is not used so dots may be below the legend,
-            #     hence we set the framealpha =0.5
-            # 2 - % character even though there well interpreted in matploltib
-            #     using \%, they are not once parsed by mpld3. So, here
-            #     we remove the \ character
-            axl = pylab.legend(loc='best', framealpha=0.8, borderpad=1)
-            axl.set_zorder(10) # in case there is a circle behind the legend.
-            texts = [this.get_text() for this in axl.get_texts()]
-
-            for i, text in enumerate(texts):
-                text = text.replace("\\%", "%")
-                text += "  "
-                axl.get_texts()[i].set_text(text)
-            import mpld3
-            htmljs = mpld3.fig_to_html(self.current_fig,
-                            d3_url=js_path1,
-                            mpld3_url=js_path2)
-        except:
-            htmljs = ""
-        return """<div class="jsimage"> """ + htmljs + "</div>"
-
-    def savefig_and_js(self, filename, size_inches=(10, 10)):
+    def savefig(self, filename, size_inches=(10, 10)):
         # Save the PNG first. The savefig automatically set the size
         # to a defined set and back to original figsize.
-
         self.figtools.savefig(filename + '.png', size_inches=size_inches)
 
-        # now the javascript. 
-        fig = self.current_fig
-        oldsize = fig.get_size_inches()
-        fig.set_size_inches(size_inches)
 
-        htmljs = self.mpld3_to_html()
-        fh = open(self.settings.directory + os.sep + filename + ".html", "w")
-        fh.write(htmljs)
-        fh.close()
-        fig.set_size_inches(*oldsize)
+
+class VolcanoANOVAJS(VolcanoANOVA):
+    def __init__(self, data, sep="\t", settings=None):
+        super(VolcanoANOVAJS, self).__init__(data, sep, settings)
+
+    def render_drug(self, name):
+        self.data = self._get_volcano_sub_data("DRUG_ID", name)
+        return self._render_data(name)
+
+    def render_feature(self, name):
+        self.data = self._get_volcano_sub_data("FEATURE", name)
+        return self._render_data(name)
+
+    def render_all(self):
+        self.data = self._get_volcano_sub_data("ALL")
+        return self._render_data()
+
+    def _render_data(self, name="all associations"):
+
+        self.data['log10pvalue'] = -log10(self.data['pvalue'])
+
+        self.data['color'] = self.data['color'].apply(lambda x:
+                x.replace("black", "not_significant"))
+        self.data['color'] = self.data['color'].apply(lambda x:
+                x.replace("green", "sensitive"))
+        self.data['color'] = self.data['color'].apply(lambda x:
+                x.replace("red", "resistant"))
+
+        # We have 3 colors but sometimes you may have only one or 2.
+        # This may be an issue with canvasXpress. It seems essential
+        # to sort the color column so that names are sorted alphabetically
+        # and to include colors that are present in the sale order
+        self.data.sort_values(by='color', inplace=True)
+        colors = []
+        if "not_significant" in self.data.color.values:
+            colors.append("rgba(0,0,0,0.5)")  # black
+        if "resistant" in self.data.color.values:
+            colors.append("rgba(205,0,0,0.5)")  # black
+        if "sensitive" in self.data.color.values:
+            colors.append("rgba(0,205,0,0.5)")  # black
+
+        import jinja2
+        from jinja2 import Environment, PackageLoader
+        env = Environment()
+
+        from easydev import get_package_location
+
+        env.loader = jinja2.FileSystemLoader(
+                        get_package_location("gdsctools")
+                        + "/gdsctools/data/templates/")
+        template = env.get_template("volcano.html")
+
+        jinja = {}
+
+        jinja["colors"] = colors
+        jinja["Group"] = list(self.data['color'].values)
+
+        text = []
+        for x,y,z in zip(self.data['Drug'].values,
+            self.data['Feature'].values,
+            self.data['FDR'].values):
+
+            text.append("<b>Drug:</b>%s <br><b>Feature:</b>%s <br><b>FDR:</b>%s" % (x,y,z))
+        jinja['vars'] = text
+
+        """
+        # does not work in the JS somehow some points do not appear
+        # disabled for now
+        markersize = self.data['markersize']
+        markersize -= markersize.min()
+        markersize /= markersize.max()
+        markersize = (3*markersize).round()
+        #markersize[markersize == 0] = 1
+
+        FC = list(markersize.astype(int).astype(str))
+        jinja['FC'] = FC
+        """
+        self.data.markersize /= (self.data.markersize.max()/3.)
+
+        #First value is Y, second is X, following will be used in the
+        jinja['data'] = self.data[["signed_effect", "log10pvalue",
+            "markersize"]].round(3).values.tolist()
+        jinja['title'] = '"%s"' % name
+
+        fdrs = self.get_fdr_ypos()
+        jinja['fdr1'] = fdrs[0]
+        jinja['fdr2'] = fdrs[1]
+        jinja['fdr3'] = fdrs[2]
+        jinja['fdr4'] = fdrs[3]
+
+        m = abs(self.data.signed_effect.min())
+        M = abs(self.data.signed_effect.max())
+        jinja['minX'] = -max([m, M]) * 1.1
+        jinja['maxX'] =  max([m, M]) * 1.1
+        jinja['maxY'] = self.data["log10pvalue"].max() * 1.2
+        if max(fdrs) > jinja['maxY']:
+            jinja['maxY'] = max(fdrs) * 1.2
+
+        self.html = template.render(jinja)
+        return self.html
+
+    def get_fdr_ypos(self):
+
+        fdr = self.settings.FDR_threshold
+        fdrs = sorted(self.settings.volcano_additional_FDR_lines)
+        fdrs = fdrs[::-1] # reverse sorting
+        if self.settings.volcano_FDR_interpolation is True:
+            get_pvalue_from_fdr = self._get_pvalue_from_fdr_interp
+        else:
+            get_pvalue_from_fdr = self._get_pvalue_from_fdr
+
+        pvalue = get_pvalue_from_fdr(fdr)
+        #ax.axhline(-np.log10(pvalue), linestyle='--', lw=2,
+        #    color='red', alpha=1, label="FDR %s " %  fdr + " \%")
+
+        pvalues = [-log10(pvalue)]
+        for i, this in enumerate(fdrs):
+            if this < self.df[self._colname_qvalue].min() or\
+                this > self.df[self._colname_qvalue].max():
+                    pvalues.append(3)
+                    continue
+            pvalue = get_pvalue_from_fdr(this)
+            pvalues.append(-np.log10(pvalue))
+
+        # we must have 3 values. If not, just repeat the last values
+        return pvalues
+
+
+    # window.CanvasXPress.references
+    # Working stuff:
+    # window.CanvasXpress.references[0].setHeight(400)
+    # window.CanvasXpress.references[0].data.d.line[0].color = 'green'
+    # window.CanvasXpress.references[0].redraw()
+    # window.CanvasXpress.references[0].redraw()
+
 
 

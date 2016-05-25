@@ -34,7 +34,7 @@ or used in analysis:
 import easydev
 
 
-__all__ = ['Data', 'dataset', 'ic50_test', 'genomic_features', 'cosmic_info',
+__all__ = ['Data', 'ic50_test', 'genomic_features', 'cosmic_info',
            "cosmic_builder_test", "cancer_cell_lines"]
 
 def _gsf(filename):
@@ -55,13 +55,14 @@ class Data(object):
     But the data is not stored and users must read the data set using
     their own tools. 
     """
-    def __init__(self):
+    def __init__(self, filename=None, description="No description",
+            authors="GDSC consortium"):
         #: where is located the data set (full path)
-        self.filename = None 
+        self.filename = filename
         #: a short description (string)
-        self.description = "No description"
+        self.description = description
         #: list of authors (string)
-        self.authors = 'GDSC consortium'
+        self.authors = authors
 
     def __str__(self):
         txt = 'location: %s\n' % self.filename
@@ -76,59 +77,50 @@ class Data(object):
     def __repr__(self):
         return self.__str__()
 
-
-def dataset(dataname):
-    """Retrieve information about a dataset including location
-
-    :param dataname: a data set's name (e.g., ic50_test)
-    :return: a :class:`Data` holder
-
-    Get information about a dataset and in particular its physical location
-    ::
-
-        from gdsctools.datasets import ic50_test
-        print(i50_test)
-        # Get its location
-        ic50_test.filename
-
-    """
-
-    d = Data()
-    if dataname == 'ic50_test':
-        d.filename = _gsf('IC50_10drugs.tsv')
-        d.description = 'IC50s for 10 public drugs across cell lines'
-    elif dataname == 'genomic_features':
-        d.filename = _gsf('genomic_features.tsv.gz')
-        d.descritption = 'Set of genomic features + tissue + sample name + msi'
-    elif dataname == 'cancer_cell_lines':
-        d.filename = _gsf('cancer_cell_lines.csv')
-        d.description = "List of cosmic identifiers with the corresponding "+\
-            "name, tissue and sub tissue types"
-    elif dataname == 'cosmic_builder_test':
-        d.filename = _gsf('cosmic_builder_test.txt')
-        d.description = "An example of flat file to be read by COSMICFetcher"
-    elif dataname == 'cosmic_info':
-        d.filename = _gsf('cosmic_info.csv.gz')
-        d.description = "Information about 1001 cell lines including COSMIC ID"
-
-    return d
-
-# ALIASES
+# ============== DATA SETS DEFINITION
 
 #: Dataset with IC50s for 10 drugs (for testing)
-ic50_test = dataset('ic50_test')
+ic50_test = Data(
+        filename=_gsf("IC50_10drugs.tsv"),
+        description = 'IC50s for 10 public drugs across cell lines')
 
 #: Dataset with genomic features for 1001 cell lines and 680 features
-genomic_features = dataset('genomic_features')
+genomic_features = Data(
+        filename = _gsf('genomic_features.tsv.gz'),
+        description = 'Set of genomic features / tissue / msi')
 
 #: Dataset with cancer cell lines name / cosmic id/ tissue type and sub type
-cancer_cell_lines = dataset('cancer_cell_lines')
+cancer_cell_lines = Data(
+        filename = _gsf('cancer_cell_lines.csv'),
+        description = "List of cosmic identifiers with "+\
+                "the corresponding name, tissue and sub tissue types")
 
 #: Example of flat file to be read by COSMICFetcher
-cosmic_builder_test = dataset("cosmic_builder_test")
+cosmic_builder_test = Data(
+        filename = _gsf('cosmic_builder_test.txt'),
+        description = "An example of flat file to be read by COSMICFetcher")
 
 #: Dataframe with COSMIC ID and their information
-cosmic_info = dataset("cosmic_info")
+cosmic_info = Data(
+        filename = _gsf('cosmic_info.csv.gz'),
+        description = "Information about 1001 cell lines including COSMIC ID")
+
+#: IC50 from v17
+ic50_v17 = Data(_gsf("IC50_v17.csv.gz"))
+__all__.append("ic50_v17")
+
+#: Genomic Feature from v17
+gf_v17 = Data(_gsf("genomic_features_v17.csv.gz"), 
+        description="PANCAN genomic features from v17 GDSC release")
+__all__.append("gf_v17")
+
+#: IC50 from v5
+ic50_v5 = Data(_gsf("IC50_v5.csv.gz"))
+__all__.append("ic50_v5")
+
+#: Genomic Feature from v5
+gf_v5 = Data(_gsf("genomic_features_v5.csv.gz"))
+__all__.append("gf_v5")
 
 
 

@@ -37,7 +37,6 @@ GDSC report
     :members:
     :undoc-members:
 
-
 Statistical Tools
 -------------------
 .. automodule:: gdsctools.stats
@@ -100,10 +99,19 @@ Data-related
     :undoc-members:
 
 
+
 Logistics
 -------------
 
 .. automodule:: gdsctools.logistics
+    :members:
+    :undoc-members:
+
+
+Elastic Net Analysis
+-------------------------
+
+.. automodule:: gdsctools.elastic_net
     :members:
     :undoc-members:
 
@@ -119,4 +127,17 @@ MISC
 .. automodule:: gdsctools.settings
     :members:
     :undoc-members:
+
+.. automodule:: gdsctools.drugs
+    :members:
+    :undoc-members:
+
+.. automodule:: gdsctools.models
+    :members:
+    :undoc-members:
+
+.. automodule:: gdsctools.multicore
+    :members:
+    :undoc-members:
+
 

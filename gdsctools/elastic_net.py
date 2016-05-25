@@ -21,13 +21,11 @@ import scipy
 import pylab
 import numpy as np
 
-from statsmodels.formula.api import OLS
 
 from easydev import Progress, AttrDict
 
 from gdsctools.models import BaseModels
 
-from gdsctools.boxplots import BoxPlots
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 
@@ -81,26 +79,39 @@ myalphas = [0.08633579, 0.07866596, 0.07167749, 0.06530986, 0.05950791, 0.054221
 """
 
 class ElasticNet(BaseModels):
-    """ElasticNet analysis of the IC50 vs Feature matrices
+    """Variant of :class:`ANOVA` that handle the association at the drug level
+    using an ElasticNet analysis of the IC50 vs Feature matrices.
 
 
+    In the ANOVA case, regression using OLS are computed for a given drug and a
+    given feature. Then, this analysis is repeated across all features for a
+    given drug and finally extended to all drugs. However, there is one test
+    for each combination of drug and feature.
 
+    Here, all feature for a given drug are taken together to perform an Elastic
+    Net analysis.
+
+
+    Here is an example on how to perform the analysis, which is similar to the
+    ANOVA API:
 
     .. plot::
         :include-source:
         :width: 80%
 
-        from gdsctools import ElasticNet
-        ic = IC50("IC50_v5.csv.gz")
-        gf = GenomicFeatures("genomic_features_v5.csv.gz")
+        from gdsctools import ElasticNet, gdsctools_data, IC50, GenomicFeatures
+        ic50 = IC50(gdsctools_data("IC50_v5.csv.gz"))
+        gf = GenomicFeatures(gdsctools_data("genomic_features_v5.csv.gz"))
 
         en = ElasticNet(ic50, gf)
-        en.elastic_net('1047')
+        en.elastic_net(1047, alpha=0.01, show=True)
 
 
+    For more information about the input data sets please see
+    :class:`~gdsctools.anova.ANOVA`, :mod:`~gdsctools.readers`
     """
     def __init__(self, ic50, genomic_features=None,
-            drug_decode=None, verbose=True, low_memory=True,
+            drug_decode=None, verbose=False,
             set_media_factor=False):
         """.. rubric:: Constructor
 
@@ -114,11 +125,9 @@ class ElasticNet(BaseModels):
             see :mod:`readers` for more information.
         :param verbose: verbosity in "WARNING", "ERROR", "DEBUG", "INFO"
 
-        The attribute :attr:`settings` contains specific settings related
-        to the analysis or visulation.
         """
         super(ElasticNet, self).__init__(ic50, genomic_features,
-            drug_decode=drug_decode, verbose=verbose, low_memory=low_memory,
+            drug_decode=drug_decode, verbose=verbose, 
             set_media_factor=set_media_factor)
 
     def _get_one_drug_data(self, name, scale=True):
@@ -129,21 +138,33 @@ class ElasticNet(BaseModels):
 
         if scale is True:
             columns = X.columns
-            X = preprocessing.scale(X)
+            # cast is essential here otherwise ValueError is raised
+            X = preprocessing.scale(X.astype(float))
             X = pd.DataFrame(X, columns=columns)
         return X, Y
 
     def elastic_net(self, drug_name, alpha=1, l1_ratio=0.5, n_folds=10,
-                    plot=False, tol=1e-3):
-        # by default alpha=1,  # l1_ratio=0.5
+                    show=False, tol=1e-3):
+        """
 
-        # l1_ratio correspond to alpha in glmnet R pacakge
-        # while alpha correspond to the lambda parameter in glmnet
 
-        # specifically l1_ratio=1 is the lasso penalty 
+        :param drug_name: the drug to analyse
+        :param float alpha: note that theis alpha parameter corresponds to the
+            lambda parameter in glmnet R package.
+        :param float l1_ratio: This is the lasso penalty parameter. 
+            Note that in scipy, the l1_ratio correspond 
+            to the alpha  parameter in glmnet R package. l1_ratio set to 0.5
+            means that there is a weight equivalent for the Lasso and Ridge 
+            effects.
+        :param int n_folds: defaults to 10 
 
-        # l1_ratio < 0.01 is not reliable unless sequence of alpha is provided.
-        #alpha = 0 correspond to an OLS
+        .. note:: l1_ratio < 0.01 is not reliable unless sequence of 
+            alpha is provided.
+
+        .. note:: alpha = 0 correspond to an OLS analysis
+
+
+        """
 
         # Get the data for the requested drug
         xscaled, Y = self._get_one_drug_data(drug_name, scale=True)
@@ -159,7 +180,7 @@ class ElasticNet(BaseModels):
         else:
             kf = cross_validation.KFold(len(Y), n_folds=n_folds, shuffle=False)
 
-        # 
+        # Store the results 
         scores = []
         count = 1
         self.kfold_data = {'x_test':[], 'y_test':[], 'y_train':[], 'x_train':[]}
@@ -185,7 +206,7 @@ class ElasticNet(BaseModels):
             score = en.score(X_test, Y_test)
             scores.append(score)
 
-            if plot is True:
+            if show is True:
                 pylab.clf()
                 pylab.plot(en.predict(X_test), Y_test, 'o')
                 #print en.predict(X_test), Y_test
@@ -205,8 +226,18 @@ class ElasticNet(BaseModels):
         return scores
 
     def plot_cindex(self, drug_name, alphas, l1_ratio=0.5, n_folds=10, hold=False):
-        # This is longish (300 seconds with 10 folds and 80 alphas
-        # for GDSC v5 data sets.
+        """Tune alpha parameter using concordance index
+
+
+        This is longish and performs the following task. For a set of alpha
+        (list), run the elastic net analysis for a given **l1_ratio** with 
+        **n_folds**. For each alpha, get the CIndex and find the CINdex for
+        which the errors are minimum. 
+
+
+        .. warning:: this is a bit longish (300 seconds for 10 folds and 80 alphas)
+             on GDSCv5 data set.
+        """
         from dreamtools.core.cindex import cindex
 
         CI_train = {}
@@ -222,7 +253,7 @@ class ElasticNet(BaseModels):
             self.elastic_net(drug_name, alpha=alpha, l1_ratio=l1_ratio,
                              n_folds=n_folds)
 
-            # Look at the first fold only
+            # Look at the results and store cindex
             for kf in range(n_folds):
                 x_train = self.kfold_data['x_train'][kf].values
                 y_train = self.kfold_data['y_train'][kf].values
@@ -256,17 +287,22 @@ class ElasticNet(BaseModels):
         return best_alpha
 
     def tune_alpha(self, drug_name, alphas=None, N=100, l1_ratio=0.5,
-                   n_folds=10, plot=True):
-        """
+                   n_folds=10, show=True):
+        """Another method to tun the alpha parameter.
+
+        This is much faster than :meth:`plot_cindex`.
 
         .. plot::
+            :include-source:
 
-            an.tune_alpha("1047", N=100, l1_ratio=0.1)
-            an.tune_alpha("1047", N=100, l1_ratio=0.01)
-            an.tune_alpha("1047", N=100, l1_ratio=0.001)
-            an.tune_alpha("1047", N=100, l1_ratio=0.0001)
+            from gdsctools import *
+            ic = IC50(gdsctools_data("IC50_v5.csv.gz"))
+            gf = GenomicFeatures(gdsctools_data("genomic_features_v5.csv.gz"))
 
-        29, 34, 52, 1014, 1015, 1024, 1036, 1047, 1061
+            en = ElasticNet(ic, gf)
+
+            en.tune_alpha(1047, N=40, l1_ratio=0.1)
+
 
         """
         # alphas = 10**-linspace(6,1,100)
@@ -287,7 +323,7 @@ class ElasticNet(BaseModels):
         maximum = df.mean(axis=1).max()
         alpha_best = alphas[df.mean(axis=1).argmax()]
 
-        if plot is True:
+        if show is True:
             mu = df.mean(axis=1)
             sigma = df.std(axis=1)
             pylab.clf()
@@ -301,27 +337,52 @@ class ElasticNet(BaseModels):
         return alphas, all_scores, maximum, alpha_best
 
     def plot_weight(self, drug_name, alpha, l1_ratio=0.5):
-        """
+        """Plot the elastic net weights
 
-        small alphas will have a more stringent effects on the weigths and
-        select only some of them setting others to 0. Setting alphas to zero will
-        show all weights
+        :param drug_name: the drug identifier 
+        :param alpha: 
+        :param l1_ratio:
+
+        Large alpha values will have a more stringent effects on the weigths and
+        select only some of them or maybe none. Conversely, setting alphas to zero will
+        keep all weights.
+
+
+        .. plot::
+            :include-source:
+
+            from gdsctools import *
+            ic = IC50(gdsctools_data("IC50_v5.csv.gz"))
+            gf = GenomicFeatures(gdsctools_data("genomic_features_v5.csv.gz"))
+            en = ElasticNet(ic, gf)
+            en.plot_weight(1047, 0.01, l1_ratio=0.5)
+
 
         """
         pylab.figure(1)
         pylab.clf()
         self.elastic_net(drug_name, alpha=alpha)
         df = pd.DataFrame({'name': self.X.columns, 'weight': self.en.coef_})
-        df = df.set_index("name").sort_values("weight")
+        try:
+            df = df.set_index("name").sort_values("weight")
+        except:
+            df = df.set_index("name").sort("weight")
+
         df.plot(kind="bar",  width=1, lw=1, ax=pylab.gca())
 
         pylab.figure(2)
         pylab.clf()
         df = abs(df)
-        df.sort_values("weight").plot(kind="bar", width=1, lw=1,
+
+        try:
+            df.sort_values("weight", inplace=True)
+        except:
+            df.sort("weight", inplace=True)
+
+        df.plot(kind="bar", width=1, lw=1,
                                       title='importance plot', ax=pylab.gca())
 
-        return df.sort_values('weight')
+        return df
 
     def elastic_net_cv(self, drug_name, l1_ratio=0.5, alphas=None, n_folds=10):
 
@@ -393,158 +454,13 @@ class ElasticNet(BaseModels):
         (self.df1 == 0).sum().plot()
         (self.df2 == 0).sum().plot()
 
-
-        self.indices1 = (self.df1 == 0).sum().sort_values().ix[0:nfeat]
-        self.indices2 = (self.df2 == 0).sum().sort_values().ix[0:nfeat]
+        try:
+            self.indices1 = (self.df1 == 0).sum().sort_values().ix[0:nfeat]
+            self.indices2 = (self.df2 == 0).sum().sort_values().ix[0:nfeat]
+        except:
+            self.indices1 = (self.df1 == 0).sum().sort().ix[0:nfeat]
+            self.indices2 = (self.df2 == 0).sum().sort().ix[0:nfeat]
         names1 = self.indices1.index
         names2 = self.indices2.index
         print(names2)
-
-    def anova_one_drug(self, drug_id, animate=True, output='object'):
-        """Computes ANOVA for a given drug across all features
-
-        :param str drug_id: a valid drug identifier.
-        :param animate: shows the progress bar
-        :return: a dataframe
-
-        Calls :meth:`anova_one_drug_one_feature` for each feature.
-        """
-        # some features can be dropped ??
-
-        # drop first and second columns that are made of strings
-        # works under python2 but not python 3. Assume that the 2 first
-        #columns are the sample name and tissue feature
-        # Then, we keep only cases with at least 3 features.
-        # MSI could be used but is not like in original R code.
-        features = self.features.df.copy()
-        # need to skip the FACTOR to keep only features
-        shift = self.features.shift
-
-        features = features[features.columns[shift:]]
-        # FIXME what about features with less than 3 zeros ?
-        mask = features.sum(axis=0) >= 3
-
-        # TODO: MSI, tissues, name must always be kept
-        #
-        selected_features = features[features.columns[mask]]
-
-        # scan all features for a given drug
-        assert drug_id in self.ic50.df.columns
-        N = len(selected_features.columns)
-        pb = Progress(N, 10)
-        res = {}
-
-    def anova_all(self, animate=True, drugs=None):
-        """Run all ANOVA tests for all drugs and all features.
-
-        :param drugs: you may select a subset of drugs
-        :param animate: shows the progress bar
-        :return: an :class:`~gdsctools.anova_results.ANOVAResults`
-            instance with the dataframe
-            stored in an attribute called **df**
-
-        Loops over all drugs calling :meth:`anova_one_drug` for each
-        drug and concatenating all results together. Note that once all
-        data are gathered, an extra column containing the FDR corrections
-        is added to the dataframe using :meth:`add_pvalues_correction`
-        method. An extra column  named "ASSOC_ID" is also added with
-        a unique identifer sorted by ascending FDR.
-
-        .. note:: A thorough comparison with version v17 give the same FDR
-            results (difference ~1e-6); Note however that the qvalue results
-            differ by about 0.3% due to different smoothing in R and Python.
-        """
-        # drop DRUG where number of IC50 (non-null) is below 5
-        # axis=0 is default but we emphasize that sum is over
-        # column (i.e. drug
-        vv = (self.ic50.df.isnull() == False).sum(axis=0)
-        # FIXME: should be in one_drug_one_feature ??
-        drug_names = vv.index[vv >= self.settings.minimum_nonna_ic50]
-
-        # if user provided a list of drugs, use them:
-        if drugs is not None:
-            # todo: check valifity of the drug names
-            drug_names = drugs[:]
-
-        pb = Progress(len(drug_names), 1)
-        drug_names = list(drug_names)
-        pylab.shuffle(drug_names)
-        if animate is True:
-            pb.animate(0)
-
-        for i, drug_name in enumerate(drug_names):
-            if drug_name in self.individual_anova.keys():
-                pass
-            else:
-                res = self.anova_one_drug(drug_name, animate=False,
-                                          output='dataframe')
-                self.individual_anova[drug_name] = res
-            if animate is True:
-                pb.animate(i+1)
-        print("\n")
-        if len(self.individual_anova) == 0:
-            return ANOVAResults()
-
-        df = pd.concat(self.individual_anova, ignore_index=True)
-
-        if len(df) == 0:
-            return df
-        # sort all data by ANOVA p-values
-        try:
-            df.sort_values('ANOVA_FEATURE_pval', inplace=True)
-        except:
-            df.sort('ANOVA_FEATURE_pval', inplace=True)
-
-        # all ANOVA have been computed individually for each drug and each
-        # feature. Now, we need to compute the multiple testing corrections
-        if self.settings.pvalue_correction_level == 'global':
-            df = self.add_pvalues_correction(df)
-
-        # insert a unique identifier as first column
-        df.insert(0, 'ASSOC_ID', range(1, len(df) + 1))
-
-        self.df = df
-        # order the column names as defined in the __init__ method
-        df = df[self.column_names]
-        df.reset_index(inplace=True, drop=True)
-
-        results = ANOVAResults()
-        results.df = df
-        results.settings = ANOVASettings(**self.settings)
-        return results
-
-    def add_pvalues_correction(self, df, colname='ANOVA_FEATURE_pval'):
-        """Add the corrected pvalues column in a dataframe based on pvalues
-
-        The default method (FDR correction) is stored in
-        :attr:`settings.pvalue_correction_method` and can be changed to other
-        methods (e.g., *qvalue*)
-
-        .. seealso:: :meth:`anova_all`,
-            :class:`~gdsctools.stats.MultipleTesting`
-        """
-        if len(df) == 0:
-            return
-
-        # extract pvalues
-        data = df[colname].values
-
-        # set the method and compute new pvalues
-        self.multiple_testing.method = self.settings.pvalue_correction_method
-        new_pvalues = self.multiple_testing.get_corrected_pvalues(data)
-        new_pvalues *= 100
-        # insert new columns.
-        colname = 'ANOVA_FEATURE_FDR'
-
-        try:
-            df.insert(len(df.columns), colname, new_pvalues)
-        except:
-            # replaces it otherwise
-            df[colname] = new_pvalues
-        return df
-
-    def reset_buffer(self):
-        self.individual_anova = {}
-
-
 

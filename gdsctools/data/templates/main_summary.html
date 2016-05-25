@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <div class="section">
+    <h2> Data package summary link to all data</h2>
+    --> <a href="{{ tissue_directory }}/index.html">tissue package directory</a>
+    </div>
+
+    <div class="section">
+    <h2> Data package summary link for each company</h2>
+    {{ data_table }}
+    </div>
+
+{% endblock %}

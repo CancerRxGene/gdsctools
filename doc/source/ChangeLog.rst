@@ -3,8 +3,55 @@ ChangeLog
 
 .. contents::
 
+Version 0.12 (9th May 2016)
+-------------------------------
+
+
+
+.. rubric:: 0.12
+
+* CHANGES:
+
+    - SPEEDUP: 
+      - tissue specific analysis computational time decreased by 50% 
+        by dropping the creation of dataframe and using a simple numpy array
+        inside ANOVA.anova_one_drug_one_feature
+      - Creation of volcano plots uses pure javascript for the data packages
+        and the creation of the volcano plots was dramatically sped up by a
+        factor between 10 and 100e. One can still create volcano plot manually 
+        in pure matplotlib.
+      - Similarly, boxplots for tissue, MSI and all associations are now 
+        created using JS.
+    - Data packages have been refactored. The major difference concerns 
+      the HTML layout (most HTML files are now in the sub-directory 
+      called associations) so that is it cleaner at the top level. The volcano
+      plots are not in PNG format anymore but pure HTML/JS, which can be 
+      exported manually. The consequences is that the creation of data 
+      packages is 10 times faster.
+    - The standalone application had 2 options removed: --feature (alone) 
+      and --fast options
+    - Drug Identifier are now handled as pure integer. For back
+      compatibility, old files that mix up IC50 and Genomic Features (e.g. v17
+      data) are still interpreted; the DRUG ID in that case are written as
+      Drug_ID_IC50 and are transformed as just <ID> everywhere. 
+    - associations output were named 1.html, 2.html... and are now named
+      a1.html, a2.html...
+    - Because DRUG_ID are now integer and all HTML stored in the same directory 
+      the naming of the HTML files have been altered (e.g., associations starts
+    - Report now accepts only one argument (the anova isntance). Second
+      argument (results) is now optional. If not provided, ANOVA are computed on
+      the fly
+    - Multicore module removed but ANOVA.anova_all has multicore option. This 
+      seems to work on Linux systems. Not tested on windows or MacOsX
+    - IC50 may have duplicated drug ids (at different concentrations). Not good
+      practice but that the format of e.g. v18, v19 IC50 files. A class
+      IC50Cluster was created to interepret those files. ANOVA will switch to
+      IC50Cluster automatically if there are duplicated files.
+    - Settings: low_memory option has been removed
+
+
 Version 0.11 (April-May 2016)
-----------------------------
+--------------------------------
 
 .. rubric:: 0.11.3
 
