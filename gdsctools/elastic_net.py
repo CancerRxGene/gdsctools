@@ -138,7 +138,8 @@ class ElasticNet(BaseModels):
 
         if scale is True:
             columns = X.columns
-            X = preprocessing.scale(X)
+            # cast is essential here otherwise ValueError is raised
+            X = preprocessing.scale(X.astype(float))
             X = pd.DataFrame(X, columns=columns)
         return X, Y
 
