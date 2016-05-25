@@ -109,7 +109,7 @@ class IC50Cluster(IC50):
             try:
                 df.sort_values(by='ratio', ascending=False, inplace=True)
             except:
-                df.sort(by='ratio', ascending=False, inplace=True)
+                df.sort('ratio', ascending=False, inplace=True)
         return df
 
     def cluster(self):
@@ -545,7 +545,7 @@ class GDSC(GDSCBase):
         try:
             df.sort_values(by="Number of hits", ascending=False, inplace=True)
         except:
-            pass
+            df.sort("Number of hits", ascending=False, inplace=True)
 
         output_dir = main_directory + os.sep + '..' + os.sep
         output_file = output_dir + os.sep + 'index.html'
