@@ -26,19 +26,16 @@ def test_omnibem():
     
 
     ob = OmniBEMBuilder(omnibem_data)
-    ob.filter_by_gene_list(omnibem_genes)
     ob.filter_by_type_list(["Methylation"])
     mobem = ob.get_mobem()
     assert mobem[mobem.columns[3:]].sum().sum() == 12964
 
     ob = OmniBEMBuilder(omnibem_data)
-    ob.filter_by_gene_list(omnibem_genes)
     ob.filter_by_tissue_list(["HNSC"])
     mobem = ob.get_mobem()
     assert mobem[mobem.columns[3:]].sum().sum() == 4124
 
     ob = OmniBEMBuilder(omnibem_data)
-    ob.filter_by_gene_list(omnibem_genes)
     ob.filter_by_sample_list(["SNU-423"])
     mobem = ob.get_mobem()
-    assert mobem[mobem.columns[3:]].sum().sum() == 4124
+    assert mobem[mobem.columns[3:]].sum().sum() == 63

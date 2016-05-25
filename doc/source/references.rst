@@ -55,6 +55,11 @@ Readers
     :members:
     :undoc-members:
 
+.. automodule:: gdsctools.omnibem
+    :members:
+    :undoc-members:
+
+
 Visualisation
 ---------------
 Volcano plot
