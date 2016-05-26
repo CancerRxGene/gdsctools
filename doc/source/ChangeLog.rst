@@ -6,6 +6,11 @@ ChangeLog
 Version 0.12 (9th May 2016)
 -------------------------------
 
+.. rubric:: 0.12.1
+
+* BUG:
+
+    - add missing CSS in the distribution
 
 
 .. rubric:: 0.12

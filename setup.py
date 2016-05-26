@@ -8,7 +8,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 12
-_MICRO               = 0
+_MICRO               = 1
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -84,6 +84,7 @@ setup(
     package_data = {
         '': ["*css", "*js", "*txt", "*csv", "*tsv", "*gz"],
         #'gdsctools.data' : ['*'],
+        'gdsctools.data.csss' : ['*.css'],
         'gdsctools.data.images' : ['*.png', '*.ico'],
         'gdsctools.data.templates' : ['*.html'],
         'gdsctools.data.javascript' : ['*.js'],
