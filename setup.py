@@ -84,7 +84,7 @@ setup(
     package_data = {
         '': ["*css", "*js", "*txt", "*csv", "*tsv", "*gz"],
         #'gdsctools.data' : ['*'],
-        'gdsctools.data.csss' : ['*.css'],
+        'gdsctools.data.css' : ['*.css'],
         'gdsctools.data.images' : ['*.png', '*.ico'],
         'gdsctools.data.templates' : ['*.html'],
         'gdsctools.data.javascript' : ['*.js'],
