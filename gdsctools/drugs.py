@@ -4,15 +4,18 @@ Small functionalities to retrive chembl/chemspider identifiers
 based on a drug name
 
 """
-
 from easydev import Progress
 from gdsctools import DrugDecode
+import pandas as pd
+
 
 __all__ = ["ChemSpiderSearch"]
 
 
 class ChemSpiderSearch(object):
     """This class uses ChemSpider and ChEMBL to identify drug name
+
+    .. warning:: this is a draft version in dev mode
 
     ::
 
@@ -21,14 +24,13 @@ class ChemSpiderSearch(object):
         c.search_from_smile_inchembl()
         df = c.find_chembl_ids()
 
-    It happends that most of public names can be found
-    and almost none of non-public are not found. As expected.
-
+    It happens that most of public names can be found
+    and almost none of non-public are found. As expected...
 
     If chemspider, chembl and pubchem are empty, search for the drug name in
-    chemspider. 
+    chemspider.
 
-        CHEMSPIDER search: 
+        CHEMSPIDER search:
             if no identifier found, the search if DROPPED
             if 1 identifier found, we keep going using the SMILE identifier
             If more than 1 identifier found, this is AMBIGUOUS.
@@ -40,13 +42,11 @@ class ChemSpiderSearch(object):
 
     SMILES are not unique
 
-
     """
     def __init__(self, drug_decode):
 
         self.dd = DrugDecode(drug_decode)
         self.dd_filled = DrugDecode(drug_decode)
-
 
         from bioservices.chemspider import ChemSpider
         from bioservices import ChEMBL
@@ -62,33 +62,38 @@ class ChemSpiderSearch(object):
 
         print('Loading ChEMBL service')
         self.chembl = ChEMBL(cache=True)
+
         print('Loading ChemSpider service')
         self.chemspider = ChemSpider(cache=True)
+
         print('Loading UniChem service')
         # in unichem db number is 22 and chembl is 1
         self.unichem = UniChem()
 
         print('Settings some data aliases')
-        self.chemspider_find = self.chemspider.find
-        self.chemspider_get_info = self.chemspider.GetExtendedCompoundInfo
+        self._cs_find = self.chemspider.find
+        self._cs_get = self.chemspider.GetExtendedCompoundInfo
 
         self.drug_ids = sorted(list(drug_decode.df.index.values))
         self.drug_names = sorted(list(drug_decode.df.DRUG_NAME.values))
 
     def filling_chembl_pubchem_using_unichem(self):
+        """
 
+        """
         N = len(self.drug_ids)
         pb = Progress(N)
         for i,this in enumerate(self.drug_ids):
             entry = self.dd.df.ix[this]
-            # if no information provided, we will need to get it from chemspider
+            # if no information is provided, we will need to get it 
+            # from chemspider
 
             # From the database, when chembl is provided, it is unique
             # same for chemspider and pubchem and CAS
             select = entry[['CHEMSPIDER', 'CHEMBL', 'PUBCHEM']]
             if select.count() == 0:
                 name = self.dd.df.ix[this].DRUG_NAME
-                results = self.chemspider.find(name)
+                results = self._cs_find(name)
                 if len(results) == 0:
                     # nothing found
                     pass
@@ -105,10 +110,14 @@ class ChemSpiderSearch(object):
             entry = self.dd.df.ix[this]
             if select.count() == 1:
                 res = self._cs_find(drug)
-                
+
             pb.animate(i+1)
 
     def find_chembl_ids(self):
+        """
+
+
+        """
         # don't know how to search for a chembl id given the drug name...
         # so we use chemspider
         #self.search_in_chemspider()
@@ -124,7 +133,7 @@ class ChemSpiderSearch(object):
         smiles_c = []
         smiles_cs = []
 
-        for drug in self.drugs:
+        for drug in self.drug_ids:
             try:
                 entry = self.results_chembl[drug]
 
@@ -137,7 +146,7 @@ class ChemSpiderSearch(object):
                 ids = ",".join([drug, '', '', '', '', ''])
             chemspider_ids.append(ids)
 
-        for drug in self.drugs:
+        for drug in self.drug_ids:
             try:
                 smiles_c.append(",".join([x['smiles'] for x in
                     self.results_chembl[drug]]))
@@ -148,8 +157,6 @@ class ChemSpiderSearch(object):
             except:
                 smiles_cs.append('')
 
-
-        import pandas as pd
         df = pd.DataFrame([drugs, chembl_ids, chemspider_ids, smiles_c,
             smiles_cs],
                 index=['DRUG_NAME','CHEMBL_ID','CHEMSPIDER_ID', 'SMILE_CHEMBL',
@@ -162,7 +169,10 @@ class ChemSpiderSearch(object):
         return res
 
     def search_in_chemspider(self):
-        #SB52334 --> SB-52334
+        # Fill results attribute as a dictionary. Keys being the drug id
+        # and values are list of chemspider identifiers
+        #
+        # SB52334 --> SB-52334
         N = len(self.dd)
 
         pb = Progress(N)
@@ -172,9 +182,10 @@ class ChemSpiderSearch(object):
             drug = self.dd.df.index[i]
             drug_name = self.dd.df.ix[drug].DRUG_NAME
             try:
-                res = self.chemspider_find(drug_name)
+                res = self._cs_find(drug_name)
             except:
-                print(index, drug_name)
+                print("This drug index (%s) / drug name (%s) was not found" %
+                        (index, drug_name))
                 res = []
             self.results[drug] = res
             pb.animate(i+1)
@@ -183,23 +194,23 @@ class ChemSpiderSearch(object):
 
     def search_from_smile_inchembl(self):
 
-        N = len(self.drugs)
+        N = len(self.drug_ids)
 
-        pb= Progress(N)
+        pb = Progress(N)
         self.results_chembl = {}
         self.results_chemspider = {}
 
         for i in range(0, N):
-            drug = self.drugs[i]
+            drug = self.drug_ids[i]
             self.results_chembl[drug] = []
 
             if self.results[drug]:
                 for chemspider_id in self.results[drug]:
                     chemspider_entry = self._cs_get(chemspider_id)
-                    self.results_chemspider[drug] = chemspider_entry 
+                    self.results_chemspider[drug] = chemspider_entry
                     smile = chemspider_entry['smiles']
                     # now search in chembl
-                    res_chembl = self._chembl.get_compounds_by_SMILES(smile)
+                    res_chembl = self.chembl.get_compounds_by_SMILES(smile)
                     try:
                         res_chembl['compounds']
                         self.results_chembl[drug].extend(res_chembl['compounds'])
