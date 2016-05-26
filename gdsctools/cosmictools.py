@@ -43,6 +43,7 @@ class COSMICFetcher(object):
 
     ::
 
+        >>> from gdsctools.cosmictools import COSMICFetcher
         >>> cf = COSMICFetcher() # this may take a while to download the file
         >>> cf.df.ix[0]
         ID                                       OS-A
@@ -58,13 +59,13 @@ class COSMICFetcher(object):
 
         :param str filename: If not provided, download file
             from expasy.org and store it in :attr:`data`. Otherwise,
-            if filename is provided, reads local file. Format should be
+            if filename is provided, reads a local file. Format should be
             the same as the file downloaded from expasy
 
         """
         if filename is not None:
             fh = open(filename, 'r')
-            self.data = fh.read()
+            self._data = fh.read()
             fh.close()
             self._scandata()
         else:
@@ -73,22 +74,22 @@ class COSMICFetcher(object):
             print('Downloading data. This may take a while')
             print('Consider saving the *data* attribute in a file ' +
                 'for next time')
-            self.data = urlopen(self.url).read()
+            self._data = urlopen(self.url).read()
             self._scandata()
 
     def _scandata(self):
         print('Parsing the data')
-        self.data = self.data.split("\nID   ")[1:] # skip header
-        print(len(self.data))
-        self.data = [this for this in self.data if 'Cosmic' in this]
+        self._data = self._data.split("\nID   ")[1:] # skip header
+        print(len(self._data))
+        self._data = [this for this in self._data if 'Cosmic' in this]
         print('Dropping records with no COSMIC cross references:')
-        print('Kept %s records' % len(self.data))
+        print('Kept %s records' % len(self._data))
         self._data2records()
 
     def _data2records(self):
         print("Creating records")
         self._records = {}
-        for this in self.data:
+        for this in self._data:
             record = this.split("\n",1)
             identifier = record[0].strip()
             content = record[1].strip()
