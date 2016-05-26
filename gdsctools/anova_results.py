@@ -257,14 +257,14 @@ class ANOVAResults(object):
     drugIds = property(_get_drugIds,
             doc="Returns the list of drug identifiers")
 
-    def volcano(self):
+    def volcano(self, settings=None):
         """Calls :class:`VolcanoANOVA` on the results
 
         x-value is sign(FEATURE_delta_MEAN_IC50) times FEATURE_IC50_effect_size
         y-value is the FDR correction
 
         """
-        self.handle_volcano = VolcanoANOVA(self.df, settings=self.settings)
+        self.handle_volcano = VolcanoANOVA(self.df, settings=settings)
         self.handle_volcano.volcano_plot_all()
 
     def __str__(self):
