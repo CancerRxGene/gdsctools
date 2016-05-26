@@ -172,7 +172,15 @@ DrugDecode files are not required for the analysis but are used by
 :class:`gdsctools.anova_report.ANOVAReport` to fill the HTML reports.
 
 
+You can also run the analysis and set the drug names and target later on as
+follows using the :class:`~gdsctools.readers.drug_annotations` method::
 
+    from gdsctools import *
+    an = ANOVA(ic50_test)
+    an.anova_all()
+    results = an.anova_all()
+    dd = DrugDecode("v19_drug_decode.csv")
+    newdf = dd.drug_annotations(results.df)
 
 
 

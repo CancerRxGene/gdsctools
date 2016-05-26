@@ -23,7 +23,7 @@ on `gdsctools github <https://github.com/CancerRxGene/gdsctools/issues>`_.
 I cannot see any plots or figures
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First solution is to import ths show function from pylab::
+First solution is to import the show function from pylab::
 
     from pylab import show
     show()
@@ -64,7 +64,5 @@ I’ve never used Python before. Is there a Python tutorial?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 There are numerous tutorials and books available. The standard documentation
 includes `The Python Tutorial <https://docs.python.org/3/tutorial/index.html#tutorial-index>`_. 
-
-
 
 

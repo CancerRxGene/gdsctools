@@ -43,7 +43,7 @@ def test_anova_one_drug():
     an = ANOVA(ic50_test)
     df = an.anova_one_drug(999)
 
-
+# This also test ANOVAResults
 def test_anova_all():
     an = ANOVA(ic50_test)
     # slow, let us cut the features to keep only ten-ish values 
@@ -53,6 +53,11 @@ def test_anova_all():
 
     an = ANOVA(ic50_test, features)
     results = an.anova_all()
+    results # test __repr__
+    results.volcano()
+    results.barplot_effect_size()
+
+
     assert_almost_equal( results.df['ANOVA_FEATURE_FDR'].sum(), 
             10312.23061065521, 6)
 

@@ -136,8 +136,4 @@ MISC
     :members:
     :undoc-members:
 
-.. automodule:: gdsctools.multicore
-    :members:
-    :undoc-members:
-
 
