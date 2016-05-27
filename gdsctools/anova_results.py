@@ -325,7 +325,7 @@ class ANOVAResults(object):
         try:
             data = data.sort_values()
         except:
-            data = data.sort()
+            data.sort(inplace=True)
 
         n_green = len(data[data<0])
         n_red = len(data[data>=0])
