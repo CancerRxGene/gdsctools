@@ -322,7 +322,10 @@ class ANOVAResults(object):
 
         # barplot of the IC50 effect size
         data = np.sign(self.df.FEATURE_delta_MEAN_IC50) * self.df.FEATURE_IC50_effect_size
-        data = data.sort_values()
+        try:
+            data = data.sort_values()
+        except:
+            data = data.sort()
 
         n_green = len(data[data<0])
         n_red = len(data[data>=0])
