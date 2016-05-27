@@ -6,6 +6,10 @@ ChangeLog
 Version 0.12 (9th May 2016)
 -------------------------------
 
+.. rubric:: 0.13.0
+
+* BUG: fix typo in the setup.py file. Passed travis + all tests.
+
 .. rubric:: 0.12.1
 
 * BUG:

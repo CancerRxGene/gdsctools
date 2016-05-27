@@ -7,8 +7,8 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 12
-_MICRO               = 2
+_MINOR               = 13
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -82,8 +82,7 @@ setup(
     # here below '': pattern means include that pattern in all packages
     # so '' :['README.rst'] will include all README.rst recursively
     package_data = {
-        '': ["*css", "*js", "*txt", "*csv", "*tsv", "*gz"],
-        #'gdsctools.data' : ['*'],
+        '': ["*.js", "*txt", "*.csv", "*tsv", "*.gz"],
         'gdsctools.data.css' : ['*.css'],
         'gdsctools.data.images' : ['*.png', '*.ico'],
         'gdsctools.data.templates' : ['*.html'],
