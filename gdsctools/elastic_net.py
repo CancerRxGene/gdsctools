@@ -17,7 +17,6 @@
 """Code related to the ANOVA analysis to find associations between drug IC50s
 and genomic features"""
 import pandas as pd
-import scipy
 import pylab
 import numpy as np
 
@@ -145,14 +144,13 @@ class ElasticNet(BaseModels):
 
     def elastic_net(self, drug_name, alpha=1, l1_ratio=0.5, n_folds=10,
                     show=False, tol=1e-3):
-        """
-
+        """Run Elastic Net
 
         :param drug_name: the drug to analyse
         :param float alpha: note that theis alpha parameter corresponds to the
             lambda parameter in glmnet R package.
         :param float l1_ratio: This is the lasso penalty parameter. 
-            Note that in scipy, the l1_ratio correspond 
+            Note that in scikit-learn, the l1_ratio correspond 
             to the alpha  parameter in glmnet R package. l1_ratio set to 0.5
             means that there is a weight equivalent for the Lasso and Ridge 
             effects.
@@ -163,9 +161,7 @@ class ElasticNet(BaseModels):
 
         .. note:: alpha = 0 correspond to an OLS analysis
 
-
         """
-
         # Get the data for the requested drug
         xscaled, Y = self._get_one_drug_data(drug_name, scale=True)
 
@@ -183,7 +179,8 @@ class ElasticNet(BaseModels):
         # Store the results 
         scores = []
         count = 1
-        self.kfold_data = {'x_test':[], 'y_test':[], 'y_train':[], 'x_train':[]}
+        self.kfold_data = {'x_test':[], 'y_test':[], 
+                'y_train':[], 'x_train':[]}
         for train_index, test_index in kf:
             # Get X training and testing data sets
             X_train = xscaled.iloc[train_index]
@@ -225,7 +222,8 @@ class ElasticNet(BaseModels):
 
         return scores
 
-    def plot_cindex(self, drug_name, alphas, l1_ratio=0.5, n_folds=10, hold=False):
+    def plot_cindex(self, drug_name, alphas, l1_ratio=0.5, n_folds=10, 
+            hold=False):
         """Tune alpha parameter using concordance index
 
 
@@ -234,9 +232,8 @@ class ElasticNet(BaseModels):
         **n_folds**. For each alpha, get the CIndex and find the CINdex for
         which the errors are minimum. 
 
-
-        .. warning:: this is a bit longish (300 seconds for 10 folds and 80 alphas)
-             on GDSCv5 data set.
+        .. warning:: this is a bit longish (300 seconds for 10 folds 
+            and 80 alphas) on GDSCv5 data set.
         """
         from dreamtools.core.cindex import cindex
 
@@ -246,7 +243,6 @@ class ElasticNet(BaseModels):
             CI_train[c] = []
             CI_test[c] = []
 
-        from easydev import Progress
         pb = Progress(len(alphas))
 
         for i, alpha in enumerate(alphas):
@@ -264,8 +260,10 @@ class ElasticNet(BaseModels):
                 x_train_pred = self.en.predict(x_train)
                 x_test_pred = self.en.predict(x_test)
 
-                CI_test[kf].append(1-cindex(x_test_pred, y_test, [True]*len(y_test)))
-                CI_train[kf].append(1-cindex(x_train_pred, y_train, [True] * len(y_train)))
+                CI_test[kf].append(1-cindex(x_test_pred, y_test, 
+                    [True]*len(y_test)))
+                CI_train[kf].append(1-cindex(x_train_pred, y_train, 
+                    [True] * len(y_train)))
             pb.animate(i)
 
         mu_train = pd.DataFrame(CI_train).transpose().mean()
@@ -277,8 +275,10 @@ class ElasticNet(BaseModels):
         best_alpha = alphas[pd.DataFrame(CI_test).mean(axis=1).argmax()]
 
         pylab.clf()
-        pylab.errorbar(pylab.log(alphas), mu_train, yerr=sigma_train, label="train")
-        pylab.errorbar(pylab.log(alphas)+.1, mu_test, yerr=sigma_test, label="test")
+        pylab.errorbar(pylab.log(alphas), mu_train, yerr=sigma_train, 
+                label="train")
+        pylab.errorbar(pylab.log(alphas)+.1, mu_test, yerr=sigma_test, 
+                label="test")
         pylab.plot(pylab.log(alphas), mu_train, 'ob')
         pylab.plot(pylab.log(alphas)+.1, mu_train, 'or')
         pylab.legend()
@@ -343,10 +343,9 @@ class ElasticNet(BaseModels):
         :param alpha: 
         :param l1_ratio:
 
-        Large alpha values will have a more stringent effects on the weigths and
-        select only some of them or maybe none. Conversely, setting alphas to zero will
-        keep all weights.
-
+        Large alpha values will have a more stringent effects on the 
+        weigths and select only some of them or maybe none. Conversely, 
+        setting alphas to zero will keep all weights.
 
         .. plot::
             :include-source:
@@ -380,7 +379,7 @@ class ElasticNet(BaseModels):
             df.sort("weight", inplace=True)
 
         df.plot(kind="bar", width=1, lw=1,
-                                      title='importance plot', ax=pylab.gca())
+                title='importance plot', ax=pylab.gca())
 
         return df
 
@@ -399,22 +398,24 @@ class ElasticNet(BaseModels):
         return encv.alpha_
 
     def enetpath_vs_enet(self, drug_name, alphas=None, l1_ratio=0.5, nfeat=5,
-                         max_iter=1000, tol=1e-4, selection="cyclic", fit_intercept=False):
+                         max_iter=1000, tol=1e-4, selection="cyclic", 
+                         fit_intercept=False):
         """
-        #if X is not scaled, the enetpath and ElasticNet will give slightly differen results
+        #if X is not scaled, the enetpath and ElasticNet will give slightly 
+        # different results
         #if X is scale using::
 
-        from sklearn import preprocessing
-        xscaled = preprocessing.scale(X)
-        xscaled = pd.DataFrame(xscaled, columns=X.columns)
+            from sklearn import preprocessing
+            xscaled = preprocessing.scale(X)
+            xscaled = pd.DataFrame(xscaled, columns=X.columns)
         """
-        # 1. use enet to loop over alphas and then plot the coefficients along alpha
-        # for each feature
-
+        # 1. use enet to loop over alphas and then plot the coefficients 
+        # along alpha for each feature
         # Get the data for the requested drug
         xscaled, Y = self._get_one_drug_data(drug_name)
 
-        alphas, coefs1, _ = enet_path(xscaled, Y, l1_ratio=l1_ratio, alphas=alphas)
+        alphas, coefs1, _ = enet_path(xscaled, Y, l1_ratio=l1_ratio, 
+                alphas=alphas)
         pylab.figure(1)
         pylab.clf()
         for this in coefs1:
@@ -431,9 +432,9 @@ class ElasticNet(BaseModels):
         for alpha in alphas:
             # to have same results as in enet_path, normalize must be set to
             # False when X is scaled.
-            en = sklearn.linear_model.ElasticNet(l1_ratio=l1_ratio, alpha=alpha,
-                            max_iter=max_iter, tol=tol, selection=selection,
-                            fit_intercept=fit_intercept)
+            en = sklearn.linear_model.ElasticNet(l1_ratio=l1_ratio, 
+                    alpha=alpha, max_iter=max_iter, tol=tol, 
+                    selection=selection, fit_intercept=fit_intercept)
             res = en.fit(xscaled, Y)
             coefs2.append(res.coef_)
         coefs2 = np.array(coefs2).transpose()

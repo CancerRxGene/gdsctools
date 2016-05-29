@@ -126,8 +126,8 @@ class Reader(object):
         self.header = []
 
         # sanity check on cleaning columns if not alread done
-        try:self.df.columns = [x.strip() for x in self.df.columns]
-        except: pass # fails for the IC50 where header is made of integers
+        #try:self.df.columns = [x.strip() for x in self.df.columns]
+        #except: pass # fails for the IC50 where header is made of integers
 
     def read_data(self, filename):
         # remove possible white spaces in the header's names
@@ -147,24 +147,40 @@ class Reader(object):
             # this is to cope with pandas 0.13 on ReadTheDoc
             # and newer versions
             na_values = ["NA", "NaN"]
-            if filename.endswith(".gz") is False:
-                rawdf = pd.read_csv(filename, sep=separator, comment="#",
-                        na_values=na_values)
+            if filename.endswith(".gz"):
+                compression = "gzip"
+            elif filename.endswith(".bz2"):
+                compression = "bz2"
+            elif filename.endswith(".zip"):
+                compression = "zip"
+            elif filename.endswith(".xz"):
+                compression = "xz"
+            else:
+                compression = None
+                
+            # Sometimes a column in CSV file may have several values
+            # separated by comma. This should be surrended by quotes "
+            # To account for that feature, quotechar argument must be provided
+            # Besides, to avoid conflicts with spaces, skipinitialspace must
+            # be set to True. This also helps since spaces would be
+            # interpreted as a string. Using skipinitialspace, the spaces
+            # is converetd to NA
+            rawdf = pd.read_csv(filename, sep=separator, comment="#",
+                        na_values=na_values, skipinitialspace=True,
+                        compression=compression, quotechar='"')
                 #if sum([this.count('\t') for this in rawdf.columns])>2:
                 #    print("Your input file does not seem to be comma"
                 #        " separated. If tabulated, please rename with"
                 #        " .tsv or .txt extension")
-            else:
-                rawdf = pd.read_csv(filename, sep=separator, comment="#",
-                        compression='gzip', na_values=na_values)
             # Sometimes, a user will provide a CSV, which is actually
-            # tab-delimited. This is wrong and diffcult to catch.
+            # tab-delimited. This is wrong and difficult to catch
         except Exception as err:
-            print('Could not read %s' % filename)
+            msg = 'Could not read %s. See gdsctools.readers.Reader'
+            print(msg % filename)
             raise(err)
 
         # Make sure the columns' names are stripped
-        rawdf.rename(columns=lambda x: x.strip(), inplace=True)
+        #rawdf.rename(columns=lambda x: x.strip(), inplace=True)
 
         # let us drop columns that are unnamed and print information
         columns = [x for x in rawdf.columns if x.startswith('Unnamed')]
