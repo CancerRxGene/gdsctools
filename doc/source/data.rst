@@ -7,7 +7,7 @@ Data Format and Readers
 
 CSV and TSV formats
 --------------------
-The main formats used in **GDSCTools** are :term:`CSV`-based but :term:`TSV`-based formatted files may be accepted although not encouraged. The data files may be zipped with unix-like compress tools (gzip) but not ZIP from Windows. See Pandas documentation to know the exact list of authorised compression method. Note that files saved using **GDSCTools** will be saved in CSV format only.
+The main formats used in **GDSCTools** are :term:`CSV`-based but :term:`TSV`-based formatted files may be accepted although not encouraged. The data files may be compressed using bz2, xz, gzip of zip methods. See Pandas documentation to know the exact list of authorised compression method. Note that files saved using **GDSCTools** will be saved in CSV format only.
 
 **GDSCTools** provides tools to read different kind of structured CSV files. For
 instance in the ANOVA analysis, these 3 types of CSV-input files defined in :mod:`~gdsctools.readers` module) are used:
