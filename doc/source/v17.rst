@@ -1,10 +1,10 @@
 Notes to reproduce v17a results (GDSC1000 Cell paper)
 =========================================================
 
-:Reference:
+:Reference: Iorio et al 2016
 
-Following the report of the **v17a** data sets, which can be found on the 
-`CancerRxGene <http://www.cancerrxgene.org/gdsc1000/Pharmacogenomic_interactions.html>`_ page, we will reproduce the reports and ANOVA results posted in the link aforementionned. 
+We refer to the data used in the reference above as the **v17a** data sets. It can be found on the 
+`CancerRxGene <http://www.cancerrxgene.org/gdsc1000/Pharmacogenomic_interactions.html>`_ page. We will use this data to reproduce the results published in the same web page. 
 
 First, we need to download the data. For example, let us retrieve the BRCA
 tissue specific data set using **wget** command::
@@ -12,11 +12,13 @@ tissue specific data set using **wget** command::
     wget http://www.cancerrxgene.org/gdsc1000/Data/anova/BRCA/DATA/INPUT/ANOVA_input.txt
 
 
-.. warning:: in v17, the input file **ANOVA_input.txt** contains all IC50s and
+.. warning:: in v17a data, the input file is named **ANOVA_input.txt** 
+    It is a tabulated format and contains all IC50s and
     genomic features altogether. This is not recommended and we now expect
-    the IC50s and genomic_features to be in two different files. For back
-    compatibility, GDSCTools is able to extract the IC50 alone, or the 
-    genomic features alone. See hereafter and :ref:`data` section for details.
+    the IC50s and genomic_features to be in two different files. However, 
+    for back compatibility, GDSCTools is able to extract the IC50 alone, 
+    or the genomic features alone from that kind of format. See hereafter 
+    and :ref:`data` section for details.
 
 
 Once downloaded, create an ANOVA instance as follows::
@@ -24,9 +26,9 @@ Once downloaded, create an ANOVA instance as follows::
     from gdsctools import ANOVA
     an = ANOVA("ANOVA_input.txt", "ANOVA_input.txt")
 
-Here, we provide the filename twice. Internally, the first argument extracts te IC50s and the second one extracts the genomic features.
+Here, we provide the filename twice; this is not a mistake, please see the warning box above. Internally, the first argument extracts the IC50s and the second one extracts the genomic features.
 
-In v17, there are two parameters that are not the current default values that
+In v17a, there are two parameters that are not the current default values that
 must be set to reproduce the results::
 
     an.setttings.pvalue_correction_method = "qvalue"
@@ -45,11 +47,12 @@ In the case of a tissue specific analysis (here BRCA), the name of the tissue is
     report.create_html_pages()
 
 Note that the multiple corrected values reported by GDSCTools and found on the
-website are different by 2-3 %. This is known and due to a different implementation of the qvalue method (smoothing function). However, the number of
+website are different by a systematic bais of 2-3 %. This is known and due to a different implementation of the qvalue method (smoothing function). However, the number of
 tests and the ANOVA_FEATURE_pval column (pvalues of the FEATURE factor) should
 agree perfectly. Finally, note that because the value of the FDR (corrected
 values) differ, the number of significant associations below that threshold may
-also slightly differ slighlty.
+also slightly differ. However, results are consitent for FDR not close to the
+threshold.
 
 As for the PANCAN case, results are currently different between GDSCTools and
 what is posted within the link at the top of the page because there is currently a mismatch between the ANOVA_input file provided and the results provided (one has the MEDIA factor while there other has not)

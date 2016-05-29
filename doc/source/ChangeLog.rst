@@ -3,12 +3,20 @@ ChangeLog
 
 .. contents::
 
-Version 0.12 (9th May 2016)
+
+Version 0.13 (27th May 2016)
 -------------------------------
 
 .. rubric:: 0.13.0
 
-* BUG: fix typo in the setup.py file. Passed travis + all tests.
+* BUG:
+
+      - fix typo in the setup.py file. Passed travis + all tests before main
+        release.
+
+Version 0.12 (9th May 2016)
+-------------------------------
+
 
 .. rubric:: 0.12.1
 
@@ -21,36 +29,36 @@ Version 0.12 (9th May 2016)
 
 * CHANGES:
 
-    - SPEEDUP: 
-      - tissue specific analysis computational time decreased by 50% 
+    - SPEEDUP:
+      - tissue specific analysis computational time decreased by 50%
         by dropping the creation of dataframe and using a simple numpy array
         inside ANOVA.anova_one_drug_one_feature
       - Creation of volcano plots uses pure javascript for the data packages
         and the creation of the volcano plots was dramatically sped up by a
-        factor between 10 and 100e. One can still create volcano plot manually 
+        factor between 10 and 100e. One can still create volcano plot manually
         in pure matplotlib.
-      - Similarly, boxplots for tissue, MSI and all associations are now 
+      - Similarly, boxplots for tissue, MSI and all associations are now
         created using JS.
-    - Data packages have been refactored. The major difference concerns 
-      the HTML layout (most HTML files are now in the sub-directory 
+    - Data packages have been refactored. The major difference concerns
+      the HTML layout (most HTML files are now in the sub-directory
       called associations) so that is it cleaner at the top level. The volcano
-      plots are not in PNG format anymore but pure HTML/JS, which can be 
-      exported manually. The consequences is that the creation of data 
+      plots are not in PNG format anymore but pure HTML/JS, which can be
+      exported manually. The consequences is that the creation of data
       packages is 10 times faster.
-    - The standalone application had 2 options removed: --feature (alone) 
+    - The standalone application had 2 options removed: --feature (alone)
       and --fast options
     - Drug Identifier are now handled as pure integer. For back
       compatibility, old files that mix up IC50 and Genomic Features (e.g. v17
       data) are still interpreted; the DRUG ID in that case are written as
-      Drug_ID_IC50 and are transformed as just <ID> everywhere. 
+      Drug_ID_IC50 and are transformed as just <ID> everywhere.
     - associations output were named 1.html, 2.html... and are now named
       a1.html, a2.html...
-    - Because DRUG_ID are now integer and all HTML stored in the same directory 
+    - Because DRUG_ID are now integer and all HTML stored in the same directory
       the naming of the HTML files have been altered (e.g., associations starts
     - Report now accepts only one argument (the anova isntance). Second
       argument (results) is now optional. If not provided, ANOVA are computed on
       the fly
-    - Multicore module removed but ANOVA.anova_all has multicore option. This 
+    - Multicore module removed but ANOVA.anova_all has multicore option. This
       seems to work on Linux systems. Not tested on windows or MacOsX
     - IC50 may have duplicated drug ids (at different concentrations). Not good
       practice but that the format of e.g. v18, v19 IC50 files. A class
@@ -64,15 +72,15 @@ Version 0.11 (April-May 2016)
 
 .. rubric:: 0.11.3
 
-* CHANGES: 
+* CHANGES:
 
     - The parameter **pvalue_threshold** in the general settings was changed
       from infinite to 10e-3. This has an effect on the numlber of significant
-      hits reported in the HTML reports and volvano plots. This should not have 
+      hits reported in the HTML reports and volvano plots. This should not have
       a strong impact on the number of hits but guarantees a reasonably low
       pvalue before multiple testing
-    - If an input file named with .csv extension but the content is tabulated, 
-      there was no immediate error but lead to errors later (e.g. in ANOVA), which 
+    - If an input file named with .csv extension but the content is tabulated,
+      there was no immediate error but lead to errors later (e.g. in ANOVA), which
       is difficult to debug. Now, in such cases, an error will occur immediately
       when reading the file.
     - The warnings about MEDIA factor is removed since most of the files do not
@@ -85,11 +93,15 @@ Version 0.11 (April-May 2016)
 
 .. rubric:: 0.11.2
 
-* BUG: add missing file in the setup.py
+* BUG:
+
+    - add missing file in the setup.py
 
 .. rubric:: 0.11.1
 
-* BUG: Fixes the missing data package in the setup for pip installation
+* BUG:
+
+    - Fixes the missing data package in the setup for pip installation
 
 .. rubric:: 0.11.0
 
@@ -100,8 +112,8 @@ Version 0.11 (April-May 2016)
 
 * CHANGES:
 
-    - anova module was split into modules + anova so that elastic_net module can
-      inherit from module
+    - anova module was split into modules + anova so that elastic_net 
+      module can inherit from module
     - all share/data moved to gdsctools data
     - add scikit-learn dependencies
 
@@ -117,30 +129,30 @@ Version 0.10
 
 .. rubric:: 0.10.2
 
-* BUG Fixes:
+* BUG:
 
-  - Fixes issue #127 (If MSI factor missing, the anova still tries to use it)
-  - Fixes issue #126 (--out-directory ignored in gdsctools-anova pipeline)
-  - Fixes issue #125 and #124 (HTML report links broken)
+    - Fixes issue #127 (If MSI factor missing, the anova still tries to use it)
+    - Fixes issue #126 (--out-directory ignored in gdsctools-anova pipeline)
+    - Fixes issue #125 and #124 (HTML report links broken)
 
 .. rubric:: 0.10.1
 
-* BUG FIXES: 
+* BUG:
+
     - Fix set_cancer_type to accept lists of tissues again
 
 * CHANGES:
+
     - Fixes #119 by adding more tests.
     - reactivate get_significant hits functions.
     - rename ANOVAResults.get_significant_hits into get_html_table
-
-
-
 
 .. rubric:: 0.10
 
 Lots of changes in this version but for users the API should be very similar.
 
-* NEW:
+* NEWS:
+
     - Add a new factor called MEDIA_FACTOR. If not provided, genomic
       feature matrix can populated the MEDIA_FACTOR column automatically.
     - add a class COSMICInfo and a related data file called
@@ -149,17 +161,17 @@ Lots of changes in this version but for users the API should be very similar.
     - add new class GDSC to perform the entire analysis splitting data across
       companies found in DrugDecode and across cancer types.
 
-
 * CHANGES:
+
     - COSMIC class removed and replaced by COSMICInfo class
-    - column name convention:
+    - Column name convention:
         - FEATURE_ANOVA_pval --> ANOVA_FEATURE_pval
         - MSI_ANOVA_pval --> ANOVA_MSI_pval
         - TISSUE_ANOVA_pval --> ANOVA_TISSUE_pval
         - FEATURE_ANOVA_FDR_% -->  ANOVA_FEATURE_FDR
         - new column named ANOVA_MEDIA_pval
         - to be constistent, names such as FEATURE_pos have now underscores
-          to separate words e.g., (FEATUREpos --> FEATURE_pos, FEATUREneg 
+          to separate words e.g., (FEATUREpos --> FEATURE_pos, FEATUREneg
           --> FEATURE_neg, deltaMEAN --> delta_MEAN).
     - refactor :mod:`gdsctools.volcano` module to use new naming convention.
     - SAMPLE_NAME is not required anymore in the genomic features. This is
@@ -194,40 +206,46 @@ Version 0.9
 .. rubric:: 0.9.10
 
 * NEW:
-   - add settings as json file in the HTML report
-   - ANOVAResults has now a volcano() method
-   - add read_settings method in ANOVA
-   - add code in the HTML tree directory to reproduce HTML report and results
+
+    - add settings as json file in the HTML report
+    - ANOVAResults has now a volcano() method
+    - add read_settings method in ANOVA
+    - add code in the HTML tree directory to reproduce HTML report and results
 
 * CHANGES:
-   - anova_one_drug now returns an ANOVAResults object
-   - Restructure data package tree directory (#83)
-   - Default header have changed:
-       - COSMIC ID --> COSMID_ID
-       - Sample Name --> SAMPLE_NAME
-       - MS-instability Factor Value --> MSI_FACTOR
-       - Tissue Factor Value --> TISSUE_FACTOR
+
+    - anova_one_drug now returns an ANOVAResults object
+    - Restructure data package tree directory (#83)
+    - Default header have changed:
+        - COSMIC ID --> COSMID_ID
+        - Sample Name --> SAMPLE_NAME
+        - MS-instability Factor Value --> MSI_FACTOR
+        - Tissue Factor Value --> TISSUE_FACTOR
 
      Previous values will still be accepted but deprecation warning added.
 
-* BUG FIXES:
+* BUGS:
+
     - Fixes #89 (tight layout buggy under MAC)
 
 .. rubric:: 0.9.9
 
 * CHANGES:
-   - add new regression method: Ridge/Lasso/ElasticNet in
-     :class:`gdsctools.anova.ANOVA`
-   - Rename some of the settings to have a more uniform naming convention in
-     :class:`gdsctools.settings.ANOVASettings`
-   - Add new module related to fitting ot logistic function  parameters
-     (:mod:`gdsctools.logistics`)
+
+    - add new regression method: Ridge/Lasso/ElasticNet in
+      :class:`gdsctools.anova.ANOVA`
+    - Rename some of the settings to have a more uniform naming convention in
+      :class:`gdsctools.settings.ANOVASettings`
+    - Add new module related to fitting ot logistic function  parameters
+      (:mod:`gdsctools.logistics`)
 
 .. rubric:: 0.9.8
 
-* BUG: javascript were not included in version 0.9.7 had to rename js directory
-  into javascript to avoid known bug in distutils. Maybe solved in the future
-  but for bow just renamed the directory.
+* BUG: 
+  
+    - javascript were not included in version 0.9.7 had to rename js directory
+      into javascript to avoid known bug in distutils. Maybe solved in the 
+      future but for bow just renamed the directory.
 
 .. rubric:: 0.9.7
 

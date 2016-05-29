@@ -1,14 +1,13 @@
 Reproducibility
 #########################
 
-In this section we show how to reproduce some specific results produced in the
-context of GDSC1000 paper for example. 
+In this section we show how to reproduce some specific results such as those
+published in:
 
-The motivation for this section is to show that results can be reproduced IF the
-proper parameter are set.
+- GDSC1000 paper (see :ref:`v17a` section)
 
-Data sets used for real data analysis are tagged as vXY and we start with an
-example on v17 data
+The motivation for this section is to show that results can be reproduced using
+an official release and the proper set of parameters used in the analysis.
 
 
 

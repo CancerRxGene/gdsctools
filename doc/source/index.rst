@@ -16,8 +16,8 @@ GDSCTools documentation
 .. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=Done
    :target: https://waffle.io/CancerRxGene/gdsctools
 
-.. image:: https://readthedocs.io/projects/gdsctools/badge/?version=master
-    :target: http://gdsctools.readthedocs.org/en/latest/?badge=master
+.. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
+    :target: http://gdsctools.readthedocs.io/en/latest/?badge=master
     :alt: Documentation Status
 
 
@@ -25,7 +25,8 @@ GDSCTools documentation
 :Source: https://github.com/CancerRxGene/gdsctools
 
 
-**GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant associations between drugs and genomic features (e.g., gene mutation), however, it should be also of interest to a wider community involved in cancer projects.
+**GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant associations between drugs and genomic features (e.g., gene mutation) based on an ANOVA analysis. Note, however, that other methods based on e.g., Elastic Net are also available. Besides, the library should also be useful in manipulating dedicated data sets such as IC50 or MoBEM (genomic features) data structures.
+
 
 .. index:: installation
 
@@ -34,9 +35,11 @@ already about the Python ecosystem and the **pip** command, just type the follow
 
     pip install gdsctools
 
-If you are not familiar with this command, please see the :ref:`Installation` section for further details. Note that some releases of **GDSCTools** are available on `bioconda <bioconda.github.io>`_.
+add the option ``--upgrade`` to get the latest release. Conversely, if you are not
+familiar with Python or the command above, please see the :ref:`Installation` section
+for further details. Note also that we strongly recommend to use Anaconda to install dependencies (e.g., numpy, matplotlib).
 
-In the following example, we provide a short Python snippet on how to use **GDSCTools** (from a programmer point of view). You can either copy and paste the code in a file, and execute it or type the commands in an IPython shell. With this example we investigate the associations between the :term:`IC50` of a given drug (across 52 breast cancer cell lines) and a genomic feature (here, TP53 mutation):
+In the following example, we provide a short Python snippet that uses the **GDSCTools** library. You can either copy and paste the code in a file, and execute it or type the commands in an :term:`IPython` shell. With this example we investigate the associations between the :term:`IC50` of a given drug (across 52 breast cancer cell lines) and a genomic feature (here, TP53 mutation). Drugs are refer to by a unique identifier (here 1047):
 
 
 .. doctest::
@@ -55,11 +58,11 @@ In the following example, we provide a short Python snippet on how to use **GDSC
     gdsc.set_cancer_type('breast')
     df = gdsc.anova_one_drug_one_feature(1047, 'TP53_mut', show=True)
 
-The :attr:`df` is a dataframe that contains information explained in :ref:`regression`.
+The :attr:`df` object returned in the last statement is a dataframe that contains information explained in :ref:`regression` section.
 
 
 .. seealso:: For more examples and explanations, please visit
-    the :ref:`quickstart` section.
+    the :ref:`anova_partone` section.
 
 
 .. index:: warnings
@@ -74,17 +77,19 @@ set the verbose option to False and ignore warnings as follows::
 
 .. index:: standalone
 
-The snippets above should be typed within an IPython shell. Although
-the code remains simple, nevertheless, we also provide a standalone
-application called **gdsctools_anova**, which can be used within a
-standard :term:`Terminal` (same output as in the previous example)::
+We will see more examples on how to use **GDSCTools** to perform more
+systematic studies. However, let us note that **GDSCTools** also provide
+a standalone application called **gdsctools_anova**, 
+which can be used within a standard :term:`Terminal` (same 
+output as in the previous example)::
 
-    gdsctools_anova --input-ic50 <ic50 filename> --drug 1047  
+    gdsctools_anova --input-ic50 <ic50 filename> --drug 1047
         --feature TP53_mut --onweb
 
 
-If you want to have a go, please download this
+If you want to have a go, please download this 
 :download:`IC50 example <../../gdsctools/data/test_IC50.csv>`, which is required as an input.
+
 
 Another data set is required for this analysis, which is a genomic feature file (see :ref:`data`) but it can be replaced by yours. The default data set contains only a small set of genomic features and can be downloaded:
 :download:`GenomicFeature example <../../gdsctools/data/genomic_features.tsv.gz>`, and adapted to your needs.
@@ -106,9 +111,9 @@ Contents
     installation.rst
     quickstart.rst
     data.rst
+    anova_partone.rst
+    anova_parttwo.rst
     html.rst
-    settings.rst
-    results.rst
     data_packages.rst
     notebooks.rst
     standalone.rst
@@ -129,6 +134,8 @@ Please join https://github.com/CancerRxGene/gdsctools
 .. toctree::
     :hidden:
 
+    v17.rst
+    v18.rst
     ChangeLog.rst
     faqs
     glossary

@@ -2,7 +2,7 @@
 .. index:: gdsctools_anova
 .. _standalone:
 
-Standalone applications
+Standalone application
 ==========================
 
 Although we would encourage you to use the Python shell to have as much
@@ -23,8 +23,8 @@ The main goal is to provide an interface to the python library and consequently,
 
 We suppose the input data file is called IC50_10drugs.tsv
 
-ODOF
------------
+:term:`ODOF`
+-------------
 
 ::
 
@@ -32,8 +32,8 @@ ODOF
         Drug_999_IC50 --feature TP53_mut --onweb
 
 
-ODAF
-----------
+:term:`ODAF`
+--------------
 ::
 
     gdsctools_anova --input-ic50 IC50_10drugs.tsv --drug
@@ -41,8 +41,8 @@ ODAF
 
 
 
-ADAF
----------
+:term:`ADAF`
+---------------
 
 ::
 
@@ -54,7 +54,7 @@ Some other settings
 ----------------------
 
 
-Again, you can use the --help to get up-to-date information about the available
+Again, you can use the ``--help`` to get up-to-date information about the available
 arguments. However, let us give a couple of interesting ones.
 
 If you are interesting in a specific association of drug and feature, it is

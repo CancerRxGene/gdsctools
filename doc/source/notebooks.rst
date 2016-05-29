@@ -14,14 +14,14 @@ Within **GDSCTools**, we also provide a set of `IPython notebooks <http://ipytho
 The original notebooks that we provide in **GDSCTools** are available in the `GitHub repository <https://github.com/CancerRxGene/gdsctools/tree/master/notebooks>`_ and can visualised via the `nbviewer <http://nbviewer.ipython.org/github/CancerRxGene/gdsctools/tree/master/notebooks/>`_.
 
 
-.. warning:: if you installed gdsctools with pip, it may not be obvious to find
+.. warning:: if you installed GDSCTools with pip, it may not be obvious to find
    the notebooks on your system, in which case we would recommend to download
    the notebooks form the source code (link above).
 
 Note, however, that to get the best of the those notebooks (interactivity), you
 should try them locally:
 
-    - install gdsctools and IPython if not already done. 
+    - install GDSCTools and IPython if not already done. 
     - If you installed from source, the notebooks are in ./gdsctools/notebooks,
       otherwise, download the notebooks from the `online repository <https://github.com/CancerRxGene/gdsctools/tree/master/notebooks>`_.
     - Go in the directory where are located the notebooks and type (in a shell)::

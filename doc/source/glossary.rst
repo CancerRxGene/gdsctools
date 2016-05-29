@@ -115,5 +115,5 @@ Glossary
     IPython
         Python comes with a dedicated shell, which can be started in a terminal
         by typing **python**. However, an improved shell is provided with the
-        IPython environement, which should be installed independently. Note
+        IPython environment, which should be installed independently. Note
         that conda distribution usually comes with ipython already installed.
