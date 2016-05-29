@@ -122,50 +122,49 @@ class Reader(object):
                             "a dataframe.")
 
         #: if populated, can be used to check validity of a header
+        # used by drug_decode only may be removed
         self.header = []
+
+        # sanity check on cleaning columns if not alread done
+        try:self.df.columns = [x.strip() for x in self.df.columns]
+        except: pass # fails for the IC50 where header is made of integers
 
     def read_data(self, filename):
         # remove possible white spaces in the header's names
         if ".csv" in filename:
-            try:
-                # this is to cope with pandas 0.13 on ReadTheDoc
-                # and newer versions
-                try:
-                    rawdf = pd.read_csv(filename, sep=",", comment="#")
-                    if sum([this.count('\t') for this in rawdf.columns])>2: # 2 is arbitrary
-                        print("Your input file does not seem to be comma"
-                            " separated. If tabulated, please rename with"
-                            " .tsv or .txt extension")
-                except:
-                    rawdf = pd.read_csv(filename, sep=",", comment="#",
-                            compression='gzip')
-                # Sometimes, a user will provide a CSV, which is actually
-                # tab-delimited. This is wrong and diffcult to catch.
-            except Exception as err:
-                print('Could not read %s' % filename)
-                raise(err)
-            rawdf.rename(columns=lambda x: x.strip(), inplace=True)
-        elif ".tsv" in filename or '.txt' in filename: # txt not supported
-            # officialy but txt file from previous run were interepreted as tsv
-
-            try:
-                # this is to cope with pandas 0.13 on ReadTheDoc
-                # and newer versions
-                try:
-                    rawdf = pd.read_csv(filename, sep="\t", comment="#")
-                except:
-                    rawdf = pd.read_csv(filename, sep="\t", comment="#",
-                            compression='gzip')
-            except:
-                msg = 'Could not read %s' % filename
-                raise ValueError(msg)
-            rawdf.rename(columns=lambda x: x.strip(), inplace=True)
-        elif ".RData" in filename:
-            return
+            separator = ","
+        elif ".tsv" in filename:
+            separator = "\t"
+        elif ".txt" in filename:
+            separator = "\t"
+            print("GDSCTools warning: files with .txt extension are "
+                    "accepted (we assume a tab-separated file) but "
+                    "should be renamed with .csv or .tsv extension")
         else:
-            raise ValueError("Only file ending in .csv or .csv.gz or .tsv"+
-                " or .tsv.gz will be interpreted.")
+            raise NotImplementedError("Only .csv or .tsv files are accepted ")
 
+        try:
+            # this is to cope with pandas 0.13 on ReadTheDoc
+            # and newer versions
+            na_values = ["NA", "NaN"]
+            if filename.endswith(".gz") is False:
+                rawdf = pd.read_csv(filename, sep=separator, comment="#",
+                        na_values=na_values)
+                #if sum([this.count('\t') for this in rawdf.columns])>2:
+                #    print("Your input file does not seem to be comma"
+                #        " separated. If tabulated, please rename with"
+                #        " .tsv or .txt extension")
+            else:
+                rawdf = pd.read_csv(filename, sep=separator, comment="#",
+                        compression='gzip', na_values=na_values)
+            # Sometimes, a user will provide a CSV, which is actually
+            # tab-delimited. This is wrong and diffcult to catch.
+        except Exception as err:
+            print('Could not read %s' % filename)
+            raise(err)
+
+        # Make sure the columns' names are stripped
+        rawdf.rename(columns=lambda x: x.strip(), inplace=True)
 
         # let us drop columns that are unnamed and print information
         columns = [x for x in rawdf.columns if x.startswith('Unnamed')]
@@ -173,6 +172,13 @@ class Reader(object):
             print('%s  unnamed columns found and removed. ' % len(columns) +
                 'Please fix your input file.')
         self.df = rawdf.drop(columns, axis=1)
+
+        # Some fields may be empty strings, which must be set as NA
+        import warnings
+        warnings.filterwarnings('ignore')
+        self.df = self.df.replace(" ", "").replace("\t", "").replace("", 
+                np.nan)
+        warnings.filterwarnings("default")
 
         # Finally, check that names do not contain the unwanted character
         # / that was used in some old matrices.
@@ -402,6 +408,13 @@ class IC50(Reader, CosmicRows):
         # We also want to remove suffix _IC50 but in v18, we have names
         # such as Drug_1_0.33_IC50 to provide the concentration.
         # So, we should remove the string after the second _
+        try:
+            # get rid of possible " or ' signs
+            name = name.replace("'", "")
+            name = name.replace('"', "")
+        except Exception as err:
+            print(err)
+
         try:
             res = name.replace("Drug_", "").replace("DRUG_", "")
             res = res.split("_")[0]
@@ -982,6 +995,7 @@ class DrugDecode(Reader):
             self._interpret()
         except:
             pass
+        self.df = self.df[sorted(self.df.columns)]
 
     def _interpret(self, filename=None):
         N = len(self.df)
@@ -1172,7 +1186,7 @@ class DrugDecode(Reader):
 
 
     def get_public_and_one_company(self, company):
-
+        """Return drugs that belong to a specific company and public drugs"""
         drug_decode_company = self.df.query(
                "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company)
         # Transform into a proper DrugDecode class for safety
