@@ -545,7 +545,10 @@ class VolcanoANOVAJS(VolcanoANOVA):
         # This may be an issue with canvasXpress. It seems essential
         # to sort the color column so that names are sorted alphabetically
         # and to include colors that are present in the sale order
-        self.data.sort_values(by='color', inplace=True)
+        try:
+            self.data.sort_values(by='color', inplace=True)
+        except:
+            self.data.sort("color", inplace=True)
         colors = []
         if "not_significant" in self.data.color.values:
             colors.append("rgba(0,0,0,0.5)")  # black
