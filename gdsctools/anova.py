@@ -77,7 +77,7 @@ class ANOVA(BaseModels): #Logging):
         regression/anova test based on OLS regression. This is done for
         one feature one drug across all cell lines (tissue) in the method
         :meth:`anova_one_drug`. The regression
-        takes into account the following factors: tissue, MSI, MEDIA 
+        takes into account the following factors: tissue, MSI, MEDIA
         and features. If there is only one tissue, this factor is
         dropped. If the number of MSI values is less than a pre-defined
         parameter (see :class:`~gdsctools.settings.ANOVASettings`), it is
@@ -92,8 +92,8 @@ class ANOVA(BaseModels): #Logging):
     Specific notes about the parameters. Default settings are used except for
     those releases:
 
-    V17 :: 
-    
+    V17 ::
+
         gdsc.volcano_FDR_interpolation = False
         gdsc.settings.pvalue_correction_method = 'qvalue'
 
@@ -103,7 +103,7 @@ class ANOVA(BaseModels): #Logging):
 
     """
     def __init__(self, ic50, genomic_features=None,
-            drug_decode=None, verbose=True, 
+            drug_decode=None, verbose=True,
             set_media_factor=False):
         """.. rubric:: Constructor
 
@@ -120,11 +120,11 @@ class ANOVA(BaseModels): #Logging):
         Please see :mod:`~gdsctools.readers` module for details about the
         input formats.
 
-        The attribute :attr:`settings` contains specific settings related
-        to the analysis or visualation.
+        The :attr:`settings` attribute contains specific settings related
+        to the ANOVA analysis or visualisation.
         """
         super(ANOVA, self).__init__(ic50, genomic_features,
-            drug_decode=drug_decode, verbose=verbose, 
+            drug_decode=drug_decode, verbose=verbose,
             set_media_factor=set_media_factor)
 
         self.sampling = 0
@@ -268,14 +268,15 @@ class ANOVA(BaseModels): #Logging):
         return scipy.stats.ttest_ind(sample1, sample2,
                 equal_var=self.settings.equal_var_ttest)[1]
 
+
     def anova_one_drug_one_feature(self, drug_id,
             feature_name, show=False,
             production=False, directory='.'):
-        """Compute ANOVA and various tests on one drug and one feature
+        """    
 
         :param drug_id: a valid drug identifier
         :param feature_name: a valid feature name
-        :param bool show: show some plots
+        :param bool show: show boxplots with the different factor used
         :param str directory: where to save the figure.
         :param bool production: if False, returns a dataframe otherwise
             a dictionary. This is to speed up analysis when scanning
@@ -325,18 +326,16 @@ class ANOVA(BaseModels): #Logging):
                 df = pd.DataFrame(results, index=[1])
                 return df
 
-        # with the data extract, we can now compute the regression.
-
-        # In R or statsmodels, the regression code is simple since
-        # it is based on the formula notation (Y~C(msi)+feature)
-        # This is also possible in statsmodels library,  however,
-        # this relies on patsy, which is very slow as compared to the
-        # statsmodels without formula.
-        #### self._mydata = pd.DataFrame({'Y':self.Y,
-        ####    'tissue':self.masked_tissue,
-        ####       'msi': self.masked_msi, 'feature':self.masked_features})
-        #### self.data_lm = ols('Y ~ C(tissue) + C(msi) + feature',
-        ####  data=self._mydata, missing='none').fit() #Specify C is category
+        # ANOVA analysis using statsmodels. This is 3 times slower 
+        # than our implementation without the formula. However, formula
+        # could be valuable to extend the analysis to any type of analysis
+        #    df = pd.DataFrame({'Y':odof.Y, 'tissue': odof.masked_tissue,
+        #   'msi':odof.masked_msi, 'feature': odof.masked_features})
+        #    from statsmodels.stats.api import anova_lm
+        #    import statsmodels.formula.api as smf
+        #    model = smf.ols("Y ~  C(tissue) + C(msi) + feature", data=df)
+        #    res = model.fit()
+        #    pvalues = anova_lm(res)["PR(>F)"].values
 
         # IMPORTANT: the order of the factors in the formula
         # is important. It does not change the total sum of square errors
@@ -359,24 +358,6 @@ class ANOVA(BaseModels): #Logging):
             # convention as in R.
             # see http://statsmodels.sourceforge.net/devel/contrasts.html
             # for a good explanation
-
-            #self._mydata = pd.DataFrame({'Y': odof.Y.copy(),
-            #    'tissue':odof.masked_tissue,
-            #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
-            #self.data_lm2 = ols('Y ~ C(tissue) + C(msi) + feature',
-            #    data=self._mydata).fit() #Specify C for Categorical
-
-            # from statsmodels.stats.anova import anova_lm
-            # import statsmodels.formula.api as smf
-            # df  = pd.DataFrame({'Y': odof.Y.copy(),
-            #   'tissue':odof.masked_tissue,'media'
-            #    odof.masked_media, 'msi':  odof.masked_msi,
-            #   'feature': odof.masked_features})
-            # lm = smf.ols('Y~C(tissue)+C(media)+C(msi)+feature',
-            #    data=df).fit()
-            #  anova_lm(lm)
-            # The code above gives same answer as the code in gdsctools
-            # but is slower
 
             # We could use pd.get_dummies but pretty slow
             # instead we create the full matrix in init() method.
@@ -419,15 +400,11 @@ class ANOVA(BaseModels): #Logging):
             # example of computing null model ?
             # Example of computing pvalues ourself
             # with 100 000 samples, we can get a smooth distribution
-            # that we can then fit with fitter. good distribution 
-            # for the raw data is uniform one but if we take the log10, 
+            # that we can then fit with fitter. good distribution
+            # for the raw data is uniform one but if we take the log10,
             # we have lots of possible distrob such as beta, exponweib, gamma,
             #....
         elif self.settings.include_MSI_factor is True:
-            #self._mydata = pd.DataFrame({'Y': odof.Y,
-            #    'msi':  odof.masked_msi, 'feature': odof.masked_features})
-            #self.data_lm = ols('Y ~ C(msi) + feature',
-            #    data=self._mydata).fit() #Specify C for Categorical
             df = DummyDF()
             df.values = np.ones((3, odof.Npos + odof.Nneg))
             """df = pd.DataFrame()
@@ -444,15 +421,6 @@ class ANOVA(BaseModels): #Logging):
             df.values = np.ones((2, odof.Npos + odof.Nneg))
             df.values[1] = odof.masked_features
             df.values = df.values.T
-
-            #df = pd.DataFrame()
-            #df['feature'] = odof.masked_features
-            #df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))
-            #self.data_lm = OLS(odof.Y, df.values).fit()
-            #self._mydata = pd.DataFrame({'Y': odof.Y,
-            #    'feature': odof.masked_features})
-            #self.data_lm = ols('Y ~ feature',
-            #    data=self._mydata).fit() #Specify C for Categorical
 
         if self.settings.regression_method == 'ElasticNet':
             self.data_lm = OLS(odof.Y, df.values).fit_regularized(
@@ -578,6 +546,7 @@ class ANOVA(BaseModels): #Logging):
             return df
 
     def optimise_elastic_net(self, drug_name, feature_name, N=20, Nalpha=20):
+        """Dev not for production"""
         lwts = pylab.linspace(0, 1, N)
         alphas = pylab.linspace(0, 5, Nalpha)
 
@@ -598,10 +567,12 @@ class ANOVA(BaseModels): #Logging):
         return mses
 
     def optimise_ridge(self, drug_name, feature_name, alphas=None):
+        """Dev not for production"""
         return self._opt_ridge_lasso(drug_name, feature_name,
                 'Ridge', alphas=alphas)
 
     def optimise_lasso(self, drug_name, feature_name, alphas=None):
+        """Dev not for production"""
         return self._opt_ridge_lasso(drug_name, feature_name,
                 'Lasso', alphas=alphas)
 
@@ -634,7 +605,7 @@ class ANOVA(BaseModels): #Logging):
 
     # no need to optimise anymore
     def _get_anova_summary(self, data_lm, output='dict'):
-        # could use this with statsmodels but somehow anova_lm with typ I
+        # could use this with statsmodels but somehow anova_lm with type I
         # does not work, which is the one used in R version, so we implement
         # the anova here
         q, r = np.linalg.qr(data_lm.model.data.exog)
@@ -728,6 +699,7 @@ class ANOVA(BaseModels): #Logging):
             return {'feature': F_pvalues[0]}
 
     def _draft(self):
+        # kept for book-keeping
         # using sklearn
         #ols = linear_model.LinearRegression()
         #f = ols.fit(an.dff, an.Y)
@@ -757,8 +729,6 @@ class ANOVA(BaseModels): #Logging):
 
         Calls :meth:`anova_one_drug_one_feature` for each feature.
         """
-        # some features can be dropped ??
-
         # drop first and second columns that are made of strings
         # works under python2 but not python 3. Assume that the 2 first
         #columns are the sample name and tissue feature
@@ -781,7 +751,7 @@ class ANOVA(BaseModels): #Logging):
         N = len(selected_features.columns)
         pb = Progress(N, 10)
         res = {}
-        # 
+        #
         for i, feature in enumerate(selected_features.columns):
             # production True, means we do not want to create a DataFrame
             # for each call to the anova_one_drug_one_feature function
@@ -824,17 +794,21 @@ class ANOVA(BaseModels): #Logging):
             instance with the dataframe
             stored in an attribute called **df**
 
-        Loops over all drugs calling :meth:`anova_one_drug` for each
-        drug and concatenating all results together. Note that once all
-        data are gathered, an extra column containing the FDR corrections
-        is added to the dataframe using :meth:`add_pvalues_correction`
-        method. An extra column  named "ASSOC_ID" is also added with
+        Calls :meth:`anova_one_drug` for each drug and concatenate all 
+        results together. Note that once all data are gathered,
+        :meth:`add_pvalues_correction` is called to fill a new column 
+        with FDR corrections.
+
+        An extra column  named "ASSOC_ID" is also added with
         a unique identifer sorted by ascending FDR.
 
-        .. note:: A thorough comparison with version v17 give the same FDR
+        .. note:: A thorough comparison with version v17 gives the same FDR
             results (difference ~1e-6); Note however that the qvalue results
             differ by about 0.3% due to different smoothing in R and Python.
         """
+        if self.verbose and len(self.individual_anova):
+            print("Reusing some results from the buffer. "
+            "To reset the buffer, call resut_buffer() method")
         # drop DRUG where number of IC50 (non-null) is below 5
         # axis=0 is default but we emphasize that sum is over
         # column (i.e. drug
@@ -849,7 +823,7 @@ class ANOVA(BaseModels): #Logging):
 
         pb = Progress(len(drug_names), 1)
         drug_names = list(drug_names)
-        #pylab.shuffle(drug_names) # ? why 
+        #pylab.shuffle(drug_names) # ? why
 
         if animate is True:
             pb.animate(0)
@@ -903,11 +877,22 @@ class ANOVA(BaseModels): #Logging):
         return results
 
     def add_pvalues_correction(self, df, colname='ANOVA_FEATURE_pval'):
-        """Add the corrected pvalues column in a dataframe based on pvalues
+        """Compute and add corrected pvalues in column ANOVA_FEATURE_FDR
 
-        The default method (FDR correction) is stored in
+        :param df: a dataframe with a column named after colname (defaults to
+            ANOVA_FEATURE_pval). The output of :meth:`anova_all` contains such
+            a dataframe.
+        :param str colname: name of the column that contains the pvalues to be
+            corrected.
+
+        The default multiple testing correction (FDR correction) is stored in
         :attr:`settings.pvalue_correction_method` and can be changed to other
-        methods (e.g., *qvalue*)
+        methods (e.g., **qvalue**).
+
+        The results in stored in a column named **ANOVA_FEATURE_FDR** inside
+        the input dataframe **df**.
+
+        Values are in the range 0 to 1.
 
         .. seealso:: :meth:`anova_all`,
             :class:`~gdsctools.stats.MultipleTesting`
@@ -933,11 +918,28 @@ class ANOVA(BaseModels): #Logging):
         return df
 
     def reset_buffer(self):
+        """Reset the buffer used to store the results
+
+        When calling :meth:`anova_all`, the method :meth:`anova_one_drug`
+        is called for each drug and the results saved in the
+        :attr:`individual_anova` attribute. If called again, the results are
+        simply returned from the buffer and not recomputed. 
+
+        If you change a settings that affects the analysis and therefore the
+        results, then you should call this method.
+        """
         self.individual_anova = {}
 
 
 
 def analyse_one_drug(master, drug):
+    """Function used by :func:`multicore_analysis`
+
+    :param master: an instance of :class:`ANOVA`
+    :param drug: a valid drug name
+
+
+    """
     if drug in master.individual_anova.keys():
         res = master.individual_anova[drug]
     else:
@@ -947,6 +949,15 @@ def analyse_one_drug(master, drug):
 
 
 def multicore_analysis(anova, drugs, maxcpu=2):
+    """Function used by :class:`ANOVA` to perform multiprocess analysis
+
+    :param anova: an instance of :class:`ANOVA`
+    :param list drugs: list of drugs to analyse
+    :param int maxcpu: number of CPU to use
+
+    :return: the instance itself with the individual_anova attribute filled
+        with all results
+    """
     t = MultiProcessing(maxcpu=maxcpu)
     for i, drug in enumerate(drugs):
         if drug not in anova.individual_anova.keys():

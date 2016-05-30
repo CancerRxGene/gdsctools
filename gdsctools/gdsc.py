@@ -20,28 +20,69 @@ __all__ = ["IC50Cluster", "GDSC"]
 
 
 class IC50Cluster(IC50):
+    """Utility to cluster columns that correspond to the same drug ID
+
+    From GDSC v18 data sets onwards, DRUG identifiers may be duplicated
+    to account for different drug concentration. This is not recommended
+    since we'd rather use unique identifier for different experiments but to
+    account for this feature, the IC50Cluster will rename them columns and
+    transforming the data as follows.
+
+    Consider the case of the DRUG 1211. It appears 3 times in the original 
+    data::
+
+        Drug_1211_0.15625_IC50
+        Drug_1211_1_IC50
+        Drug_1211_10_IC50
+
+    Actually, there are about 15 such cases even though in general there are
+    only 2 duplicates::
+
+
+            DRUG_ID   1   2    3  total  icommon       ratio
+        21     1782  47  47  NaN     47      47  100.000000
+        20     1510  45  45  NaN     45      45  100.000000
+        19     1211  48  47  4.0     50      46   92.000000
+        18     1208  48  47  NaN     50      45   90.000000
+        16     1032  43  47  NaN     50      40   80.000000
+        17     1207  38  47  NaN     50      35   70.000000
+        13      231   2  39  NaN     39       2    5.128205
+        14      232  45   2  NaN     45       2    4.444444
+        10      226   2  45  NaN     45       2    4.444444
+        12      230   2  46  NaN     46       2    4.347826
+        15      238   2  46  NaN     46       2    4.347826
+        0       206   2  46  NaN     46       2    4.347826
+        1       211  46   2  NaN     46       2    4.347826
+        9       224   2  46  NaN     46       2    4.347826
+        8       223   2  46  NaN     46       2    4.347826
+        7       221   2  46  NaN     46       2    4.347826
+        6       217   2  46  NaN     46       2    4.347826
+        5       216   2  46  NaN     46       2    4.347826
+        4       215   2  46  NaN     46       2    4.347826
+        3       214   2  46  NaN     46       2    4.347826
+        2       213   2  46  NaN     46       2    4.347826
+        11      229   2  46  NaN     46       2    4.347826
+
+    The clustering works as follows. If the ratio of drugs in common between
+    several concentrations is large, then they are studied independently.
+    Otherwise they are merged.
+
+    In the final dataframe, the columns names are transformed into unique 
+    identifiers like in the IC50 class by removing the ``Drug_`` prefix and 
+    ````_conc_IC50`` suffix.
+
+    The :attr:`mapping` contains the mapping between new and old identifiers.
+
+    .. seealso:: :meth:`cleanup` method.
     """
+    def __init__(self, ic50, ratio_threshold=10, verbose=True, cluster=True):
+        """.. rubric:: constructor
 
-    .. todo:: doc
-
-    Used in v18 onwards to cluster the DRUG columns with same drug Identifiers.
-
-    The convention in v18 is not great. Drug ids should be unique anyway.
-
-    This class merges drug names (not identifiers) but duplicated identifiers
-    may appear.
-
-
-    ::
-
-        ic50 = IC50Cluster(gdsctools_data("test_v18_clustering.tsv"))
-
-        # This may not work if there are duplicated drug identifiers
-        IC50(ic50)
-
-    """
-    def __init__(self, ic50, ratio_threshold=10, verbose=True):
-        """
+        :param ic50:
+        :param int ratio_threshold:
+        :param bool verbose:
+        :param bool cluster: may be useful to not cluster the data for 
+            testing or debugging
 
         """
         super(IC50Cluster, self).__init__(ic50, v18=True)
@@ -50,15 +91,16 @@ class IC50Cluster(IC50):
 
         if self.verbose:
             print(self)
-        self.cluster()
-        self.cleanup()
-        if self.verbose:
-            print(self)
+        if cluster:
+            self.cluster()
+            self.cleanup()
+            if self.verbose:
+                print(self)
 
     def _get_to_cluster(self):
         info = self._info()
         if len(info) > 0:
-            to_cluster = info[info.ratio < 10].DRUG_ID.values
+            to_cluster = info[info.ratio < self.ratio_threshold].DRUG_ID.values
             return list(to_cluster)
         else:
             return []
@@ -140,7 +182,14 @@ class IC50Cluster(IC50):
             # Remove the individual columns
             self.df.drop(todrop, axis=1, inplace=True)
 
-    def cleanup(self):
+    def cleanup(self, offset=10000):
+        """Rename the columns into unique identifiers
+
+        :param int offset: if duplicated, add the offset
+
+        The :attr:`mapping` contains the mapping, which should be used
+        to update the decoder file.
+        """
         # Need to transform column names in proper identifiers (integer)
         # and makes sure identifiers are unique. If not, we add +10000
         # Also, for later we keep track of the original mame in a dictionary
@@ -149,7 +198,7 @@ class IC50Cluster(IC50):
         for col in self.df.columns:
             identifier = self.drug_name_to_int(col)
             while identifier in new_columns:
-                identifier += 10000 # not robust but would do for now
+                identifier += offset # not robust but would do for now
                 # We use a while since ids may occur 3 times
             self.extra_mapping[identifier] = col
             new_columns.append(identifier)
@@ -175,36 +224,28 @@ class GDSCBase(object):
 
 
 class GDSC(GDSCBase):
-    """Alias to ANOVA class with default settings to loop over all TCGA Tissues
-    and comnpanies.
+    """Wrapper of the :class:`~gdcstools.anova.ANOVA` class and reports to 
+    analyse all TCGA Tissues and companies automatically.
 
-    Reads
-
-    1. Nf Genomic feature files for different TCGA types.
-    2. a unique DRUG DECODER file
-    3. a unique IC50 file
-
-    and perform the Nf analysis saving results in appropriate files.
-
-    Then split the data for each companies.
-
-    It also converts tissue names into TCGA names.
-
-    .. todo:: How to get the GF files
+    First, one need to provide the unique IC50 files. Second, the DRugDecode
+    file (see :class:``) must be provided to convert identifiers into
+    drug names within the reports. Third, genomic feature files must be 
+    provided for each tissue. 
 
     First, create all main analysis that include all drugs::
 
         gg = GDSC('IC50_v18.csv', 'DRUG_DECODE.txt',
             genomic_feature_pattern='GF*csv')
-        # identifies all genomic features GF* that contains specific TCGA GF
-        gg.analysis() # This may take a while (1 hour) depending on the number of drugs.
 
-        # On v18, On an i7 core using 1 CPU this takes about 1 hour.30 minutes
-        # The PANCAN data set is the largest and takes about 1 hour itself
+    Then run the analysis. This will launch an ANOVA analysis for each 
+    tissue as well as a dedicated HTML report for each tissue considered.
 
-    You should now have a directory called **tissue_packages** with about 20 directories for
-    each TCGA GF file. Keep that in a safe place or you will have to restart
-    the analysis
+    This may take lots of time. On v18, on an i7 core using 1 CPU 
+    this takes about 1 hour.30 minutes
+
+    You should now have a directory called **tissue_packages** with about 
+    20 directories for each TCGA GF file. Keep that in a safe place or 
+    you will have to restart the analysis
 
     Second, split those data just created for each specific proprietary
     compounds. For instance::
@@ -214,7 +255,6 @@ class GDSC(GDSCBase):
     or for all in one go::
 
         gg.create_data_packages_for_companies()
-
 
     Third, create some summary pages::
 
@@ -346,6 +386,7 @@ class GDSC(GDSCBase):
                 except:
                     results_path = "%s/%s/OUTPUT/results.csv" % (self.main_directory, tcga)
                     results_df = ANOVAResults(results_path)
+
 
                 # MAke sure the results are formatted correctly
                 results = ANOVAResults(results_df)

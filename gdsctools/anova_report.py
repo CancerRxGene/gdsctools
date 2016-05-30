@@ -21,7 +21,6 @@ import warnings
 
 from gdsctools.report import HTMLTable, ReportMAIN
 from gdsctools.tools import Savefig
-from gdsctools.volcano import VolcanoANOVA
 from gdsctools.volcano import VolcanoANOVAJS
 from gdsctools.boxplots import BoxPlotsJS
 from gdsctools.settings import ANOVASettings
@@ -62,12 +61,15 @@ class ANOVAReport(object):
         r.settings.directory = 'testing'
         r.create_html_pages()
 
-    :Significant association: an association is significant if one of those
-        conditions is fulfilled:
-          - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
-          - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
-          - The field *FEATURE_delta_MEAN_IC50* must be < 0 (sensible) or
-            >= 0 (resistant)
+
+    .. rubric:: Significant association
+
+    An association is significant if
+
+      - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
+      - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
+    It is then labelled **sensible** if *FEATURE_delta_MEAN_IC50* is 
+    below 0, otherwise it is **resistant**.
 
 
     """
@@ -76,7 +78,8 @@ class ANOVAReport(object):
         """.. rubric:: Constructor
 
         :param gdsc: the instance with which you created the results to report
-        :param results: the results returned by :meth:`ANOVA.anova_all`
+        :param results: the results returned by :meth:`ANOVA.anova_all`. If
+            not provided, the ANOVA is run on the fly.
 
         """
         self.verbose = verbose
@@ -147,6 +150,7 @@ class ANOVAReport(object):
         n_drugs = len(self.df[self._colname_drug_id].unique())
 
         N = float(n_drugs * n_features)
+
         ratio = float(self.n_tests)/(N) * 100
         ratio = easydev.precision(ratio, digit=2)
 
@@ -280,6 +284,7 @@ class ANOVAReport(object):
         return df_count
 
     def get_drug_summary_data(self):
+        """Return dataframe with drug summary"""
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
 
@@ -292,7 +297,7 @@ class ANOVAReport(object):
         return df_count
 
     def drug_summary(self,  top=50, fontsize=15, filename=None):
-        """Return dataframe with significant drugs
+        """Return dataframe with significant drugs and plot figure
 
         :param fontsize:
         :param top: max number of significant associations to show
@@ -310,6 +315,7 @@ class ANOVAReport(object):
         return df_count
 
     def get_feature_summary_data(self):
+        """Return dataframe with feature summary"""
         # get sensible and resistant sub dataframes
         self._set_sensible_df()
         df_count_sensible = self.sensible_df.groupby('FEATURE').count()
@@ -318,7 +324,7 @@ class ANOVAReport(object):
         return df_count
 
     def feature_summary(self, filename=None, top=50, fontsize=15):
-        """Return dataframe with significant features
+        """Return dataframe with significant features and plot figure
 
         :param fontsize:
         :param top: max number of significant associations to show
@@ -816,6 +822,8 @@ class HTMLPageMain(ReportMAIN):
         diag = self.report.diagnostics()
         table = HTMLTable(diag, 'summary')
         txt = ''
+
+
         for index, row in diag.iterrows():
             if len(row.text) == 0 and len(row.value) == 0:
                 txt += '----<br/>'
@@ -875,6 +883,7 @@ class HTMLPageMain(ReportMAIN):
             df_drugs.index = ["{}-{}".format(x, get_name(x)) for x in df_drugs.index]
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
+
 
         # --------------------------- Create table with links to all drugs
         groups = self.report.df.groupby('DRUG_ID')

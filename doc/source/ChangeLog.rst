@@ -7,6 +7,13 @@ ChangeLog
 Version 0.13 (27th May 2016)
 -------------------------------
 
+.. rubric:: 0.13.1
+
+* CHANGES:
+
+    - DrugDecode file converts Drug_<ID>_IC50 into <ID> only so that
+      it is compatible with IC50 class.
+
 .. rubric:: 0.13.0
 
 * CHANGES:

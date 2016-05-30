@@ -14,7 +14,7 @@
 #  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
-"""ANOVAResults stored the output of the ANOVA analysis"""
+"""ANOVAResults data structure to store the output of the ANOVA analysis"""
 from collections import OrderedDict
 
 import pandas as pd
@@ -33,18 +33,17 @@ __all__ = ['ANOVAResults']
 class ANOVAResults(object):
     """Class to handle results of the ANOVA analysis
 
-    The :class:`ANOVA` performs the regression and ANOVA analysis and
-    returns an :class:`ANOVAResults` instance (e.g., when you call
-    :meth:`gdsctools.anova.ANOVA.anova_all` method). The :class:`ANOVAResults`
-    contains a dataframe with all results in :attr:`df`.
-
-    The columns of the dataframe are defined as follows:
-
+    The :class:`ANOVA` class and in particular its method
+    :meth:`~gdsctools.anova.ANOVA.anova_all` returns the results of
+    the ANOVA analysis for each drug and genomic feature. The results
+    are stored in a data structure defined in this class, which is 
+    just a dataframe stored in :attr:`df` attribute with the following
+    header:
 
     =========================== ===============================================
          Column name                                  Description
     =========================== ===============================================
-    ASSOC_ID                    Alphanumerical identifier of the interaction
+    ASSOC_ID                    Alphanumeric identifier of the interaction
     FEATURE                     The CFE involved in the interaction, it
                                 can be a mutated cancer driver gene
                                 (CG) [suffix _mut], an abberrantly
@@ -124,7 +123,30 @@ class ANOVAResults(object):
     =========================== ===============================================
 
     Note that those column names are renamed internally (and if the data is
-    saved in a new file).
+    saved in a new file):
+
+    ======================= ================================
+    ======================= ================================
+    assoc_id                ASSOC_ID
+    Drug id                 DRUG_ID
+    Owned_by                OWNED_BY
+    FEATUREpos_IC50_sd      FEATURE_pos_IC50_sd
+    FEATUREneg_IC50_sd      FEATURE_neg_IC50_sd
+    FEATUREpos_Glass_delta  FEATURE_pos_Glass_delta
+    FEATUREneg_Glass_delta  FEATURE_neg_Glass_delta
+    FEATUREpos_logIC50_MEAN FEATURE_pos_logIC50_MEAN
+    FEATUREneg_logIC50_MEAN FEATURE_neg_logIC50_MEAN
+    Drug Target             DRUG_TARGET
+    FEATURE_deltaMEAN_IC50  FEATURE_delta_MEAN_IC50
+    FEATURE_ANOVA_pval      ANOVA_FEATURE_pval
+    ANOVA FEATURE FDR %     ANOVA_FEATURE_FDR
+    MSI_ANOVA_pval          ANOVA_MSI_pval
+    Tissue_ANOVA_pval       ANOVA_TISSUE_pval
+    MEDIA_ANOVA_pval        ANOVA_MEDIA_pval
+    TISSUE_ANOVA_pval       ANOVA_TISSUE_pval
+    Drug name               DRUG_NAME
+    ======================= ================================
+
 
 
     """
@@ -133,10 +155,10 @@ class ANOVAResults(object):
     def __init__(self, filename=None):
         """.. rubric:: Constructor
 
-        :param str filename: Another ANOVAResults instance of a saved
-            dataframe that can be read by this class, that is a CSV
-            with the official header. This parameter can also be set
-            to None (default) and populated later.
+        :param str filename: Another ANOVAResults instance or a 
+            compatible CSV file with the correct header.
+            The filename may also be set to None (default) and 
+            populated later.
 
         """
         if filename is not None and isinstance(filename, str):
@@ -153,7 +175,7 @@ class ANOVAResults(object):
 
         #: dictionary with the relevant column names and their expected types
         self.mapping = OrderedDict()
-        self.mapping['ASSOC_ID'] =  np.dtype('int64')
+        self.mapping['ASSOC_ID'] = np.dtype('int64')
         self.mapping['FEATURE'] = np.dtype('O')
         self.mapping['DRUG_ID'] = np.dtype('int64')
         self.mapping['DRUG_NAME'] = np.dtype('O')
@@ -197,7 +219,7 @@ class ANOVAResults(object):
             'Tissue_ANOVA_pval': 'ANOVA_TISSUE_pval',
             'MEDIA_ANOVA_pval': 'ANOVA_MEDIA_pval',
             'TISSUE_ANOVA_pval': 'ANOVA_TISSUE_pval',
-            'Drug name': 'DRUG_NAME', 'A':'B'}, inplace=True)
+            'Drug name': 'DRUG_NAME', 'A': 'B'}, inplace=True)
 
         self.colnames_subset = [
             'ASSOC_ID', 'FEATURE',
@@ -234,12 +256,12 @@ class ANOVAResults(object):
     df = property(_get_df, _set_df, doc="dataframe with all results")
 
     def to_csv(self, filename):
-        """Save dataframe into a file using comma separated values"""
+        """Save the ANOVAResults dataframe into a CSV file"""
         assert filename.endswith('.csv'), "filename should end in .csv"
         self.df.to_csv(filename, sep=',', index=False)
 
     def read_csv(self, filename):
-        """Read a CSV file
+        """Read an ANOVAResults file from a CSV file
 
         .. todo:: check validity of the header
         """
@@ -263,6 +285,8 @@ class ANOVAResults(object):
         x-value is sign(FEATURE_delta_MEAN_IC50) times FEATURE_IC50_effect_size
         y-value is the FDR correction
 
+        See the online documentation for details on gdsctools.readthedocs.io.
+
         """
         self.handle_volcano = VolcanoANOVA(self.df, settings=settings)
         self.handle_volcano.volcano_plot_all()
@@ -276,15 +300,14 @@ class ANOVAResults(object):
         return txt
 
     def copy(self):
-        a = ANOVAResults(self.df.copy())
-        return
+        """Returns a copy """
+        return ANOVAResults(self.df.copy())
 
     def get_html_table(self, collapse_table=False, clip_threshold=2,
             index=False, header=True, escape=False):
+        """Return an HTML table for the reports"""
         cmap_clip = cmap_builder('#ffffff', '#0070FF')
         cmap_absmax = cmap_builder('green', 'white', 'red')
-
-        columns = ANOVAResults().colnames_subset
 
         # The copy is used because we'll change it afterwards
         df = self.df[self.colnames_subset].copy()
@@ -297,13 +320,11 @@ class ANOVAResults(object):
         # "a" as prefix
         df.ASSOC_ID = df.ASSOC_ID.apply(lambda x: int(str(x).replace("a", "")))
 
-
         html = HTMLTable(df, 'notused')
         # Those columns should be links
         html.add_href("FEATURE")
         html.add_href("ASSOC_ID", url="a", suffix=".html") # here url works like a prefix
         html.add_href("DRUG_ID", url="drug_", suffix=".html") # here url works like a prefix
-
 
         for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
                 'FEATURE_pos_Glass_delta']:
@@ -319,7 +340,7 @@ class ANOVAResults(object):
                 collapse_table=collapse_table, justify='center')
 
     def barplot_effect_size(self):
-
+        """Dev not for production"""
         # barplot of the IC50 effect size
         data = np.sign(self.df.FEATURE_delta_MEAN_IC50) * self.df.FEATURE_IC50_effect_size
         try:

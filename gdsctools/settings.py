@@ -56,7 +56,6 @@ class ANOVASettings(AttrDict):
     Here are the current values available.
 
 
-
     ========================= ================ ========================================
     Name                      Default          Description
     ========================= ================ ========================================
@@ -74,7 +73,7 @@ class ANOVASettings(AttrDict):
                                                provide a valid tissue name to
                                                be found in the Genomic Feature
                                                data set.
-    pvalue_correction_method    fdr              Type of p-values correction
+    pvalue_correction_method    fdr            Type of p-values correction
                                                method used. Could be *fdr*,
                                                *qvalue*  or one accepted
                                                by
@@ -100,7 +99,6 @@ class ANOVASettings(AttrDict):
     savefig                   False            Save the figure or not (PNG format)
     effect_threshold          0                Used in the volcano plot. See
                                                :class:`~gdsctools.volcano.VolcanoPlot`
-
     ========================= ================ ========================================
 
 
@@ -122,7 +120,6 @@ class ANOVASettings(AttrDict):
     .. seealso:: :ref:`settings_filtering` or
         gdsctools.readthedocs.org/en/master/settings.html#filtering
 
-    .. versionchanged:: 0.11.3  pvalue_threshold is now set to 10e-3; this may
         decrease the number of significant hits.
 
     """
@@ -227,7 +224,6 @@ class ANOVASettings(AttrDict):
 
     def __str__(self):
         txt = ''
-        for k,v in self.items():
-            txt += '- %s: %s\n' % (k,v)
+        for k, v in self.items():
+            txt += '- %s: %s\n' % (k, v)
         return txt
-

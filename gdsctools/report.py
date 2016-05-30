@@ -133,12 +133,7 @@ class ReportMAIN(Report):
                 shutil.copy(filename, target)
 
     def create_report(self, onweb=True):
-        try:
-            # some parent will have that method implemented
-            self._create_report()
-        except Exception as err:
-            print(err)
-            pass
+        self._create_report()
         self.write()
         if onweb is True:
             self.onweb()
