@@ -439,6 +439,9 @@ class IC50(Reader, CosmicRows):
         self.df.columns = [drug_name_to_int(x) for x in self.df.columns]
         self.df.columns = self.df.columns.astype(int)
 
+    def drug_name_to_int(self, name):
+        return drug_name_to_int(name)
+    
     def _get_drugs(self):
         return list(self.df.columns)
     def _set_drugs(self, drugs):
