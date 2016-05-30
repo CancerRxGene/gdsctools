@@ -297,7 +297,7 @@ class IC50(Reader, CosmicRows):
     of COSMIC identifiers and Drug. Nothing prevents you to fill the file with
     data that have other meaning (e.g. AUC).
 
-    If at least one column starts with "Drug_", all other columns will be
+    If at least one column starts with ``Drug_``, all other columns will be
     ignored. This was implemented for back compatibility.
 
     The order of the columns is not important.
@@ -424,12 +424,10 @@ class IC50(Reader, CosmicRows):
         # We also want to remove suffix _IC50 but in v18, we have names
         # such as Drug_1_0.33_IC50 to provide the concentration.
         # So, we should remove the string after the second _
-        try:
+        if isinstance(name, str):
             # get rid of possible " or ' signs
             name = name.replace("'", "")
             name = name.replace('"', "")
-        except Exception as err:
-            print(err)
 
         try:
             res = name.replace("Drug_", "").replace("DRUG_", "")

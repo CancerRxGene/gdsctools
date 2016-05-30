@@ -25,10 +25,16 @@ The datasets may be for testing purpose:
 or informative:
 
 - :attr:`cancer_cell_lines`
+- :attr:`cosmic_info`
 
 or used in analysis:
 
 - :attr:`genomic_features`
+- :attr:`ic50_v17`: IC50s for 1001 cell lines
+- :attr:`gf_v17`: dataset with genomic features for 1001 cell lines and 680
+  features (mutation, CNA)
+- :attr:`ic50_v5`
+- :attr:`gf_v5`
 """
 # use underscore to hide from API
 import easydev
@@ -79,46 +85,46 @@ class Data(object):
 
 # ============== DATA SETS DEFINITION
 
-#: Dataset with IC50s for 10 drugs (for testing)
+# Dataset with IC50s for 10 drugs (for testing)
 ic50_test = Data(
         filename=_gsf("IC50_10drugs.tsv"),
         description = 'IC50s for 10 public drugs across cell lines')
 
-#: Dataset with genomic features for 1001 cell lines and 680 features
+# Dataset with genomic features for 1001 cell lines and 680 features
 genomic_features = Data(
         filename = _gsf('genomic_features.tsv.gz'),
         description = 'Set of genomic features / tissue / msi')
 
-#: Dataset with cancer cell lines name / cosmic id/ tissue type and sub type
+# Dataset with cancer cell lines name / cosmic id/ tissue type and sub type
 cancer_cell_lines = Data(
         filename = _gsf('cancer_cell_lines.csv'),
         description = "List of cosmic identifiers with "+\
                 "the corresponding name, tissue and sub tissue types")
 
-#: Example of flat file to be read by COSMICFetcher
+# Example of flat file to be read by COSMICFetcher
 cosmic_builder_test = Data(
         filename = _gsf('cosmic_builder_test.txt'),
         description = "An example of flat file to be read by COSMICFetcher")
 
-#: Dataframe with COSMIC ID and their information
+# Dataframe with COSMIC ID and their information
 cosmic_info = Data(
         filename = _gsf('cosmic_info.csv.gz'),
         description = "Information about 1001 cell lines including COSMIC ID")
 
-#: IC50 from v17
+# IC50 from v17
 ic50_v17 = Data(_gsf("IC50_v17.csv.gz"))
 __all__.append("ic50_v17")
 
-#: Genomic Feature from v17
+# Genomic Feature from v17
 gf_v17 = Data(_gsf("genomic_features_v17.csv.gz"), 
         description="PANCAN genomic features from v17 GDSC release")
 __all__.append("gf_v17")
 
-#: IC50 from v5
+# IC50 from v5
 ic50_v5 = Data(_gsf("IC50_v5.csv.gz"))
 __all__.append("ic50_v5")
 
-#: Genomic Feature from v5
+# Genomic Feature from v5
 gf_v5 = Data(_gsf("genomic_features_v5.csv.gz"))
 __all__.append("gf_v5")
 

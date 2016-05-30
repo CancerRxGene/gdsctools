@@ -45,22 +45,22 @@ class DummyDF(object):
 # Not that Logging is not used: it is not pickable and prevent
 # multicore analysis.
 class ANOVA(BaseModels): #Logging):
-    """ANOVA analysis of the IC50 vs Feature matrices
+    """ANOVA analysis of the :term:`IC50` vs Feature matrices
 
     This class is the core of the analysis. It can be used to
     compute
 
     #. One association between a drug and a feature
     #. The association**S** between a drug and a set of features
-    #. All assocations between a set of deugs and a set of features.
+    #. All assocations between a set of drugs and a set of features.
 
     For instance here below, we read an IC50 matrix and compute the
     association for a given drug with a specific feature.
 
     Note that genomic features are not provided as input but a default
-    file is provided with this package that contains 677 genomic
-    features for 1001 cell lines. If your IC50 contains unknown cell lines,
-    you can provide your own file.
+    file is provided with this package that contains 49 genomic
+    features for 988 cell lines. If your IC50 contains unknown cell lines,
+    you can provide your own file or use the :mod:`gdsctools.datasets` v17.
 
     .. plot::
         :include-source:
@@ -77,20 +77,28 @@ class ANOVA(BaseModels): #Logging):
         regression/anova test based on OLS regression. This is done for
         one feature one drug across all cell lines (tissue) in the method
         :meth:`anova_one_drug`. The regression
-        takes into account the following factors: tissue, MSI and features.
-        The order matters. If there is only one tissue, this factor is
+        takes into account the following factors: tissue, MSI, MEDIA 
+        and features. If there is only one tissue, this factor is
         dropped. If the number of MSI values is less than a pre-defined
         parameter (see :class:`~gdsctools.settings.ANOVASettings`), it is
-        dropped. The other
+        dropped. MEDIA, MSI columns are optional. The other
         methods :meth:`anova_one_drug` and :meth:`anova_all` are wrappers
         around :meth:`anova_one_drug_one_feature` to loop over all drugs, and
         loop over all drugs and all features, respectively.
 
-    V17 : 
+        Please see the online documentation (ANOVA sections) for more help
+        on gdsctools.readthedocs.io
+
+    Specific notes about the parameters. Default settings are used except for
+    those releases:
+
+    V17 :: 
+    
         gdsc.volcano_FDR_interpolation = False
         gdsc.settings.pvalue_correction_method = 'qvalue'
 
-    V18 :
+    V18 ::
+
         gdsc.settings.FDR_threshold = 35
 
     """
@@ -109,8 +117,11 @@ class ANOVA(BaseModels): #Logging):
             see :mod:`readers` for more information.
         :param verbose: verbosity in "WARNING", "ERROR", "DEBUG", "INFO"
 
+        Please see :mod:`~gdsctools.readers` module for details about the
+        input formats.
+
         The attribute :attr:`settings` contains specific settings related
-        to the analysis or visulation.
+        to the analysis or visualation.
         """
         super(ANOVA, self).__init__(ic50, genomic_features,
             drug_decode=drug_decode, verbose=verbose, 

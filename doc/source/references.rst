@@ -115,6 +115,12 @@ Elastic Net Analysis
     :members:
     :undoc-members:
 
+Data Packages
+--------------
+
+.. automodule:: gdsctools.gdsc
+    :members:
+    :undoc-members:
 
 MISC
 ------
@@ -133,6 +139,10 @@ MISC
     :undoc-members:
 
 .. automodule:: gdsctools.models
+    :members:
+    :undoc-members:
+
+.. automodule:: gdsctools.errors
     :members:
     :undoc-members:
 
