@@ -9,8 +9,17 @@ Version 0.13 (27th May 2016)
 
 .. rubric:: 0.13.0
 
+* CHANGES:
+
+    - Reader class simplification and improvments: files can now be compressed
+      using gzip but also xz, zip and bz2 formats. The NA can be encoded as NA
+      or NaN strings. Spaces are interpreted as NA. 
+    - Sort DrugDecode's dataframe columns
+    - Updated all documentation
+
 * BUG:
 
+      - Fix scaling of the data with newest version of scikit-learn
       - fix typo in the setup.py file. Passed travis + all tests before main
         release.
 

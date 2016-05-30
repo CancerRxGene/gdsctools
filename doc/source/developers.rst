@@ -18,13 +18,13 @@ Then, in the directory where is the **setup.py** file, type ::
 
     python setup.py nosetests 
 
-You may also go directly in the ./tests/gdsctools directory  but some tests may
+You may also go directly in the ./test/gdsctools directory  but some tests may
 required extra files or permission.
 
 Documentation
 ----------------
 
-The documentation is based on Sphinx. This means that all code is documentated
+The documentation is based on Sphinx. This means that all code is documented
 using the REST syntax. Docstring are added in classes and
 functions as much as possible with code examples. 
 
@@ -37,9 +37,9 @@ the REST syntax. If you go to that directory and type::
     make html
 
 then the entire documentation included Tutorial and Developer guide 
-will be parsed and interpreted. The resulting html documentation can then be found in doc/build/html. For the Sphinx documentation to be generated, the **gdsctools** package must be installed.
+will be parsed and interpreted. The resulting html documentation can then be found in doc/build/html. For the Sphinx documentation to be generated, the **GDSCTools** package must be installed.
 
-.. note:: the command above will work only if gdsctools source code is 
+.. note:: the command above will work only if GDSCTools source code is 
     available and installed in the shell where the command is executed.
 
 
@@ -53,4 +53,17 @@ Continuous Integration
 ---------------------------
 
 This is based on Travis. The reports should be available here: https://travis-ci.org/CancerRxGene/gdsctools and the status is also reported in the main github page (https://github.com/CancerRxGene/gdsctools) as an icon (**build**)  that will be green or red depending  on the status of the build within Travis. 
+
+The required files is in the main directory and called **.travis.yml**
+
+ReadTheDocs
+----------------
+
+The doc is built on read the docs. The required files are **readthedocs.yml**
+and **requirements.txt**.
+
+
+
+
+
 
