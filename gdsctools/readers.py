@@ -38,6 +38,26 @@ import easydev
 __all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecode']
 
 
+
+def drug_name_to_int(name):
+    # We want to remove the prefix Drug_ 
+    # We also want to remove suffix _IC50 but in v18, we have names
+    # such as Drug_1_0.33_IC50 to provide the concentration.
+    # So, we should remove the string after the second _
+    if isinstance(name, str):
+        # get rid of possible " or ' signs
+        name = name.replace("'", "")
+        name = name.replace('"', "")
+    try:
+        res = name.replace("Drug_", "").replace("DRUG_", "")
+        res = res.split("_")[0]
+        res = int(res)
+        return res
+    except:
+        return int(name)
+
+
+
 class Reader(object):
     """Convenience base class to read CSV or TSV files (using extension)"""
     def __init__(self, data=None):
@@ -416,26 +436,8 @@ class IC50(Reader, CosmicRows):
         if self._v18 is True:
             return
 
-        self.df.columns = [self.drug_name_to_int(x) for x in self.df.columns]
+        self.df.columns = [drug_name_to_int(x) for x in self.df.columns]
         self.df.columns = self.df.columns.astype(int)
-
-    def drug_name_to_int(self, name):
-        # We want to remove the prefix Drug_ 
-        # We also want to remove suffix _IC50 but in v18, we have names
-        # such as Drug_1_0.33_IC50 to provide the concentration.
-        # So, we should remove the string after the second _
-        if isinstance(name, str):
-            # get rid of possible " or ' signs
-            name = name.replace("'", "")
-            name = name.replace('"', "")
-
-        try:
-            res = name.replace("Drug_", "").replace("DRUG_", "")
-            res = res.split("_")[0]
-            res = int(res)
-            return res
-        except:
-            return int(name)
 
     def _get_drugs(self):
         return list(self.df.columns)
@@ -976,8 +978,8 @@ class DrugDecode(Reader):
         - OWNED_BY
 
     The OWNED_BY and WEBRELEASE may be required to create packages for each
-    company. If those columns are not provided, the internal dataframe is filled
-    with None.
+    company. If those columns are not provided, the internal dataframe is 
+    filled with None.
 
     Note that older version of identifiers such as::
 
@@ -987,7 +989,8 @@ class DrugDecode(Reader):
 
         950
 
-    Then, the data is accessible as a dataframe, the index being the DRUG_ID column::
+    Then, the data is accessible as a dataframe, the index being the 
+    DRUG_ID column::
 
         data = DrugDecode('DRUG_DECODE.csv')
         data.df.ix[999]
@@ -1038,6 +1041,7 @@ class DrugDecode(Reader):
             # could be done already
             pass
 
+        self.df.index = [drug_name_to_int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
 
         # sort the columns
