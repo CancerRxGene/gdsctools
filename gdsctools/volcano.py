@@ -596,8 +596,12 @@ class VolcanoANOVAJS(VolcanoANOVA):
         self.data.markersize /= (self.data.markersize.max()/3.)
 
         #First value is Y, second is X, following will be used in the
-        jinja['data'] = self.data[["signed_effect", "log10pvalue",
-            "markersize"]].round(3).values.tolist()
+        try: # introduced in pandas > 0.16.2
+            jinja['data'] = self.data[["signed_effect", "log10pvalue",
+                "markersize"]].round(3).values.tolist()
+        except: #for py3.3 on travis
+            jinja['data'] = np.around(self.data[["signed_effect", "log10pvalue",
+                "markersize"]]).values.tolist()
         jinja['title'] = '"%s"' % name
 
         fdrs = self.get_fdr_ypos()
