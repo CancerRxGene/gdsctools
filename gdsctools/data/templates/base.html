@@ -47,10 +47,15 @@
     <h2 class="subtitle">Report and analysis created with
         <a target="_blank" href="https://gdsctools.readthedocs.io">GDSCTools</A>,  (version {{ version }})</h2>
     <hr>
-    <p>Analysis Domain: <b>{{ analysis_domain }}</b> tissues/cancer cell type</p>
+    <p>Analysis Domain: <b>{{ analysis_domain }}</b> tissues/cancer cell type
+    {% if collaborator %}
+    <br>
+    Drug Domain: <b>{{ collaborator }}</b> proprietary compounds and public
+compounds.
+    {% endif %}
+    </p>
     <hr>
       {% block content %}{% endblock %}
-
       <hr/>
 
     <div class="footer">
