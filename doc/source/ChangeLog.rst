@@ -11,8 +11,20 @@ Version 0.13 (27th May 2016)
 
 * CHANGES:
 
-    - DrugDecode file converts Drug_<ID>_IC50 into <ID> only so that
-      it is compatible with IC50 class.
+    - **DrugDecode**: In brief, the DRUG ID in the IC50 input file and the
+      DrugDecode files should be integers. Some old data sets use the
+      following convention to refer to a drug Drug_<ID>_IC50 and so DrugDecode
+      was using the same convention. However, we now convert this type of
+      identifier into integers. This is done internally for the IC50 file,
+      however, was not done inside the DrugDecoder file. This is now effective.
+    - HTML reports when using the GDSC class:
+      - Company names now appear systematically in the top of the company data
+        packages.
+      - Drug Names were missing and do now appear in top of the relevant HTML
+        pages.
+    - Boxplots: If a DrugDecode file is provided Boxplots show the DRUG ID 
+      and the real drug name in the matplotlib and JS boxplots
+
 
 .. rubric:: 0.13.0
 
@@ -20,7 +32,7 @@ Version 0.13 (27th May 2016)
 
     - Reader class simplification and improvments: files can now be compressed
       using gzip but also xz, zip and bz2 formats. The NA can be encoded as NA
-      or NaN strings. Spaces are interpreted as NA. 
+      or NaN strings. Spaces are interpreted as NA.
     - Sort DrugDecode's dataframe columns
     - Updated all documentation
 
@@ -128,7 +140,7 @@ Version 0.11 (April-May 2016)
 
 * CHANGES:
 
-    - anova module was split into modules + anova so that elastic_net 
+    - anova module was split into modules + anova so that elastic_net
       module can inherit from module
     - all share/data moved to gdsctools data
     - add scikit-learn dependencies
@@ -257,10 +269,10 @@ Version 0.9
 
 .. rubric:: 0.9.8
 
-* BUG: 
-  
+* BUG:
+
     - javascript were not included in version 0.9.7 had to rename js directory
-      into javascript to avoid known bug in distutils. Maybe solved in the 
+      into javascript to avoid known bug in distutils. Maybe solved in the
       future but for bow just renamed the directory.
 
 .. rubric:: 0.9.7
