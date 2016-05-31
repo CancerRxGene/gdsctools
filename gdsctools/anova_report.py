@@ -19,7 +19,7 @@ and genomic features"""
 import os
 import warnings
 
-from gdsctools.report import HTMLTable, ReportMAIN
+from gdsctools.report import HTMLTable, ReportMain
 from gdsctools.tools import Savefig
 from gdsctools.volcano import VolcanoANOVAJS
 from gdsctools.boxplots import BoxPlotsJS
@@ -118,8 +118,10 @@ class ANOVAReport(object):
         # create some data
         self._set_sensible_df()
 
+        self.company = None
+
         # just to create the directory
-        ReportMAIN(directory=self.settings.directory, verbose=self.verbose)
+        ReportMain(directory=self.settings.directory, verbose=self.verbose)
 
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
@@ -488,7 +490,8 @@ class ANOVAReport(object):
         N = len(df)
         pb = Progress(N)
 
-        html = Association(self, drug='dummy', feature='dummy',  fdr='dummy')
+        html = Association(self, drug='dummy', feature='dummy', fdr='dummy',
+                company=self.company)
 
         for i in range(N):
             html.drug = drugs[i]
@@ -568,7 +571,7 @@ class ANOVAReport(object):
 
         """
         df = self.get_significant_set()
-        page = HTMLPageMANOVA(self.gdsc, df)
+        page = HTMLPageMANOVA(self.gdsc, df, self.company)
         page.create_report(onweb)
 
     def create_html_pages(self, onweb=True):
@@ -584,7 +587,7 @@ class ANOVAReport(object):
         onweb(self.settings.directory + os.sep + 'index.html')
 
 
-class HTMLPageMANOVA(ReportMAIN):
+class HTMLPageMANOVA(ReportMain):
     """Creates an HTML page dedicated to significant hits
 
     ::
@@ -598,7 +601,7 @@ class HTMLPageMANOVA(ReportMAIN):
         h.report()
 
     """
-    def __init__(self, gdsc, df):
+    def __init__(self, gdsc, df, company):
         """.. rubric:: constructor
 
         :param : an ANOVA instance.
@@ -616,6 +619,7 @@ class HTMLPageMANOVA(ReportMAIN):
         self.jinja['manova'] = html
         self.jinja['analysis_domain'] = gdsc.settings.analysis_type
         self.jinja['resource_path'] = ".."
+        self.jinja["collaborator"] = company
 
     def _create_report(self):
         pass # used to avoid warning
@@ -629,9 +633,9 @@ class HTMLPageMANOVA(ReportMAIN):
 ##############################################################################
 
 
-class Association(ReportMAIN):
+class Association(ReportMain):
     def __init__(self, report, drug=None, feature=None,
-            fdr=-1, assoc_id=-1):
+            fdr=-1, assoc_id=-1, company=None):
 
         try:
             # here report is expected to be ANOVAReport
@@ -657,6 +661,7 @@ class Association(ReportMAIN):
                 init_report=False)
         self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['resource_path'] = ".."
+        self.jinja["collaborator"] = company
 
     def run(self):
         # to keep . Used in the standalone version
@@ -693,8 +698,7 @@ class Association(ReportMAIN):
 
         self.jinja['boxplots'] = section
 
-
-class HTMLOneFeature(ReportMAIN):
+class HTMLOneFeature(ReportMain):
     def __init__(self, report, data, subdata, feature):
         self.df = data
         self.subdf = subdata
@@ -721,6 +725,7 @@ class HTMLOneFeature(ReportMAIN):
         self.jinja['analysis_domaiin'] = report.settings.analysis_type
         self.jinja['n_hits'] = self.n_hits
         self.jinja['resource_path'] = ".."
+        self.jinja["collaborator"] = report.company
 
     def create_pictures(self):
         v = VolcanoANOVAJS(self.df, settings=self.settings)
@@ -728,7 +733,6 @@ class HTMLOneFeature(ReportMAIN):
         return html
 
     def _create_report(self, onweb=True):
-
         self.jinja['N_hits'] = len(self.subdf)
         if len(self.subdf) > 0:
             sign = ANOVAResults(self.subdf)
@@ -738,7 +742,7 @@ class HTMLOneFeature(ReportMAIN):
         self.jinja['volcano_jsdata'] =  self.create_pictures()
 
 
-class HTMLOneDrug(ReportMAIN):
+class HTMLOneDrug(ReportMain):
     def __init__(self, report, data, subdata, drug):
         """
         data is a dataframe with all results from anova_all
@@ -772,6 +776,7 @@ class HTMLOneDrug(ReportMAIN):
         self.jinja['n_cell_lines'] = len(report.gdsc.ic50.df[self.drug].dropna())
         self.jinja['drug_id'] = self.drug
 
+
         self.jinja['drug_name'] = report.drug_decode.get_name(self.drug)
         self.jinja['drug_target'] = report.drug_decode.get_target(self.drug)
         #self.jinja['drug_synonyms'] = report.drug_decode._get_row(self.drug, 'SYNONYMS')
@@ -780,6 +785,7 @@ class HTMLOneDrug(ReportMAIN):
         self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['n_hits'] = self.nhits
         self.jinja['resource_path'] = ".."
+        self.jinja["collaborator"] = report.company
 
     def create_pictures(self):
         v = VolcanoANOVAJS(self.df, settings=self.settings)
@@ -807,7 +813,7 @@ class HTMLOneDrug(ReportMAIN):
         self.jinja['volcano_jsdata'] =  self.create_pictures()
 
 
-class HTMLPageMain(ReportMAIN):
+class HTMLPageMain(ReportMain):
     def __init__(self, report, filename='index.html'):
         super(HTMLPageMain, self).__init__(
                 directory=report.settings.directory,
@@ -816,6 +822,7 @@ class HTMLPageMain(ReportMAIN):
         self.settings = report.settings
         self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['settings_table'] = self.settings.to_html()
+        self.jinja["collaborator"] = report.company
 
     def _create_report(self, onweb=True):
         # A summary table
