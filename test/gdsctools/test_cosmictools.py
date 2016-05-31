@@ -1,5 +1,6 @@
 from gdsctools.cosmictools import COSMICFetcher, COSMICInfo
 from gdsctools.datasets import cosmic_builder_test
+from nose.plugins.attrib import attr
 
 def test_cosmic_info():
     c = COSMICInfo()
@@ -15,6 +16,10 @@ def test_cosmic():
     r.get(924100)
     r.get('924100')
     r.get(924100, colname='SAMPLE_NAME')
-    r.on_web(924100)
     r.get(1000000000)
 
+
+@attr("onweb")
+def test_onweb():
+    r = COSMICInfo()
+    r.on_web(924100)
