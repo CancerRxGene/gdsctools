@@ -35,14 +35,14 @@ from colormap import rgb2hex, cmap_builder
 
 from reports import HTMLTable
 
-__all__ = ['ReportMAIN']
+__all__ = ['ReportMain']
 
 
 # Should re-user reports package
 from reports import Report
 
 
-class ReportMAIN(Report):
+class ReportMain(Report):
     """A base class to create HTML pages
 
     This :class:`Report` class holds the CSS and HTML layout and will ease
@@ -82,7 +82,7 @@ class ReportMAIN(Report):
         :param str mode: if none, report have a structure that contains the
             following directories: OUTPUT, INPUT, js, css, images, code.
             Otherwise, if mode is set to 'summary', only the following
-            directories are created: js, css, images, code
+            directories are created: js, css, images 
 
         """
         gdsctools_path = easydev.get_package_location('gdsctools')
@@ -94,10 +94,17 @@ class ReportMAIN(Report):
 
         searchpath = sepjoin([gdsctools_path, "gdsctools", "data", "templates"])
 
-        super(ReportMAIN, self).__init__(searchpath, filename=filename,
-            template_filename=template_filename, directory=directory,
-            extra_css_list=extra_css_list,
-            extra_js_list=extra_js_list, init_report=init_report)
+
+        if mode == "summary":
+            super(ReportMain, self).__init__(searchpath, filename=filename,
+                template_filename=template_filename, directory=directory,
+                extra_css_list=extra_css_list,
+                init_report=init_report)
+        else:
+            super(ReportMain, self).__init__(searchpath, filename=filename,
+                template_filename=template_filename, directory=directory,
+                extra_css_list=extra_css_list,
+                extra_js_list=extra_js_list, init_report=init_report)
 
         self.jinja['dependencies'] = self.get_table_dependencies("gdsctools").to_html()
         self.jinja['analysis'] = 'anova'
@@ -124,7 +131,7 @@ class ReportMAIN(Report):
         bs(self.abspath)
 
     def _init_report(self):
-        super(ReportMAIN, self)._init_report()
+        super(ReportMain, self)._init_report()
 
         for filename in ['EBI_logo.png', 'sanger-logo.png']:
             target = os.sep.join([self.directory, 'images', filename ])
