@@ -601,7 +601,7 @@ class VolcanoANOVAJS(VolcanoANOVA):
                 "markersize"]].round(3).values.tolist()
         except: #for py3.3 on travis
             jinja['data'] = np.around(self.data[["signed_effect", "log10pvalue",
-                "markersize"]].round(3)).values.tolist()
+                "markersize"]]).values.tolist()
         jinja['title'] = '"%s"' % name
 
         fdrs = self.get_fdr_ypos()
