@@ -234,14 +234,14 @@ def anova_one_drug_one_feature(anova, options):
     """Analyse the entire data set"""
 
     from gdsctools import anova_report
-    from gdsctools.report import ReportMAIN
+    from gdsctools.report import ReportMain
 
     if options.tissue is not None:
         anova.set_cancer_type(options.tissue)
     
 
     # just to create the directory
-    ReportMAIN(directory=options.directory)
+    ReportMain(directory=options.directory)
 
     odof = anova_report.Association(anova,
             drug=int(options.drug),
