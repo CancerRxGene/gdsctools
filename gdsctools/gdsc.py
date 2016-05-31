@@ -7,7 +7,7 @@ from gdsctools.readers import DrugDecode
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.anova_report import ANOVAReport
 from gdsctools.settings import ANOVASettings
-from gdsctools.anova_report import ReportMAIN
+from gdsctools.anova_report import ReportMain
 
 import pandas as pd
 
@@ -429,35 +429,16 @@ class GDSC(GDSCBase):
                 an.settings.analysis_type = tcga
 
                 # Now we create the report
-                self.report = ANOVAReport(an, results, verbose=self.verbose)
+                self.report = ANOVAReport(an, results, 
+                        drug_decode=drug_decode_company,
+                        verbose=self.verbose)
+                self.report.company = company 
                 self.report.settings.analysis_type = tcga
                 self.report.create_html_main(False)
                 self.report.create_html_manova(False)
                 self.report.create_html_features()
+                self.report.create_html_drugs()
                 self.report.create_html_associations()
-
-                # Volcano plot for a given drug (ODAF)
-                # do not need to be recomputed. If already done,
-                # we just need to copy it (faster)
-                # Although, names of the brand may not appear correctly
-                from easydev import shellcmd, Progress
-                drug_ids = results.df.DRUG_ID.unique()
-                print("Copying drug HTML files")
-                pb = Progress(len(drug_ids))
-                for i, drug_id in enumerate(drug_ids):
-                    # copy the HTML
-                    filename = "drug_%s.html" % drug_id
-                    source = "%s%s%s%sassociations%s" % (self.main_directory,
-                        os.sep, tcga, os.sep , os.sep)
-                    dest = os.sep.join([self.company_directory, company, tcga, "associations"])
-                    dest += os.sep
-                    cmd = "cp %s%s %s" % (source, filename, dest )
-                    shellcmd(cmd, verbose=False)
-                    #copy the images
-
-                    if self.settings.animate:
-                        pb.animate(i+1)
-                if self.settings.animate:print("\n")
 
     def _get_tcga(self):
         return [x.split("_")[1].split(".")[0] for x in self.gf_filenames]
@@ -496,10 +477,7 @@ class GDSC(GDSCBase):
             |   |-- index.html
 
 
-
-
         """
-
         # First for the main directory (tissue_packages):
         print(purple("Creating summary index.html for the tissues"))
         self._create_summary_pages(self.main_directory, verbose=False)
@@ -523,9 +501,10 @@ class GDSC(GDSCBase):
         # We could also add a column with number of association ?
         companies = self.companies[:]
         df = pd.DataFrame({"Company": companies})
-        html_page = ReportMAIN(directory=".",
+        html_page = ReportMain(directory=".",
                 filename='index.html',
-                template_filename='main_summary.html' )
+                template_filename='main_summary.html',
+                mode="summary")
         html_table = HTMLTable(df)
         html_table.add_href('Company', newtab=True, url="company_packages/",
                 suffix="/index.html")
@@ -590,9 +569,10 @@ class GDSC(GDSCBase):
 
         output_dir = main_directory + os.sep + '..' + os.sep
         output_file = output_dir + os.sep + 'index.html'
-        self.html_page = ReportMAIN(directory=main_directory,
+        self.html_page = ReportMain(directory=main_directory,
                 filename='index.html',
-                template_filename='datapack_summary.html' )
+                template_filename='datapack_summary.html',
+                mode="summary")
 
         # Let us use our HTMLTable to add the HTML references
         self.html_table = HTMLTable(df)
