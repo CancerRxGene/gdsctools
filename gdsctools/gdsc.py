@@ -28,7 +28,7 @@ class IC50Cluster(IC50):
     account for this feature, the IC50Cluster will rename them columns and
     transforming the data as follows.
 
-    Consider the case of the DRUG 1211. It appears 3 times in the original 
+    Consider the case of the DRUG 1211. It appears 3 times in the original
     data::
 
         Drug_1211_0.15625_IC50
@@ -67,8 +67,8 @@ class IC50Cluster(IC50):
     several concentrations is large, then they are studied independently.
     Otherwise they are merged.
 
-    In the final dataframe, the columns names are transformed into unique 
-    identifiers like in the IC50 class by removing the ``Drug_`` prefix and 
+    In the final dataframe, the columns names are transformed into unique
+    identifiers like in the IC50 class by removing the ``Drug_`` prefix and
     ````_conc_IC50`` suffix.
 
     The :attr:`mapping` contains the mapping between new and old identifiers.
@@ -81,7 +81,7 @@ class IC50Cluster(IC50):
         :param ic50:
         :param int ratio_threshold:
         :param bool verbose:
-        :param bool cluster: may be useful to not cluster the data for 
+        :param bool cluster: may be useful to not cluster the data for
             testing or debugging
 
         """
@@ -224,54 +224,60 @@ class GDSCBase(object):
 
 
 class GDSC(GDSCBase):
-    """Wrapper of the :class:`~gdcstools.anova.ANOVA` class and reports to 
-    analyse all TCGA Tissues and companies automatically.
+    """Wrapper of the :class:`~gdcstools.anova.ANOVA` class and reports to
+    analyse all TCGA Tissues and companies automatically while creating summary
+    HTML pages.
 
-    First, one need to provide the unique IC50 files. Second, the DRugDecode
-    file (see :class:``) must be provided to convert identifiers into
-    drug names within the reports. Third, genomic feature files must be 
-    provided for each tissue. 
+    First, one need to provide an unique IC50 file. Second, the DrugDecode
+    file (see :class:`~gdsctools.readers.DrugDecode`) must be provided
+    with the DRUG identifiers and their corresponding names. Third,
+    a set of genomic feature files must be provided for each :term:`TCGA`
+    tissue.
 
-    First, create all main analysis that include all drugs::
 
+    You then create a GDSC instance::
+
+        from gdsctools import GDSC
         gg = GDSC('IC50_v18.csv', 'DRUG_DECODE.txt',
             genomic_feature_pattern='GF*csv')
 
-    Then run the analysis. This will launch an ANOVA analysis for each 
-    tissue as well as a dedicated HTML report for each tissue considered.
+    At that stage you may want to change the settings, e.g::
 
-    This may take lots of time. On v18, on an i7 core using 1 CPU 
-    this takes about 1 hour.30 minutes
+        gg.settings.FDR_threshold = 20
 
-    You should now have a directory called **tissue_packages** with about 
-    20 directories for each TCGA GF file. Keep that in a safe place or 
-    you will have to restart the analysis
+    Then run the analysis::
 
-    Second, split those data just created for each specific proprietary
-    compounds. For instance::
+        gg.analysis()
 
-        gg.create_data_packages_for_companies(['AZ'])
+    This will launch an ANOVA analysis for each TCGA tissue + PANCAN case
+    if provided. This will also create a data package for each tissue.
+    The data packages are stored in ./tissue_packages directory.
 
-    or for all in one go::
+    Since all private and public drugs are stored together, the next step is 
+    to create data packages for each company::
 
         gg.create_data_packages_for_companies()
 
-    Third, create some summary pages::
+    you may select a specific one if you wish::
+
+        gg.create_data_packages_for_companies(['AZ'])
+
+    Finally, create some summary pages::
 
         gg.create_summary_pages()
 
-    The last step is fast (a few seconds) and create index.html in the
-    tissue_package directory and each proprietary directory.
-
-
+    You entry point is an HTML file called **index.html**
     """
     def __init__(self, ic50, drug_decode,
             genomic_feature_pattern="GF_*csv",
             main_directory="tissue_packages", verbose=True):
-        """
+        """.. rubric:: Constructor
+        
+        :param ic50: an :class:`~gdsctools.readers.IC50` file.
+        :param drug_decode: an :class:`~gdsctools.readers.DrugDecode` file.
+        :param genomic_feature_pattern: a glob to a set of
+            :class:`~gdsctools.readers.GenomicFeature` files.
 
-        ic50 must be a filename (not IC50 instance) because it will be used for
-        each genomic features file
         """
         super(GDSC, self).__init__(genomic_feature_pattern, verbose=verbose)
         assert isinstance(ic50, str)
@@ -294,7 +300,7 @@ class GDSC(GDSCBase):
         # quick test on 15 features
         self.test = False
 
-    def analyse(self, onweb=False, multicore=None):
+    def analyse(self, multicore=None):
         """Launch ANOVA analysis and creating data package for each tissue.
 
         :param bool onweb: By default, reports are created
@@ -306,9 +312,9 @@ class GDSC(GDSCBase):
         self.mkdir(self.main_directory)
         # First analyse all TCGA cases + PANCAN once for all and
         # store all the results in a dictionary.
-        self._analyse_all(onweb=onweb, multicore=multicore)
+        self._analyse_all(multicore=multicore)
 
-    def _analyse_all(self, onweb, multicore=None):
+    def _analyse_all(self, multicore=None):
         for gf_filename in sorted(self.gf_filenames):
             tcga = gf_filename.split("_")[1].split('.')[0]
             print(purple('======================== Analysing %s data' % tcga))
@@ -340,9 +346,11 @@ class GDSC(GDSCBase):
             self.report = ANOVAReport(an)
             self.report.settings.savefig = True
 
-            self.report.create_html_pages(onweb=onweb)
+            self.report.create_html_pages(onweb=False)
 
     def create_data_packages_for_companies(self, companies=None):
+        """Creates a data package for each company found in the DrugDecode file
+        """
         ##########################################################
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
         #                                                        #
@@ -429,10 +437,10 @@ class GDSC(GDSCBase):
                 an.settings.analysis_type = tcga
 
                 # Now we create the report
-                self.report = ANOVAReport(an, results, 
+                self.report = ANOVAReport(an, results,
                         drug_decode=drug_decode_company,
                         verbose=self.verbose)
-                self.report.company = company 
+                self.report.company = company
                 self.report.settings.analysis_type = tcga
                 self.report.create_html_main(False)
                 self.report.create_html_manova(False)
@@ -449,20 +457,21 @@ class GDSC(GDSCBase):
     companies = property(_get_companies)
 
     def create_summary_pages(self):
-        """
+        """Create summary pages
 
         Once the main analyis is done (:meth:`analyse`), and the company
         packages have been created (:meth:`create_data_packages_for_companies`),
         you can run this method that will creade a summary HTML page
         (index.html) for the tissue, and a similar summary HTML page for the
-        tissues of each company. Finally, an HTML summary page for the companies
-        is also created. 
+        tissues of each company. Finally, an HTML summary page for the 
+        companies is also created.
 
         The final tree direcorty looks like::
 
 
             |-- index.html
             |-- company_packages
+            |   |-- index.html
             |   |-- Company1
             |   |   |-- Tissue1
             |   |   |-- Tissue2
@@ -472,9 +481,9 @@ class GDSC(GDSCBase):
             |   |   |-- Tissue2
             |   |   |-- index.html
             |-- tissue_packages
+            |   |-- index.html
             |   |-- Tissue1
             |   |-- Tissue2
-            |   |-- index.html
 
 
         """
@@ -513,7 +522,7 @@ class GDSC(GDSCBase):
         html_page.jinja['tissue_directory'] = self.main_directory
         html_page.write()
 
-    def _create_summary_pages(self, main_directory, verbose=True, 
+    def _create_summary_pages(self, main_directory, verbose=True,
             company=None):
         # Read all directories in tissue_packages
 

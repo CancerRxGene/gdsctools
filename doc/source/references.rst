@@ -30,13 +30,6 @@ The ANOVA report
     :members:
     :undoc-members:
 
-GDSC report
-~~~~~~~~~~~~~~~~~
-
-.. automodule:: gdsctools.gdsc
-    :members:
-    :undoc-members:
-
 Statistical Tools
 -------------------
 .. automodule:: gdsctools.stats

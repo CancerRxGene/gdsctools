@@ -17,7 +17,7 @@
 """IO functionalities
 
 
-Provides readers to read
+Provides readers to read the following formats
 
 - Matrix of IC50 data set :class:`IC50`
 - Matrix of Genomic features with :class:`GenomicFeatures`
