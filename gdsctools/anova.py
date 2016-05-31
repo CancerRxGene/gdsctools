@@ -130,7 +130,7 @@ class ANOVA(BaseModels): #Logging):
         self.sampling = 0
         self.pvalues_features = {}
 
-    def _get_one_drug_one_feature_data(self, drug_name, feature_name,
+    def _get_one_drug_one_feature_data(self, drug_id, feature_name,
             diagnostic_only=False):
         """
         return: a dictionary with relevant information. There is also
@@ -143,7 +143,7 @@ class ANOVA(BaseModels): #Logging):
         # select IC50 of a given drug
         # a fast way to select non-NA values from 1 column:
         # dropna is actually faster than a method using a mask.
-        #dd.Y = self.ic50.df[drug_name].dropna()
+        #dd.Y = self.ic50.df[drug_id].dropna()
         #indices = dd.Y.index
         #dd.masked_features = self.features.df[feature_name][indices]
         #dd.masked_tissue = self.tissue_factor[indices]
@@ -153,7 +153,7 @@ class ANOVA(BaseModels): #Logging):
         #dd.positive_msi = dd.masked_msi.values.sum()
         #dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
         # using a mask instead of indices is 30% slower
-        #mask = self.ic50.df[drug_name].isnull()==False
+        #mask = self.ic50.df[drug_id].isnull()==False
         #dd.masked_features = self.features.df[feature_name][mask]
         #dd.masked_tissue = self.tissue_factor[mask]
         #dd.masked_msi = self.msi_factor[mask]
@@ -162,10 +162,10 @@ class ANOVA(BaseModels): #Logging):
         # 2-3 times faster. It requires to transform the dataframe into a
         # dictionary once for all and dropping the NA as well.
         # Now, the next line takes no time
-        dd.Y = self.ic50_dict[drug_name]['Y']
+        dd.Y = self.ic50_dict[drug_id]['Y']
 
         # an alias to the indices
-        indices = self.ic50_dict[drug_name]['indices']
+        indices = self.ic50_dict[drug_id]['indices']
         dd.indices = indices
         # select only relevant tissues/msi/features
 
@@ -173,17 +173,17 @@ class ANOVA(BaseModels): #Logging):
         # code that follows, the creation of this masked_features was
         # taking 99% of the time in this function and now takes about 50%
         #dd.masked_features = self.features.df.loc[indices, feature_name].values
-        real_indices = self.ic50_dict[drug_name]['real_indices']
+        real_indices = self.ic50_dict[drug_id]['real_indices']
         dd.masked_features = self.features.df[feature_name].values[real_indices]
 
-        dd.masked_tissue = self.tissue_dict[drug_name]
+        dd.masked_tissue = self.tissue_dict[drug_id]
         if self.features.found_msi:
-            dd.masked_msi = self.msi_dict[drug_name]
+            dd.masked_msi = self.msi_dict[drug_id]
             dd.positive_msi = dd.masked_msi.values.sum()
             dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
 
         if self.features.found_media:
-            dd.masked_media = self.media_dict[drug_name]
+            dd.masked_media = self.media_dict[drug_id]
 
         # compute length of pos/neg features and MSI
         dd.positive_feature = dd.masked_features.sum()
@@ -213,7 +213,9 @@ class ANOVA(BaseModels): #Logging):
 
         # additional information
         dd.feature_name = feature_name
-        dd.drug_name = drug_name
+        dd.drug_id = drug_id
+        dd.drug_target = self.drug_decode.get_target(drug_id)
+        dd.drug_name = self.drug_decode.get_name(drug_id)
 
         # FIXME is False does not give the same results as == False
         # in the test test_anova.py !!
@@ -303,8 +305,6 @@ class ANOVA(BaseModels): #Logging):
         # This is now pretty fast accounting for 45 seconds
         # for 265 drugs and 988 features
         odof = self._get_one_drug_one_feature_data(drug_id, feature_name)
-        drug_name = self.drug_decode.get_name(drug_id)
-        drug_target = self.drug_decode.get_target(drug_id)
 
         # if the status is False, it means the number of data points
         # in a category (e.g., positive feature) is too low.
@@ -312,9 +312,9 @@ class ANOVA(BaseModels): #Logging):
         if odof.status is False:
             results = self._odof_dict.copy()
             results['FEATURE'] = feature_name
-            results['DRUG_ID'] = drug_id
-            results['DRUG_NAME'] = drug_name
-            results['DRUG_TARGET'] = drug_target
+            results['DRUG_ID'] = odof.drug_id
+            results['DRUG_NAME'] = odof.drug_name
+            results['DRUG_TARGET'] = odof.drug_target
             results['N_FEATURE_pos'] = odof.Npos
             results['N_FEATURE_neg'] = odof.Nneg
             if production is True:
@@ -518,9 +518,9 @@ class ANOVA(BaseModels): #Logging):
             if self.settings.include_MSI_factor:
                 boxplot.boxplot_pancan(fignum=3, mode='msi')
         results = {'FEATURE': feature_name,
-                'DRUG_ID': drug_id,
-                'DRUG_NAME': drug_name,
-                'DRUG_TARGET': drug_target,
+                'DRUG_ID': odof.drug_id,
+                'DRUG_NAME': odof.drug_name,
+                'DRUG_TARGET': odof.drug_target,
                 'N_FEATURE_pos': odof.Npos,
                 'N_FEATURE_neg': odof.Nneg,
                 'FEATURE_pos_logIC50_MEAN': odof.pos_IC50_mean,
@@ -545,7 +545,7 @@ class ANOVA(BaseModels): #Logging):
             df = pd.DataFrame(results, index=[1])
             return df
 
-    def optimise_elastic_net(self, drug_name, feature_name, N=20, Nalpha=20):
+    def optimise_elastic_net(self, drug_id, feature_name, N=20, Nalpha=20):
         """Dev not for production"""
         lwts = pylab.linspace(0, 1, N)
         alphas = pylab.linspace(0, 5, Nalpha)
@@ -558,7 +558,7 @@ class ANOVA(BaseModels): #Logging):
                 self.settings.regression_method = 'ElasticNet'
                 self.settings.regression_alpha = alpha
                 self.settings.regression_L1_wt = lwt
-                odof = self.anova_one_drug_one_feature(drug_name,
+                odof = self.anova_one_drug_one_feature(drug_id,
                         feature_name)
                 anova = self._get_anova_summary(self.data_lm,
                         output='dataframe')
@@ -566,17 +566,17 @@ class ANOVA(BaseModels): #Logging):
             pb.animate(i+1)
         return mses
 
-    def optimise_ridge(self, drug_name, feature_name, alphas=None):
+    def optimise_ridge(self, drug_id, feature_name, alphas=None):
         """Dev not for production"""
-        return self._opt_ridge_lasso(drug_name, feature_name,
+        return self._opt_ridge_lasso(drug_id, feature_name,
                 'Ridge', alphas=alphas)
 
-    def optimise_lasso(self, drug_name, feature_name, alphas=None):
+    def optimise_lasso(self, drug_id, feature_name, alphas=None):
         """Dev not for production"""
-        return self._opt_ridge_lasso(drug_name, feature_name,
+        return self._opt_ridge_lasso(drug_id, feature_name,
                 'Lasso', alphas=alphas)
 
-    def _opt_ridge_lasso(self, drug_name, feature_name, method, alphas=None):
+    def _opt_ridge_lasso(self, drug_id, feature_name, method, alphas=None):
 
         if alphas is None:
             alphas = pylab.linspace(0,1, 20)
@@ -590,7 +590,7 @@ class ANOVA(BaseModels): #Logging):
         for j, alpha in enumerate(alphas):
             self.settings.regression_method = method
             self.settings.elastic_net.alpha = alpha
-            odof = self.anova_one_drug_one_feature(drug_name,
+            odof = self.anova_one_drug_one_feature(drug_id,
                     feature_name)
             anova = self._get_anova_summary(self.data_lm,
                     output='dataframe')

@@ -91,7 +91,7 @@ class BoxPlots(object):
         #: linewidth used in the plots
         self.lw = 3
 
-        self.drug = self.odof.drug_name
+        self.drug = self.odof.drug_id
         self.feature = self.odof.feature_name.replace("_", " ")
 
 
@@ -166,7 +166,14 @@ class BoxPlots(object):
                 {'pos': self.odof.positives, 'neg': self.odof.negatives},
                 lw=self.lw, fontsize=self.fontsize)
 
-        pylab.title('Individual association\n {0} versus {1}'.format(self.drug,
+
+        print(self.odof.drug_name)
+        if self.odof.drug_name:
+            drug_name = "%s (%s)" % (self.drug, self.odof.drug_name)
+        else:
+            drug_name = self.drug
+
+        pylab.title('Individual association\n {0} versus {1}'.format(drug_name,
             self.feature), fontsize=self.fontsize)
         pylab.ylabel("{0} logIC50".format(self.drug),
                 fontsize=self.fontsize)
@@ -289,7 +296,12 @@ class BoxPlotsJS(BoxPlots):
         jinja = {}
         N = len(self.odof.negatives) + len(self.odof.positives)
         jinja["title"] = "Individual Association"
-        jinja["subtitle"] = "%s versus %s" % (self.drug, self.feature)
+
+        if self.odof.drug_name:
+            drug_name = "%s (%s)" % (self.drug, self.odof.drug_name)
+            jinja["subtitle"] = "%s versus %s" % (drug_name, self.feature)
+        else:
+            jinja["subtitle"] = "%s versus %s" % (self.drug, self.feature)
         jinja['factor'] = ["neg"] * len(self.odof.negatives) + ["pos"] * len(self.odof.positives)
         jinja["data"] = self.odof.negatives.tolist() + self.odof.positives.tolist()
         jinja["smps"] = [str(this) for this in self.odof.indices]
