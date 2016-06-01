@@ -20,4 +20,8 @@ Here is a short explanation for some of them
   988 cell lines
 
 
+* test_omnibem files are used to test OmniBEM but the files are also
+  scientifically interesting since they contain e.g. Methylation that are not
+  included in other official files such as genomic_features_v17
+
 github-gist.css and highlight.pack.js were found at https://highlightjs.org/
