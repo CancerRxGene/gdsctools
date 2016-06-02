@@ -29,6 +29,10 @@ Glossary
         response halfway between the baseline and maximum after a specified
         amount of time. It is used as a measure of drug's potency
 
+    MoBEM
+        Data structure used in GDSC to store genomic information. This is a
+        CSV file with specific header: (SAMPLE, TISSUE, TYPE, GENE)
+
     MSI
         Microsatellite Instability (MSI) are markers indicating the
         presence or absence of a MSI shift, allele

@@ -61,6 +61,7 @@ from gdsctools.tissues import TCGA
 from gdsctools.gdsc import GDSC, IC50Cluster
 from gdsctools.stats import signed_effects
 from gdsctools.elastic_net import ElasticNet
+from gdsctools.omnibem import OmniBEMBuilder
 
 def gdsctools_help(name=None):
     if name is None:

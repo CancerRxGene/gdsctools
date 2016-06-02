@@ -115,6 +115,7 @@ Contents
     anova_parttwo.rst
     html.rst
     data_packages.rst
+    omnibem.rst
     notebooks.rst
     standalone.rst
     releases.rst
