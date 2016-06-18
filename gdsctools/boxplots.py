@@ -244,7 +244,7 @@ class BoxPlots(object):
             except Exception as err:
                 # conda for py3.3 is 0.16.2 where sort_values sdoes not exists
                 # Useful also for readthedocs
-                delta.sort()
+                delta.sort(inplace=True)
 
             significance = {}
             data = []
