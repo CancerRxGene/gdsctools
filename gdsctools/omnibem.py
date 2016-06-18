@@ -171,7 +171,10 @@ class OmniBEMBuilder(object):
 
         """
         count = self.unified.groupby(['TISSUE_TYPE'])['GENE'].count()
-        count.sort_values(inplace=True, ascending=False)
+        try:
+            count.sort_values(inplace=True, ascending=False)
+        except:
+            count.sort(inplace=True, ascending=False)
         count.plot(kind="bar")
         pylab.grid()
         pylab.xlabel("Tissue Type")
@@ -192,7 +195,10 @@ class OmniBEMBuilder(object):
             bem.filter_by_gene_list(gdsctools_data("test_omnibem_genes.txt"))
             bem.plot_alterations_per_cellline()
         """
-        df = self.summary.sort_values("fraction", ascending=False)
+        try:
+            df = self.summary.sort_values("fraction", ascending=False)
+        except:
+            df = self.summary.sort("fraction", ascending=False)
         df.plot(y="fraction", legend=False, kind='bar', fontsize=10, width=0.8)
         pylab.ylabel("Alterations per cell line")
         pylab.grid()
