@@ -21,36 +21,41 @@ GDSCTools documentation
     :alt: Documentation Status
 
 
-:Note: tested for Python 2.7, 3.3, 3.4, 3.5
+:Note: developed and tested for Python 2.7,  3.4, 3.5
 :Source: https://github.com/CancerRxGene/gdsctools
 
 
 **GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant associations between drugs and genomic features (e.g., gene mutation) based on an ANOVA analysis. Note, however, that other methods based on e.g., Elastic Net are also available. Besides, the library should also be useful in manipulating dedicated data sets such as IC50 or MoBEM (genomic features) data structures.
 
 
-
 .. Here we are building the carrousel
 
-.. |associatin| image::
-   auto_examples/01_plotting/images/sphx_glr_plot_demo_glass_brain_002.png
-   :target: auto_examples/01_plotting/plot_demo_glass_brain.html
+.. |association| image::
+   _images/sphx_glr_plot_association_001.png
+   :target: auto_examples/plot_association.html
 
 .. |volcano| image::
-   auto_examples/01_plotting/images/sphx_glr_plot_demo_glass_brain_002.png
-   :target: auto_examples/01_plotting/plot_demo_glass_brain.html
+   _images/sphx_glr_plot_volcano_001.png
+   :target: auto_examples/plot_volcano.html
+
+.. |histo| image::
+   _images/sphx_glr_plot_ic50_hist_001.png
+   :target: auto_examples/plot_ic50_hist.html
+
+.. |elastic| image::
+   _images/sphx_glr_plot_elastic_tuning_001.png
+   :target: auto_examples/plot_elastic_tuning.html
 
 .. raw:: html
 
+    <div class="body">
    <div id="index-grid" class="section group">
     <div class="col span_1_of_3">
-        <h3><a
-        href="introduction.html#python-for-neuroimaging-a-quick-start">First
-Steps</a></h3>
-        <p>Get started with nilearn</p>
-
-        <h3><a href="auto_examples/index.html"> Examples</a></h3>
+        <h3><a href="quickstart.html">First Steps</a></h3>
+        <p>Get started with GDSCTools</p>
+        <h3><a href="auto_examples/index.html">Examples</a></h3>
         <p>Visit our example gallery</p>
-        <h3><a href="user_guide.html"> User Guide</a></h3>
+        <h3><a href="anova_partone.html">The ANOVA analysis</a></h3>
         <p>Browse the full documentation</p>
     </div>
     <div class="col span_2_of_3">
@@ -58,23 +63,20 @@ Steps</a></h3>
     <div class="jcarousel">
 
 * |association|
-
 * |volcano|
+* |histo|
+* |elastic|
 
 .. raw:: html
 
             </div>
-
         <a href="#" class="jcarousel-control-prev">&lsaquo;</a>
         <a href="#" class="jcarousel-control-next">&rsaquo;</a>
-
         <p class="jcarousel-pagination">
-
         </p>
-
         </div>
         </div>
-
+        </div>
    </div>
    <div style="clear: left"></div>
 
