@@ -28,6 +28,59 @@ GDSCTools documentation
 **GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant associations between drugs and genomic features (e.g., gene mutation) based on an ANOVA analysis. Note, however, that other methods based on e.g., Elastic Net are also available. Besides, the library should also be useful in manipulating dedicated data sets such as IC50 or MoBEM (genomic features) data structures.
 
 
+
+.. Here we are building the carrousel
+
+.. |associatin| image::
+   auto_examples/01_plotting/images/sphx_glr_plot_demo_glass_brain_002.png
+   :target: auto_examples/01_plotting/plot_demo_glass_brain.html
+
+.. |volcano| image::
+   auto_examples/01_plotting/images/sphx_glr_plot_demo_glass_brain_002.png
+   :target: auto_examples/01_plotting/plot_demo_glass_brain.html
+
+.. raw:: html
+
+   <div id="index-grid" class="section group">
+    <div class="col span_1_of_3">
+        <h3><a
+        href="introduction.html#python-for-neuroimaging-a-quick-start">First
+Steps</a></h3>
+        <p>Get started with nilearn</p>
+
+        <h3><a href="auto_examples/index.html"> Examples</a></h3>
+        <p>Visit our example gallery</p>
+        <h3><a href="user_guide.html"> User Guide</a></h3>
+        <p>Browse the full documentation</p>
+    </div>
+    <div class="col span_2_of_3">
+    <div class="jcarousel-wrapper">
+    <div class="jcarousel">
+
+* |association|
+
+* |volcano|
+
+.. raw:: html
+
+            </div>
+
+        <a href="#" class="jcarousel-control-prev">&lsaquo;</a>
+        <a href="#" class="jcarousel-control-next">&rsaquo;</a>
+
+        <p class="jcarousel-pagination">
+
+        </p>
+
+        </div>
+        </div>
+
+   </div>
+   <div style="clear: left"></div>
+
+
+
+
 .. index:: installation
 
 **GDSCTools** is written in Python. If you are a developer and/or knows
@@ -118,6 +171,7 @@ Contents
     omnibem.rst
     notebooks.rst
     standalone.rst
+    auto_examples/index
     releases.rst
     references.rst
     developers.rst
