@@ -1,5 +1,5 @@
 OmniBEM Builder
-==========
+================
 
 **OmniBEM Builder** is an optional tool within gdsctools designed to give the user more flexibility on the levels of genomic annotation probed by gdsctools.
 
