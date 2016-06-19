@@ -134,7 +134,7 @@ It can be saved and read as follows with the :class:`GenomicFeatures`
     >>> gf
     GenomicFeatures <Nc=2, Nf=2, Nt=2>
 
-In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../../gdsctools/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). A more complex file tagged v17 is also provided with about 600 features :download:`v17 genomic feature <../../gdsctools/data/genomic_features_v17.csv.gz>`.
+In **GDSCTools**, we provide a :download:`zipped Genomic Features file<../gdsctools/data/genomic_features.tsv.gz>`. It contains about 1000 cell lines and 47 genomic features (gene mutations). A more complex file tagged v17 is also provided with about 600 features :download:`v17 genomic feature <../gdsctools/data/genomic_features_v17.csv.gz>`.
 
 Note that you may create instance of GenomicFeatures without input but a default data set is loaded (the subset aforementionned):
 

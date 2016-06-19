@@ -55,7 +55,7 @@ The IC50 input data
 -------------------------------
 
 Before starting, we first need to get an IC50 data set example. Let us use this
-:download:`IC50 example <../../gdsctools/data/test_IC50.csv>` test file.
+:download:`IC50 example <../gdsctools/data/test_IC50.csv>` test file.
 
 .. seealso:: More details about the data format can be found in the :ref:`data` section as well as links to retrieve IC50 data sets.
 
@@ -111,7 +111,7 @@ The ANOVA class
 
 One of the main application of **GDSCTools** is based on an ANOVA analysis that is used to identify significant associations between drug and genomic features. As mentionned above, a first file that contains the IC50s is required. That file contains experimentall measured IC50s for a set of :math:`N_d` drugs across :math:`N_c` cell lines. The second data file is a binary file that contains various features across the same cell lines. Those :math:`N_f` features are usually of genomic types (e.g., mutation, CNA, Methylation). A default set of about 50 genomic features is provided and automatically fetched in the following examples. You may also provide your own data set as an input.
 
-The default :download:`genomic feature file <../../gdsctools/data/genomic_features.tsv.gz>` is downloadable and its location can be found using::
+The default :download:`genomic feature file <../gdsctools/data/genomic_features.tsv.gz>` is downloadable and its location can be found using::
 
     from gdsctools import datasets
     gf =  datasets.genomic_features 

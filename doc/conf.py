@@ -98,7 +98,7 @@ copyright = copyright
 # built documents.
 #
 # The short X.Y version.
-version = 'Current version: ' + str(version) 
+version = "Current version: " + str(version) 
 # The full version, including alpha/beta/rc tags.
 release = release
 

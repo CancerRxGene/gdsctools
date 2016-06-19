@@ -13,9 +13,6 @@ GDSCTools documentation
 .. image::  https://coveralls.io/repos/CancerRxGene/gdsctools/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/CancerRxGene/gdsctools?branch=master
 
-.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=Done
-   :target: https://waffle.io/CancerRxGene/gdsctools
-
 .. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
     :target: http://gdsctools.readthedocs.io/en/latest/?badge=master
     :alt: Documentation Status
@@ -143,11 +140,11 @@ output as in the previous example)::
 
 
 If you want to have a go, please download this 
-:download:`IC50 example <../../gdsctools/data/test_IC50.csv>`, which is required as an input.
+:download:`IC50 example <../gdsctools/data/test_IC50.csv>`, which is required as an input.
 
 
 Another data set is required for this analysis, which is a genomic feature file (see :ref:`data`) but it can be replaced by yours. The default data set contains only a small set of genomic features and can be downloaded:
-:download:`GenomicFeature example <../../gdsctools/data/genomic_features.tsv.gz>`, and adapted to your needs.
+:download:`GenomicFeature example <../gdsctools/data/genomic_features.tsv.gz>`, and adapted to your needs.
 
 
 .. seealso:: See :ref:`standalone` section for more details about the
