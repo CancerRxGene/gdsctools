@@ -27,5 +27,5 @@ def test_elastic_net():
     df = gd.elastic_all(0.1, stacked=True)
 
 
-    gd.plot_cindex(999, [0.1])
+    #gd.plot_cindex(999, [0.1])
 
