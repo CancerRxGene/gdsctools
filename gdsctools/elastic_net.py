@@ -567,7 +567,7 @@ class ElasticNet(BaseModels):
             dfall = dfall.stack().reset_index()
             dfall.columns = ["feature", "drug", "weight"]
 
-        # X = weights for a given feature§drug
+        # X = weights for a given feature/drug
         # Y = Sum of all weights on a given drug
         return dfall
 
