@@ -20,7 +20,7 @@ GDSCTools
 
 |License|
 
-:Note: tested for Python 2.7, 3.3, 3.4
+:Note: developed and tested for Python 2.7, 3.4, 3.5
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
 
 :Online documentation: `On ReadTheDocs <http://gdsctools.readthedocs.io/en/master>`_

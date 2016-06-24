@@ -14,8 +14,7 @@
 #  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
-"""Code related to the ANOVA analysis to find associations between drug IC50s
-and genomic features"""
+"""Look for IC50 vs and genomic features associations using Elastic Net"""
 import pandas as pd
 import pylab
 import numpy as np
@@ -336,7 +335,8 @@ class ElasticNet(BaseModels):
 
         return alphas, all_scores, maximum, alpha_best
 
-    def plot_weight(self, drug_name, alpha, l1_ratio=0.5):
+    def plot_weight(self, drug_name, alpha, l1_ratio=0.5, fontsize=12,
+            figsize=(10,7), max_label_length=20):
         """Plot the elastic net weights
 
         :param drug_name: the drug identifier 
@@ -358,30 +358,107 @@ class ElasticNet(BaseModels):
 
 
         """
-        pylab.figure(1)
-        pylab.clf()
         self.elastic_net(drug_name, alpha=alpha)
         df = pd.DataFrame({'name': self.X.columns, 'weight': self.en.coef_})
-        try:
-            df = df.set_index("name").sort_values("weight")
-        except:
-            df = df.set_index("name").sort("weight")
+        df = df.set_index("name").sort_values("weight")
 
-        df.plot(kind="bar",  width=1, lw=1, ax=pylab.gca())
+        if len(df)<50:
+            pylab.figure(1)
+            pylab.clf()
+            df.plot(kind="bar",  width=1, lw=1, ax=pylab.gca(),
+                fontsize=fontsize, figsize=figsize)
+        else:
+            # split the data
+            df1 = df.iloc[0:25]
+            df2 = df.iloc[-25:]
+            df1.index = [this[0:max_label_length] for this in df1.index]
+            df2.index = [this[0:max_label_length] for this in df2.index]
 
-        pylab.figure(2)
-        pylab.clf()
-        df = abs(df)
+            f, (ax, ax2) = pylab.subplots(1,2, sharey=True, figsize=(10,7))
+            ff = pylab.gcf()
+            ff.set_facecolor('white')
+            df1.plot(y="weight", kind="bar",  width=1, lw=1, ax=ax,
+                color="b", legend=False, fontsize=fontsize, figsize=figsize)
+            df2.plot(y="weight", kind="bar",  width=1, lw=1, ax=ax2,
+                color="r", sharey=True, legend=False, fontsize=fontsize,
+                figsize=figsize)
 
-        try:
-            df.sort_values("weight", inplace=True)
-        except:
-            df.sort("weight", inplace=True)
+            # hide the spines between ax and ax2
+            ax.spines['right'].set_visible(False)
+            ax2.spines['left'].set_visible(False)
+            ax.yaxis.tick_left()
+            ax2.yaxis.tick_right()
+            ax2.tick_params(labelleft='off')
 
-        df.plot(kind="bar", width=1, lw=1,
-                title='importance plot', ax=pylab.gca())
+            d = 0.02 # diagonal lines
+            kwargs = dict(transform=ax.transAxes, color='k', clip_on=False)
+            ax.plot((1 -d, 1 + d), (-d, +d), **kwargs)
+            ax.plot((1 -d, 1 + d), (1-d, 1+d), **kwargs)
+
+            kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
+            ax2.plot(( -d,  d), (1-d, 1+d), **kwargs)
+            ax2.plot(( -d,  d), (-d, d), **kwargs)
+            ax.grid()
+            ax2.grid()
+            # x0, y0, width_x, width_y
+            ax.set_position([0.06,0.3,0.425,0.6])
+            ax2.set_position([0.50,0.3,0.425,0.6])
 
         return df
+
+    def plot_importance(self, drug_name, alpha, l1_ratio=0.5, fontsize=11,
+            max_label_length=35, orientation="vertical"):
+        assert orientation in ["vertical", "horizontal"] 
+        if orientation=="vertical":
+            kind = "bar"
+            figsize = (10, 7)
+        else:
+            kind = "barh"
+            figsize = (8, 10)
+
+        self.elastic_net(drug_name, alpha=alpha)
+        df = pd.DataFrame({'name': self.X.columns, 'weight': self.en.coef_})
+        df = df.set_index("name")#.sort_values("weight")
+
+        pylab.figure(figsize=figsize)
+
+        df.loc[:,'sign'] = df['weight']>0
+
+        df["weight"] = abs(df['weight'])
+        df.index = [this[0:max_label_length] for this in df.index]
+
+        df = df.sort_values('weight', ascending=True)
+        df.loc[df['sign'] == True, 'sign'] = 'r'
+        df.loc[df['sign'] == False, 'sign'] = 'b'
+
+        colors = "".join(df['sign'])
+
+        if len(df)<50:
+            df.plot(y="weight", kind=kind, color=colors, width=1, lw=1,
+                title='importance plot', ax=pylab.gca(),
+                fontsize=fontsize, figsize=figsize)
+        else:
+            df.iloc[-50:].plot(y="weight", kind=kind, color=colors[-50:], 
+                width=1, lw=1,
+                title='importance plot', ax=pylab.gca(),
+                fontsize=fontsize, figsize=figsize)
+    
+        import matplotlib.patches as mpatches
+        red_patch = mpatches.Patch(color='red', label='positive weights')
+        blue_patch = mpatches.Patch(color='blue', label="negative weights")
+
+        ax = pylab.gca()
+        if orientation=="horizontal":
+            ax.set_position([0.3,0.1,0.6,0.8])
+            pylab.legend(handles=[red_patch, blue_patch], loc='lower right')
+        elif orientation=="vertical":
+            ax.set_position([0.1,0.3,0.8,0.6])
+            pylab.legend(handles=[red_patch, blue_patch], loc='upper left')
+        pylab.grid()
+        pylab.xlabel("Absolute weight", fontsize=fontsize)
+
+        return df
+
 
     def elastic_net_cv(self, drug_name, l1_ratio=0.5, alphas=None, n_folds=10):
 
@@ -464,4 +541,35 @@ class ElasticNet(BaseModels):
         names1 = self.indices1.index
         names2 = self.indices2.index
         print(names2)
+
+
+
+    def elastic_all(self, alpha, stacked=False):
+        drugids = self.drugIds
+        from easydev import Progress
+        pb = Progress(len(drugids))
+        d = {}
+
+
+        for i, drug in enumerate(drugids):
+            self.elastic_net(drug, alpha=alpha)
+            df = pd.DataFrame({'name': self.X.columns, 'weight': self.en.coef_})
+            df = df.set_index("name").sort_values("weight")
+            d[drug] = df.copy()
+            pb.animate(i+1)
+
+        
+        dfall = pd.concat([d[i] for i in d.keys()], axis=1)
+        dfall.columns = drugids
+
+        if stacked is True:
+            print('here')
+            dfall = dfall.stack().reset_index()
+            dfall.columns = ["feature", "drug", "weight"]
+
+        # X = weights for a given feature/drug
+        # Y = Sum of all weights on a given drug
+        return dfall
+
+
 

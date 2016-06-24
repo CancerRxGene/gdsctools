@@ -13,19 +13,71 @@ GDSCTools documentation
 .. image::  https://coveralls.io/repos/CancerRxGene/gdsctools/badge.svg?branch=master&service=github
     :target: https://coveralls.io/github/CancerRxGene/gdsctools?branch=master
 
-.. image:: https://badge.waffle.io/CancerRxGene/gdsctools.png?label=Done
-   :target: https://waffle.io/CancerRxGene/gdsctools
-
 .. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
     :target: http://gdsctools.readthedocs.io/en/latest/?badge=master
     :alt: Documentation Status
 
 
-:Note: tested for Python 2.7, 3.3, 3.4, 3.5
+:Note: developed and tested for Python 2.7,  3.4, 3.5
 :Source: https://github.com/CancerRxGene/gdsctools
 
 
 **GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant associations between drugs and genomic features (e.g., gene mutation) based on an ANOVA analysis. Note, however, that other methods based on e.g., Elastic Net are also available. Besides, the library should also be useful in manipulating dedicated data sets such as IC50 or MoBEM (genomic features) data structures.
+
+
+.. Here we are building the carrousel
+
+.. |association| image::
+   _images/sphx_glr_plot_association_001.png
+   :target: auto_examples/plot_association.html
+
+.. |volcano| image::
+   _images/sphx_glr_plot_volcano_001.png
+   :target: auto_examples/plot_volcano.html
+
+.. |histo| image::
+   _images/sphx_glr_plot_ic50_hist_001.png
+   :target: auto_examples/plot_ic50_hist.html
+
+.. |elastic| image::
+   _images/sphx_glr_plot_elastic_tuning_001.png
+   :target: auto_examples/plot_elastic_tuning.html
+
+.. raw:: html
+
+    <div class="body">
+   <div id="index-grid" class="section group">
+    <div class="col span_1_of_3">
+        <h3><a href="quickstart.html">First Steps</a></h3>
+        <p>Get started with GDSCTools</p>
+        <h3><a href="auto_examples/index.html">Examples</a></h3>
+        <p>Visit our example gallery</p>
+        <h3><a href="anova_partone.html">The ANOVA analysis</a></h3>
+        <p>Browse the full documentation</p>
+    </div>
+    <div class="col span_2_of_3">
+    <div class="jcarousel-wrapper">
+    <div class="jcarousel">
+
+* |association|
+* |volcano|
+* |histo|
+* |elastic|
+
+.. raw:: html
+
+            </div>
+        <a href="#" class="jcarousel-control-prev">&lsaquo;</a>
+        <a href="#" class="jcarousel-control-next">&rsaquo;</a>
+        <p class="jcarousel-pagination">
+        </p>
+        </div>
+        </div>
+        </div>
+   </div>
+   <div style="clear: left"></div>
+
+
 
 
 .. index:: installation
@@ -88,11 +140,11 @@ output as in the previous example)::
 
 
 If you want to have a go, please download this 
-:download:`IC50 example <../../gdsctools/data/test_IC50.csv>`, which is required as an input.
+:download:`IC50 example <../gdsctools/data/test_IC50.csv>`, which is required as an input.
 
 
 Another data set is required for this analysis, which is a genomic feature file (see :ref:`data`) but it can be replaced by yours. The default data set contains only a small set of genomic features and can be downloaded:
-:download:`GenomicFeature example <../../gdsctools/data/genomic_features.tsv.gz>`, and adapted to your needs.
+:download:`GenomicFeature example <../gdsctools/data/genomic_features.tsv.gz>`, and adapted to your needs.
 
 
 .. seealso:: See :ref:`standalone` section for more details about the
@@ -118,6 +170,7 @@ Contents
     omnibem.rst
     notebooks.rst
     standalone.rst
+    auto_examples/index
     releases.rst
     references.rst
     developers.rst

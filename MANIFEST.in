@@ -1,6 +1,2 @@
 include README.rst MANIFEST.in 
-global-exclude genomic*v17*
-global-exclude genomic*v5*
-global-exclude IC50*v5*
-global-exclude IC50*v17*
 

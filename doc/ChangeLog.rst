@@ -3,6 +3,23 @@ ChangeLog
 
 .. contents::
 
+Version 0.14 (20th June 2016)
+---------------------------------
+
+* NEWS:
+
+    - ElasticNet: new method elastic_all()
+    - plot_elastic_weight in the gallery
+
+* CHANGES:
+
+    - ElasticNet plot_weights is now split into plot_weights 
+      and plot_importance.
+   
+* BUGS: 
+
+    - Fixes missing files in the pypi distributino (MANIFEST changed) 
+
 
 Version 0.13 (27th May 2016)
 -------------------------------

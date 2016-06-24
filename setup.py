@@ -7,8 +7,8 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 13
-_MICRO               = 1
+_MINOR               = 14
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -50,11 +50,12 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # on rtd, pandas is 1.3.1 cannot use something better for now (march 2016)
 if on_rtd is True:  # only import and set the theme if we're building docs
-    install_requires = ['colormap', 'easydev']
+    install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc"]
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
         'pandas>=0.16.2', 'easydev>=0.9.18', 'scipy', "colormap>=0.9.7",
-        'jinja2', 'statsmodels', "scikit-learn", "reports>=0.1.9"],
+        'jinja2', 'statsmodels', "scikit-learn", "reports>=0.1.9", 
+        "sphinx-gallery", "numpydoc"],
 
 
 packages = find_packages()

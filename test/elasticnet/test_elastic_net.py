@@ -20,3 +20,12 @@ def test_elastic_net():
 
 
     res = en.plot_weight(1047, 0.01, l1_ratio=0.5)
+    res = en.plot_importance(1047, 0.01, l1_ratio=0.5)
+
+    from gdsctools import ic50_test
+    gd = ElasticNet(ic50_test, gf)
+    df = gd.elastic_all(0.1, stacked=True)
+
+
+    #gd.plot_cindex(999, [0.1])
+
