@@ -420,6 +420,7 @@ class IC50(Reader, CosmicRows):
                 self.df = self.df[columns]
 
         # If already interpreted, COSMIC name should be the index already.
+        # and should be integers, so let us cast to integer
         elif self.df.index.name == self.cosmic_name:
             _cols = [str(x) for x in self.df.columns]
             if drug_prefix:
@@ -438,6 +439,7 @@ class IC50(Reader, CosmicRows):
 
         self.df.columns = [drug_name_to_int(x) for x in self.df.columns]
         self.df.columns = self.df.columns.astype(int)
+        self.df.index = self.df.index.astype(int)
 
     def drug_name_to_int(self, name):
         return drug_name_to_int(name)
@@ -665,6 +667,7 @@ class GenomicFeatures(Reader, CosmicRows):
             error_msg = "the features input file must contains a column " +\
                 " named %s" % self.colnames.cosmic
             raise ValueError(error_msg)
+        self.df.index = self.df.index.astype(int)
         self.df.sort_index(inplace=True)
 
     def fill_media_factor(self):

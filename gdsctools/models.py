@@ -163,6 +163,14 @@ class BaseModels(object):
 
         if self.settings.analysis_type != 'PANCAN':
             self.settings.include_media_factor = False
+            if self.features.found_media is True:
+                # Not authorised. See 
+                # http://gdsctools.readthedocs.io/en/master/anova_parttwo.html#regression-analysis 
+                print("WARNING")
+                print("You have only one Tissue %s " % self.features.tissues[0])
+                print("When using MEDIA FACTOR, you must use MSI and a PANCAN analysis")
+                print("We DO NOT include the MEDIA Factor in the analysis hereafter\n")
+
         elif self.features.found_media is True:
             self.settings.include_media_factor = True
             colname = self.features.colnames.media
@@ -243,7 +251,8 @@ class BaseModels(object):
             # MSI, media and tissue are not large data files and can be store
             if self.features.found_msi:
                 self.msi_dict[drug_name] = self.msi_factor.ix[indices]
-            if self.features.found_media:
+
+            if self.settings.include_media_factor:
                 self.media_dict[drug_name] = self.media_factor.ix[indices]
 
             self.tissue_dict[drug_name] = self.tissue_factor.ix[indices]
