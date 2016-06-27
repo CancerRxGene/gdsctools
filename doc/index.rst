@@ -22,7 +22,16 @@ GDSCTools documentation
 :Source: https://github.com/CancerRxGene/gdsctools
 
 
-**GDSCTools** is a Python library dedicated to the study of drug responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project. It contains utilities to find significant associations between drugs and genomic features (e.g., gene mutation) based on an ANOVA analysis. Note, however, that other methods based on e.g., Elastic Net are also available. Besides, the library should also be useful in manipulating dedicated data sets such as IC50 or MoBEM (genomic features) data structures.
+**GDSCTools** is a free open-source Python library dedicated to the study of drug
+responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <http://www.cancerrxgene.org/>`_ project.  The main developer is `Thomas Cokelaer (Institut Pasteur) <https://research.pasteur.fr/en/member/thomas-cokelaer/>`_, and it is a
+joint effort of the groups of `Mathew Garnett (Sanger Institute) <http://www.sanger.ac.uk/people/directory/garnett-mathew>`_ and `Julio Saez-Rodriguez (RWTH Aachen & EMBL-EBI) <http://www.combine.rwth-aachen.de/index.php/people/julio-saez-rodriguez.html>`_.
+
+It contains utilities to find significant associations between drugs and genomic
+features (e.g., gene mutation) based on an ANOVA analysis.  Note, however, that 
+other methods based on e.g., Elastic Net are also available. Besides, the library should also be useful in manipulating dedicated data sets such as IC50 or MoBEM (genomic features) data structures.
+
+
+
 
 
 .. Here we are building the carrousel
