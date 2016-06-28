@@ -27,9 +27,12 @@ responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <
 joint effort of the groups of `Mathew Garnett (Sanger Institute) <http://www.sanger.ac.uk/people/directory/garnett-mathew>`_ and `Julio Saez-Rodriguez (RWTH Aachen & EMBL-EBI) <http://www.combine.rwth-aachen.de/index.php/people/julio-saez-rodriguez.html>`_.
 
 It contains utilities to find significant associations between drugs and genomic
-features (e.g., gene mutation) based on an ANOVA analysis.  Note, however, that 
-other methods based on e.g., Elastic Net are also available. Besides, the library should also be useful in manipulating dedicated data sets such as IC50 or MoBEM (genomic features) data structures.
-
+features (e.g., gene mutation) based on an ANOVA analysis. Other methods, such
+as multi-factorial linear models based on Elastic Net are also available.
+Besides, the library should also be useful for manipulating dedicated data sets
+such as IC50 (drug response) or MoBEM (genomic features) data structures. Hence,
+we hope that GDSCTools serves as basis for other scientists to develop further
+methods.
 
 
 
