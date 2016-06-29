@@ -121,7 +121,7 @@ class ANOVAReport(object):
         self.company = None
 
         # just to create the directory
-        ReportMain(directory=self.settings.directory, verbose=self.verbose)
+        # ReportMain(directory=self.settings.directory, verbose=self.verbose)
 
     def _get_ndrugs(self):
         return len(self.df[self._colname_drug_id].unique())
@@ -554,9 +554,12 @@ class ANOVAReport(object):
     def create_html_main(self, onweb=False):
         """Create HTML main document (summary)"""
         self._set_sensible_df()
+
         if self.verbose:
             print("Creating main HTML page in directory %s" %
                 (self.settings.directory))
+        ReportMain(directory=self.settings.directory, verbose=self.verbose)
+
         buffer_ = self.settings.savefig
         self.settings.savefig = True
         html = HTMLPageMain(self, 'index.html')
@@ -571,7 +574,7 @@ class ANOVAReport(object):
 
         """
         df = self.get_significant_set()
-        page = HTMLPageMANOVA(self.gdsc, df, self.company)
+        page = HTMLPageMANOVA(self, df, self.company)
         page.create_report(onweb)
 
     def create_html_pages(self, onweb=True):
@@ -601,7 +604,7 @@ class HTMLPageMANOVA(ReportMain):
         h.report()
 
     """
-    def __init__(self, gdsc, df, company):
+    def __init__(self, report, df, company):
         """.. rubric:: constructor
 
         :param : an ANOVA instance.
@@ -611,13 +614,13 @@ class HTMLPageMANOVA(ReportMain):
         be changes (default is manova.html)
         """
         super(HTMLPageMANOVA, self).__init__(filename='manova.html',
-                directory=gdsc.settings.directory+os.sep+"associations",
+                directory=report.settings.directory+os.sep+"associations",
                 template_filename='manova.html', init_report=False)
 
         html = ANOVAResults(df).get_html_table(collapse_table=False)
 
         self.jinja['manova'] = html
-        self.jinja['analysis_domain'] = gdsc.settings.analysis_type
+        self.jinja['analysis_domain'] = report.settings.analysis_type
         self.jinja['resource_path'] = ".."
         self.jinja["collaborator"] = company
 
