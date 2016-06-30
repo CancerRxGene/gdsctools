@@ -442,6 +442,7 @@ class IC50(Reader, CosmicRows):
 
         self.df.index = [int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
+        self.df.index.name = "COSMIC_ID"
 
     def drug_name_to_int(self, name):
         return drug_name_to_int(name)
