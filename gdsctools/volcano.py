@@ -420,7 +420,7 @@ class VolcanoANOVA(object):
 
         pvalue = get_pvalue_from_fdr(fdr)
         ax.axhline(-np.log10(pvalue), linestyle='--', lw=2,
-            color='red', alpha=1, label="FDR %s " %  fdr + " \%")
+            color='red', alpha=1, label="FDR %s " %  fdr + " %")
 
         for i, this in enumerate(fdrs):
             if this < self.df[self._colname_qvalue].min() or\
@@ -428,7 +428,7 @@ class VolcanoANOVA(object):
                     continue
             pvalue = get_pvalue_from_fdr(this)
             ax.axhline(-np.log10(pvalue), linestyle=styles[i],
-                color='red', alpha=1, label="FDR %s " % this +" \%")
+                color='red', alpha=1, label="FDR %s " % this +" %")
 
         pylab.ylim([0, pylab.ylim()[1]*1.2]) # times 1.2 to put the legend
 
