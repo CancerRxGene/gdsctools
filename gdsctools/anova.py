@@ -182,7 +182,7 @@ class ANOVA(BaseModels): #Logging):
             dd.positive_msi = dd.masked_msi.values.sum()
             dd.negative_msi = len(dd.masked_msi) - dd.positive_msi
 
-        if self.features.found_media:
+        if self.settings.include_media_factor:
             dd.masked_media = self.media_dict[drug_id]
 
         # compute length of pos/neg features and MSI

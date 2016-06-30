@@ -439,6 +439,8 @@ class IC50(Reader, CosmicRows):
 
         self.df.columns = [drug_name_to_int(x) for x in self.df.columns]
         self.df.columns = self.df.columns.astype(int)
+
+        self.df.index = [int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
 
     def drug_name_to_int(self, name):
@@ -542,10 +544,11 @@ class GenomicFeatures(Reader, CosmicRows):
         - 'TISSUE_FACTOR'
         - 'MSI_FACTOR'
 
-    If this column is found, it is removed (deprecated)::
+    If one of the following column is found, it is removed (deprecated)::
 
         - 'SAMPLE_NAME'
         - 'Sample Name'
+        - 'CELL_LINE'
 
     and features can be also encoded with the following convention:
 
@@ -600,7 +603,7 @@ class GenomicFeatures(Reader, CosmicRows):
         self.df = self.df[[x for x in self.df.columns
             if x.startswith('Drug_') is False]]
 
-        for this in ['Sample Name', 'SAMPLE_NAME', 'Sample_Name']:
+        for this in ['Sample Name', 'SAMPLE_NAME', 'Sample_Name', 'CELL_LINE']:
             if this in self.df.columns:
                 self.df.drop(this, axis=1, inplace=True)
 
@@ -667,6 +670,7 @@ class GenomicFeatures(Reader, CosmicRows):
             error_msg = "the features input file must contains a column " +\
                 " named %s" % self.colnames.cosmic
             raise ValueError(error_msg)
+        self.df.index = [int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
         self.df.sort_index(inplace=True)
 
