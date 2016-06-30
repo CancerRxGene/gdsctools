@@ -10,6 +10,7 @@ Date: 2016-06-17
 import pandas as pd
 import os
 import urllib.request
+import csv
 
 class GDSC1000( object ):
     """
@@ -24,7 +25,21 @@ class GDSC1000( object ):
             Extracts relevant columns, re-names column names and saves as csv files.
         GDSC1000.load_data()
             Loads methylation, cna and variant data frames from csv files.
-    2. 
+    2. Annotate / Filter data:
+        GDSC1000.annotate_all()
+            Annotates methylation and copy number alteration on a gene level
+            Also sets self.annotate = True (only really used when calling GDSC1000.make_matrix() )
+        GDSC1000.filter(...):
+            GDSC1000.filter_by_cell_line( [ "AsPC-1", "U-2-OS", "MDA-MB-231"... ] )
+            GDSC1000.filter_by_cosmic_id( [ 948121, 2839818, ...] )
+            GDSC1000.filter_by_gene(["ATM", "TP53", ...])
+            GDSC1000.filter_by_recurrence( min_recurrence = 3 )
+            GDSC1000.filter_by_tissue_type( [ "BRCA", "COAD/READ", ... ] )
+            GDSC1000.filter_by_alteration_type( [ "METHYLATION", "AMPLIFICATION", "DELETION", "GENE_VARIANT" ] )
+    3. Make genomic matrix:
+        GDSC1000.make_matrix()
+            Makes matrix and stores it under GDSC1000.genomic_matrix_path
+            Filters GDSC1000.ic50_df to only contain cell lines also featured in GDSC1000.genomic_matrix
     
     """
 
@@ -41,6 +56,11 @@ class GDSC1000( object ):
         self._variant_path = self.data_folder_name + "variant.xlsx"
         self._cell_dict_path = self.data_folder_name + "cell_line_dict.xlsx"
         self._ic50_path = self.data_folder_name + "ic50.xlsx"
+        
+        self.genomic_matrix_path = self.data_folder_name + "genomic_features_matrix.csv"
+        self.ic50_path = self.data_folder_name + "ic50_full_matrix.csv"
+        self.ic50_matrix_path = self.data_folder_name + "ic50_matrix.csv"
+        self.drug_decoder_original_path = self.data_folder_name + "drug_decoder.csv"
         
         
     def download_data( self, save_csv = False ):
@@ -61,10 +81,14 @@ class GDSC1000( object ):
         self.methylation_df = pd.read_csv( self.data_folder_name + "methylation.csv" )
         self.cna_df = pd.read_csv( self.data_folder_name + "cna.csv" )
         self.cell_line_dict = pd.read_csv( self.data_folder_name + "cell_line_dict.csv" )
-        self.ic50_df = pd.read_csv( self.data_folder_name + "ic50.csv" )
-        self.drug_decoder_df = pd.read_csv( self.data_folder_name + "drug_decoder.csv" )
+        self.ic50_df = pd.read_csv( self.ic50_path )
+        self.drug_decoder_df = pd.read_csv( self.drug_decoder_original_path )
         self.genomic_df = pd.read_csv( self.data_folder_name + "genomic.csv" )
         self.annotation_df = pd.read_csv( self.data_folder_name + "annotation.csv" )
+        
+        self.backup_genomic_df = self.genomic_df
+        self.backup_ic50_df = self.ic50_df
+        self.backup_drug_decoder_df = self.drug_decoder_df
         
     def _download_raw(self):
         print("Downloading data...")
@@ -160,8 +184,11 @@ class GDSC1000( object ):
         drug_dict[ 'DRUG_TARGET' ] = 'Unknown'
         self.drug_decoder_df = drug_dict
         if save_csv:
-            df.to_csv( self.data_folder_name + 'ic50.csv', index = False )
-            drug_dict.to_csv( self.data_folder_name + 'drug_decoder.csv', index = False )
+            df.to_csv( self.ic50_path, index = False )
+            drug_dict.to_csv( self.drug_decoder_original_path, index = False )
+            
+        self.backup_ic50_df = self.ic50_df 
+        self.backup_drug_decoder_df = self.drug_decoder_df
             
     def _combine_genomic_annotation( self, save_csv ):
         print( "Combining data frames." )
@@ -174,6 +201,10 @@ class GDSC1000( object ):
         
     def reset_genomic_data( self ):
         self.genomic_df = self.backup_genomic_df
+        self.annotate = False
+        self.ic50_df = self.backup_ic50_df
+        self.drug_decoder_df = self.backup_drug_decoder_df
+
     
     def annotate_all( self ):
         # Annotate after read_annotation
@@ -181,6 +212,7 @@ class GDSC1000( object ):
         self.genomic_df = self.genomic_df.merge( self.annotation_df, how = 'left', on = ['IDENTIFIER'] )
         print( "Splitting strings" )
         self.genomic_df = self._string_split( self.genomic_df, 'GENE', ',' )
+        self.annotate = True
         
         
     def _string_split(self, to_be_split, col_name, separator):
@@ -222,14 +254,14 @@ class GDSC1000( object ):
         if save_csv:
             self.annotation_df.to_csv( self.data_folder_name + "annotation.csv", index = False )
         
-    def filter_by_type( self, type_list = None ):
+    def filter_by_alteration_type( self, type_list = None ):
         if type_list == None:
             print( "Please enter list of types to keep. Acceptable types include: 'GENE_VARIANT', 'AMPLIFICATION', 'DELETION', 'METHYLATION'." )
         else:
             type_list = [ x.upper() for x in type_list ]
             self.genomic_df = self.genomic_df.query( "TYPE in @type_list" )
 
-    def filter_by_gene_list( self, gene_list = None ):
+    def filter_by_gene( self, gene_list = None ):
         if gene_list == None:
             print( "Please enter gene list. To use the GDSC1000 core genes, add argument gene_list = 'Core Genes'." )
             if self.dicts in globals():
@@ -241,7 +273,7 @@ class GDSC1000( object ):
         gene_list = [ x.upper() for x in gene_list ]
         self.genomic_df = self.genomic_df.query( "GENE in @gene_list" )
 
-    def filter_by_tissue_list( self, tissue_list = None ):
+    def filter_by_tissue_type( self, tissue_list = None ):
         if tissue_list == None:
             print( "Please enter list of tissues. To use all tissues, add argument tissue_list = 'Complete'" )
             if self.dicts in globals():
@@ -253,7 +285,7 @@ class GDSC1000( object ):
         tissue_list = [ x.upper() for x in tissue_list ]
         self.genomic_df = self.genomic_df.query( "TISSUE_FACTOR in @tissue_list" )
 
-    def filter_by_cosmic_list( self, cosmic_list = None ):
+    def filter_by_cosmic_id( self, cosmic_list = None ):
         if cosmic_list == None:
             print( "Please enter list of COSMIC IDs. To use an example set of COSMIC IDs, add argument cosmic_list = 'Dummy'" )
             if self.dicts in globals():
@@ -264,7 +296,7 @@ class GDSC1000( object ):
             pass
         self.genomic_df = self.genomic_df.query( "COSMIC_ID in @cosmic_list" )
         
-    def filter_by_cell_line_list( self, cell_line_list = None ):
+    def filter_by_cell_line( self, cell_line_list = None ):
         if cell_line_list == None:
             print( "Please enter list of cell line names. To use an example set of names, add argument cell_line_list = 'Dummy'" )
             if self.dicts in globals():
@@ -284,9 +316,36 @@ class GDSC1000( object ):
         else:
             feature = "IDENTIFIER"
             
-        flatten_cell_lines = self.genomic_df.groupby( [ feature, "COSMIC_ID", "TISSUE_FACTOR" ], as_index = False )[[ "TYPE" ]].count() 
+        flatten_cell_lines = self.genomic_df.groupby( [ feature, "COSMIC_ID", "TISSUE_FACTOR" ], as_index = False )[[ "ALTERATION_TYPE" ]].count() 
         feature_count = flatten_cell_lines.groupby( [feature], as_index = False )[[ "COSMIC_ID" ]].count() 
         self.feature_count = feature_count[ feature_count["COSMIC_ID"] >= min_recurrence ]
 
         self.genomic_df = self.genomic_df[ self.genomic_df[ feature ].isin( self.feature_count[ feature ] ) ]
 
+
+    # Make into matrix
+    def make_matrix( self, min_recurrence = None ):
+        """
+        Return a dataframe compatible with ANOVA analysis
+        """
+        
+        msi_dictionary = { "MSI-H": 1, "MSS/MSI-L": 0 }
+        
+        if min_recurrence == None:
+            min_recurrence = self.recurrence
+        self.filter_by_recurrence( min_recurrence = 3 )
+        
+        if self.annotate == True: 
+            feature = "GENE"
+        else:
+            feature = "IDENTIFIER"    
+        
+        genomic_matrix = pd.crosstab( self.genomic_df[ feature ], columns=[ self.genomic_df["COSMIC_ID"], self.genomic_df['TISSUE_FACTOR'], self.genomic_df["CELL_LINE"], self.genomic_df[ "MSI_FACTOR" ], self.genomic_df[ "MEDIA_FACTOR"] ] )
+        genomic_matrix[ genomic_matrix > 1 ] = 1
+        self.genomic_matrix = genomic_matrix.T.reset_index()
+        self.genomic_matrix.MSI_FACTOR = self.genomic_matrix.MSI_FACTOR.map( msi_dictionary )
+        
+        self.genomic_matrix.to_csv( self.genomic_matrix_path, index = False, quoting = csv.QUOTE_NONNUMERIC )
+        
+        ic50_filtered_matrix = self.ic50_df.query( "COSMIC_ID in @self.genomic_matrix.COSMIC_ID.tolist()" )
+        ic50_filtered_matrix.to_csv( self.ic50_matrix_path, index = False )
