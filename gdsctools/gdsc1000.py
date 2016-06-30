@@ -80,7 +80,7 @@ class GDSC1000( object ):
         if os.path.exists(self.data_folder_name):
             pass
         else: 
-            os.mkdirs(self.data_folder_name)
+            os.makedirs(self.data_folder_name)
         
         urllib.request.urlretrieve(methylation_url, self._methylation_path)
         urllib.request.urlretrieve(cna_url, self._cna_path)
