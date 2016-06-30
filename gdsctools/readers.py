@@ -672,6 +672,7 @@ class GenomicFeatures(Reader, CosmicRows):
             raise ValueError(error_msg)
         self.df.index = [int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
+        self.df.index.name = "COSMIC_ID"
         self.df.sort_index(inplace=True)
 
     def fill_media_factor(self):
@@ -1053,6 +1054,7 @@ class DrugDecode(Reader):
 
         self.df.index = [drug_name_to_int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
+        self.df.index.name = "COSMIC_ID"
 
         # sort the columns
         try:
