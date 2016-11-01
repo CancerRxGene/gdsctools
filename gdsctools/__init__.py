@@ -60,15 +60,15 @@ from gdsctools.cosmictools import COSMICInfo
 from gdsctools.tissues import TCGA
 from gdsctools.gdsc import GDSC, IC50Cluster
 from gdsctools.stats import signed_effects
-from gdsctools.regression import *
+from gdsctools.regression import GDSCElasticNet, GDSCLasso, GDSCRidge
 from gdsctools.omnibem import OmniBEMBuilder
+
 
 def gdsctools_help(name=None):
     if name is None:
         easydev.onweb('http://gdsctools.readthedocs.org')
     else:
         url = "http://gdsctools.readthedocs.org/en/master/references.html"
-        #url += "#" + name.__module__ + "."+ name
         try:
             url += '#module-' + name.__module__
         except:
