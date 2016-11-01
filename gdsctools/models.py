@@ -67,7 +67,6 @@ class BaseModels(object):
             except Exception as err:
                 raise(err)
 
-
         # Reads features if provided, otherwise use a default data set
         if genomic_features is None:
             # Reads default version provided with the package
@@ -370,7 +369,6 @@ class BaseModels(object):
                 'feasible_tests': feasible,
                 'percentage_feasible_tests': float(feasible)/n_combos*100}
         return results
-
 
     def read_drug_decode(self, filename=None):
         """Read file with the DRUG information
