@@ -26,14 +26,11 @@ from statsmodels.formula.api import OLS
 from easydev import Progress, AttrDict
 
 from gdsctools.models import BaseModels
-
-#from gdsctools.stats import MultipleTesting
-#from gdsctools import readers
 from gdsctools.boxplots import BoxPlots
 from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 
-from easydev import MultiProcessing, do_profile
+from easydev import MultiProcessing
 
 
 __all__ = ['ANOVA']
