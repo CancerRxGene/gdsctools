@@ -539,6 +539,11 @@ class ANOVA(BaseModels): #Logging):
         if production is True:
             return results
         else:
+            # with newer version of pandas (v0.19), None are not accepted
+            # anymore
+            for k in results.keys():
+                if results[k] is None:
+                    results[k] = np.nan
             df = pd.DataFrame(results, index=[1])
             return df
 
