@@ -191,13 +191,19 @@ class ANOVAResults(object):
         self.mapping['FEATURE_neg_IC50_sd'] = np.dtype('float64')
         self.mapping['FEATURE_pos_IC50_sd'] = np.dtype('float64')
         self.mapping['FEATURE_IC50_T_pval'] = np.dtype('float64')
-
         self.mapping['ANOVA_FEATURE_pval'] = np.dtype('float64')
         self.mapping['ANOVA_TISSUE_pval'] = np.dtype('float64')
         self.mapping['ANOVA_MSI_pval'] = np.dtype('float64')
         self.mapping['ANOVA_MEDIA_pval'] = np.dtype('float64')
-
         self.mapping['ANOVA_FEATURE_FDR'] = np.dtype('float64')
+
+
+        # If the dataframe is empty, we still fill the columns so that reports 
+        # and other code will find the column names.
+        if len(self.df) == 0:
+            self.df = pd.DataFrame(columns=self.mapping.keys())
+            self.df = self.astype(self.df)
+
 
         # before gdsctools, columns names were a bit different.
         # We need to rename some column names
@@ -288,6 +294,9 @@ class ANOVAResults(object):
         See the online documentation for details on gdsctools.readthedocs.io.
 
         """
+        if len(df) == 0:
+            print("No data to plot")
+            return
         self.handle_volcano = VolcanoANOVA(self.df, settings=settings)
         self.handle_volcano.volcano_plot_all()
 
@@ -342,6 +351,8 @@ class ANOVAResults(object):
     def barplot_effect_size(self):
         """Dev not for production"""
         # barplot of the IC50 effect size
+        if len(df) == 0:
+            print("No data to plot")
         data = np.sign(self.df.FEATURE_delta_MEAN_IC50) * self.df.FEATURE_IC50_effect_size
         try:
             data = data.sort_values()
