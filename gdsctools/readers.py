@@ -1055,7 +1055,7 @@ class DrugDecode(Reader):
 
         self.df.index = [drug_name_to_int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
-        self.df.index.name = "COSMIC_ID"
+        self.df.index.name = "DRUG_ID"
 
         # sort the columns
         try:
