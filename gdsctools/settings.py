@@ -224,6 +224,6 @@ class ANOVASettings(AttrDict):
 
     def __str__(self):
         txt = ''
-        for k, v in self.items():
-            txt += '- %s: %s\n' % (k, v)
+        for k in sorted(self.keys()):
+            txt += '- %s: %s\n' % (k, self[k])
         return txt
