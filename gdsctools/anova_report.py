@@ -153,7 +153,10 @@ class ANOVAReport(object):
 
         N = float(n_drugs * n_features)
 
-        ratio = float(self.n_tests)/(N) * 100
+        if N == 0:
+            ratio = 0
+        else:
+            ratio = float(self.n_tests)/(N) * 100
         ratio = easydev.precision(ratio, digit=2)
 
         msg = "Type of analysis"
@@ -828,11 +831,24 @@ class HTMLPageMain(ReportMain):
         self.jinja["collaborator"] = report.company
 
     def _create_report(self, onweb=True):
+        self.add_summary()
+        if len(self.report.df):
+            self.add_volcano()
+            self.add_manova()
+            self.add_features()
+        else:
+            self.jinja["__section_skip_volcano"] = True
+            self.jinja["__section_skip_manova"] = True
+            self.jinja["__section_skip_features"] = True
+            self.jinja["__section_skip_summary"] = True
+        self.add_cosmic()
+        self.add_settings()
+
+    def add_summary(self):
         # A summary table
         diag = self.report.diagnostics()
         table = HTMLTable(diag, 'summary')
         txt = ''
-
 
         for index, row in diag.iterrows():
             if len(row.text) == 0 and len(row.value) == 0:
@@ -841,6 +857,7 @@ class HTMLPageMain(ReportMain):
                 txt += row.text + ": " +  str(row.value) + "<br/>"
         self.jinja['summary'] = txt
 
+    def add_volcano(self):
         """
         As of version 0.13, we will use Javascript directly. 
 
@@ -866,24 +883,18 @@ class HTMLPageMain(ReportMain):
         v = VolcanoANOVAJS(self.report.df, settings=self.settings)
         self.jinja['volcano_jsdata'] = v.render_all()
 
+    def add_manova(self):
         # MANOVA link
         N = len(self.report.get_significant_set())
         self.jinja['manova'] = str(N)
 
+    def add_features(self):
+        
         # feature summary
         df_features = self.report.feature_summary("feature_summary.png")
         filename = 'OUTPUT' + os.sep + 'features_summary.csv'
         df_features.to_csv(self.directory + os.sep + filename, sep=',')
 
-        # drug summary
-        #not_tested = [x for x in self.report.gdsc.drugIds if x not in
-        #        self.report.df.DRUG_ID.unique()]
-        #if len(not_tested) > 0:
-        #    not_tested = """%s drugs were not analysed due to
-        #    lack of valid data points: """ % len(not_tested) + \
-        #            ", ".join(not_tested)
-        #else:
-        #    not_tested = ""
         not_tested = ""
         self.jinja['drug_not_tested'] = not_tested
 
@@ -894,6 +905,8 @@ class HTMLPageMain(ReportMain):
         filename = 'OUTPUT' + os.sep + 'drugs_summary.csv'
         df_drugs.to_csv(self.directory + os.sep + filename, sep=',')
 
+        if len(self.report.df) == 0:
+            return
 
         # --------------------------- Create table with links to all drugs
         groups = self.report.df.groupby('DRUG_ID')
@@ -902,8 +915,8 @@ class HTMLPageMain(ReportMain):
         except:
             # note double brackets for pythonn3.3
             df = groups.mean()[['ANOVA_FEATURE_FDR']].sort()
-        df = df.reset_index() # get back the Drug id in the dframe columns
 
+        df = df.reset_index() # get back the Drug id in the dframe columns
         # let us add also the drug name
         df = self.report.drug_decode.drug_annotations(df)
 
@@ -955,6 +968,7 @@ class HTMLPageMain(ReportMain):
         self.jinja['feature_table'] = table.to_html(escape=False,
                 header=True, index=False)
 
+    def add_cosmic(self):
         # -------------------------------------- COSMIC table for completeness
         colnames = self.report.gdsc.features._special_names
         df = self.report.gdsc.features.df[colnames]
@@ -968,6 +982,7 @@ class HTMLPageMain(ReportMain):
         table.add_href('COSMIC_ID', url=url, newtab=True)
         self.jinja['cosmic_table'] = table.to_html()
 
+    def add_settings(self):
         # -------------------------------------- settings and INPUT files
         input_dir = self.directory + os.sep + 'INPUT'
         filename = 'ANOVA_input.csv'
