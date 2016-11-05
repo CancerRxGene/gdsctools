@@ -605,6 +605,9 @@ class VolcanoANOVAJS(VolcanoANOVA):
         jinja['title'] = '"%s"' % name
 
         fdrs = self.get_fdr_ypos()
+        # If there is a NAN, plot is not shown, so we must be sure all FDRs are
+        # real values. Set 0 for the NAN so that we do not see the lines
+        fdrs = [0 if np.isnan(x) else x for x in fdrs]
         jinja['fdr1'] = fdrs[0]
         jinja['fdr2'] = fdrs[1]
         jinja['fdr3'] = fdrs[2]
@@ -622,7 +625,6 @@ class VolcanoANOVAJS(VolcanoANOVA):
         return self.html
 
     def get_fdr_ypos(self):
-
         fdr = self.settings.FDR_threshold
         fdrs = sorted(self.settings.volcano_additional_FDR_lines)
         fdrs = fdrs[::-1] # reverse sorting
