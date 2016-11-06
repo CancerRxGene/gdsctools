@@ -3,6 +3,49 @@ ChangeLog
 
 .. contents::
 
+Version 0.15 (Nov 2016)
+-------------------------------------
+
+* BUG Fixes
+
+    - Fix issue #156 (GDSC failures in some cases). This was due to special
+      MOBEM input files for which no tests are performed. In such cases, some
+      codes were failing in ANOVAReport and ANOVAResults, which have been fixed
+      in this release.
+    - Fix buggy volcano plot (no plot if no data); if FDR threshold below
+      minimum value, set fdr_threshold to minimum value so that it scaled the
+      plots properly. Now, users can add as many lines as desired using
+      settings.additional_fdr. pvalues found to be NAN are set to 0 to prevent
+      plotting issues.
+    - anova module: regression in the case Y ~ C(TISSUE) + C(MSI) + feature, 
+        the tissue sum of squares was using N-1 tissues (one missing).
+
+* CHANGES:
+
+   - elastic_net module renamed into regression
+   - ANOVASetting prints keys in alphabetical order (instead of randomly)
+   - ANOVASetting: regression_formula is added; other regression_XX settings
+     are not removed but not used anymore.
+   - GenomicFeature reader: if a tissue is empty, it is replaced by UNDEFINED.
+   - standalone: the drug option must be an integer. THis is now caught are the
+     option level, not later in the code.
+   - anova module: remove code related to elastic net, ridge, and lasso. This
+     won't be used in production with ANOVA. EN, Ridge and Lasso are used 
+     in the regression module and will be part of an independent type of
+     analysis. See NEWS
+
+* NEWS:
+
+   - Add Ridge + Lasso + LassoLars classes in addition to ElasticNet regression
+     method into the regression module.
+   - Add more features in regression module (boxplot, dendogram)
+   - New regression notebook in the notebooks directory
+   - anova module: We can now use any combo of regression formula using
+     statsmodels. This is slower but one can do use any formula accepted
+     by statsmodels. The previous faster code is still used for the standard
+     analysis.
+
+
 Version 0.14 (20th June 2016)
 ---------------------------------
 
