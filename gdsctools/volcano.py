@@ -219,8 +219,7 @@ class VolcanoANOVA(object):
         """Get pvalue for a given FDR threshold
 
         This is equivalent to v17 of the R version but is not very precise
-        we should use _get_pvalue_from_fdr_interp instead but needs to be
-        tested.
+        we should use _get_pvalue_from_fdr_interp instead.
 
         """
         qvals = self.df[self._colname_qvalue]
@@ -232,14 +231,16 @@ class VolcanoANOVA(object):
             return pvals[qvals < fdr].max()
 
     def _get_pvalue_from_fdr_interp(self, fdr):
-        # same as get_pvalue_from_fdr but with a linear inerpolation
+        # same as get_pvalue_from_fdr but with a linear interpolation
         fdr += 1e-15
+
         qvals = self.df[self._colname_qvalue]
         pvals = self.df[self._colname_pvalue]
-        ya = pvals[qvals < fdr].max()
+        ya = pvals[qvals <= fdr].max()
         yb = pvals[qvals > fdr].min()
-        xa = qvals[qvals < fdr].max()
+        xa = qvals[qvals <= fdr].max()
         xb = qvals[qvals > fdr].min()
+
         dx = xb - xa
         dy = yb - ya
         xc = fdr
@@ -320,13 +321,11 @@ class VolcanoANOVA(object):
         else:
             for delta, qval, pval in zip(deltas, qvals, pvals):
                 if pval <= self.settings.pvalue_threshold and \
-                        qval <= FDR_threshold and delta < 0 and \
-                        pval <= self.settings.pvalue_threshold:
+                        qval <= FDR_threshold and delta < 0: 
                     colors.append('green')
                     annotations.append(True)
                 elif pval <= self.settings.pvalue_threshold and \
-                        qval <= FDR_threshold and delta > 0 and \
-                        pval <= self.settings.pvalue_threshold:
+                        qval <= FDR_threshold and delta > 0:
                     colors.append('red')
                     annotations.append(True)
                 else:
@@ -409,6 +408,9 @@ class VolcanoANOVA(object):
 
         # some aliases
         fdr = self.settings.FDR_threshold
+        if fdr < self.df[self._colname_qvalue].min():
+            fdr = self.df[self._colname_qvalue].min()
+
         fdrs = sorted(self.settings.volcano_additional_FDR_lines)
         fdrs = fdrs[::-1] # reverse sorting
 
@@ -473,8 +475,6 @@ class VolcanoANOVA(object):
         # for the JS version
         # TODO: for the first 1 to 2000 entries ?
         labels = []
-
-
         self.data = data
         for i, row in data[['Drug', 'Feature', 'FDR']].iterrows():
 
@@ -511,7 +511,6 @@ class VolcanoANOVA(object):
         # Save the PNG first. The savefig automatically set the size
         # to a defined set and back to original figsize.
         self.figtools.savefig(filename + '.png', size_inches=size_inches)
-
 
 
 class VolcanoANOVAJS(VolcanoANOVA):
@@ -553,9 +552,9 @@ class VolcanoANOVAJS(VolcanoANOVA):
         if "not_significant" in self.data.color.values:
             colors.append("rgba(0,0,0,0.5)")  # black
         if "resistant" in self.data.color.values:
-            colors.append("rgba(205,0,0,0.5)")  # black
+            colors.append("rgba(205,0,0,0.5)")  # red
         if "sensitive" in self.data.color.values:
-            colors.append("rgba(0,205,0,0.5)")  # black
+            colors.append("rgba(0,205,0,0.5)")  # green
 
         import jinja2
         from jinja2 import Environment, PackageLoader
@@ -605,13 +604,15 @@ class VolcanoANOVAJS(VolcanoANOVA):
         jinja['title'] = '"%s"' % name
 
         fdrs = self.get_fdr_ypos()
-        # If there is a NAN, plot is not shown, so we must be sure all FDRs are
-        # real values. Set 0 for the NAN so that we do not see the lines
         fdrs = [0 if np.isnan(x) else x for x in fdrs]
-        jinja['fdr1'] = fdrs[0]
-        jinja['fdr2'] = fdrs[1]
-        jinja['fdr3'] = fdrs[2]
-        jinja['fdr4'] = fdrs[3]
+        jinja['additional_fdrs'] = ""
+        for i,this in enumerate(fdrs):
+            line = '\n{"color": "red", "width": 1, "type": "dashed", "y":  %s}'
+            if i == len(fdrs)-1:
+                pass
+            else:
+                line += ","
+            jinja['additional_fdrs'] += line % this
 
         m = abs(self.data.signed_effect.min())
         M = abs(self.data.signed_effect.max())
@@ -633,19 +634,27 @@ class VolcanoANOVAJS(VolcanoANOVA):
         else:
             get_pvalue_from_fdr = self._get_pvalue_from_fdr
 
+        # If provided FDR is below minimum one, use minimum FDR as the
+        # threshold.
         pvalue = get_pvalue_from_fdr(fdr)
+        if np.isnan(pvalue):
+            pvalue = self.df["ANOVA_FEATURE_pval"].min()
         #ax.axhline(-np.log10(pvalue), linestyle='--', lw=2,
         #    color='red', alpha=1, label="FDR %s " %  fdr + " \%")
 
         pvalues = [-log10(pvalue)]
+        # If there is a NAN, plot is not shown, so we must be sure all FDRs are
+        # real values. Set 0 for the NAN so that we do not see the lines
+        #pvalues = [0 if np.isnan(x) else x for x in pvalues]
         for i, this in enumerate(fdrs):
             if this < self.df[self._colname_qvalue].min() or\
                 this > self.df[self._colname_qvalue].max():
-                    pvalues.append(3)
+                    pvalues.append(0)
                     continue
             pvalue = get_pvalue_from_fdr(this)
             pvalues.append(-np.log10(pvalue))
 
+        pvalues = [0 if np.isnan(x) else x for x in pvalues]
         # we must have 3 values. If not, just repeat the last values
         return pvalues
 
