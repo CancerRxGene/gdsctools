@@ -45,7 +45,7 @@ class MultipleTesting(object):
     holm-sidak          step down method using Sidak adjustments
     holm                step down method using Bonferroni adjustments
     simes-hochberg      step up method (independent)
-    hommel              close method based on Simes tests (non 
+    hommel              close method based on Simes tests (non
                         negative)
     fdr_bh              FDR Benjamini-Hochberg (non-negative)
     fdr_by              FDR Benjamini-Yekutieli (negative)
@@ -70,7 +70,7 @@ class MultipleTesting(object):
             correction.
         """
 
-        #: set of valid methods 
+        #: set of valid methods
         self.valid_methods = ['bonferroni', 'sidak', 'fdr_by',
             'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh',
             'fdr_tsbh', 'fdr_tsbky', 'fdr', 'qvalue']
@@ -121,10 +121,10 @@ class MultipleTesting(object):
             from gdsctools.stats import MultipleTesting
             mt = MultipleTesting()
             pvalues = [1e-10, 9.5e-2, 2.2e-1, 3.6e-1, 5e-1, 6e-1,8e-1,9.6e-1]
-            mt.plot_comparison(pvalues, 
+            mt.plot_comparison(pvalues,
                 methods=['fdr_bh', 'qvalue', 'bonferroni', 'fdr_tsbh'])
 
-        .. note:: in that example, the qvalue and FDR are identical, but 
+        .. note:: in that example, the qvalue and FDR are identical, but
             this is not true in general.
 
         """
@@ -198,9 +198,9 @@ def glass(x, y):
     :param y: second sample
     :return: 2 values (one or each sample)
 
-    The Glass effect size is computed as 
+    The Glass effect size is computed as
 
-    .. math::  
+    .. math::
 
 
         \Delta = \frac{\bar{x}_1-\bar{x}_2}{\sigma_i}
@@ -213,7 +213,7 @@ def glass(x, y):
     x = np.array(x)
     y = np.array(y)
 
-    # mean difference: 
+    # mean difference:
     md = np.abs(x.mean() - y.mean())
 
     # here, we want same as in R that is unbiased variance
