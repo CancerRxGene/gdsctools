@@ -55,14 +55,14 @@
     <h2> 3 -  <a class="toc-backref" href="#id3">Explore all significant results</a></h2>
 
     <p>There were {{ manova }} significant associations found.
-     All significant associations have been gathered
-     the following link: </p><p><a
+     All significant associations have been gathered in the following link: </p>
+    <p><a
          href="./associations/manova.html">MANOVA results</a></p>
     </div>
     {% endif %}
 
 
-    {% if not __section_skip_summary %} 
+    {% if not __section_skip_feature_summary %} 
     <div class="section" id="Feature_summary">
     <h2> 4 - <a class="toc-backref" href="#id4">Feature summary</a></h2>
     <p>Features most frequently associated with a drug response</p>
@@ -74,7 +74,7 @@
     {% endif %}
 
 
-    {% if not __section_skip_summary %} 
+    {% if not __section_skip_drug_summary %} 
     <div class="section" id="Drug_summary">
     <h2> 5 - <a class="toc-backref" href="#id4">Drug Summary</a></h2>
     <p>Drug most frequently associated with a feature</p>
@@ -85,7 +85,7 @@
     {% endif %}
 
 
-    {% if not __section_skip_summary %} 
+    {% if not __section_skip_drug_associations %} 
     <div class="section" id="Drug_wise_associations">
     <h2> 6 - <a class="toc-backref" href="#id6">
            Drug wise associations</a></h2>
@@ -99,7 +99,7 @@
     {% endif %}
 
 
-    {% if not __section_skip_summary %} 
+    {% if not __section_skip_feature_associations %} 
     <div class="section" id="Feature_wise_associations">
     <h2> 7 - <a class="toc-backref" href="#id6"> Feature wise associations</a></h2>
     <p> The following table provides links to dedicated pages for
