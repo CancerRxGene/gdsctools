@@ -294,7 +294,7 @@ class ANOVAResults(object):
         See the online documentation for details on gdsctools.readthedocs.io.
 
         """
-        if len(df) == 0:
+        if len(self.df) == 0:
             print("No data to plot")
             return
         self.handle_volcano = VolcanoANOVA(self.df, settings=settings)
@@ -351,7 +351,7 @@ class ANOVAResults(object):
     def barplot_effect_size(self):
         """Dev not for production"""
         # barplot of the IC50 effect size
-        if len(df) == 0:
+        if len(self.df) == 0:
             print("No data to plot")
         data = np.sign(self.df.FEATURE_delta_MEAN_IC50) * self.df.FEATURE_IC50_effect_size
         try:
