@@ -34,13 +34,11 @@ import numpy as np
 import easydev
 
 
-
 __all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecode']
 
 
-
 def drug_name_to_int(name):
-    # We want to remove the prefix Drug_ 
+    # We want to remove the prefix Drug_
     # We also want to remove suffix _IC50 but in v18, we have names
     # such as Drug_1_0.33_IC50 to provide the concentration.
     # So, we should remove the string after the second _
@@ -177,7 +175,7 @@ class Reader(object):
                 compression = "xz"
             else:
                 compression = None
-                
+
             # Sometimes a column in CSV file may have several values
             # separated by comma. This should be surrended by quotes "
             # To account for that feature, quotechar argument must be provided
@@ -212,7 +210,7 @@ class Reader(object):
         # Some fields may be empty strings, which must be set as NA
         import warnings
         warnings.filterwarnings('ignore')
-        self.df = self.df.replace(" ", "").replace("\t", "").replace("", 
+        self.df = self.df.replace(" ", "").replace("\t", "").replace("",
                 np.nan)
         warnings.filterwarnings("default")
 
@@ -352,7 +350,6 @@ class IC50(Reader, CosmicRows):
         Number of cell lines: 988
         Percentage of NA 0.206569746043
 
-
     You can get the drug identifiers as follows::
 
         r.drugIds
@@ -395,7 +392,7 @@ class IC50(Reader, CosmicRows):
         drug_prefix = None
         for this in _cols:
             if this.startswith("Drug_"):
-                drug_prefix = "Drug" 
+                drug_prefix = "Drug"
 
         _cols = [str(x) for x in self.df.columns]
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
@@ -433,7 +430,7 @@ class IC50(Reader, CosmicRows):
             raise ValueError("{0} column could not be found in the header".format(
                 self.cosmic_name))
 
-        # In v18, the drug ids may be duplicated 
+        # In v18, the drug ids may be duplicated
         if self._v18 is True:
             return
 
@@ -446,7 +443,7 @@ class IC50(Reader, CosmicRows):
 
     def drug_name_to_int(self, name):
         return drug_name_to_int(name)
-    
+
     def _get_drugs(self):
         return list(self.df.columns)
     def _set_drugs(self, drugs):
@@ -577,6 +574,11 @@ class GenomicFeatures(Reader, CosmicRows):
         The header's columns' names have changed to be more consistant.
         Previous names are deprecated but still accepted.
 
+    .. versionchanged:: 0.9.15
+        If a tissue is empty, it is replaced by UNDEFINED.
+        We also strip the spaces to make sure there is "THIS" and "THIS " are
+        the same.
+
     """
     colnames = easydev.AttrDict()
     colnames.cosmic = 'COSMIC_ID'
@@ -584,11 +586,14 @@ class GenomicFeatures(Reader, CosmicRows):
     colnames.msi = 'MSI_FACTOR'
     colnames.media = 'MEDIA_FACTOR'
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, empty_tissue_name="UNDEFINED"):
         """.. rubric:: Constructor
 
-        If no file is provided, using the edfault file provided in the
+        If no file is provided, using the default file provided in the
         package that is made of 1001 cell lines times 680 features.
+
+        :param str empty_tissue_name: if a tissue name is let empty, replace
+            it with this string.
 
         """
         # first reset the filename to the shared data (if not provided)
@@ -631,7 +636,7 @@ class GenomicFeatures(Reader, CosmicRows):
         if self.colnames.tissue not in self.df.columns:
             warnings.warn("column named '%s' not found"
                     % self.colnames.tissue, UserWarning)
-            self.df[self.colnames.tissue] = ['unspecified'] * len(self.df)
+            self.df[self.colnames.tissue] = ['UNDEFINED'] * len(self.df)
             self._special_names.append(self.colnames.tissue)
         else:
             self._special_names.append(self.colnames.tissue)
@@ -657,6 +662,16 @@ class GenomicFeatures(Reader, CosmicRows):
 
         #
         self.check()
+
+        self._fix_empty_tissues(empty_tissue_name)
+
+    def _fix_empty_tissues(self, name="UNDEFINED"):
+        # Sometimes, tissues may be empty so a nan is present. This lead to
+        # to errors in ANOVA or Regression so we replace them with "UNDEFINED"
+        N = self.df.TISSUE_FACTOR.isnull().sum()
+        if N > 0:
+            print("WARNING: Some tissues were empty strings and renamed as UNDEFINED!")
+        self.df.TISSUE_FACTOR.fillna('UNDEFINED', inplace=True)
 
     def _get_shift(self):
         return len(self._special_names)
@@ -990,7 +1005,7 @@ class DrugDecode(Reader):
         - OWNED_BY
 
     The OWNED_BY and WEBRELEASE may be required to create packages for each
-    company. If those columns are not provided, the internal dataframe is 
+    company. If those columns are not provided, the internal dataframe is
     filled with None.
 
     Note that older version of identifiers such as::
@@ -1001,7 +1016,7 @@ class DrugDecode(Reader):
 
         950
 
-    Then, the data is accessible as a dataframe, the index being the 
+    Then, the data is accessible as a dataframe, the index being the
     DRUG_ID column::
 
         data = DrugDecode('DRUG_DECODE.csv')
