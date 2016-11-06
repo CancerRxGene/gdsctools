@@ -134,10 +134,8 @@ def anova_pipeline(args=None):
     # dispatcher to the functions according to the user parameters
     from gdsctools import ANOVA, ANOVAReport
     anova = ANOVA(options.input_ic50, options.input_features,
-            options.input_drug)
+            options.input_drug_decode)
     anova = _set_settings(anova, options)
-
-    options.drug = int(options.drug)
 
     if options.drug and options.drug not in anova.ic50.df.columns:
         print(red("Invalid Drug. Try one of those"))
@@ -335,7 +333,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            considered as genomic features (e.g., mutation)
                            """)
 
-        group.add_argument("-D", "--input-drug-decode", dest='input_drug',
+        group.add_argument("-D", "--input-drug-decode", dest='input_drug_decode',
                             default=None, type=str,
                             help="a decoder file")
 
@@ -354,7 +352,7 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            Set this option if you do not want to open the
                            html page automatically.""")
         # if one drug one feature only
-        group.add_argument("-d", "--drug", dest="drug",
+        group.add_argument("-d", "--drug", dest="drug", type=int,
                            help="""The name of a valid drug identifier to be
                            found in the header of the IC50 matrix""")
 
