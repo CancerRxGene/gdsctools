@@ -55,10 +55,8 @@ elif self.settings.regression_method == 'Lasso':
     self.data_lm = OLS(odof.Y, df.values).fit_regularized(
                        alpha=self.settings.regression_alpha, L1_wt=1)
 
-
-
-
 """
+
 
 class RegressionCVResults(object):
     def __init__(self, model, Rp, kfold=None):
@@ -78,7 +76,7 @@ class RegressionCVResults(object):
         txt = "Best alpha on %s folds: %s (%.2f in log scale); Rp=%s" %\
                   (self.kfold, self.alpha, self.ln_alpha, self.Rp)
         return txt
-    
+
 
 class Regression(BaseModels):
     """Base class for all Regression analysis
@@ -162,18 +160,18 @@ class Regression(BaseModels):
                 fontsize=fontsize)
         return df
 
-    def print(self, txt):
+    def _print(self, txt):
         if self.verbose:
             print(txt)
 
     def get_best_model(self, drug_name, n_folds=10, alphas=None, l1_ratio=0.5):
         """Return best model fitted using a CV """
-        self.print("Running CV to estimate best alpha.")
+        self._print("Running CV to estimate best alpha.")
         results = self.runCV(drug_name, n_folds=n_folds, alphas=alphas,
                              l1_ratio=l1_ratio)
         best_alpha = results["alpha"]
         model = self.get_model(alpha=best_alpha)
-        self.print("Using alpha=%s." % model.alpha)
+        self._print("Using alpha=%s." % model.alpha)
         return model
 
     def plot_weight(self, drug_name, model=None, fontsize=12,
