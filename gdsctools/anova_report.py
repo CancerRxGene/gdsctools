@@ -840,7 +840,10 @@ class HTMLPageMain(ReportMain):
             self.jinja["__section_skip_volcano"] = True
             self.jinja["__section_skip_manova"] = True
             self.jinja["__section_skip_features"] = True
-            self.jinja["__section_skip_summary"] = True
+            self.jinja["__section_skip_feature_summary"] = True
+            self.jinja["__section_skip_drug_summary"] = True
+            self.jinja["__section_skip_drug_associations"] = True
+            self.jinja["__section_skip_feature_associations"] = True
         self.add_cosmic()
         self.add_settings()
 
