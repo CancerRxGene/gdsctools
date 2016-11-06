@@ -16,6 +16,8 @@
 ##############################################################################
 """Code related to the ANOVA analysis to find associations between drug IC50s
 and genomic features"""
+import collections
+
 import pandas as pd
 
 from easydev import Progress
@@ -344,7 +346,7 @@ class BaseModels(object):
         modes.append('feature')
         return modes
 
-    def diagnostics(self):
+    def diagnostics(self, details=False):
         """Return dataframe with information about the analysis
 
         """
@@ -354,12 +356,16 @@ class BaseModels(object):
         feasible = 0
         pb = Progress(n_drugs, 1)
         counter = 0
+
+        feasibles = collections.defaultdict(int)
+
         for drug in self.ic50.drugIds:
             for feature in self.features.features[self.features.shift:]:
                 dd = self._get_one_drug_one_feature_data(drug, feature,
                         diagnostic_only=True)
                 if dd.status is True:
                     feasible += 1
+                    feasibles[drug] +=1
             counter += 1
             pb.animate(counter)
 
@@ -368,6 +374,10 @@ class BaseModels(object):
                 'n_combos': n_combos,
                 'feasible_tests': feasible,
                 'percentage_feasible_tests': float(feasible)/n_combos*100}
+
+        if details is True:
+            results["feasible_tests_per_drug"] =  feasibles
+
         return results
 
     def read_drug_decode(self, filename=None):
