@@ -102,26 +102,32 @@ class ANOVASettings(AttrDict):
     ========================= ================ ========================================
 
 
-    There are parameters dedicated to the regression method:
+    There are parameters dedicated to the regression method. Note that only
+    regression_formula is effective right now.
 
     ======================= ========= =========================================
     Name                    Default   Description
     ======================= ========= =========================================
-    regression_method       OLS       Regression method amongst OLS, Ridge
-                                      Lasso, ElasticiNet.
+    regression_method       OLS       Regression method amongst OLS. NOT USED
+                                      YET.
     regression_alpha        0.01      Fraction of penalty included. If 0,
-                                      equivalent to OLS.
+                                      equivalent to OLS. NOT USED YET.
     regression_L1_wt        0.5       Fraction of the penalty given to L1
                                       penalty term. Must be between 0 and 1.
                                       If 0, equivalent to Ridge. If 1
-                                      equivalent to Lasso
+                                      equivalent to Lasso. NOT USED YET.
+    regression_formula      auto      if auto, use standard regression from
+                                      GDSCTools (see link_formula_)
+                                      otherwise any valid regression formula
+                                      can be used.
     ======================= ========= =========================================
 
     .. seealso:: :ref:`settings_filtering` or
         gdsctools.readthedocs.org/en/master/settings.html#filtering
-
         decrease the number of significant hits.
 
+
+    .. _link_formula: http://gdsctools.readthedocs.io/en/master/anova_parttwo.html#regression-analysis
     """
     def __init__(self, **kargs):
         super(ANOVASettings, self).__init__(**kargs)
@@ -155,6 +161,9 @@ class ANOVASettings(AttrDict):
         self.regression_method = 'OLS' # can be ElasticNet, LAsso, Ridge
         self.regression_alpha = 0.01
         self.regression_L1_wt = 0.5
+
+        self.regression_formula = "auto"
+
         # uses statsmodels package
         # The fraction of the penalty given to the L1 penalty term. Must be
         # between 0 and 1 (inclusive). If 0, the fit is ridge regression. If
