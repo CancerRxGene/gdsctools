@@ -557,7 +557,7 @@ class ANOVA(BaseModels): #Logging):
         model = smf.ols(formula, data=df)
         anova = anova_lm(model.fit(), typ=1)
         anova_pvalues = {}
-        for k,v in anova['PR(>F)'].items():
+        for k,v in anova['PR(>F)'].iteritems():
             if k == 'C(tissue)':
                 anova_pvalues['tissue'] = v
             elif k == 'C(msi)':
