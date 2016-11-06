@@ -38,6 +38,48 @@ from sklearn import linear_model # must use the module rather than classes to
 __all__ = ['GDSCRidge', "GDSCLasso", "GDSCElasticNet"]
 
 
+"""book keeping
+
+from statsmodels.formula.api import OLS
+
+if self.settings.regression_method == 'ElasticNet':
+    self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                       alpha=self.settings.regression_alpha,
+                       L1_wt=self.settings.regression_L1_wt)
+elif self.settings.regression_method == 'OLS':
+    self.data_lm = OLS(odof.Y, df.values).fit()
+elif self.settings.regression_method == 'Ridge':
+    self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                       alpha=self.settings.regression_alpha, L1_wt=0)
+elif self.settings.regression_method == 'Lasso':
+    self.data_lm = OLS(odof.Y, df.values).fit_regularized(
+                       alpha=self.settings.regression_alpha, L1_wt=1)
+
+
+
+
+"""
+
+class RegressionCVResults(object):
+    def __init__(self, model, Rp, kfold=None):
+        self.model = model
+        self.Rp = Rp
+        self.kfold = kfold
+    def _get_alpha(self):
+        return self.model.alpha_
+    alpha = property(_get_alpha)
+    def _get_ln_alpha(self):
+        return pylab.log(self.alpha)
+    ln_alpha = property(_get_ln_alpha)
+    def _get_coefficients(self):
+        return self.model.coeff_
+    coefficients = property(_get_coefficients)
+    def __str__(self):
+        txt = "Best alpha on %s folds: %s (%.2f in log scale); Rp=%s" %\
+                  (self.kfold, self.alpha, self.ln_alpha, self.Rp)
+        return txt
+    
+
 class Regression(BaseModels):
     """Base class for all Regression analysis
 
@@ -315,17 +357,13 @@ class Regression(BaseModels):
         en = self._get_cv_model(l1_ratio=l1_ratio, alphas=alphas, kfold=kfold, **kargs)
 
         # Fit the model
-        self._encv = en.fit(X, Y)
-        prediction = self._encv.predict(X)
+        model = en.fit(X, Y)
+        prediction = model.predict(X)
 
         Rp = self._get_rpearson(prediction, Y)
 
-        res = {"alpha": self._encv.alpha_, "Rp": Rp, "X": X, 'Y': Y,
-                "ln_alpha": pylab.log(self._encv.alpha_)}
-
-        if verbose:
-            print("Best alpha on %s folds: %s (%.2f in log scale); Rp=%s" %
-                  (n_folds, res["alpha"], res["ln_alpha"], res['Rp']))
+        res = RegressionCVResults(model, Rp, n_folds)
+        if verbose: print(res)
         return res
 
     def tune_alpha(self, drug_name, alphas=None, N=80, l1_ratio=0.5,
@@ -392,16 +430,15 @@ class Regression(BaseModels):
         scores = []
         for i in range(N):
             # Fit a model using CV
-            results = self.runCV(drug_name, n_folds=n_folds, verbose=False)
-            # The correlation being equal to
-            scores.append(results["Rp"])
+            inter_results = self.runCV(drug_name, n_folds=n_folds, verbose=False)
+            scores.append(inter_results.Rp)
 
         random_scores = []
         for i in range(N):
             # Fit a model using CV
-            results = self.runCV(drug_name, n_folds=n_folds,
+            inter_results = self.runCV(drug_name, n_folds=n_folds,
                                 randomize_Y=True, verbose=False)
-            random_scores.append(results["Rp"])
+            random_scores.append(inter_results.Rp)
 
         from scipy.stats import ttest_ind
         ttest_res = ttest_ind(scores, random_scores)
@@ -409,7 +446,6 @@ class Regression(BaseModels):
                     "random_scores": random_scores,
                     "ttest_pval": ttest_res.pvalue}
 
-        from scipy.special import betaln
         # Compute the log of the Bayes factor to avoid underflow as communicated
         # by M.Menden.
         S = sum([s>r for s,r in zip(scores, random_scores)])
@@ -442,8 +478,9 @@ class Regression(BaseModels):
         d = {}
 
         for i, drug in enumerate(drugids):
+            X, Y = self._get_one_drug_data(drug_name, randomize_Y=randomize_Y)
             results = self.runCV(drug, verbose=False)
-            df = pd.DataFrame({'name': results['X'].columns, 'weight': self._encv.coef_})
+            df = pd.DataFrame({'name': X.columns, 'weight': self._encv.coef_})
             df = df.set_index("name").sort_values("weight")
             d[drug] = df.copy()
             pb.animate(i+1)
