@@ -84,6 +84,6 @@ def test_anova_brca():
  
     assert totest == exact
 
-    import shutil
-    shutil.rmtree('breast')
+    #import shutil
+    #shutil.rmtree('breast')
 

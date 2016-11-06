@@ -5,15 +5,19 @@ from easydev import assert_list_almost_equal
 from nose.tools import assert_almost_equal
 from gdsctools import ic50_test
 
+
 def test_anova_one_drug_one_feature():
 
     an = ANOVA(ic50_test)
-
     # test 1 drug
     drug_id = 999
     df = an.anova_one_drug_one_feature(
         drug_id=drug_id,
         feature_name='ABCB1_mut', show=True)
+    df['DRUG_ID'] = drug_id
+    df['DRUG_NAME'] = drug_id
+    df['DRUG_TARGET'] = drug_id
+    df['ANOVA_MEDIA_pval'] = -1
 
     control = {'DRUG_ID': {1: drug_id},
         'DRUG_NAME': {1: drug_id},
@@ -32,10 +36,32 @@ def test_anova_one_drug_one_feature():
         'ANOVA_MSI_pval': {1: 0.14598946672374763},
         'N_FEATURE_neg': {1: 370},
         'N_FEATURE_pos': {1: 5},
+        'ANOVA_MEDIA_pval': {1: -1},
         'ANOVA_TISSUE_pval': {1: 3.2808255732569986e-06}}
     control = pd.DataFrame(control)
-
     assert_list_almost_equal(df,control)
+
+
+def test_compare_formula_vs_gdsc():
+    # TISSUE + MSI + feature 
+    an = ANOVA(ic50_test)
+    drug_id = 999
+    df1 = an.anova_one_drug_one_feature(
+        drug_id=drug_id, feature_name='ABCB1_mut')
+    an.settings.regression_formula = "Y ~ C(tissue) + C(msi) + feature"
+    df2 = an.anova_one_drug_one_feature(
+        drug_id=drug_id, feature_name='ABCB1_mut')
+
+    assert all(df1.fillna(1).values[0] == df2.fillna(1).values[0])
+
+    # MSI + feature only
+    an = ANOVA(ic50_test)
+    an.settings.analysis_type = "breast"
+    df1 = an.anova_one_drug_one_feature(
+        drug_id=drug_id, feature_name='ABCB1_mut')
+    an.settings.regression_formula = "Y ~ C(msi) + feature"
+    df2 = an.anova_one_drug_one_feature(an.drugIds[2], an.feature_names[0])
+    assert all(df1.fillna(1) == df2.fillna(1))
 
 
 def test_anova_one_drug():
@@ -84,37 +110,31 @@ def test_odof_with_without_media():
          0.023777744527686766, 1.5729157319290974e-44])
 
 
-def test_odof():
-    pass
-    # gdsc.anova_one_drug_one_feature('Drug_1013_IC50', 'BCR-ABL_mut').TOut[65]: 
-    #                                   1
-    #ANOVA_FEATURE_pval              0.176635
-    #ANOVA_MEDIA_pval                0.720394
-    #ANOVA_MSI_pval                  0.720394
-
-
 def test_anova_summary():
     an = ANOVA(ic50_test)
     # by default  regression includes + msi + feature
     drug_id = 999
-
     df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
 
     x = an.anova_pvalues
-    y = [3.210453608523738e-06, 0.14579091345305398, 0.5430736275249095, None]
+    x = [x["tissue"], x["msi"], x["feature"]]
+    y = [3.210453608523738e-06, 0.14579091345305398, 0.5430736275249095]
     assert_list_almost_equal(x, y)
 
     an.settings.analysis_type = 'COREAD' # something different from PANCAN
     df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
     x = an.anova_pvalues
-    y = [0.262294448831941, 0.30599483315087317, None]
+    x = [x["msi"], x["feature"]]
+    y = [0.262294448831941, 0.30599483315087317]
     assert_list_almost_equal(x, y)
 
-    # now remove also the MSI factor
+    # now remove also the MSI factor, in which case the tissue must also be
+    # removed !
     an.settings.include_MSI_factor = False
+    an.settings.analysis_type = "COREAD"
     df = an.anova_one_drug_one_feature(drug_id, 'ASH1L_mut')
-    x = an.anova_pvalues
-    y = [0.21266050833611852, None]
+    x = [an.anova_pvalues["feature"]]
+    y = [0.21266050833611852]
     assert_list_almost_equal(x, y)
 
     assert (df.N_FEATURE_neg == 365).all()
@@ -123,14 +143,10 @@ def test_anova_summary():
 def test_set_cancer_type():
     an = ANOVA(gdsctools_data("IC50_v17.csv.gz"))
     an.set_cancer_type("breast")
-    an.ic50.df.sum()
-    an.ic50.df.sum().sum()
     assert_list_almost_equal([an.ic50.df.sum().sum()], [27721.255627472943])
 
 
-
 def test_multicore():
-
 
     an = ANOVA(ic50_test)
     results = an.anova_all()
