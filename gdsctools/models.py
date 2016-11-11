@@ -28,6 +28,7 @@ from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.errors import GDSCToolsDuplicatedDrugError
 
+
 __all__ = ['BaseModels']
 
 
@@ -214,7 +215,7 @@ class BaseModels(object):
         self.set_cancer_type(self.settings.analysis_type)
 
     def init(self):
-        # Some preprocessing to speed up data access
+        # Some preprocessing to speed up data access in ANOVA
         ic50_parse = self.ic50.df.copy().unstack().dropna()
         # for each drug, we store the IC50s (Y) and corresponding indices
         # of cosmic identifiers + since v0.13 the real indices
@@ -249,7 +250,8 @@ class BaseModels(object):
         for drug_name in self.ic50.drugIds:
             indices = self.ic50_dict[drug_name]['indices']
 
-            # MSI, media and tissue are not large data files and can be store
+            # MSI, media and tissue are not large data files and can be stored
+            # enterily
             if self.features.found_msi:
                 self.msi_dict[drug_name] = self.msi_factor.ix[indices]
 
@@ -262,7 +264,7 @@ class BaseModels(object):
         # We create the dummies for the tissue factor once for all
         # Note that to agree with R convention, we have to resort the column
         # to agree with R convention that is a<B==b<c instead of
-        # where A<B<C<a<b<c (in R)
+        # where A<B<C<a<b<c (in Python)
         self._tissue_dummies = pd.get_dummies(self.tissue_factor)
         columns = self._tissue_dummies.columns
         columns = sorted(columns, key=lambda s: s.lower())
@@ -284,14 +286,15 @@ class BaseModels(object):
 
         # drop first feature in the tissues that seems to be used as a
         # reference in the regression
-        tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
+        #tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
+        #self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
 
-        self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
-
-        if self.settings.include_media_factor:
+        """if self.settings.include_media_factor:
+            # Drop first category in the media factor ?! like for tissues.
+            # What is the rationale ?
             media = [x for x in self._tissue_dummies.columns if 'media' in x]
             self._tissue_dummies.drop(media[0], axis=1, inplace=True)
-
+        """
         # reset the buffer.
         self.individual_anova = {}
 

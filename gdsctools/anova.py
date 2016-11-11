@@ -23,7 +23,7 @@ import numpy as np
 
 from statsmodels.formula.api import OLS
 
-from easydev import Progress, AttrDict
+from easydev import Progress, AttrDict, do_profile
 
 from gdsctools.models import BaseModels
 from gdsctools.boxplots import BoxPlots
@@ -361,52 +361,51 @@ class ANOVA(BaseModels): #Logging):
             # and needs to be dropped.
             df = self._tissue_dummies.ix[odof.masked_tissue.index]
             todrop = df.columns[df.values.sum(axis=0) == 0]
+
             if len(todrop) > 0: # use if since drop() is slow
                 df = df.drop(todrop, axis=1)
-
+            tissues = [x for x in df.columns if x.startswith('C(tissue')]
+            df.drop(tissues[0], axis=1, inplace=True)
             # Here we set other variables with dataframe columns' names as
             # expected by OLS.
             if self.settings.include_media_factor == False:
+                # make sure the media factor is not included
                 todrop = [x for x in df.columns if
                         x.startswith('C(media)')]
                 df = df.drop(todrop, axis=1)
+            else:
+                # drop the first one for the regression
+                medias = [x for x in df.columns if x.startswith('C(media')]
+                if len(medias):
+                    df.drop(medias[0], axis=1, inplace=True)
             df['C(msi)[T.1]'] = odof.masked_msi.values
             df['feature'] = odof.masked_features
 
-            # example of computing null model ?
-            # Example of computing pvalues ourself
-            # with 100 000 samples, we can get a smooth distribution
-            # that we can then fit with fitter. good distribution
-            # for the raw data is uniform one but if we take the log10,
-            # we have lots of possible distrob such as beta, exponweib, gamma,
-
-            # The ANOVA itself
+            # The regression itself
             self.data_lm = OLS(odof.Y, df.values).fit()
-            self.anova_pvalues = self._get_anova_summary(self.data_lm)
+            # The ANOVA
+            self.anova_pvalues = self._get_anova_summary(self.data_lm, odof=odof)
             results = self._set_odof_results(self.anova_pvalues, odof)
         elif self.settings.include_MSI_factor is True:
             df = DummyDF()
             df.values = np.ones((3, odof.Npos + odof.Nneg))
-            """df = pd.DataFrame()
-            df['C(msi)[T.1]'] = odof.masked_msi.values
-            df['feature'] = odof.masked_features
-            df.insert(0, 'Intercept', [1] * (odof.Npos + odof.Nneg))"""
             df.values[1] = odof.masked_msi.values
             df.values[2] = odof.masked_features
-            #df.values[0] = [1] * (odof.Npos + odof.Nneg)
             df.values = df.values.T
-            # The ANOVA itself
+            # The regression itself
             self.data_lm = OLS(odof.Y, df.values).fit()
-            self.anova_pvalues = self._get_anova_summary(self.data_lm)
+            # The ANOVA itself
+            self.anova_pvalues = self._get_anova_summary(self.data_lm, odof=odof)
             results = self._set_odof_results(self.anova_pvalues, odof)
         else:
             df = DummyDF()
             df.values = np.ones((2, odof.Npos + odof.Nneg))
             df.values[1] = odof.masked_features
             df.values = df.values.T
-            # The ANOVA itself
+            # The regression itself
             self.data_lm = OLS(odof.Y, df.values).fit()
-            self.anova_pvalues = self._get_anova_summary(self.data_lm)
+            # The ANOVA itself
+            self.anova_pvalues = self._get_anova_summary(self.data_lm, odof=odof)
             results = self._set_odof_results(self.anova_pvalues, odof)
 
         key = str(drug_id) + "__" + feature_name
@@ -431,7 +430,7 @@ class ANOVA(BaseModels): #Logging):
                 #data_lm = OLS(Y, df.values).fit()
                 data_lm = OLS(Y+noise*pylab.randn(len(Y)), df.values).fit()
                 anova_pvalues = self._get_anova_summary(data_lm,
-                    output='dict')
+                    output='dict', odof=odof)
                 try:self.samples1.append(anova_pvalues['msi'])
                 except:pass
                 self.samples2.append(anova_pvalues['feature'])
@@ -447,9 +446,7 @@ class ANOVA(BaseModels): #Logging):
                 'error': ff.df_errors.ix[dist].values[0],
                 'params': ff.fitted_param[dist],
                 'feature': feature_name,
-                'N':len(Y)
-            }
-            print(self.pvalues_features[key])
+                'N':len(Y)}
 
         if show is True:
             boxplot = BoxPlots(odof, savefig=self.settings.savefig,
@@ -532,6 +529,10 @@ class ANOVA(BaseModels): #Logging):
             "Y ~  C(msi) + feature"
             "Y ~  feature"
 
+        By default, in categories, the first treatment (e.g tissue) is used a
+        reference and is not shown in the results. You may set the reference
+        "Y ~ C(tissue, Treatment(reference='breast'))" .  
+
         ANOVA pvalues returned are of type I
 
         .. versionadded: 0.15.0
@@ -543,7 +544,7 @@ class ANOVA(BaseModels): #Logging):
             odof = self._get_one_drug_one_feature_data(drug_id, feature_name)
         df = pd.DataFrame({ 'Y':odof.Y,
                             'feature': odof.masked_features})
-        # Add other explanatory variables if available
+        # Add other categorical explanatory variables if available
         try: df['tissue'] = odof.masked_tissue.values
         except: pass
         try: df['msi'] = odof.masked_msi.values
@@ -551,10 +552,15 @@ class ANOVA(BaseModels): #Logging):
         try: df['media'] = odof.masked_media.values
         except:pass
 
-        self.mydf = df
+
         # "Y ~  C(tissue) + C(msi) + C(media) + feature"
         assert "Y" in formula, "Y must be the LHS of the formula"
+        # This returns a Model instance
         model = smf.ols(formula, data=df)
+
+        self._debug_custom_df = df
+        self._debug_custom_model = model
+
         anova = anova_lm(model.fit(), typ=1)
         anova_pvalues = {}
         for k,v in anova['PR(>F)'].iteritems():
@@ -570,66 +576,33 @@ class ANOVA(BaseModels): #Logging):
         return anova
 
     # no need to optimise anymore
-    def _get_anova_summary(self, data_lm, output='dict'):
+    def _get_anova_summary(self, data_lm, output='dict', odof=None):
         """
 
-        using IC50_v17 and genomic_features.tsv.gz
-
-        # Running normally
+        an = ANOVA(...)
         an.anova_one_drug_one_feature(1047, "ABCB1_mut")
-        an._get_anova_summary(an.data_lm, output="dataframe")
-                      Df       Sum Sq    Mean Sq  F value       PR(>F)
-        tissue      26.0   346.911275  13.342741  9.12559  5.98222e-31
-        msi          1.0     5.309389   5.309389  3.63129    0.0570537
-        feature      1.0     3.186109   3.186109   2.1791     0.140282
-        Residuals  817.0  1194.554709   1.462123     None         None
+        an._get_anova_summary(an.data_lm, output="dataframe", odof=an.odof)
 
-        # Now, we do it with the formula (statsmodels)
-        an.anova_one_drug_one_feature_custom(1047, "ABCB1_mut", 
-            formula="Y ~ C(tissue) + C(msi) + feature")
-                     df       sum_sq    mean_sq         F        PR(>F)
-        C(tissue)   26.0   352.345257  13.551741  9.268535  1.638640e-31
-        C(msi)       1.0     5.309389   5.309389  3.631287  5.705371e-02
-        feature      1.0     3.186109   3.186109  2.179097  1.402818e-01
-        Residual   817.0  1194.554709   1.462123       NaN           NaN
+        should be identical to 
 
-        Some same results except for tissue due to sum_seq
-
-        Df  Sum Sq Mean Sq F value  Pr(>F)
-        TISSUEpattern  26  352.35 13.5517  9.2685 < 2e-16 ***
-        MSIpattern      1    5.31  5.3094  3.6313 0.05705 .
-        FEATpattern     1    3.19  3.1861  2.1791 0.14028
-        Residuals     817 1194.55  1.4621
+        an.anova_one_drug_one_feature_custom(1047, "ABCB1_mut", formula="Y ~ C(tissue) + C(msi) + feature")
 
         """
-        # could use this with statsmodels but somehow anova_lm with type I
-        # does not work, which is the one used in R version, so we implement
-        # the anova here
         q, r = np.linalg.qr(data_lm.model.data.exog)
         effects = np.dot(q.T, data_lm.model.data.endog)
 
         # In the regression, the first tissue is dropped hence -1
-        # The degree of freedom for tissues is N - 1
-        # self.features.tissues contains all tissues even those that
-        # were dropped due to lack of pos or neg features. So, we must use
+        # Similarly for the MEDIA factor
         modes = self._get_analysis_mode()
-        Ncolumns = data_lm.model.data.exog.shape[1]
-        Ntissue = Ncolumns
-        Ntissue -= 1 # remove intercept
-        Ntissue -= 1 # remove feature, which are always taken into account
-        if 'msi' in modes:
-            Ntissue -= 1
-
-        if 'media' in modes:
-            Nmedia = len(self._media_dummies.columns)-1
-        else:
-            Nmedia = 0
-        Ntissue -= Nmedia
 
         # create the W matrix using tissue and MSI if requested
         # default is that the 3 features are used
         if 'tissue' in modes and 'msi' in modes and 'media' in modes:
+            Ntissue = len(odof.masked_tissue.unique()) - 1
+            Nmedia = len(odof.masked_media.unique()) -1
             dof = [Ntissue, Nmedia, 1, 1]
+            self._debug_dof = dof
+            Ncolumns = sum(dof) + 1         # intercept added
             indices = ['tissue', 'media', 'msi', 'feature', 'Residuals']
             # 4 stands for intercept + tissue + msi +feature
             arr = np.zeros((5, Ncolumns))
@@ -637,18 +610,19 @@ class ANOVA(BaseModels): #Logging):
             arr[2, slice(Ntissue+1, Ntissue+Nmedia+1)] = 1
             arr[3, Ntissue + Nmedia + 1] = 1
             arr[4, Ntissue + Nmedia + 2] = 1
-            self.arr = arr
         elif 'tissue' in modes and 'msi' in modes:
+            Ntissue = len(odof.masked_tissue.unique()) - 1
             dof = [Ntissue, 1, 1]
             indices = ['tissue', 'msi', 'feature', 'Residuals']
             # 4 stands for intercept + tissue + msi +feature
+            Ncolumns = sum(dof) + 1         # intercept added
             arr = np.zeros((4, Ncolumns))
             arr[1, slice(1, Ntissue+1)] = 1
             arr[2, Ntissue + 1] = 1
             arr[3, Ntissue + 2] = 1
-            self.arr = arr
         elif 'tissue' not in modes and 'msi' in modes:
             dof = [1, 1]
+            Ncolumns = sum(dof) + 1         # intercept added
             indices = ['msi', 'feature', 'Residuals']
             # 3 stands for intercept + msi +feature
             arr = np.zeros((3, Ncolumns))
@@ -656,6 +630,7 @@ class ANOVA(BaseModels): #Logging):
             arr[2, 2] = 1
         elif 'tissue' not in modes and 'msi' not in modes:
             dof = [1]
+            Ncolumns = sum(dof) + 1         # intercept added
             indices = ['feature', 'Residuals']
             # 3 stands for intercept + msi +feature
             arr = np.zeros((2, Ncolumns))
@@ -664,10 +639,18 @@ class ANOVA(BaseModels): #Logging):
             raise NotImplementedError("""
 This combo %s is not implemented in the "auto" mode. See
 http://gdsctools.readthedocs.io/en/master/anova_parttwo.html for available
-combos of variables. In short, MSI must be included except. Note, however that
+combos of variables. In short, MSI must be included. Note, however that
 if you wish to use your own formula, you can set it in
-settings.regression_formula """ % modes)
+settings.regression_formula ; this is simply be slower as compared to the 
+standard regression. Here is an example of a formula: 
+
+Y ~ C(tissue) + C(media) + feature
+
+""" % modes)
         arr[0, 0] = 1                   # intercept
+
+        self._debug_arr = arr
+        self._debug_effects = effects
         sum_sq = np.dot(arr, effects**2)
         sum_sq = sum_sq[1:] # drop the intercep
         mean_sq = sum_sq / np.array(dof)
@@ -706,18 +689,6 @@ settings.regression_formula """ % modes)
             return {'msi': F_pvalues[0], 'feature': F_pvalues[1]}
         else:
             return {'feature': F_pvalues[0]}
-
-    def _draft(self):
-        # kept for book-keeping
-        # using sklearn
-        #ols = linear_model.LinearRegression()
-        #f = ols.fit(an.dff, an.Y)
-        #sse = sum(np.square((f.predict(an.dff).T - an.Y))) /
-        #           float(an.dff.shape[0] - an.dff.shape[1])
-        # ssr = sum(np.square((f.predict(an.dff).T - an.Y.mean())))
-        pass
-
-
 
     def anova_one_drug(self, drug_id, animate=True, output='object'):
         """Computes ANOVA for a given drug across all features
