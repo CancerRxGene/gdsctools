@@ -5,7 +5,7 @@ from nose.tools import assert_almost_equal
 import numpy as np
 
 
-@attr('skip')
+#:@attr('skip')
 def test_anova_brca():
 
     an1 = ANOVA(gdsctools_data('IC50_v17.csv.gz'))

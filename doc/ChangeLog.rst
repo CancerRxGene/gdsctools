@@ -3,6 +3,22 @@ ChangeLog
 
 .. contents::
 
+Version 0.16 (Nov 2016)
+----------------------------
+* BUG Fixes
+
+    - Fix pending issue related to #153 
+      ic_input.csv", "test_gf_input.csv" for the case where some media factor
+      are missing. This is now handle properly.
+  
+- NEWS:
+
+     - anova_one_drug_one_feature_custom allows to perform any regression using
+       formula like in R. This is not for production but should be useful to
+       perform custom analysis
+
+
+
 Version 0.15 (Nov 2016)
 -------------------------------------
 
@@ -17,8 +33,10 @@ Version 0.15 (Nov 2016)
       plots properly. Now, users can add as many lines as desired using
       settings.additional_fdr. pvalues found to be NAN are set to 0 to prevent
       plotting issues.
-    - anova module: regression in the case Y ~ C(TISSUE) + C(MSI) + feature, 
+    - anova module: regression in the case Y ~ C(TISSUE) + C(MSI) + feature,
         the tissue sum of squares was using N-1 tissues (one missing).
+    - anova module: regression in the case Y ~ C(TISSUE) + C(MEDIA) + C(MSI) + feature,
+        the media sum of squares was not normalised properly.
 
 * CHANGES:
 

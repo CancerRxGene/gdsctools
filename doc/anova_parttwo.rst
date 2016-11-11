@@ -10,7 +10,7 @@ The ANOVA analysis in details
 About the settings
 ----------------------
 
-When using the :class:`~gdsctools.anova.ANOVA` instance or the 
+When using the :class:`~gdsctools.anova.ANOVA` instance or the
 :class:`~gdsctools.anova.ANOVAReport` to create an
 HTML report (see :ref:`html`), all tunable settings are accessible from an
 attribute called :attr:`settings`::
@@ -19,10 +19,10 @@ attribute called :attr:`settings`::
     gdsc = ANOVA(ic50_test)
     gdsc.settings
 
-This :attr:`settings` attribute is an instance of :class:`gdsctools.settings.ANOVASettings`, which is fully documented in the reference. For example in the :ref:`HTML` section, we will change the default output **directory** where HTML pages are saved to a user-defined value. 
+This :attr:`settings` attribute is an instance of :class:`gdsctools.settings.ANOVASettings`, which is fully documented in the reference. For example in the :ref:`HTML` section, we will change the default output **directory** where HTML pages are saved to a user-defined value.
 
 It is also important to note that when calling ANOVAReport, the first argument
-is an ANOVA instance that already contains the settings. So, ANOVAReport 
+is an ANOVA instance that already contains the settings. So, ANOVAReport
 will use that settings automatically (it may still be changed later). Consider this example::
 
     >>> from gdsctools import ANOVA, ic50_test, ANOVAReport
@@ -31,24 +31,24 @@ will use that settings automatically (it may still be changed later). Consider t
     >>> results = gdsc.anova_all()
 
     >>> ar = ANOVAReport(gdsc, results)
-    >>> ar.settings.FDR_threshold 
+    >>> ar.settings.FDR_threshold
     15
 
 We will see more settings here below but first let us come back on the ANOVA
-analysis. 
+analysis.
 
 .. _regression:
 
 Regression analysis
 -----------------------
 
-By default, the regression uses a :term:`OLS` method. 4 Factors may be
-taken into account depending on the content of the 
+By default, the regression uses an :term:`OLS` method. 4 Factors may be
+taken into account depending on the content of the
 :class:`~gdsctools.readers.GenomicFeature` data set.
 
-Here, we will use the R syntax for simplicity. Depending on the data and the
+Here below, we use the R syntax where C() stands for categorical data and Y is
+the variable to be explained. Depending on the data and the
 :class:`gdsctools.anova.settings` one of the following formula will be used:
-
 
 .. math:: Y \sim C(tissue) + C(media) + C(MSI) + Feature
 
@@ -58,10 +58,27 @@ Here, we will use the R syntax for simplicity. Depending on the data and the
 
 .. math:: Y \sim Feature
 
-Note that the feature factor is always last and that the order may have an
-impact of the analysis. This is hardcoded in the current version of GDSCTools
-for optimisation. 
+Here are some rules applied:
 
+- Feature factor is always included by definition
+- MSI and Media are included by default if found in the genomic feature data
+set. Note, however than one can exclude these factors using the
+:attr:`settings`.
+- Tissue is included if there are more than 2 tissues. Again, one can change the
+settings.analysis_type to the name of the tissue (instead of PANCAN, the default
+value).
+
+.. note:: the feature factor is always last and that the order, which may have an
+    impact on the analysis is fixed. Indeed, for optimisation, we hard-coded the
+    regression formula.
+
+.. versionadded:: 0.16
+
+    The :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature_custom`
+    can now use any type of regression based on a user formula. This is
+    slower than the 4 hardcoded version mentionned above but is generic.
+
+    One can for instance set the formula to specify the treatement
 
 The default regression method is the :term:`OLS` method. It is also the
 recommended method::
@@ -74,9 +91,9 @@ Future version will include other regression methods such as  Elastic Net, Ridge
     settings.regression.method = 'Ridge'
     settings.regression.method = 'Lasso'
 
-.. note:: Here the ElasticNet/Ridge/Lasso regression like the OLS one is used 
-    for one drug and one feature (:term:`ODOF`). The module 
-    :mod:`gdsctools.elastic_net`  provides a different implementation where 
+.. note:: Here the ElasticNet/Ridge/Lasso regression like the OLS one is used
+    for one drug and one feature (:term:`ODOF`). The module
+    :mod:`gdsctools.elastic_net`  provides a different implementation where
     the regression is applied for one drug and all feature (:term:`ODAF`) at
     the same time.
 
@@ -88,20 +105,20 @@ additional settings::
 
 See :class:`~gdsctools.anova.ANOVASettings` for details.
 
-The regression analysis uses at most 4 factors: :term:`MSI`, Tissue, 
+The regression analysis uses at most 4 factors: :term:`MSI`, Tissue,
 :term:`MEDIA` and Feature.  The latter is always included but others can be
 tuned.
 
 MSI factor
 ~~~~~~~~~~~~
-If included in the genomic feature data set, MSI are included by default. 
+If included in the genomic feature data set, MSI are included by default.
 However, you may exclude it by setting its value to False::
 
     settings.include_MSI_factor
 
-If **MSI_FACTOR** column is not found in the Genomic Feature data set, the MSI factor will be excluded automatically and the parameter above set to False. 
+If **MSI_FACTOR** column is not found in the Genomic Feature data set, the MSI factor will be excluded automatically and the parameter above set to False.
 
-.. warning:: If you force the MSI factor to True wherease there 
+.. warning:: If you force the MSI factor to True wherease there
     is not enough data in the binary sets of the MSI factor, error
     will be raised.
 
@@ -114,8 +131,8 @@ However, you may exclude it by setting its value to False::
 
     settings.include_MEDIA_factor
 
-If **MEDIA_FACTOR** column is not found in the Genomic Feature data set, 
-the MEDIA factor will be set automatically to False. 
+If **MEDIA_FACTOR** column is not found in the Genomic Feature data set,
+the MEDIA factor will be set automatically to False.
 
 Tissue factor
 ~~~~~~~~~~~~~~~~~
@@ -139,14 +156,14 @@ These parameters will influence the number of tests being performed (number of a
     - minimum_nonna_ic50
     - MSI_feature_threshold
     - feature_factor_threshold
- 
+
 The first parameter indicates the minimum number of valid IC50 required for a given drug to be analysed. The current default value is 6.
 
 The second parameter indicates the minimum size of the positive and negative
-population when IC50 are filtered by MSI factor (defaults to 2). 
+population when IC50 are filtered by MSI factor (defaults to 2).
 
 The third parameter indicates the minimum size of the positive and negative
-population when IC50 are filtered by Feature factor (defaults to 3). 
+population when IC50 are filtered by Feature factor (defaults to 3).
 
 This table summarizes the effect of these parameters:
 
@@ -160,7 +177,7 @@ here as annotations for the following discussions.
 When the regression analysis is performed for a given drug and a given feature,
 3 filters are applied. First, a minimum number of values is required (minimum_nonna_ic50 setting). Therefore, the drug is not analysed. The second check is performed with respect to the MSI values. A drug can be analysed only if (once NA have been discarded) the number of IC50s corresponding to positive and negative MSIs is greater or equal to **MSI_feature_threshold**.
 In our example, the drugs in column **D_pMSI=0** and **D_pMSI=1** are therefore
-discarded since they have zero and only one positive MSI, respectively. 
+discarded since they have zero and only one positive MSI, respectively.
 
 Finally, similarly to the MSI check, a drug/feature association is analysed if
 the number of IC50s corresponding to positive and negative feature is or equal
@@ -170,7 +187,7 @@ to **feature_factor_threshold**.
 Multiple testing corrections
 ------------------------------
 
-By default, the multiple testing correction  is based on 
+By default, the multiple testing correction  is based on
 Benjamini–Hochberg (BH) method but it can be set to other methods using ::
 
     settings.pval_correction_method
@@ -183,12 +200,12 @@ lines.This parameter is stored in ::
     settings.pvalue_correction_level
 
 By default it is set to *global*. Set it to *local* to keep the multiple
-correction at the drug level (ODAF).    
+correction at the drug level (ODAF).
 
-When you perform an ANOVA analysis, the multiple correction method is used to 
-populate the results column named ANOVA_FEATURE_FDR. 
+When you perform an ANOVA analysis, the multiple correction method is used to
+populate the results column named ANOVA_FEATURE_FDR.
 
-If you change your mind and wish to run the analysis with another method, 
+If you change your mind and wish to run the analysis with another method,
 you do not need to re-run the entire analysis. Instead, simply change the
 method's name and call :meth:`anova_all` again. Only the multiple testing computation is
 performed, skipping ANOVA testing, which have already been done.
@@ -208,14 +225,14 @@ volcano plots
 -----------------
 
 The volcano plots are one of the main results of the analysis and summarizes
-visually the significance of the different associations. 
+visually the significance of the different associations.
 
-It is part of the :class:`~gdsctools.anova_report.AnovaResults` class and is 
+It is part of the :class:`~gdsctools.anova_report.AnovaResults` class and is
 returned either by an ODAF or ADAF analysis:
 
 .. plot::
     :include-source:
-    :width: 80% 
+    :width: 80%
 
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
@@ -226,7 +243,7 @@ returned either by an ODAF or ADAF analysis:
 Here are some
 parameters used to tune the plots and selection of significant events:
 
-- **pvalue_threshold** is used to select significant hits. See :class:`~gdsctools.anova_report.ANOVAReport`. 
+- **pvalue_threshold** is used to select significant hits. See :class:`~gdsctools.anova_report.ANOVAReport`.
 - **effect_threshold** is used to select significant hits as well.
 - **FDR_threshold**   is used in :class:`gdsctools.volcano.VolcanoANOVA`
   (horizontal lines)
@@ -244,5 +261,5 @@ See :class:`~gdsctools.settings.ANOVASettings` for the full listing.
 
 .. note:: Some settings will be set automatically when calling some functions.
     For instance, if you call :meth:`anova.ANOVA.set_cancer_type` to a single
-    tissue, then the analysis_type will be set to the tissue's name. If there 
+    tissue, then the analysis_type will be set to the tissue's name. If there
     are not enough positive or negative MSI, the MSI factor will ignored.
