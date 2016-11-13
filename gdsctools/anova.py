@@ -459,6 +459,8 @@ class ANOVA(BaseModels): #Logging):
                 boxplot.boxplot_pancan(fignum=2, mode='tissue')
             if self.settings.include_MSI_factor:
                 boxplot.boxplot_pancan(fignum=3, mode='msi')
+            if self.settings.include_media_factor:
+                boxplot.boxplot_pancan(fignum=3, mode='media')
 
         # about 30% of the time spent in creating the DataFrame...
         if production is True:

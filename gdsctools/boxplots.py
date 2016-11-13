@@ -101,7 +101,7 @@ class BoxPlots(object):
         :param mode: either set to **msi** or **tissue**
 
         """
-        assert mode in ['tissue', 'msi']
+        assert mode in ['tissue', 'msi', "media"]
 
         results = self._get_boxplot_data(mode)
         if results is None:
@@ -126,8 +126,10 @@ class BoxPlots(object):
         bb.xlabel = r'%s log(IC50)' % self.drug
         if mode == 'tissue':
             bb.title = 'FEATURE/Cancer-type interactions'
-        else:
+        elif mode == 'msi':
             bb.title = 'FEATURE/MS-instability interactions'
+        elif mode == "media":
+            bb.title = 'FEATURE/Media interactions'
         ax = bb.plot(vert=False)
         # get info from left axis
         common_ylim = ax.get_ylim()
@@ -191,20 +193,38 @@ class BoxPlots(object):
         # should be called by anova_one_drug_one_feature
         # since masked_tissue, masked_ic50 attributes must
         # be populated.
-        assert mode in ['tissue', 'msi']
+        assert mode in ['tissue', 'msi', "media"]
 
         # Let us use Pandas, this will be easier
-
-        df = pd.DataFrame(
-            {'tissue': self.odof.masked_tissue.values,
-             'ic50': self.odof.Y,
-             'feature': self.odof.masked_features,
-             'msi': self.odof.masked_msi.values})
+        try:
+            df = pd.DataFrame({
+                 'ic50': self.odof.Y,
+                 'media': self.odof.masked_media,
+                 'feature': self.odof.masked_features,
+                 'msi': self.odof.masked_msi.values,
+                'tissue': self.odof.masked_tissue.values})
+        except:
+            df = pd.DataFrame({
+                 'ic50': self.odof.Y,
+                 'tissue': self.odof.masked_tissue,
+                 'feature': self.odof.masked_features,
+                 'msi': self.odof.masked_msi.values})
 
         if mode == 'tissue':
-            df.drop('msi', inplace=True, axis=1)
+            if 'msi' in df.columns:
+                df.drop('msi', inplace=True, axis=1)
+            if "media" in df.columns:
+                df.drop('media', inplace=True, axis=1)
         elif mode == 'msi':
-            df.drop('tissue', inplace=True, axis=1)
+            if 'tissue' in df.columns:
+                df.drop('tissue', inplace=True, axis=1)
+            if "media" in df.columns:
+                df.drop('media', inplace=True, axis=1)
+        elif mode == 'media':
+            if 'tissue' in df.columns:
+                df.drop('tissue', inplace=True, axis=1)
+            if 'msi' in df.columns:
+                df.drop('msi', inplace=True, axis=1)
 
         groups = df.groupby(['feature', mode])
 
@@ -217,6 +237,7 @@ class BoxPlots(object):
         cc = (counts >= 2).all()
         # create a groups structure
         categories = list(cc.unstack().columns[cc])
+
         """
         # Seems to be fixed (May 2016)
         try:
@@ -270,6 +291,8 @@ class BoxPlots(object):
                         name = 'MSI-stable'
                     elif category == 1:
                         name = 'MSI-unstable'
+                elif mode == "media":
+                    name = category
 
                 for this in [0.05, 0.01, 0.001]:
                     if significance[category] < this:
@@ -312,6 +335,36 @@ class BoxPlotsJS(BoxPlots):
         html = template.render(jinja)
         return html
 
+    def get_html_media(self):
+        env = Environment()
+        env.loader = jinja2.FileSystemLoader(
+                       get_package_location("gdsctools")
+                       + "/gdsctools/data/templates/")
+        template = env.get_template("boxplot_media.html")
+
+        data = self._get_boxplot_data("media")
+        if data is None:
+            return ""
+        # Show from bottom to top
+        labels = data[1][::-1]
+        data = data[0][::-1]
+
+        jinja = {}
+        N = len(self.odof.negatives) + len(self.odof.positives)
+        jinja["title"] = "FEATURE/Media interactions"
+        jinja["subtitle"] = "%s versus %s" % (self.drug, self.feature)
+        factor = []
+        for i, thisdata in enumerate(data):
+            factor.extend( [labels[i]] * len(thisdata))
+        jinja['sign'] = [x.split()[1] for  x in factor]
+        jinja['status'] = [x.split()[0] for  x in factor]
+        jinja["data"] = list(pylab.flatten([list(this) for this in data]))
+        jinja['xlabel'] = '"logIC50"'
+
+        html = template.render(jinja)
+        return html
+
+
     def get_html_msi(self):
         env = Environment()
         env.loader = jinja2.FileSystemLoader(
@@ -320,6 +373,8 @@ class BoxPlotsJS(BoxPlots):
         template = env.get_template("boxplot_msi.html")
 
         data = self._get_boxplot_data("msi")
+        if data is None:
+            return ""
         # Show from bottom to top
         labels = data[1][::-1]
         data = data[0][::-1]

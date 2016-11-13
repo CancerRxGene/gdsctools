@@ -699,6 +699,8 @@ class Association(ReportMain):
         section = ""
         if self.factory.settings.include_MSI_factor:
             self.jinja["boxplot_msi_jsdata"] = bx.get_html_msi()
+        if self.factory.settings.include_media_factor:
+            self.jinja["boxplot_media_jsdata"] = bx.get_html_media()
         if self.factory.settings.analysis_type == 'PANCAN':
             self.jinja["boxplot_tissue_jsdata"] = bx.get_html_tissue()
 
