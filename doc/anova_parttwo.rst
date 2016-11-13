@@ -60,7 +60,7 @@ the variable to be explained. Depending on the data and the
 
 Here are some rules applied:
 
-- Feature factor is always included by definition
+- Feature factor is always included by definition and in last position
 - MSI and Media are included by default if found in the genomic feature data
 set. Note, however than one can exclude these factors using the
 :attr:`settings`.
@@ -68,17 +68,18 @@ set. Note, however than one can exclude these factors using the
 settings.analysis_type to the name of the tissue (instead of PANCAN, the default
 value).
 
-.. note:: the feature factor is always last and that the order, which may have an
-    impact on the analysis is fixed. Indeed, for optimisation, we hard-coded the
-    regression formula.
+.. note:: The order of the different feature in the equations may have an
+    impact on the analysis. 
 
-.. versionadded:: 0.16
+Since analysis may be time-consuming, we have hard-coded the
+regression formula. Note, however, that in version 0.16, we have
+added the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature_custom`
+method, which can b use for any type of regression based on a user formula. 
+This is slower than the 4 hardcoded version mentionned above but is 
+more flexible. One can for instance set the formula to specify the treatement 
+to be used as a reference::
 
-    The :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature_custom`
-    can now use any type of regression based on a user formula. This is
-    slower than the 4 hardcoded version mentionned above but is generic.
 
-    One can for instance set the formula to specify the treatement
 
 The default regression method is the :term:`OLS` method. It is also the
 recommended method::

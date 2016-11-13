@@ -10,7 +10,10 @@ Version 0.16 (Nov 2016)
     - Fix pending issue related to #153 
       ic_input.csv", "test_gf_input.csv" for the case where some media factor
       are missing. This is now handle properly.
-  
+    - Fix #151 : large integer are not cast properly with consequence that
+      indices are strings, not integers leading to further issues in the 
+      HTML pages. 
+ 
 - NEWS:
 
      - anova_one_drug_one_feature_custom allows to perform any regression using

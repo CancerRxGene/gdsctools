@@ -1,5 +1,5 @@
 from gdsctools.readers import GenomicFeatures, IC50, DrugDecode
-from gdsctools.readers import Reader
+from gdsctools.readers import Reader, drug_name_to_int
 from easydev import TempFile
 from gdsctools import ic50_test, gdsctools_data
 import pandas as pd
@@ -153,4 +153,10 @@ def test_readers_tabs():
     except:
         assert True
 
+
+
+def test_reader_long_strings():
+    assert 10 == drug_name_to_int(10)
+    assert drug_name_to_int("1234567890123456789") == 1234567890123456789
+    assert drug_name_to_int(str(2**63)) == 9223372036854775808
 
