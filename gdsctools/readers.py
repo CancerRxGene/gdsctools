@@ -52,7 +52,7 @@ def drug_name_to_int(name):
         elif isinstance(x, str):
             if len(x) > maxdigits:
                 print("Warnings gdsctools.readers.drug_name_to_int: " +
-                      "%s identifier too long" % x +
+                      "%s identifier too long." % x +
                       "Please use values below 2**64 with less than 19 digits")
                 x = int(x[0:maxdigits])
             else:
@@ -296,7 +296,7 @@ class Reader(object):
                     raise GDSCToolsDuplicatedDrugError(this)
 
     def _check_uniqueness(self, data):
-        if len(data.index.unique()) != len(data):
+        if len(set(data)) != len(data):
             raise Exception("Error gdsctools in readers.IC50: data " + 
                             " identifiers not unique.")
 
