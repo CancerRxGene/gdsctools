@@ -60,59 +60,35 @@ the variable to be explained. Depending on the data and the
 
 Here are some rules applied:
 
-- Feature factor is always included by definition and in last position
+- Feature factor is always included by definition and is in last position
 - MSI and Media are included by default if found in the genomic feature data
-set. Note, however than one can exclude these factors using the
-:attr:`settings`.
-- Tissue is included if there are more than 2 tissues. Again, one can change the
-settings.analysis_type to the name of the tissue (instead of PANCAN, the default
-value).
+  set. Note, however than one can exclude these factors using the
+  :attr:`settings`.
+- Tissue is included if there are more than 2 tissues. Again, one can
+  change the :attr:`settings.analysis_type` to the name of the tissue (instead
+  of PANCAN, the default value).
 
-.. note:: The order of the different feature in the equations may have an
-    impact on the analysis. 
+.. note:: The order of the different features in the equations may have an
+    impact on the analysis.
 
 Since analysis may be time-consuming, we have hard-coded the
 regression formula. Note, however, that in version 0.16, we have
 added the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature_custom`
-method, which can b use for any type of regression based on a user formula. 
-This is slower than the 4 hardcoded version mentionned above but is 
-more flexible. One can for instance set the formula to specify the treatement 
+method, which can be use for any type of regression based on a user formula.
+This is slower than the 4 hardcoded versions mentionned above but is
+more flexible. One can for instance set the formula to specify the treatement
 to be used as a reference::
 
 
+.. versionchanged:: 0.16
+  The regression method is the :term:`OLS` method. Other methods will be used in
+  an independent module (regression) 
 
-The default regression method is the :term:`OLS` method. It is also the
-recommended method::
-
-    settings.regression.method = 'OLS'
-
-Future version will include other regression methods such as  Elastic Net, Ridge or Lasso::
-
-    settings.regression.method = 'ElasticNet'
-    settings.regression.method = 'Ridge'
-    settings.regression.method = 'Lasso'
-
-.. note:: Here the ElasticNet/Ridge/Lasso regression like the OLS one is used
-    for one drug and one feature (:term:`ODOF`). The module
-    :mod:`gdsctools.elastic_net`  provides a different implementation where
-    the regression is applied for one drug and all feature (:term:`ODAF`) at
-    the same time.
-
-If you use anything else than OLS, you should then consider settings 1 or 2
-additional settings::
-
-    settings.regression.alpha
-    settings.regression.L1_wt
-
-See :class:`~gdsctools.anova.ANOVASettings` for details.
-
-The regression analysis uses at most 4 factors: :term:`MSI`, Tissue,
-:term:`MEDIA` and Feature.  The latter is always included but others can be
-tuned.
 
 MSI factor
 ~~~~~~~~~~~~
-If included in the genomic feature data set, MSI are included by default.
+
+MSI is always included by default.
 However, you may exclude it by setting its value to False::
 
     settings.include_MSI_factor
