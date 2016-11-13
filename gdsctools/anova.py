@@ -778,7 +778,7 @@ Y ~ C(tissue) + C(media) + feature
         """
         if self.verbose and len(self.individual_anova):
             print("Reusing some results from the buffer. "
-            "To reset the buffer, call resut_buffer() method")
+            "To reset the buffer, call reset_buffer() method")
         # drop DRUG where number of IC50 (non-null) is below 5
         # axis=0 is default but we emphasize that sum is over
         # column (i.e. drug
