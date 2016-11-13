@@ -42,17 +42,39 @@ def drug_name_to_int(name):
     # We also want to remove suffix _IC50 but in v18, we have names
     # such as Drug_1_0.33_IC50 to provide the concentration.
     # So, we should remove the string after the second _
+    # finally, #154 also causes a trouble that is a cast to integer
+    # from a string that is too large (more than 20 digits) may not be cast
+    # with pandas. Values must be less than 2**64-1. To guarantee that
+    # the cast works correctly, we can assume that it has less than 19 digits
+    def _str_to_int(x, maxdigits=19):
+        if isinstance(x, (int, np.integer)):
+            return x
+        elif isinstance(x, str):
+            if len(x) > maxdigits:
+                print("Warnings gdsctools.readers.drug_name_to_int: " +
+                      "%s identifier too long" % x +
+                      "Please use values below 2**64 with less than 19 digits")
+                x = int(x[0:maxdigits])
+            else:
+                x = int(x)
+            return x
+        else:
+            print(type(x))
+            raise NotImplementedError
+
+    # remove characters (' and ")
     if isinstance(name, str):
-        # get rid of possible " or ' signs
         name = name.replace("'", "")
         name = name.replace('"', "")
+
+    # replace the Drug_ and DRUG_
     try:
         res = name.replace("Drug_", "").replace("DRUG_", "")
         res = res.split("_")[0]
-        res = int(res)
+        res = _str_to_int(res)
         return res
     except:
-        return int(name)
+        return _str_to_int(name)
 
 
 
