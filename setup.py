@@ -53,7 +53,7 @@ if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc"]
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
-        'pandas>=0.19', 'easydev>=0.9.28', 'scipy', "colormap>=0.9.7",
+        'pandas>=0.19', 'easydev>=0.9.29', 'scipy', "colormap>=0.9.7",
         'jinja2', 'statsmodels', "scikit-learn", "reports>=0.2.1", 
         "sphinx-gallery", "numpydoc"],
 
