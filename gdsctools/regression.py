@@ -156,6 +156,8 @@ class Regression(BaseModels):
         df = pd.DataFrame({'name': X.columns, 'weight': model.coef_})
         df = df.set_index("name")
 
+        df = df[df['weight'] != 0]
+
         barplot(df, "weight", orientation=orientation, max_label_length=max_label_length,
                 fontsize=fontsize)
         return df
@@ -211,14 +213,34 @@ class Regression(BaseModels):
             # we keep the Nmax strongest weights irrespective of the sign
             threshold = df.abs().sort_values(by="weight").values[-Nmax:][0,0]
 
-            df1 = df.query("weight<=0 and abs(weight)>=@threshold")
-            df2 = df.query("weight>=0 and abs(weight)>=@threshold")
+            df1 = df.query("weight<=0 and abs(weight)>=@threshold").copy()
+            df2 = df.query("weight>=0 and abs(weight)>=@threshold").copy()
         else:
-            df1 = df[df.weight<0]
-            df2 = df[df.weight>=0]
+            df1 = df[df.weight<0].copy()
+            df2 = df[df.weight>=0].copy()
 
         df1.index = [this[0:max_label_length] for this in df1.index]
         df2.index = [this[0:max_label_length] for this in df2.index]
+
+        # We also want some symmetry so as many red as blue so that the span 
+        # of positive and negative is equivalent
+        N = len(df2) - len(df1)
+        if N > 0:
+            # more red LHS than blue RHS
+            for i in range(1, N+1):
+                label = "_dummy%s" % i
+                df1.loc[label, "weight"] = 0
+            df1.index = [x if not x.startswith("_dummy") else "" 
+                         for x in df1.index]
+        elif N < 0:
+            # more blue RHS than red LHS
+            for i in range(1, abs(N)+1):
+                label = "_dummy%s" % i
+                df2.loc[label, "weight"] = 0
+            df2.index = [x if not x.startswith("_dummy") else "" 
+                         for x in df2.index]
+            df2.sort_values(by="weight", ascending=True, inplace=True)
+
 
         f, (ax, ax2) = pylab.subplots(1,2, sharey=True, figsize=(10,7))
         ff = pylab.gcf()
@@ -807,12 +829,12 @@ def barplot(df, colname, color="sign",colors=("b", "r"),
 
     colors = "".join(df['sign'])
 
-    if len(df) < 50:
+    if len(df) < Nmax:
         df.plot(y=colname, kind=kind, color=colors, width=1, lw=1,
             title='importance plot', ax=pylab.gca(),
             fontsize=fontsize, figsize=figsize)
     else:
-        df.iloc[-50:].plot(y=colname, kind=kind, color=colors[-50:],
+        df.iloc[-Nmax:].plot(y=colname, kind=kind, color=colors[-50:],
             width=1, lw=1,
             title='importance plot', ax=pylab.gca(),
             fontsize=fontsize, figsize=figsize)
@@ -829,5 +851,5 @@ def barplot(df, colname, color="sign",colors=("b", "r"),
         ax.set_position([0.1,0.3,0.8,0.6])
         pylab.legend(handles=[red_patch, blue_patch], loc='upper left')
     pylab.grid()
-    pylab.xlabel("Absolute weight", fontsize=fontsize)
+    pylab.ylabel("Absolute weights", fontsize=fontsize)
 
