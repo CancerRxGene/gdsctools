@@ -11,14 +11,26 @@ from gdsctools import *
 
 #####################################################
 # First we alpha=0.01
-gd = elastic_net.ElasticNet(ic50_v17, gf_v17)
-gd.plot_weight(1047, alpha=0.1, fontsize=9)
+gd = GDSCElasticNet(ic50_v17, gf_v17)
+drugid = 1047
+
+#####################################################
+# Find best model and corresponding alpha
+res = gd.runCV(drugid, n_folds=10)
+best_alpha = res.alpha
+
+#####################################################
+# Plot weights of best model
+best_model = gd.get_model(alpha=best_alpha)
+gd.plot_weight(drugid, model=best_model)
 
 #####################################################
 # increasing alpha 
-gd.plot_weight(1047, alpha=0.5, fontsize=9)
+model1 = gd.get_model(alpha=best_alpha*10.)
+gd.plot_weight(drugid, model=model1, fontsize=9)
 
 #####################################################
 # decreasing alpha
-gd.plot_weight(1047, alpha=0.01, fontsize=9)
+model2 = gd.get_model(alpha=best_alpha/10.)
+gd.plot_weight(drugid, model=model2, fontsize=9)
 

@@ -106,10 +106,10 @@ Logistics
     :undoc-members:
 
 
-Elastic Net Analysis
+Regression Analysis
 -------------------------
 
-.. automodule:: gdsctools.elastic_net
+.. automodule:: gdsctools.regression
     :members:
     :undoc-members:
 

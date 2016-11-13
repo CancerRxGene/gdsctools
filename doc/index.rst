@@ -55,6 +55,11 @@ methods.
    _images/sphx_glr_plot_elastic_tuning_001.png
    :target: auto_examples/plot_elastic_tuning.html
 
+.. |elastic_weights| image::
+   _images/sphx_glr_plot_elastic_weights_001.png
+   :target: auto_examples/plot_elastic_weights.html
+
+
 .. raw:: html
 
     <div class="body">
@@ -75,6 +80,7 @@ methods.
 * |volcano|
 * |histo|
 * |elastic|
+* |elastic_weights|
 
 .. raw:: html
 
