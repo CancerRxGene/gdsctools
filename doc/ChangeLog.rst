@@ -19,8 +19,7 @@ Version 0.16 (Nov 2016)
      - anova_one_drug_one_feature_custom allows to perform any regression using
        formula like in R. This is not for production but should be useful to
        perform custom analysis
-     - Include the MEDIA factor boxplot in the library 
-
+     - Include the MEDIA factor boxplot in the library and reports
 
 
 Version 0.15 (Nov 2016)
