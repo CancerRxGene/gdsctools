@@ -295,6 +295,11 @@ class Reader(object):
                 if columns.count(this) > 1:
                     raise GDSCToolsDuplicatedDrugError(this)
 
+    def _check_uniqueness(self, data):
+        if len(data.index.unique()) != len(data):
+            raise Exception("Error gdsctools in readers.IC50: data " + 
+                            " identifiers not unique.")
+
     def __eq__(self, other):
         return all(self.df.fillna(0) == other.df.fillna(0))
 
@@ -462,6 +467,9 @@ class IC50(Reader, CosmicRows):
         self.df.index = [int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
         self.df.index.name = "COSMIC_ID"
+
+        # Check uniqueness
+        self._check_uniqueness(self.df.index)
 
     def drug_name_to_int(self, name):
         return drug_name_to_int(name)
@@ -1099,6 +1107,7 @@ class DrugDecode(Reader):
             self.df.sort_index(inplace=True)
         except:
             self.df = self.df.ix[sorted(self.df.index)]
+        self._check_uniqueness(self.df.index)
 
     def _get_names(self):
         return list(self.df.DRUG_NAME.values)
@@ -1251,7 +1260,6 @@ class DrugDecode(Reader):
             return all(self.df.fillna(0) == other.df.fillna(0))
         except:
             return False
-
 
     def get_public_and_one_company(self, company):
         """Return drugs that belong to a specific company and public drugs"""
