@@ -3,6 +3,13 @@ ChangeLog
 
 .. contents::
 
+Version 0.16.1
+---------------------
+
+- Update doc + test
+- Omnibem: drops the NA instead of replacing by ""
+- Fix regression dendogram plot
+
 Version 0.16 (Nov 2016)
 ----------------------------
 * BUG Fixes
