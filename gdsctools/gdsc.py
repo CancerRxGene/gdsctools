@@ -272,7 +272,7 @@ class GDSC(GDSCBase):
             genomic_feature_pattern="GF_*csv",
             main_directory="tissue_packages", verbose=True):
         """.. rubric:: Constructor
-        
+
         :param ic50: an :class:`~gdsctools.readers.IC50` file.
         :param drug_decode: an :class:`~gdsctools.readers.DrugDecode` file.
         :param genomic_feature_pattern: a glob to a set of
@@ -597,8 +597,3 @@ class GDSC(GDSCBase):
         self.html_page.write()
 
         return df
-
-
-
-
-

@@ -44,7 +44,7 @@ class ChemSpiderSearch(object):
 
     """
     def __init__(self, drug_decode):
-
+        print("ChemSpiderSearch is still in progress, please do not use")
         self.dd = DrugDecode(drug_decode)
         self.dd_filled = DrugDecode(drug_decode)
 
@@ -74,8 +74,8 @@ class ChemSpiderSearch(object):
         self._cs_find = self.chemspider.find
         self._cs_get = self.chemspider.GetExtendedCompoundInfo
 
-        self.drug_ids = sorted(list(drug_decode.df.index.values))
-        self.drug_names = sorted(list(drug_decode.df.DRUG_NAME.values))
+        self.drug_ids = sorted(list(self.dd.df.index.values))
+        self.drug_names = sorted(list(self.dd.df.DRUG_NAME.values))
 
     def filling_chembl_pubchem_using_unichem(self):
         """
