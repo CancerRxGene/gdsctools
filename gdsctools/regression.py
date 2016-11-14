@@ -70,7 +70,7 @@ class RegressionCVResults(object):
         return pylab.log(self.alpha)
     ln_alpha = property(_get_ln_alpha)
     def _get_coefficients(self):
-        return self.model.coeff_
+        return self.model.coef_
     coefficients = property(_get_coefficients)
     def __str__(self):
         txt = "Best alpha on %s folds: %s (%.2f in log scale); Rp=%s" %\
@@ -171,7 +171,7 @@ class Regression(BaseModels):
         self._print("Running CV to estimate best alpha.")
         results = self.runCV(drug_name, n_folds=n_folds, alphas=alphas,
                              l1_ratio=l1_ratio)
-        best_alpha = results["alpha"]
+        best_alpha = results.alpha
         model = self.get_model(alpha=best_alpha)
         self._print("Using alpha=%s." % model.alpha)
         return model
@@ -194,8 +194,9 @@ class Regression(BaseModels):
             from gdsctools import *
             ic = IC50(gdsctools_data("IC50_v5.csv.gz"))
             gf = GenomicFeatures(gdsctools_data("genomic_features_v5.csv.gz"))
-            en = ElasticNet(ic, gf)
-            en.plot_weight(1047, 0.01, l1_ratio=0.5)
+            en = GDSCElasticNet(ic, gf)
+            model = en.get_model(alpha=0.01)
+            en.plot_weight(1047, model=model)
 
         """
         X, Y = self._get_one_drug_data(drug_name)
@@ -400,7 +401,7 @@ class Regression(BaseModels):
             ic = IC50(gdsctools_data("IC50_v5.csv.gz"))
             gf = GenomicFeatures(gdsctools_data("genomic_features_v5.csv.gz"))
 
-            en = ElasticNet(ic, gf)
+            en = GDSCElasticNet(ic, gf)
 
             en.tune_alpha(1047, N=40, l1_ratio=0.1)
 
@@ -497,12 +498,12 @@ class Regression(BaseModels):
         pb = Progress(len(drugids))
         d = {}
 
-        for i, drug in enumerate(drugids):
-            X, Y = self._get_one_drug_data(drug_name, randomize_Y=randomize_Y)
-            results = self.runCV(drug, verbose=False)
-            df = pd.DataFrame({'name': X.columns, 'weight': self._encv.coef_})
+        for i, drug_name in enumerate(drugids):
+            X, Y = self._get_one_drug_data(drug_name, randomize_Y=False)
+            results = self.runCV(drug_name, verbose=False)
+            df = pd.DataFrame({'name': X.columns, 'weight': results.coefficients})
             df = df.set_index("name").sort_values("weight")
-            d[drug] = df.copy()
+            d[drug_name] = df.copy()
             pb.animate(i+1)
 
         dfall = pd.concat([d[i] for i in d.keys()], axis=1)
@@ -516,7 +517,6 @@ class Regression(BaseModels):
         if stacked is True:
             dfall = dfall.stack().reset_index()
             dfall.columns = ["feature", "drug", "weight"]
-
         return dfall
 
     def boxplot(self, drug_name, model, n=5, minimum_match_per_combo=10,
@@ -560,6 +560,7 @@ class Regression(BaseModels):
         columns = [x.replace("(", "_") for x in columns]
         columns = [x.replace(")", "_") for x in columns]
         columns = [x.replace(",", "_") for x in columns]
+        columns = [x.replace(".", "_") for x in columns]
         features.columns = columns
         self._features = features
         # loop over all possible combos
@@ -654,7 +655,7 @@ class GDSCElasticNet(Regression):
         ic50 = IC50(gdsctools_data("IC50_v5.csv.gz"))
         gf = GenomicFeatures(gdsctools_data("genomic_features_v5.csv.gz"))
 
-        en = ElasticNet(ic50, gf)
+        en = GDSCElasticNet(ic50, gf)
         en.elastic_net(1047, alpha=0.01, show=True)
 
 
@@ -831,12 +832,12 @@ def barplot(df, colname, color="sign",colors=("b", "r"),
 
     if len(df) < Nmax:
         df.plot(y=colname, kind=kind, color=colors, width=1, lw=1,
-            title='importance plot', ax=pylab.gca(),
+            title='Importance plot', ax=pylab.gca(),
             fontsize=fontsize, figsize=figsize)
     else:
         df.iloc[-Nmax:].plot(y=colname, kind=kind, color=colors[-50:],
             width=1, lw=1,
-            title='importance plot', ax=pylab.gca(),
+            title='Importance plot', ax=pylab.gca(),
             fontsize=fontsize, figsize=figsize)
 
     import matplotlib.patches as mpatches
