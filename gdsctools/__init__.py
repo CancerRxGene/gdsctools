@@ -26,7 +26,7 @@ try:
 except:
     # update this manually is possible when the version in the
     # setup changes
-    version = "0.3"
+    version = "0.16"
 
 try:
     license = open('../LICENSE', 'r').read()

@@ -20,3 +20,12 @@ def test_IC50Cluster():
     an = ANOVA(ic50, dataset)
     an.diagnostics()['feasible_tests'] == 65026
 
+
+
+
+
+
+
+
+
+

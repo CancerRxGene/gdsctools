@@ -9,7 +9,7 @@ def test_omnibem():
     ob = OmniBEMBuilder(omnibem_data)
     ob.filter_by_gene_list(omnibem_genes)
     mobem = ob.get_mobem()
-    assert mobem[mobem.columns[3:]].sum().sum() == 57678
+    assert mobem[mobem.columns[3:]].sum().sum() == 54061
 
     #
     ob.plot_number_alteration_by_tissue()
@@ -33,7 +33,7 @@ def test_omnibem():
     ob = OmniBEMBuilder(omnibem_data)
     ob.filter_by_tissue_list(["HNSC"])
     mobem = ob.get_mobem()
-    assert mobem[mobem.columns[3:]].sum().sum() == 4124
+    assert mobem[mobem.columns[3:]].sum().sum() == 4102
 
     ob = OmniBEMBuilder(omnibem_data)
     ob.filter_by_sample_list(["SNU-423"])

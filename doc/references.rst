@@ -43,10 +43,14 @@ Statistical Tools
 
 Readers
 ----------
+IC50, Genomic Features, Drug Decode
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: gdsctools.readers
     :members:
     :undoc-members:
 
+OmniBEM
+~~~~~~~~~~~~~~~~
 .. automodule:: gdsctools.omnibem
     :members:
     :undoc-members:
