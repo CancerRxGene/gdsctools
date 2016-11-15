@@ -16,6 +16,8 @@ before_install:
     - export PATH=$HOME/miniconda3/bin:$PATH
     - hash -r
     - conda update --yes conda
+    - conda config --add channels r
+    - conda config --add channels bioconda
     # are not specific to using mini
     - sudo rm -rf /dev/shm
     - sudo ln -s /run/shm /dev/shm
