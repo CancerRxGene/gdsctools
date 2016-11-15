@@ -238,10 +238,12 @@ class ANOVA(BaseModels): #Logging):
         dd.pos_IC50_std = dd.positives.std(ddof=1)
         dd.neg_IC50_std = dd.negatives.std(ddof=1)
 
-        dd.pos_IC50_std = np.sqrt(( (dd.positives**2).sum() -
-            pos_sum**2/dd.Npos)/(dd.Npos-1.))
-        dd.neg_IC50_std = np.sqrt(( (dd.negatives**2).sum() -
-            neg_sum**2/dd.Nneg)/(dd.Nneg-1.))
+        # Nov 2016. Den may be close to zero but slightly negative
+        den = (dd.positives**2).sum() - pos_sum**2/dd.Npos
+        dd.pos_IC50_std = np.sqrt( max(0,den) / (dd.Npos-1.))
+
+        den = (dd.negatives**2).sum() -  neg_sum**2/dd.Nneg
+        dd.neg_IC50_std = np.sqrt( max(0,den) / (dd.Nneg-1.))
 
         # Compute Cohens and Glass effect size. Since underlying code
         # has lots in common, we do not use the modules but add
@@ -249,6 +251,7 @@ class ANOVA(BaseModels): #Logging):
         md = np.abs(dd.pos_IC50_mean - dd.neg_IC50_mean)
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
+
 
         csd = (dd.Npos - 1.) * dd.pos_IC50_std**2 + \
                 (dd.Nneg - 1.) * dd.neg_IC50_std**2
