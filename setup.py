@@ -55,7 +55,7 @@ else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
         'pandas>=0.19', 'easydev>=0.9.29', 'scipy', "colormap>=0.9.7",
         'jinja2', 'statsmodels', "scikit-learn", "reports>=0.2.1", 
-        "sphinx-gallery", "numpydoc"],
+        "sphinx-gallery", "numpydoc", "biokit"],
 
 
 packages = find_packages()
