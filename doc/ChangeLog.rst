@@ -6,9 +6,15 @@ ChangeLog
 Version 0.16.1
 ---------------------
 
-- Update doc + test
-- Omnibem: drops the NA instead of replacing by ""
-- Fix regression dendogram plot
+* BUG Fixes
+
+    - Fix regression dendogram plot
+    - Fix bug leading to NA in effect size reported by Carlos P. (private communication)"
+
+* CHANGES:
+
+    - Omnibem: drops the NA instead of replacing by ""
+
 
 Version 0.16 (Nov 2016)
 ----------------------------
