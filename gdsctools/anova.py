@@ -249,6 +249,7 @@ class ANOVA(BaseModels): #Logging):
         # has lots in common, we do not use the modules but add
         # the code here below
         md = np.abs(dd.pos_IC50_mean - dd.neg_IC50_mean)
+
         dd.pos_glass = md / dd.pos_IC50_std
         dd.neg_glass = md / dd.neg_IC50_std
 
@@ -256,7 +257,12 @@ class ANOVA(BaseModels): #Logging):
         csd = (dd.Npos - 1.) * dd.pos_IC50_std**2 + \
                 (dd.Nneg - 1.) * dd.neg_IC50_std**2
         csd /= dd.Npos + dd.Nneg - 2.  # make sure this is float
-        dd.effectsize_ic50 = md / np.sqrt(csd)
+        if (csd > 0):
+            dd.effectsize_ic50 = md / np.sqrt(csd)
+        else:
+            print("Unexpected negative effect size for %s %s. Set to zero. " % 
+                (drug_id, feature_name))
+            dd.effectsize_ic50 = 0
 
         # Note that equal_var is a user parameter and affects
         # results. The ANOVA_results.txt obtained from SFTP
@@ -291,6 +297,7 @@ class ANOVA(BaseModels): #Logging):
         .. note:: **for developer** Data used in this function comes from
             _get_one_drug_one_feature_data method, which should also be kept
             as fast as possible.
+        data = data.replace(np.inf, 0)
         """
         if drug_id not in self.drugIds:
             raise ValueError('Unknown drug name %s. Use e.g., %s'

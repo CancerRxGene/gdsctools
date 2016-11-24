@@ -375,6 +375,10 @@ class VolcanoANOVA(object):
         # !! There seem to bes a memory leak in this function due to matplotlib
         # This is not easy to track down and should have no impact now that
         # ANOVAReport using JS instead of matplotlib 
+
+        data = data.replace(np.inf, 0)
+        data = data.replace(-np.inf, 0)
+
         colors = list(data['color'].values)
         pvalues = data['pvalue'].values
         signed_effects = data['signed_effect'].values
@@ -389,6 +393,10 @@ class VolcanoANOVA(object):
         ax = fig.add_subplot(111)
         ax.set_axis_bgcolor('#EEEEEE')
         ax.cla()
+
+        # TODO signed effects may be inf why ?
+
+
         X = [easydev.precision(x, digit=2) for x in signed_effects]
         Y = [easydev.precision(y, digit=2) for y in Y]
 
