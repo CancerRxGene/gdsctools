@@ -80,9 +80,46 @@ more flexible. One can for instance set the formula to specify the treatement
 to be used as a reference::
 
 
-.. versionchanged:: 0.16
-  The regression method is the :term:`OLS` method. Other methods will be used in
-  an independent module (regression) 
+.. versionchanged:: 0.16 
+   The regression method is the :term:`OLS` method. Other methods will be 
+   used in an independent module (regression) 
+
+
+The ANOVA analysis itself uses a **type I** error. The summary can be obtained
+for a specific combination of drug and feature as follows::
+
+    from gdsctools import *
+    an = ANOVA(ic50_test, gf_v17)
+    drugid = 1047
+    feature = an.feature_names[0]
+    odof = an._get_one_drug_one_feature_data(drugid, feature)
+    res = an.anova_one_drug_one_feature(drugid, feature)
+    an._get_anova_summary(an.data_lm, output="dataframe", odof=odof)
+
+and should show the following summary::
+
+                  Df       Sum Sq    Mean Sq  F value       PR(>F)
+    tissue      26.0   352.345257  13.551741  9.26853  1.63864e-31
+    msi          1.0     5.309389   5.309389  3.63129    0.0570537
+    feature      1.0     3.186109   3.186109   2.1791     0.140282
+    Residuals  817.0  1194.554709   1.462123     None         None
+
+
+An alternative (simpler but slower) way since version 0.16 is to use::
+
+    an.anova_one_drug_one_feature_custom(drugid, feature, 
+        formula='Y ~ C(tissue) + C(msi) + feature')
+
+
+Type I error
+~~~~~~~~~~~~~~~~~~~~
+
+The ANOVA analysis is based on a **Type I** error, also called *sequential* sum of squares.
+Consider 2 effects A and B, it tests the main effect of factor A, followed by the 
+main effect of factor B after the main effect of A, followed by the interaction 
+effect AB after the main effects. So, this type of sums of squares gives
+different results for unbalanced data depending on the sequence.
+
 
 
 MSI factor

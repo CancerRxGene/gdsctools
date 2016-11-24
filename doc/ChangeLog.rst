@@ -3,6 +3,13 @@ ChangeLog
 
 .. contents::
 
+Version 0.16.2
+----------------
+
+* BUG Fix:
+
+    - Fix volcano plot and anova results (avoid infinite values)
+
 Version 0.16.1
 ---------------------
 

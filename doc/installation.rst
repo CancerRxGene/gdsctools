@@ -25,6 +25,7 @@ Anaconda is a free Python distribution. It includes most popular Python packages
 
 Please, visit the `Anaconda <https://www.continuum.io/downloads>`_ website and follow the instructions. You may need to choose between 2 versions of Python (2.X or 3.5). **GDSCTools** is tested under Python 2.7 and 3.5 (as well as 3.3 and 3.4) so the version should not matter.
 
+
 Once anaconda is installed, open a new :term:`Terminal` (under Windows, open the
 Anaconda prompt) and type::
 
