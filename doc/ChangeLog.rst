@@ -3,12 +3,18 @@ ChangeLog
 
 .. contents::
 
+Version 0.16.3
+----------------
+
+* BUG Fix: #158 infinity are removed in ANOVAReport in the constructor
+
 Version 0.16.2
 ----------------
 
 * BUG Fix:
 
     - Fix volcano plot and anova results (avoid infinite values)
+    
 
 Version 0.16.1
 ---------------------

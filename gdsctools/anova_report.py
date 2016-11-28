@@ -89,8 +89,11 @@ class ANOVAReport(object):
         if results is None:
             results = gdsc.anova_all()
         self.df = ANOVAResults(results).df # this does a copy and sanity check
+
+
         # Make sure the DRUG are integers
         self.df.DRUG_ID = self.df.DRUG_ID.astype(int)
+
 
         self.settings = ANOVASettings()
         for k, v in gdsc.settings.items():
@@ -114,6 +117,12 @@ class ANOVAReport(object):
             # Copy from gdsc instance
             self.drug_decode = DrugDecode(gdsc.drug_decode)
         self.df = self.drug_decode.drug_annotations(self.df)
+        #if sum(self.df == np.inf).sum()>0:
+        #    print("WARNING: infinite values were found in your results... Set to zero")
+        try:
+            self.df = self.df.replace({np.inf:0, -np.inf:0})
+        except:
+            pass
 
         # create some data
         self._set_sensible_df()
@@ -157,7 +166,13 @@ class ANOVAReport(object):
             ratio = 0
         else:
             ratio = float(self.n_tests)/(N) * 100
-        ratio = easydev.precision(ratio, digit=2)
+
+        try:
+            ratio = easydev.precision(ratio, digit=2)
+        except:
+            # Fixme: this is a hack for the infinite values but should not
+            # happen...
+            ratio = 0
 
         msg = "Type of analysis"
         df = self._df_append(df, [msg, self.settings.analysis_type])
