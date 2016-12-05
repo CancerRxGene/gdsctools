@@ -14,7 +14,7 @@ gf = GenomicFeatures(config['genomic_features'])
 
 gd = regression.GDSCLasso(ic50,gf)
 
-DRUGIDS = gd.drugIds[0:20]
+DRUGIDS = gd.drugIds[0:10]
 PREFIX = "gdsctools_regression_"
 
 localrules: all, get_weights, get_results, report

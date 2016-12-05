@@ -77,14 +77,14 @@ setup(
     url              = metainfo['url'],
     download_url     = metainfo['download_url'],
     classifiers      = metainfo['classifiers'],
-
     packages = packages,
 
     # here below '': pattern means include that pattern in all packages
     # so '' :['README.rst'] will include all README.rst recursively
     package_data = {
         '': ["*.js", "*txt", "*.csv", "*tsv", "*.gz"],
-        'gdsctools.data.css' : ['*.css'],
+        'gdsctools.pipelines': ['*.rules', '*.yaml'],
+        'gdsctools.data.css': ['*.css'],
         'gdsctools.data.images' : ['*.png', '*.ico'],
         'gdsctools.data.templates' : ['*.html'],
         'gdsctools.data.javascript' : ['*.js'],
