@@ -14,18 +14,14 @@ var loadVolcano = function() {
         "Group" : {{ Group }}
         },
     "y" : {
-            "smps" : ["Signed Effect Size",  "-log10(pvalue)"],
- //           "smps" : [{{ xlabel }},  {{ ylabel }}],
+            "smps" : [{{ xlabel }},  {{ ylabel }}],
             "vars": {{ vars }},
             "data": {{ data }}
         },
     "d": {
             "line": [
-                {"color" : "black",  "width" : 2, "x": 0.5, "y": -3},
-                {"color" : "black",   "width" : 2, "x": -0.5},
-                {"color" : "grey", "width" : 1, "x": 0},
-                {{ additional_fdrs }},
                 {"color" : "blue", "width" : 2, "type": "dashed", "y": 3},
+                {"color" : "blue", "width" : 2, "type": "dashed", "y": 10},
                 ]
             }
         },
@@ -51,7 +47,7 @@ var loadVolcano = function() {
             "setMinX": {{ minX }},
             "setMaxX": {{ maxX }},
             "setMaxY": {{ maxY }},
-            "setMinY": 0,
+            "setMinY": {{ minY }},
             "axisExtension": 0.,  // margin around min/max/x/y
            "xAxisTickColor": "rgb(255,255,255)",
            "yAxis": ["-log10(pvalue)"],
