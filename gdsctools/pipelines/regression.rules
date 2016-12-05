@@ -11,11 +11,17 @@ assert config['method'] in ['lasso', "elastic_net", "ridge"]
 print("//Loading main data set")
 ic50 = IC50(config['ic50'])
 gf = GenomicFeatures(config['genomic_features'])
-
 gd = regression.GDSCLasso(ic50,gf)
 
-DRUGIDS = gd.drugIds[0:10]
+DRUGIDS = gd.drugIds
 PREFIX = "gdsctools_regression_"
+
+
+################################################  NOTHING TO CHANGE HERE BELOW
+# RUNME as follows:
+# snakemake -s regression.rules -j 40 --cluster "sbatch --qos normal"
+#
+#################################################################"
 
 localrules: all, get_weights, get_results, report
 
@@ -24,9 +30,9 @@ rule all:
 
 rule report:
     input: 
-        PREFIX+"scatter_plot.png",
-        PREFIX+"weights.csv",
-        PREFIX+"results.csv",
+        PREFIX + "scatter_plot.png",
+        PREFIX + "weights.csv",
+        PREFIX + "results.csv",
     output: "index.html"
     run:
         from gdsctools import regression_report
