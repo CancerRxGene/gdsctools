@@ -1,4 +1,5 @@
-from gdsctools import pipelines, ic50_test
+from gdsctools import anova_pipelines as pipelines
+from gdsctools import  ic50_test
 
 from nose.plugins.attrib import attr
 
