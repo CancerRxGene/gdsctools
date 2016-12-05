@@ -1,0 +1,13 @@
+# configuration file for the regression pipeline
+####################################################
+
+
+# Analysis
+method: lasso       # lasso, elasticnet or ridge
+kfold: 10           # Used to automatically estimate best alpha parameter
+
+
+# Input data sets
+ic50: /home/cokelaer/Work/github/gdsctools/gdsctools/data/IC50_v17.csv.gz
+genomic_features: /home/cokelaer/Work/github/gdsctools/gdsctools/data/genomic_features.tsv.gz
+
