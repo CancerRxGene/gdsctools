@@ -31,6 +31,9 @@ from numpy import log10
 from easydev import Progress, AttrDict
 from gdsctools.tools import Savefig
 
+import jinja2
+from jinja2 import Environment, PackageLoader
+
 
 __all__ = ['VolcanoANOVA', "VolcanoANOVAJS"]
 
@@ -564,8 +567,6 @@ class VolcanoANOVAJS(VolcanoANOVA):
         if "sensitive" in self.data.color.values:
             colors.append("rgba(0,205,0,0.5)")  # green
 
-        import jinja2
-        from jinja2 import Environment, PackageLoader
         env = Environment()
 
         from easydev import get_package_location
@@ -579,6 +580,8 @@ class VolcanoANOVAJS(VolcanoANOVA):
 
         jinja["colors"] = colors
         jinja["Group"] = list(self.data['color'].values)
+        jinja['xlabel'] = "Signed Effect Size"
+        jinja['ylabel'] = "-log10(pvalue)"
 
         text = []
         for x,y,z in zip(self.data['Drug'].values,
@@ -675,4 +678,75 @@ class VolcanoANOVAJS(VolcanoANOVA):
     # window.CanvasXpress.references[0].redraw()
 
 
+class ScatterJS(object):
+    """
+
+        df = 
+        js = ScatterJS(df, "x_name", "y_name", "color_name", "size_name")
+        html = js.get_html()
+
+    """
+    def __init__(self, df, x, y, color, size):
+        self.data = df.copy()
+        self._colname_color = color
+        self._colname_x = x
+        self._colname_y = y
+        self._colname_size = size
+
+    def get_html(self):
+
+        # We have 3 colors but sometimes you may have only one or 2.
+        # This may be an issue with canvasXpress. It seems essential
+        # to sort the color column so that names are sorted alphabetically
+        # and to include colors that are present in the sale order
+        """try:
+            self.data.sort_values(by='color', inplace=True)
+        except:
+            self.data.sort("color", inplace=True)
+        """
+        # Jinja related
+        from easydev import get_package_location
+        env = Environment()
+        env.loader = jinja2.FileSystemLoader(
+                        get_package_location("gdsctools")
+                        + "/gdsctools/data/templates/")
+        template = env.get_template("scatter.html")
+
+        # We need to cireate 20 different colors
+        from colormap import Colormap
+        c = Colormap()
+        cmap = c.cmap_linear("red", "blue", "yellow", N=20)
+
+        colors = self.data[self._colname_color]
+        colors = ["red" for x in self.data[self._colname_color]]
+
+        jinja = {}
+        jinja["colors"] = ["rgba(205,0,0,0.5)"]
+        jinja["Group"] = colors
+        jinja['xlabel'] = '"%s"' % self.xlabel
+        jinja['ylabel'] = '"%s"' % self.ylabel
+
+        text = []
+        for index in zip(self.data.index):
+            text.append("<pre>%s</pre>" % self.data.ix[index].to_string())
+        jinja['vars'] = text
+
+        #self.data.markersize /= (self.data.markersize.max()/3.)
+        self.data['markersize'] = 20
+        selection = [self._colname_x, self._colname_y, self._colname_size]
+        #First value is Y, second is X, following will be used in the
+        try: # introduced in pandas > 0.16.2
+            jinja['data'] = self.data[selection].round(3).values.tolist()
+        except: #for py3.3 on travis
+            jinja['data'] = np.around(self.data[selection]).values.tolist()
+
+        jinja['title'] = '"Regression coefficient/ttest/bayes factor for all drugs"' 
+
+        jinja['minX'] = 0
+        jinja['minY'] = 0
+        jinja['maxX'] = 1
+        jinja['maxY'] = self.data[self._colname_y].max() * 1.1
+
+        self.html = template.render(jinja)
+        return self.html
 
