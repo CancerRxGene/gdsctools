@@ -143,6 +143,7 @@ variable to explain (red). The bayes and ttest metric are then computed. """
 
 class HTMLPageMain(ReportMain):
     def __init__(self, caller):
+        sepjoin = os.sep.join
         super(HTMLPageMain, self).__init__(
                 directory=caller.directory,
                 template_filename="regression.html",

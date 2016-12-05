@@ -1,3 +1,4 @@
+# A snakemake pipeline for regression analysis across many drugs and features
 import pylab
 from gdsctools import *
 import pandas as pd
@@ -64,8 +65,8 @@ rule scatter_plot:
         pylab.colorbar(extend="max")
         pylab.xlabel("Regression coefficients")
         pylab.ylabel("-log10 ttest")
-        #pylab.xlim([0, pylab.xlim()[1]])
-        #pylab.ylim([0, pylab.ylim()[1]])
+        pylab.xlim([0, pylab.xlim()[1]])
+        pylab.ylim([0, pylab.ylim()[1]])
         pylab.savefig(output[0])
 
 

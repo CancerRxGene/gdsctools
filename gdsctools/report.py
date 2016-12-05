@@ -94,17 +94,10 @@ class ReportMain(Report):
 
         searchpath = sepjoin([gdsctools_path, "gdsctools", "data", "templates"])
 
-
-        if mode == "summary":
-            super(ReportMain, self).__init__(searchpath, filename=filename,
+        super(ReportMain, self).__init__(searchpath, filename=filename,
                 template_filename=template_filename, directory=directory,
-                extra_css_list=extra_css_list,
+                extra_css_list=extra_css_list, extra_js_list=extra_js_list,
                 init_report=init_report)
-        else:
-            super(ReportMain, self).__init__(searchpath, filename=filename,
-                template_filename=template_filename, directory=directory,
-                extra_css_list=extra_css_list,
-                extra_js_list=extra_js_list, init_report=init_report)
 
         self.jinja['dependencies'] = self.get_table_dependencies("gdsctools").to_html()
         self.jinja['analysis'] = 'anova'
