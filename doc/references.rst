@@ -76,7 +76,7 @@ Boxplot and beeswarm
 
 Pipelines and reports
 ----------------------------
-.. automodule:: gdsctools.pipelines
+.. automodule:: gdsctools.anova_pipelines
     :members:
     :undoc-members:
 
