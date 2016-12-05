@@ -58,6 +58,11 @@ elif self.settings.regression_method == 'Lasso':
 """
 
 
+class RegressionResults(object):
+    def __init__(self):
+        pass
+
+
 class RegressionCVResults(object):
     def __init__(self, model, Rp, kfold=None):
         self.model = model
@@ -158,8 +163,11 @@ class Regression(BaseModels):
 
         df = df[df['weight'] != 0]
 
-        barplot(df, "weight", orientation=orientation, max_label_length=max_label_length,
+        if len(df):
+            barplot(df, "weight", orientation=orientation, max_label_length=max_label_length,
                 fontsize=fontsize)
+        if len(df) < 5:
+            pylab.xlim(-5,5)
         return df
 
     def _print(self, txt):
@@ -249,11 +257,15 @@ class Regression(BaseModels):
         self.df1 = df1
         self.df2 = df2
 
-        df1.plot(y="weight", kind="bar",  width=1, lw=1, ax=ax,
-            color="b", legend=False, fontsize=fontsize, figsize=figsize)
-        df2.plot(y="weight", kind="bar",  width=1, lw=1, ax=ax2,
-            color="r", sharey=True, legend=False, fontsize=fontsize,
-            figsize=figsize)
+        if len(df1): 
+            df1.plot(y="weight", kind="bar",  width=1, lw=1, ax=ax,
+                color="b", legend=False, fontsize=fontsize, figsize=figsize)
+        if len(df2):
+            df2.plot(y="weight", kind="bar",  width=1, lw=1, ax=ax2,
+                color="r", sharey=True, legend=False, fontsize=fontsize,
+                figsize=figsize)
+        if len(df1) == 0 and len(df2) == 0:
+            return df
 
         # hide the spines between ax and ax2
         ax.spines['right'].set_visible(False)
@@ -446,20 +458,27 @@ class Regression(BaseModels):
         return results
         #return alphas, all_scores, maximum, alpha_best
 
-    def check_randomness(self, drug_name, n_folds=10, N=10, show=True):
+    def check_randomness(self, drug_name, n_folds=10, N=10, show=True,
+            progress=False):
 
         scores = []
+        pb = Progress(N)
         for i in range(N):
             # Fit a model using CV
             inter_results = self.runCV(drug_name, n_folds=n_folds, verbose=False)
             scores.append(inter_results.Rp)
+            if progress: 
+                pb.animate(i+1)
 
         random_scores = []
+        pb = Progress(N)
         for i in range(N):
             # Fit a model using CV
             inter_results = self.runCV(drug_name, n_folds=n_folds,
                                 randomize_Y=True, verbose=False)
             random_scores.append(inter_results.Rp)
+            if progress:
+                pb.animate(i+1)
 
         from scipy.stats import ttest_ind
         ttest_res = ttest_ind(scores, random_scores)
@@ -472,7 +491,10 @@ class Regression(BaseModels):
         S = sum([s>r for s,r in zip(scores, random_scores)])
         proba = S / len(scores)
         if proba == 1:
-            bayes_factor = np.inf
+            # Set the maximum instead of infinite
+            # bayes_factor = np.inf
+            bayes_factor = 1. / (1./len(scores))
+            
         else:
             bayes_factor = 1. / (1-proba)
         results['bayes_factor'] = bayes_factor
@@ -506,7 +528,8 @@ class Regression(BaseModels):
             d[drug_name] = df.copy()
             pb.animate(i+1)
 
-        dfall = pd.concat([d[i] for i in d.keys()], axis=1)
+        # use drugid to keep same order as in the data
+        dfall = pd.concat([d[i] for i in drugids], axis=1)
         dfall.columns = drugids
 
         if show:
@@ -520,7 +543,7 @@ class Regression(BaseModels):
         return dfall
 
     def boxplot(self, drug_name, model, n=5, minimum_match_per_combo=10,
-                bx_vert=True, bx_alpha=0.5):
+                bx_vert=True, bx_alpha=0.5, verbose=False):
 
         X, Y = self._get_one_drug_data(drug_name)
         fitted_model = self._fit_model(drug_name, model)
@@ -576,7 +599,8 @@ class Regression(BaseModels):
                 if len(inner_indices) >= minimum_match_per_combo:
                     name = ",".join(combo)
                     indices[name] = inner_indices
-                    print("Found %s with %s events" % (name,len(inner_indices)))
+                    if verbose:
+                        print("Found %s with %s events" % (name,len(inner_indices)))
         # Wild type
         inner_indices = features.query("total==0").index
         indices["Wild Type"] = inner_indices
@@ -805,6 +829,7 @@ class GDSCElasticNet(Regression):
         # columns the smallest 
         for text,v in data['coeffs'].iloc[-5:,-1].items():
             pylab.text(pylab.log(min(data["alphas"])),v,text, fontsize=fontsize)
+
 
 def barplot(df, colname, color="sign",colors=("b", "r"),
             orientation="vertical", Nmax=50, max_label_length=20,
