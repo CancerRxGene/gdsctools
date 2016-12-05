@@ -97,7 +97,7 @@ setup(
     zip_safe=False,
     entry_points = {
         'console_scripts': [
-        'gdsctools_anova=gdsctools.pipelines:anova_pipeline',]
+        'gdsctools_anova=gdsctools.anova_pipelines:anova_pipeline',]
     },
 )
 
