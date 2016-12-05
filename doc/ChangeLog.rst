@@ -3,6 +3,14 @@ ChangeLog
 
 .. contents::
 
+Version 0.16.4
+-----------------
+
+* NEWS:
+
+    - a snakemake pipeline for the regression analysis 
+    - Reports for the regression analysis
+
 Version 0.16.3
 ----------------
 

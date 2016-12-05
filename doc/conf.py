@@ -34,14 +34,14 @@ version = pkg_resources.require(pkg_name)[0].version
 release = version
 author = "Thomas Cokelaer"
 title = "GDSCtools"
-copyright = author + ", 2015"
+copyright = author + ", 2015-2016"
 project = 'GDSCTools'
 
 import easydev
 from easydev import get_path_sphinx_themes
 
-#import warnings
-#warnings.simplefilter("ignore","exceptions.Warning")
+
+# common sphinx extensions
 
 # -- General configuration -----------------------------------------------------
 

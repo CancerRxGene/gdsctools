@@ -186,6 +186,7 @@ Contents
     html.rst
     data_packages.rst
     omnibem.rst
+    regression.rst
     notebooks.rst
     standalone.rst
     auto_examples/index
