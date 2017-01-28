@@ -39,7 +39,8 @@ class RegressionReport(object):
 
 
     """
-    def __init__(self, method, directory=".", verbose=True):
+    def __init__(self, method, directory=".", verbose=True, image_dir="images",
+            config={"boxplot_n": "?"}):
         """.. rubric:: Constructor
 
         :param gdsc: the instance with which you created the results to report
@@ -47,16 +48,21 @@ class RegressionReport(object):
             not provided, the ANOVA is run on the fly.
 
         """
+        self.image_dir = image_dir
         self.method = method
+        self.config = config
+
         self.directory = directory
         self.output_dir = "."
         self.verbose = verbose
         self.prefix = "gdsctools_regression_"
-        self.filenames = glob.glob(self.prefix + "boxplot_*png")
-        self.drugids =  [this.rstrip(".png").lstrip(self.prefix).lstrip("boxplot_") 
+        self.prefix_images = image_dir + os.sep +"gdsctools_regression__"
+        self.filenames = glob.glob(self.prefix_images + "boxplot_*png")
+        self.drugids =  [this.rstrip(".png").lstrip(self.prefix_images).lstrip("boxplot_") 
                         for this in self.filenames]
 
     def create_html_drug(self):
+        """report for each individual drug"""
         for drugid in self.drugids:
             print('Creating HTML report for drug %s' % drugid)
             report = HTMLOneDrug(drugid, caller=self)
@@ -73,9 +79,6 @@ class RegressionReport(object):
         html = HTMLPageMain(caller=self)
         html.create_report(onweb=onweb)
 
-        # report for each individual drug
-        self.create_html_drug()
-
 
 class HTMLOneDrug(ReportMain):
     def __init__(self, drugid, caller):
@@ -91,8 +94,8 @@ class HTMLOneDrug(ReportMain):
         self.title = 'Single Drug analysis (%s)' % self.drug
         self.params = {"drugid": self.drug}
 
-        self.filename_template = self.caller.prefix + "%(name)s_" + "%s." % self.drug 
-        results_filename = self.filename_template % {"name":"results"} + "json"
+        filename_template = self.caller.prefix + "%(name)s_" + "%s." % self.drug 
+        results_filename = filename_template % {"name":"results"} + "json"
 
         with open(results_filename, "r") as fh:
             data = json.loads(fh.read())
@@ -100,9 +103,12 @@ class HTMLOneDrug(ReportMain):
         except:pass
         try:data["alpha"] = easydev.precision(data['alpha'], 3)
         except:pass
+        try:data["Rp"] = easydev.precision(data['Rp'], 3)
+        except:pass
         self.params.update(data)
         self.params['method'] = self.caller.method
         self.jinja['sections'] = []
+        self.jinja['goback'] = True
 
     def _create_report(self, onweb=True):
         section = """<div>
@@ -110,29 +116,37 @@ class HTMLOneDrug(ReportMain):
         <b>Regression method:</b> %(method)s </br>
         <b>Regression, alpha parameter used:</b> %(alpha)s</br>
         <b>Bayes factor:</b> %(bayes)s</br>
-        <b>Regression coeffcient:</b> %(Rp)s</br>
+        <b>Coefficient of regression (pearson):</b> %(Rp)s</br>
         </div>
         """ % self.params
         self.jinja['sections'].append(section)
 
         text = {}
-        text['boxplot'] = "to do"
+        text['boxplot'] = ("This boxplot shows the %s most important features "
+            "(based on the weights of the regression).")
+        text['boxplot'] %= self.caller.config["boxplot_n"]
+
         text['importance'] = ("Feature with non-null weights. If empty, it"
             " means no feature of interests were found")
-        text['randomness'] = """Here we run the regression analysis N times and
-plot the regression value (x-axis) for the real data (blue) and randomising the
-variable to explain (red). The bayes and ttest metric are then computed. """
+
+        text['randomness'] = ("Here we run the regression analysis %s times and "
+            "plot the regression value (x-axis) for the real data (blue) "
+            "and randomising the variable to explain (red). The bayes factor is"
+            "provided () " )
+        text['randomness'] %= self.caller.config['randomness']
+
         text['weights'] = ("Feature with non-null weights. If empty, it"
             " means no feature of interests were found")
 
         for this in ["boxplot", "randomness", "importance", "weights"]:
             self.params['name'] = this
             self.params['text'] = text[this]
-            filename = self.caller.prefix + "%(name)s_%(drugid)s.png" % self.params
+            filename = self.caller.prefix_images + "%(name)s_%(drugid)s.png" % self.params
             self.params["filename"] = filename
+            self.params['title'] = this.title()
             if os.path.exists(filename):
                 section = """<div>
-                <h2>%(name)s results</h2>
+                <h2>%(title)s results</h2>
                 <p>%(text)s</p>
                 <img src="%(filename)s">
                 """ % self.params
@@ -156,12 +170,16 @@ class HTMLPageMain(ReportMain):
         #self.jinja["collaborator"] = report.company
 
     def _create_report(self, onweb=True):
+
+        # The top section with standard information
         section = """<div>
         <b>Regression method:</b> %s </br>
         </div><hr>
         """ % self.caller.method
         self.jinja['sections'].append(section)
 
+
+        # The main CSV tables with bayes factor and links to each drug ID
         filename = self.caller.prefix + "results.csv"
         df = pd.read_csv(filename)
         df['ttest (-log10)'] = -pylab.log10(df['ttest'])
@@ -169,22 +187,29 @@ class HTMLPageMain(ReportMain):
         table = HTMLTable(df)
         table.add_bgcolor('bayes')
         table.add_bgcolor('Rp')
-        table.df['drugid'] = ['<a href="drug_%s.html">%s</a>' % (x,x)
+        table.df['drugid'] = ['<a href="drug_%s.html">%s</a>' % (x, x)
                           for x in table.df['drugid']]
 
-        html = ("<div><p>This table contains links to all drugs. The Rp columns"
-                " contains the coefficient of correlation found with the"
-                " method for the give alpha parameter. The ln_alpha column"
-                " is just the -log10(alpha) value. The bayes and ttest columns"
-                " gives an idea of the significance of the correlation as "
-                " compared to a null distribution.</p>")
-        html += table.to_html(index=False) +"</div>"
-        self.jinja['sections'].append(html)
+        html = ("<div><p>This table contains links to all drugs (first column)."
+                " The Rp column contains the coefficient of correlation"
+                " (pearson) found with the regression method for the alpha"
+                " parameter provided in column 3. The alpha value is the optimised"
+                " value obtained using a cross validation (see below)."
+                " The ln_alpha column is just the -log10(alpha) value. The bayes"
+                " factor gives an idea of the significance of the correlation as "
+                " compared to a null distribution. See"
+                ' <a href="http://gdsctools.readthedocs.io/en/master/references.html">'
+                'gdstools documentation.</a> for details.'
+                "<br>"
+                " Note also that the optimisation of the alpha parameter is"
+                " performed using a cross validation and depends on a few"
+                " parameters such as the range of alpha values, number of "
+                " cross validation, ....</p>")
+        html += table.to_html(index=False)
 
-        filename = self.caller.prefix + "scatter_plot.png"
-        html = "<hr><div>"
-        html += "<img src=%s></img>" % filename
-        html += "/<div>"
+        pattern = '<div>%s <p>Download the CSV <a href="%s">file</a></p></div><hr>' 
+        pattern = pattern % (html, filename)
+        html = pattern
 
         self.jinja['sections'].append(html)
 
@@ -206,11 +231,9 @@ class HTMLPageMain(ReportMain):
     def _set_scatter(self):
         filename = self.caller.prefix + "results.csv"
         df = pd.read_csv(filename)
-        df["log_ttest"] = -pylab.log10(df["ttest"])
         df["markersize"] = 20
-        js = ScatterJS(df, x="Rp", y="log_ttest", color="bayes", size="markersize" )
-        js.xlabel = "Regression coefficient"
-        js.ylabel = "log10(ttest pvalue)"
+        js = ScatterJS(df, x="Rp", y="bayes", color="bayes", size="markersize")
+        js.xlabel = "Coefficient correlation (pearson)"
+        js.ylabel = "Bayes factor"
         self.jinja['volcano_jsdata'] = js.get_html()
-        
 

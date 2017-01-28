@@ -7,6 +7,7 @@ omnibem_genes = gdsctools_data("test_omnibem_genes.txt")
 
 def test_omnibem():
     ob = OmniBEMBuilder(omnibem_data)
+    assert len(ob) ==  56943
     ob.filter_by_gene_list(omnibem_genes)
     mobem = ob.get_mobem()
     assert mobem[mobem.columns[3:]].sum().sum() == 54061
@@ -23,7 +24,6 @@ def test_omnibem():
     mobem = ob.get_mobem()
     assert mobem.shape == (1,105)
     assert mobem.ix[0,3:].sum() == 102
-    
 
     ob = OmniBEMBuilder(omnibem_data)
     ob.filter_by_type_list(["Methylation"])
@@ -39,3 +39,6 @@ def test_omnibem():
     ob.filter_by_sample_list(["SNU-423"])
     mobem = ob.get_mobem()
     assert mobem[mobem.columns[3:]].sum().sum() == 63
+
+
+    gf = ob.get_genomic_features()

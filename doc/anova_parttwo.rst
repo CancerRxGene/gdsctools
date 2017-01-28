@@ -77,12 +77,11 @@ added the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature_custom`
 method, which can be use for any type of regression based on a user formula.
 This is slower than the 4 hardcoded versions mentionned above but is
 more flexible. One can for instance set the formula to specify the treatement
-to be used as a reference::
-
+to be used as a reference:
 
 .. versionchanged:: 0.16 
-   The regression method is the :term:`OLS` method. Other methods will be 
-   used in an independent module (regression) 
+    The regression method is the :term:`OLS` method. Other methods will 
+    be used in an independent module (:mod:`gdsctools.regression`)
 
 
 The ANOVA analysis itself uses a **type I** error. The summary can be obtained
@@ -107,7 +106,7 @@ and should show the following summary::
 
 An alternative (simpler but slower) way since version 0.16 is to use::
 
-    an.anova_one_drug_one_feature_custom(drugid, feature, 
+    an.anova_one_drug_one_feature_custom(drugid, feature,
         formula='Y ~ C(tissue) + C(msi) + feature')
 
 
@@ -115,8 +114,8 @@ Type I error
 ~~~~~~~~~~~~~~~~~~~~
 
 The ANOVA analysis is based on a **Type I** error, also called *sequential* sum of squares.
-Consider 2 effects A and B, it tests the main effect of factor A, followed by the 
-main effect of factor B after the main effect of A, followed by the interaction 
+Consider 2 effects A and B, it tests the main effect of factor A, followed by the
+main effect of factor B after the main effect of A, followed by the interaction
 effect AB after the main effects. So, this type of sums of squares gives
 different results for unbalanced data depending on the sequence.
 
@@ -132,7 +131,7 @@ However, you may exclude it by setting its value to False::
 
 If **MSI_FACTOR** column is not found in the Genomic Feature data set, the MSI factor will be excluded automatically and the parameter above set to False.
 
-.. warning:: If you force the MSI factor to True wherease there
+.. warning:: If you force the MSI factor to True whereas there
     is not enough data in the binary sets of the MSI factor, error
     will be raised.
 

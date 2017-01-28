@@ -104,7 +104,7 @@ Notes for windows/mac/linux
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The Anaconda method was tested successfully on the following systems: MAC,
-Windows 7 Pack1, Fedora 19 (Nov 2015) with version 0.9.3 of gdsctools.
+Windows 7 Pack1, Fedora 19 (Nov 2015) with version 0.16.5 of GDSCTools.
 
 Under Windows, an error was raised due to scipy. This was fixed by typing::
 

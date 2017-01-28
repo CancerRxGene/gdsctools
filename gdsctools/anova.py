@@ -522,32 +522,38 @@ class ANOVA(BaseModels): #Logging):
 
     def anova_one_drug_one_feature_custom(self, drug_id, feature_name, formula,
         odof=None):
-        """Same as anova_one_drug_one_feature but allows any formula
-
-        Formula must be set in the settings attribute as 
-        settings.regression_formula::
+        """Same as :meth:`anova_one_drug_one_feature` but allows any formula
 
         :return: full ANOVA table but also populate interal attribute
             anova_pvalues that is a dictionary with pvalues for
             feature, media, msi and tissue
 
+        Formula must be set in the settings attribute as 
+        settings.regression_formula::
+
             an = ANOVA(...)
             an.settings.formula = "Y ~  C(tissue) + feature"
 
         .. note:: This function is convenient but 3 times slower than
-            :meth:`anova_one_drug_one_feature`. So if your formula are one of
-            "Y ~  C(tissue) + C(media) + C(msi) + feature"
-            "Y ~  C(tissue) + C(msi) + feature"
-            "Y ~  C(msi) + feature"
-            "Y ~  feature"
+            :meth:`anova_one_drug_one_feature`. So if your formula are one of::
+
+                "Y ~  C(tissue) + C(media) + C(msi) + feature"
+                "Y ~  C(tissue) + C(msi) + feature"
+                "Y ~  C(msi) + feature"
+                "Y ~  feature"
+
+            you should use :meth:`anova_one_drug_one_feature` instead.
 
         By default, in categories, the first treatment (e.g tissue) is used a
-        reference and is not shown in the results. You may set the reference
-        "Y ~ C(tissue, Treatment(reference='breast'))" .  
+        reference and is not shown in the results. You may set the reference as
+        follows::
+
+            "Y ~ C(tissue, Treatment(reference='breast'))"
 
         ANOVA pvalues returned are of type I
 
-        .. versionadded: 0.15.0
+        .. versionadded:: 0.15.0
+
         """
         import statsmodels.formula.api as smf
         from statsmodels.stats.api import anova_lm

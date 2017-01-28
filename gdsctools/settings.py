@@ -122,7 +122,7 @@ class ANOVASettings(AttrDict):
                                       can be used.
     ======================= ========= =========================================
 
-    .. seealso:: :ref:`settings_filtering` or
+    .. seealso:: :ref:`settings` or
         gdsctools.readthedocs.org/en/master/settings.html#filtering
         decrease the number of significant hits.
 

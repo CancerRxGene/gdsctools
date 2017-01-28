@@ -25,15 +25,13 @@ Quote characters are also removed.
 .. warning:: Some readers will use the name of the extensions to infer
     the separator so it is important that the extension reflects the content
     of the file. A compressed file named as e.g. *ic50.csv.gz* will
-    therefore be interepreted as a CSV file.
+    therefore be interpreted as a CSV file.
 
 
-.. note:: With CSV files, if a column's name is ambiguous in the header (i.e, contains already a comma), then it should be enclosed within double quotes.
-
-Finally, note that if a cell in the CSV file is a string that contains commas,
-these characters may be interpreted as separators. To avoid this ambiguity, use
-quotes to define the string (e.g *A,B* should be *"A,B"*). See the
-:ref:`drug_decode` section for an example. 
+.. note:: With CSV files, if a column's name is ambiguous in the header (i.e,
+   contains already a comma), then it should be enclosed within double quotes to 
+   avoid ambiguities (e.g *A,B* should be *"A,B"*). See the
+   :ref:`drug_decode` section for an example. 
 
 
 IC50
@@ -73,7 +71,7 @@ If you save that example in a file, you can read it with the
     >>> from gdsctools import IC50
     >>> r = IC50('source/ic50_tiny.csv')
     >>> r.drugIds
-    [1, 20]
+    [1, 20, 40]
 
 
 .. note:: the columns' names should be identifiers (not drug names). There

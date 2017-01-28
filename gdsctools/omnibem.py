@@ -15,13 +15,13 @@
 #
 ##############################################################################
 """OmniBEM functions"""
+from gdsctools import Reader, GenomicFeatures
+
 import pandas as pd
-from gdsctools import Reader
 import pylab
 
 
 __all__ = ["OmniBEMBuilder"]
-
 
 
 class OmniBEMBuilder(object):
@@ -98,6 +98,9 @@ class OmniBEMBuilder(object):
         self.df.rename(columns={"COSMIC.ID": "COSMIC_ID",
             "TISSUE.TYPE": "TISSUE_TYPE"}, inplace=True)
         self._update_unified()
+
+    def __len__(self):
+        return len(self.df)
 
     def _update_unified(self):
         """# Sort genes by number of times they have an alteration
@@ -276,6 +279,7 @@ class OmniBEMBuilder(object):
         try:pylab.tight_layout()
         except:pass
 
-
-
-
+    def get_genomic_features(self):
+        mobem = self.get_mobem()
+        gf = GenomicFeatures(mobem[[x for x in mobem.columns if x!="SAMPLE"]])
+        return gf

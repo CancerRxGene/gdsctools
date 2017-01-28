@@ -12,7 +12,7 @@ def test_regression_elastic_net():
     drugid = 1047
 
     # automatic CV to get best model
-    results = gd.runCV(drugid, n_folds=5)
+    results = gd.runCV(drugid, kfolds=5)
     bestalpha = results.alpha
     results.coefficients
     best_model = gd.get_model(alpha=bestalpha)

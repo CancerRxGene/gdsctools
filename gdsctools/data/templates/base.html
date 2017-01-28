@@ -49,6 +49,13 @@
 <h1 class="title">{{ title }}</h1>
     <h2 class="subtitle">Report and analysis created with
         <a target="_blank" href="https://gdsctools.readthedocs.io">GDSCTools</A>,  (version {{ version }})</h2>
+
+   {% if goback %}
+   Go back to <a href="./index.html">main page</a>.<br/>
+   {% endif %}
+
+
+
     <hr>
     <p>Analysis Domain: <b>{{ analysis_domain }}</b> tissues/cancer cell type
     {% if collaborator %}

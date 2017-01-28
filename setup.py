@@ -8,7 +8,7 @@ import glob
 
 _MAJOR               = 0
 _MINOR               = 16
-_MICRO               = 4
+_MICRO               = 5
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -39,7 +39,6 @@ metainfo = {
     }
 
 
-
 with open('README.rst') as f:
     readme = f.read()
 
@@ -53,9 +52,9 @@ if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc"]
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
-        'pandas>=0.19', 'easydev>=0.9.29', 'scipy', "colormap>=0.9.7",
-        'jinja2', 'statsmodels', "scikit-learn", "reports>=0.2.1", 
-        "sphinx-gallery", "numpydoc", "biokit"],
+        'pandas>=0.19', 'easydev>=0.9.31', 'scipy', "colormap>=0.9.9",
+        'jinja2', 'statsmodels', "scikit-learn", "reports>=0.3.0", 
+        "sphinx-gallery", "numpydoc", "biokit>=0.3.4", "colorlog"],
 
 
 packages = find_packages()
@@ -97,7 +96,8 @@ setup(
     zip_safe=False,
     entry_points = {
         'console_scripts': [
-        'gdsctools_anova=gdsctools.anova_pipelines:anova_pipeline',]
+        'gdsctools_anova=gdsctools.scripts.anova:main',
+        'gdsctools_regression=gdsctools.scripts.regression:main']
     },
 )
 

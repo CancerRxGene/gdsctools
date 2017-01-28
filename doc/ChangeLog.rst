@@ -3,6 +3,17 @@ ChangeLog
 
 .. contents::
 
+Version 0.17
+------------
+
+* CHANGES and BUG Fixes in regression (snakemake pipeline)
+* More documentation
+
+Version 0.16.5
+---------------
+
+* BUG fix: typo in the setup
+
 Version 0.16.4
 -----------------
 

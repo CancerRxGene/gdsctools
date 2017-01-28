@@ -9,8 +9,7 @@ We refer to the data used in the reference above as the **v17a** data sets. It c
 First, we need to download the data. For example, let us retrieve the BRCA
 tissue specific data set using **wget** command::
 
-    wget http://www.cancerrxgene.org/gdsc1000/Data/anova/BRCA/DATA/INPUT/ANOVA_input.txt
-
+    wget http://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources//Data/anova/BRCA/DATA/INPUT/ANOVA_input.txt
 
 .. warning:: in v17a data, the input file is named **ANOVA_input.txt** 
     It is a tabulated format and contains all IC50s and

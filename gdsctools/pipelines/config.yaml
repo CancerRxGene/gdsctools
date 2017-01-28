@@ -1,13 +1,22 @@
-# configuration file for the regression pipeline
-####################################################
+# configuration file for the regression pipeline (GDSCTools)
+#
+# Please see gdsctools.readthedocs.io for details
+#
+#############################################################
 
 
 # Analysis
-method: lasso       # lasso, elasticnet or ridge
-kfold: 10           # Used to automatically estimate best alpha parameter
+regression:
+  method: lasso    # lasso, elasticnet or ridge
+  kfold: 10        # Used to automatically estimate best alpha parameter
+  randomness: 50   # number of model fitting for significance (most of the time is here)
+  boxplot_n: 5     # most important features to use in boxplot
 
-
-# Input data sets
-ic50: /home/cokelaer/Work/github/gdsctools/gdsctools/data/IC50_v17.csv.gz
-genomic_features: /home/cokelaer/Work/github/gdsctools/gdsctools/data/genomic_features.tsv.gz
+# The input data files in the form of an IC50 and genomic features files
+#
+# See http://gdsctools.readthedocs.io/en/master/data.html for data formats
+#
+input:
+  ic50:
+  genomic_features:
 

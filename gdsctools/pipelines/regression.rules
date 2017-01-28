@@ -3,15 +3,18 @@ import pylab
 from gdsctools import *
 import pandas as pd
 
-
 configfile: "config.yaml"
 
-assert config['method'] in ['lasso', "elastic_net", "ridge"]
 
 print("//Loading main data set")
-ic50 = IC50(config['ic50'])
-gf = GenomicFeatures(config['genomic_features'])
-gd = regression.GDSCLasso(ic50,gf)
+ic50 = IC50(config['input']['ic50'])
+gf = GenomicFeatures(config['input']['genomic_features'])
+gd = regression.GDSCLasso(ic50, gf)
+
+## Overwrite config :
+config = config['regression']
+assert config['method'] in ['lasso', "elastic_net", "ridge"]
+
 
 DRUGIDS = gd.drugIds
 PREFIX = "gdsctools_regression_"
@@ -25,28 +28,28 @@ PREFIX = "gdsctools_regression_"
 
 localrules: all, get_weights, get_results, report
 
+
 rule all:
     input: "index.html"
 
+
 rule report:
-    input: 
+    input:
         PREFIX + "scatter_plot.png",
         PREFIX + "weights.csv",
         PREFIX + "results.csv",
     output: "index.html"
     run:
         from gdsctools import regression_report
-        report = regression_report.RegressionReport(config['method'])
+        report = regression_report.RegressionReport(config['method'], image_dir=".")
         report.create_html_main()
+        report.create_html_drug()
+
 
 rule all_drug_all_features:
     input:
-        expand(PREFIX+"weights_{drugid}.png", drugid=DRUGIDS),
         expand(PREFIX+"results_{drugid}.json", drugid=DRUGIDS),
-        expand(PREFIX+"boxplot_{drugid}.png", drugid=DRUGIDS),
         expand(PREFIX+"weights_{drugid}.csv", drugid=DRUGIDS),
-        expand(PREFIX+"importance_{drugid}.png", drugid=DRUGIDS),
-        expand(PREFIX+"randomness_{drugid}.png", drugid=DRUGIDS),
 
 
 rule get_weights:
@@ -59,6 +62,7 @@ rule get_weights:
             axis=1)
         df.columns = DRUGIDS
         df.to_csv(output[0])
+
 
 rule scatter_plot:
     input: PREFIX+"results.csv"
@@ -91,37 +95,45 @@ rule get_results:
 
 rule one_drug_all_features:
     output:
-        PREFIX+"weights_{drugid}.png",
         PREFIX+"weights_{drugid}.csv",
         PREFIX+"results_{drugid}.json",
-        PREFIX+"boxplot_{drugid}.png",
-        randomness = PREFIX+"randomness_{drugid}.png",
-        importance = PREFIX+"importance_{drugid}.png"
+    params:
+        prefix=PREFIX
     run:
+        def _pngname(tag):
+            return "%s_%s_%s.png" % (params.prefix, tag, wildcards.drugid)
         drugid = int(wildcards.drugid)
 
-        res = gd.runCV(drugid, verbose=False, n_folds=config['kfold'])
+        # Get best model
+        res = gd.runCV(drugid, verbose=False, kfolds=config['kfold'])
         bestmodel = gd.get_model(alpha=res.alpha)
 
+        # Plot weights
         weights = gd.plot_weight(drugid, bestmodel)
-        pylab.savefig(output[0])
-        pylab.close()
+        if len(weights):
+            pylab.savefig(_pngname("weights"))
+            pylab.close()
 
         weights = pd.DataFrame({
                 "weigths": res.coefficients,
                 "features":gd.feature_names})
-        weights.to_csv(output[1], index=False)
+        weights.to_csv(output[0], index=False)
 
-        gd.plot_importance(drugid, bestmodel)
-        pylab.savefig(output['importance'])
-        pylab.close()
+        # Plot importance
+        weights = gd.plot_importance(drugid, bestmodel)
+        if len(weights):
+            pylab.savefig(_pngname("importance"))
+            pylab.close()
 
-        gd.boxplot(drugid, model=bestmodel, n=10, bx_vert=False)
-        pylab.savefig(output[3])
-        pylab.close()
+        # Boxplots
+        boxres = gd.boxplot(drugid, model=bestmodel, n=10, bx_vert=False)
+        if len(boxres['data']):
+            pylab.savefig(_pngname("boxplot"))
+            pylab.close()
 
-        ran = gd.check_randomness(drugid, config["kfold"], N=50, show=True)
-        pylab.savefig(output.randomness)
+        # Bayes factor
+        ran = gd.check_randomness(drugid, config["kfold"], N=config['randomness'])
+        pylab.savefig(_pngname("randomness"))
         pylab.close()
         results = {"drugid": int(drugid),
                 "Rp":res.Rp,
@@ -130,7 +142,7 @@ rule one_drug_all_features:
                 "ttest": ran['ttest_pval'],
                 "bayes":ran['bayes_factor']}
 
-        fh = open(output[2], "w")
+        fh = open(output[1], "w")
         json.dump(results, fh)
         fh.close()
 

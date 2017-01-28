@@ -207,8 +207,6 @@ Please join https://github.com/CancerRxGene/gdsctools
 .. toctree::
     :hidden:
 
-    v17.rst
-    v18.rst
     ChangeLog.rst
     faqs
     glossary

@@ -20,6 +20,8 @@ import easydev
 import warnings
 warnings.simplefilter('ignore', DeprecationWarning)
 
+#import colorlog as logger
+
 try:
     version = pkg_resources.require("gdsctools")[0].version
     __version__ = version
@@ -39,7 +41,7 @@ def gdsctools_data(filename, where=None):
     """Simple utilities to retrieve data sets from gdsctools/share directory"""
     gdsctools_path = easydev.get_package_location('gdsctools')
     share = os.sep.join([gdsctools_path, "gdsctools", 'data'])
-    # in the code one may use / or \ 
+    # in the code one may use / or \
     if where:
         filename = os.sep.join([share, where, filename])
     else:
@@ -51,7 +53,7 @@ def gdsctools_data(filename, where=None):
 
 from gdsctools.readers import IC50, GenomicFeatures, DrugDecode, Reader
 from gdsctools.anova import ANOVA
-from gdsctools.anova_report import ANOVAReport 
+from gdsctools.anova_report import ANOVAReport
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.settings import ANOVASettings
 from gdsctools.datasets import *

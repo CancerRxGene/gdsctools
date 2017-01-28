@@ -19,6 +19,7 @@
 ##############################################################################
 """Look for IC50 vs and genomic features associations using Regression methods"""
 import itertools
+import warnings
 
 import pandas as pd
 import pylab
@@ -34,8 +35,12 @@ from sklearn import preprocessing
 from sklearn import model_selection
 from sklearn import linear_model # must use the module rather than classes to
 
+from sklearn.exceptions import ConvergenceWarning
+warnings.simplefilter('ignore', ConvergenceWarning)
 
-__all__ = ['GDSCRidge', "GDSCLasso", "GDSCElasticNet"]
+
+__all__ = ["Regression", 'GDSCRidge', "GDSCLasso", "GDSCElasticNet", 
+           "RegressionCVResults"]
 
 
 """book keeping
@@ -58,12 +63,16 @@ elif self.settings.regression_method == 'Lasso':
 """
 
 
-class RegressionResults(object):
-    def __init__(self):
-        pass
-
-
 class RegressionCVResults(object):
+    """Simple data structure to hold some results of the regression analysis
+
+    - :attr:`model`
+    - :attr:`kfold`: number of folds used
+    - :attr:`Rp`
+    - :attr:`alpha`: best alpha parameter
+    - :attr:`ln_alpha`  best alpĥa parameter (log scale)
+
+    """
     def __init__(self, model, Rp, kfold=None):
         self.model = model
         self.Rp = Rp
@@ -88,31 +97,40 @@ class Regression(BaseModels):
 
 
 
-    In the ANOVA case, regression using OLS are computed for a given drug and a
-    given feature. Then, this analysis is repeated across all features for a
-    given drug and finally extended to all drugs. However, there is one test
-    for each combination of drug and feature.
+    In the :class:`gdsctools.anova.ANOVA` case, the regression is based on the 
+    OLS method and is computed for a given drug and a given feature (:term:`ODOF`). 
+    Then, the analysis is repeated across all features for a
+    given drug (:term:`ODAF`) and finally extended to all drugs (:term:`ADAF`). 
+    So, there is one test for each combination of drug and feature.
 
-    Here, all feature for a given drug are taken together to perform a
-    Regression analysis. The regression algorithm implemented so far are:
+    Here, all features for a given drug are taken together to perform a
+    Regression analysis (:term:`ODAF`). The regression algorithm implemented so 
+    far are:
 
     - Ridge
     - Lasso
     - ElasticNet
     - LassoLars
 
-    Based on tools from scikit-learn
+    Based on tools from the scikit-learn library.
 
     """
     def __init__(self, ic50, genomic_features=None,
             verbose=False):
-        super(Regression, self).__init__(ic50, genomic_features, 
+        """.. rubric:: Constructor
+
+        :param ic50: an IC50 file
+        :param genomic_features: a genomic feature file
+
+        see :ref:`data` for help on the input data formats.
+
+        """
+        super(Regression, self).__init__(ic50, genomic_features,
             verbose=verbose, set_media_factor=False)
         self.scale = False
 
     def _get_one_drug_data(self, name, randomize_Y=False):
-        """Returns X and Y for a given drug, dropping NA
-
+        """Returns X and Y for a given drug, dropping NAs
 
         :param name: drug name
         :param randomize_Y: randomize Y
@@ -142,7 +160,7 @@ class Regression(BaseModels):
         return X, Y
 
     def _fit_model(self, drug_name, model):
-        """Fit a model given a drug name
+        """call fit method of a model given a drug name
 
         Save the current X, Y, model fitter in _X, _Y and _model attributes
         """
@@ -152,7 +170,21 @@ class Regression(BaseModels):
 
     def plot_importance(self, drug_name, model=None, fontsize=11,
             max_label_length=35, orientation="vertical"):
+        """Plot the absolute weights found by a fittd model.
 
+
+        :param str drug_name:
+        :param model: a model
+        :param int fontsize: (defaults to 11)
+        :param max_label_length: 35 by default
+        :param orientation: orientation of the plot (vertical or horizontal)
+
+        :return: the dataframe with the weights (may be empty)
+
+        .. note:: if no weights are different from zeros, no plots are
+            created.
+
+        """
         X, Y = self._get_one_drug_data(drug_name)
         if model is None:
             model = self.get_best_model(drug_name)
@@ -166,18 +198,29 @@ class Regression(BaseModels):
         if len(df):
             barplot(df, "weight", orientation=orientation, max_label_length=max_label_length,
                 fontsize=fontsize)
-        if len(df) < 5:
-            pylab.xlim(-5,5)
+            # sometimes there is only a few weights close to zero. Set the ylim
+            # to 1 if it is below 0.1. 
+            if pylab.ylim()[1] < 0.1:
+                pylab.ylim([0,1])
+            if len(df) < 5:
+                pylab.xlim(-5,5)
         return df
 
     def _print(self, txt):
         if self.verbose:
             print(txt)
 
-    def get_best_model(self, drug_name, n_folds=10, alphas=None, l1_ratio=0.5):
-        """Return best model fitted using a CV """
+    def get_best_model(self, drug_name, kfolds=10, alphas=None, l1_ratio=0.5):
+        """Return best model fitted using a CV
+
+        :param drug_name:
+        :param kfolds:
+        :param alphas:
+        :param l1_ratio:
+
+        """
         self._print("Running CV to estimate best alpha.")
-        results = self.runCV(drug_name, n_folds=n_folds, alphas=alphas,
+        results = self.runCV(drug_name, kfolds=kfolds, alphas=alphas,
                              l1_ratio=l1_ratio)
         best_alpha = results.alpha
         model = self.get_model(alpha=best_alpha)
@@ -231,7 +274,7 @@ class Regression(BaseModels):
         df1.index = [this[0:max_label_length] for this in df1.index]
         df2.index = [this[0:max_label_length] for this in df2.index]
 
-        # We also want some symmetry so as many red as blue so that the span 
+        # We also want some symmetry so as many red as blue so that the span
         # of positive and negative is equivalent
         N = len(df2) - len(df1)
         if N > 0:
@@ -239,14 +282,14 @@ class Regression(BaseModels):
             for i in range(1, N+1):
                 label = "_dummy%s" % i
                 df1.loc[label, "weight"] = 0
-            df1.index = [x if not x.startswith("_dummy") else "" 
+            df1.index = [x if not x.startswith("_dummy") else ""
                          for x in df1.index]
         elif N < 0:
             # more blue RHS than red LHS
             for i in range(1, abs(N)+1):
                 label = "_dummy%s" % i
                 df2.loc[label, "weight"] = 0
-            df2.index = [x if not x.startswith("_dummy") else "" 
+            df2.index = [x if not x.startswith("_dummy") else ""
                          for x in df2.index]
             df2.sort_values(by="weight", ascending=True, inplace=True)
 
@@ -257,7 +300,7 @@ class Regression(BaseModels):
         self.df1 = df1
         self.df2 = df2
 
-        if len(df1): 
+        if len(df1):
             df1.plot(y="weight", kind="bar",  width=1, lw=1, ax=ax,
                 color="b", legend=False, fontsize=fontsize, figsize=figsize)
         if len(df2):
@@ -265,6 +308,9 @@ class Regression(BaseModels):
                 color="r", sharey=True, legend=False, fontsize=fontsize,
                 figsize=figsize)
         if len(df1) == 0 and len(df2) == 0:
+            pylab.xlim([-5,5])
+            pylab.ylim([-1,1])
+            pylab.grid(True)
             return df
 
         # hide the spines between ax and ax2
@@ -290,16 +336,20 @@ class Regression(BaseModels):
         return df
 
     def _get_rpearson(self, Y_pred, Y_test):
+        self.a = Y_pred
+        self.b = Y_test
         if Y_pred.std() == 0:
             Rp = 0
         else:
             Rp = np.corrcoef(Y_pred, Y_test)[0,1]
+        if abs(Rp) <1e-10:
+            Rp = 0
         return Rp
 
-    def fit(self, drug_name, alpha=1, l1_ratio=0.5, n_folds=10,
+    def fit(self, drug_name, alpha=1, l1_ratio=0.5, kfolds=10,
                     show=True, tol=1e-3, normalize=False,
                     shuffle=False, perturbation=0.01, randomize_Y=False):
-        """Run Elastic Net
+        """Run Elastic Net with a cross validation for one value of alpha
 
         :param drug_name: the drug to analyse
         :param float alpha: note that theis alpha parameter corresponds to the
@@ -309,7 +359,10 @@ class Regression(BaseModels):
             to the alpha  parameter in glmnet R package. l1_ratio set to 0.5
             means that there is a weight equivalent for the Lasso and Ridge
             effects.
-        :param int n_folds: defaults to 10
+        :param int kfolds: defaults to 10
+        :param shuffle: shuffle the indices in the KFold
+        :return: kfolds scores for each fold. The score is the pearson
+            correlation.
 
         .. note:: l1_ratio < 0.01 is not reliable unless sequence of
             alpha is provided.
@@ -317,7 +370,7 @@ class Regression(BaseModels):
         .. note:: alpha = 0 correspond to an OLS analysis
 
         """
-        assert n_folds > 1, "n_folds must be larger than 1"
+        assert kfolds > 1, "kfolds must be larger than 1"
         # Get the data for the requested drug
         X, Y = self._get_one_drug_data(drug_name, randomize_Y=randomize_Y)
 
@@ -326,7 +379,7 @@ class Regression(BaseModels):
                             normalize=normalize, tol=tol)
 
         # Create a cross validation set of indices for training and testing
-        kfold = model_selection.KFold(n_folds, shuffle=shuffle)
+        kfold = model_selection.KFold(kfolds, shuffle=shuffle)
 
         # Store the results
         scores = []
@@ -346,7 +399,7 @@ class Regression(BaseModels):
             # Fit model on the training set
             en.fit(X_train, Y_train)
 
-            # now compare the prediction with Y_test. This is the coefficient 
+            # now compare the prediction with Y_test. This is the coefficient
             # of determination R^2. See scikit learn doc for details.
             Y_pred = en.predict(X_test)
 
@@ -361,7 +414,7 @@ class Regression(BaseModels):
                 pylab.xlabel("prediction")
                 pylab.ylabel("test values")
 
-            if n_folds == 1 and count == 1:
+            if kfolds == 1 and count == 1:
                 break
             else:
                 count += 1
@@ -379,32 +432,42 @@ class Regression(BaseModels):
 
         return scores
 
-    def runCV(self, drug_name, l1_ratio=0.5, alphas=None, n_folds=10,
+    def runCV(self, drug_name, l1_ratio=0.5, alphas=None, kfolds=10,
                        verbose=True, shuffle=True, randomize_Y=False, **kargs):
+        """Perform the Cross validation to get the best alpha parameter.
 
+        :return: an instance of :class:`RegressionCVResults` that contains
+            alpha parameter and Pearson correlation value.
+        """
         # Get the data for the requested drug
         X, Y = self._get_one_drug_data(drug_name, randomize_Y=randomize_Y)
 
+        if kfolds > len(X):
+            kfolds = len(X)
+
         # Creates a model
-        kfold = model_selection.KFold(n_folds, shuffle=shuffle)
+        kfold = model_selection.KFold(kfolds, shuffle=shuffle)
         en = self._get_cv_model(l1_ratio=l1_ratio, alphas=alphas, kfold=kfold, **kargs)
 
         # Fit the model
-        model = en.fit(X, Y)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model = en.fit(X, Y)
         prediction = model.predict(X)
 
         Rp = self._get_rpearson(prediction, Y)
 
-        res = RegressionCVResults(model, Rp, n_folds)
+        res = RegressionCVResults(model, Rp, kfolds)
         if verbose: print(res)
         return res
 
     def tune_alpha(self, drug_name, alphas=None, N=80, l1_ratio=0.5,
-                   n_folds=10, show=True, shuffle=False, alpha_range=[-2.8,0.1]):
+                   kfolds=10, show=True, shuffle=False, alpha_range=[-2.8,0.1],
+                   randomize_Y=False):
         """Interactive tuning of the model (alpha).
 
         This is much faster than :meth:`plot_cindex` but much slower than
-        ElasticNetCV
+        :meth:`runCV`.
 
         .. plot::
             :include-source:
@@ -431,7 +494,8 @@ class Regression(BaseModels):
         all_scores = []
         for alpha in alphas:
             scores = self.fit(drug_name, alpha, l1_ratio=l1_ratio,
-                              n_folds=n_folds, shuffle=shuffle)
+                              kfolds=kfolds, shuffle=shuffle,
+                         randomize_Y=randomize_Y)
             all_scores.append(scores)
 
         # We can now plot the results that is the mean scores + error enveloppe
@@ -448,7 +512,7 @@ class Regression(BaseModels):
             pylab.errorbar(pylab.log(alphas), mu, yerr=sigma, color="gray")
             pylab.plot(pylab.log(alphas), mu, 'or')
             pylab.axvline(pylab.log(alpha_best), lw=4, alpha=0.5, color='g')
-            pylab.title("Mean scores (pearson) across alphas for Kfold=%s" % n_folds)
+            pylab.title("Mean scores (pearson) across alphas for Kfold=%s" % kfolds)
             pylab.xlabel("ln(alpha)")
             pylab.ylabel("mean score (pearson)")
             pylab.grid()
@@ -458,24 +522,55 @@ class Regression(BaseModels):
         return results
         #return alphas, all_scores, maximum, alpha_best
 
-    def check_randomness(self, drug_name, n_folds=10, N=10, show=True,
-            progress=False):
+    def check_randomness(self, drug_name, kfolds=10, N=10,
+            progress=False, nbins=40, **kargs):
+        """Compute Bayes factor between NULL model and best model fitted N times
 
+
+        :param int N: optimise NULL models and real model N times
+
+        Bayes factor::
+
+            S = sum([s>r for s,r in zip(scores, random_scores)])
+            proba = S / len(scores)
+            bayes_factor = 1. / (1-proba)
+
+        Interpretation for values of the Bayes factor according to Kass 
+        and Raftery (1995).
+
+        ============================  ==================
+            Interpretation                  B(1,2)
+        ============================  ==================
+           Very strong support for 1   < 0.0067
+                    Strong support 1   0.0067 to 0.05
+              Positive support for 1   0.05 to .33
+                  Weak support for 1   0.33 to 1
+         No support for either model   1
+                  Weak support for 2   1 to 3
+              Positive support for 2   3 to 20
+                Strong support for 2   20 to 150
+           Very strong support for 2   > 150
+        ============================  ==================
+
+        references: http://www.socsci.uci.edu/~mdlee/LodewyckxEtAl2009.pdf
+            http://www.aarondefazio.com/adefazio-bayesfactor-guide.pdf
+        """
         scores = []
         pb = Progress(N)
         for i in range(N):
             # Fit a model using CV
-            inter_results = self.runCV(drug_name, n_folds=n_folds, verbose=False)
+            inter_results = self.runCV(drug_name, kfolds=kfolds,
+                                       verbose=False, **kargs)
             scores.append(inter_results.Rp)
-            if progress: 
+            if progress:
                 pb.animate(i+1)
 
         random_scores = []
         pb = Progress(N)
         for i in range(N):
             # Fit a model using CV
-            inter_results = self.runCV(drug_name, n_folds=n_folds,
-                                randomize_Y=True, verbose=False)
+            inter_results = self.runCV(drug_name, kfolds=kfolds,
+                                randomize_Y=True, verbose=False, **kargs)
             random_scores.append(inter_results.Rp)
             if progress:
                 pb.animate(i+1)
@@ -494,19 +589,20 @@ class Regression(BaseModels):
             # Set the maximum instead of infinite
             # bayes_factor = np.inf
             bayes_factor = 1. / (1./len(scores))
-            
         else:
             bayes_factor = 1. / (1-proba)
         results['bayes_factor'] = bayes_factor
 
-        if show:
-            M = max(max(scores), max(random_scores)) * 1.2
-            bins = pylab.linspace(0, M, 40)
-            pylab.clf()
-            pylab.hist(scores, bins=bins, color="b", alpha=0.5)
-            pylab.hist(random_scores, color="r", alpha=0.5, bins=bins)
-            pylab.title("ttest=%(ttest_pval).3e, bayes=%(bayes_factor)s" % results)
-            pylab.grid(True)
+        M = max(max(scores), max(random_scores)) * 1.2
+        m = min(min(scores), min(random_scores)) * 1.2
+        bins = pylab.linspace(m, M, nbins)
+        pylab.clf()
+        pylab.hist(scores, bins=bins, color="b", alpha=0.5)
+        pylab.hist(random_scores, color="r", alpha=0.5, bins=bins)
+        pylab.title("Bayes factor=%(bayes_factor).2f" % results)
+        pylab.grid(True)
+        pylab.xlabel("Coefficient of correlation Rp")
+        pylab.xlabel("#")
 
         return results
 
@@ -543,8 +639,27 @@ class Regression(BaseModels):
         return dfall
 
     def boxplot(self, drug_name, model, n=5, minimum_match_per_combo=10,
-                bx_vert=True, bx_alpha=0.5, verbose=False):
+                bx_vert=True, bx_alpha=0.5, verbose=False, max_label_length=40):
+        """Boxplot plot of the most important features.
 
+        :param int n: maximum most important features to be shown (in term
+            of coefficient/weight used in the model)
+        :param int minimum_match_per_combo: minimum number of alterations
+            required for a feature to be shown
+
+        ::
+
+            # assuming there is a drug ID = 29
+            r = GDSCLasso()
+            model = r.get_best_model(29)
+            r.boxplot(29, model)
+
+        In addition, we also show the wild type case where the total number 
+        of mutations is 0.
+
+
+        """
+        # The data and fitted model based on provided model
         X, Y = self._get_one_drug_data(drug_name)
         fitted_model = self._fit_model(drug_name, model)
         df = pd.DataFrame({'name': X.columns, 'weight': fitted_model.coef_})
@@ -613,16 +728,26 @@ class Regression(BaseModels):
         sorted_names_by_mean = df.sort_values(by="mean")['names']
 
         data = [Y.ix[indices[name]].dropna() for name in sorted_names_by_mean]
-        bx = BoxSwarm(data, sorted_names_by_mean)
-        if bx_vert is False:
-            bx.xlabel = "Drug response"
-        else:
-            bx.ylabel = "Drug response"
-        bx.plot(vert=bx_vert, alpha=bx_alpha, widths=0.5)
+
+        # the dropna means some subdata/names are now empty
+        sorted_names_by_mean = [name for this,name in zip(data, sorted_names_by_mean) if len(this)]
+        data = [this for this in data if len(this)]
+
+        for subdata in data:
+            subdata.index.name = subdata.index.name[0:max_label_length]
+
+        if len(data):
+            bx = BoxSwarm(data, sorted_names_by_mean)
+            if bx_vert is False:
+                bx.xlabel = "Drug response"
+            else:
+                bx.ylabel = "Drug response"
+            bx.plot(vert=bx_vert, alpha=bx_alpha, widths=0.5)
         return {'weights': weights, "data":data, }
 
 
 class GDSCRidge(Regression):
+    """Same as :class:`Regression`"""
     def __init__(self, ic50, genomic_features=None, verbose=False):
         super(GDSCRidge, self).__init__(ic50, genomic_features,
                                         verbose=verbose)
@@ -637,6 +762,7 @@ class GDSCRidge(Regression):
 
 
 class GDSCLasso(Regression):
+    """See as :class:`Regression`"""
     def __init__(self, ic50, genomic_features=None, verbose=False):
         super(GDSCLasso, self).__init__(ic50, genomic_features,
                                         verbose=verbose)
@@ -649,6 +775,7 @@ class GDSCLasso(Regression):
 
 
 class GDSCLassoLars(Regression):
+    """See as :class:`Regression`"""
     def __init__(self, ic50, genomic_features=None, verbose=False):
         super(GDSCLassoLars, self).__init__(ic50, genomic_features,
                                             verbose=verbose)
@@ -667,7 +794,6 @@ class GDSCElasticNet(Regression):
 
     As compared to the :class:`GDSCRidge` and :class:`GDSCLasso`
 
-
     Here is an example on how to perform the analysis, which is similar to the
     ANOVA API:
 
@@ -675,12 +801,12 @@ class GDSCElasticNet(Regression):
         :include-source:
         :width: 80%
 
-        from gdsctools import ElasticNet, gdsctools_data, IC50, GenomicFeatures
+        from gdsctools import GDSCElasticNet, gdsctools_data, IC50, GenomicFeatures
         ic50 = IC50(gdsctools_data("IC50_v5.csv.gz"))
         gf = GenomicFeatures(gdsctools_data("genomic_features_v5.csv.gz"))
 
         en = GDSCElasticNet(ic50, gf)
-        en.elastic_net(1047, alpha=0.01, show=True)
+        en.enetpath_vs_enet(1047)
 
 
     For more information about the input data sets please see
@@ -710,14 +836,14 @@ class GDSCElasticNet(Regression):
     def _get_cv_model(self, l1_ratio=0.5, alphas=None, kfold=None, **kargs):
         return linear_model.ElasticNetCV(l1_ratio=l1_ratio, alphas=alphas, cv=kfold, **kargs)
 
-    def plot_cindex(self, drug_name, alphas, l1_ratio=0.5, n_folds=10,
+    def plot_cindex(self, drug_name, alphas, l1_ratio=0.5, kfolds=10,
             hold=False):
         """Tune alpha parameter using concordance index
 
 
         This is longish and performs the following task. For a set of alpha
         (list), run the elastic net analysis for a given **l1_ratio** with
-        **n_folds**. For each alpha, get the CIndex and find the CINdex for
+        **kfolds**. For each alpha, get the CIndex and find the CINdex for
         which the errors are minimum.
 
         .. warning:: this is a bit longish (300 seconds for 10 folds
@@ -727,7 +853,7 @@ class GDSCElasticNet(Regression):
 
         CI_train = {}
         CI_test = {}
-        for c in range(n_folds):
+        for c in range(kfolds):
             CI_train[c] = []
             CI_test[c] = []
 
@@ -735,10 +861,10 @@ class GDSCElasticNet(Regression):
 
         for i, alpha in enumerate(alphas):
             self.fit(drug_name, alpha=alpha, l1_ratio=l1_ratio,
-                             n_folds=n_folds)
+                             kfolds=kfolds)
 
             # Look at the results and store cindex
-            for kf in range(n_folds):
+            for kf in range(kfolds):
                 x_train = self.kfold_data['x_train'][kf].values
                 y_train = self.kfold_data['y_train'][kf].values
 
@@ -796,7 +922,7 @@ class GDSCElasticNet(Regression):
         alphas, coeffs, _ = enet_path(X, Y, l1_ratio=l1_ratio, alphas=alphas)
 
         # estimate the best alpha for later
-        best_alpha = self.runCV(drug_name, verbose=False)['alpha']
+        best_alpha = self.runCV(drug_name, verbose=False).alpha
 
         # The final data, coeffs is sorted by coefficients on the smallest alpha
         coeffs = pd.DataFrame(coeffs, index=list(X.columns))
@@ -825,8 +951,9 @@ class GDSCElasticNet(Regression):
         pylab.axvline(pylab.log(data['best_alpha']), color="r", lw=2)
         pylab.xlabel("ln alpha")
         pylab.ylabel("Coefficients")
+        pylab.grid(True)
         # The data is sorted with last rows having largest coeff and last
-        # columns the smallest 
+        # columns the smallest
         for text,v in data['coeffs'].iloc[-5:,-1].items():
             pylab.text(pylab.log(min(data["alphas"])),v,text, fontsize=fontsize)
 

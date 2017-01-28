@@ -28,7 +28,7 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 #warnings.simplefilter(action="ignore", category=UserWarning)
 
 
-__all__ = ['anova_pipeline', 'ANOVAOptions']
+__all__ = ['main', 'ANOVAOptions']
 
 
 def print_color(txt, func_color=darkgreen, underline=False):
@@ -41,7 +41,7 @@ def print_color(txt, func_color=darkgreen, underline=False):
         print(txt)
 
 
-def anova_pipeline(args=None):
+def main(args=None):
     """This function is used by the standalone application called
     **gdsctools_anova**
 

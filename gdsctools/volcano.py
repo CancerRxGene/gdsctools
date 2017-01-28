@@ -693,6 +693,11 @@ class ScatterJS(object):
         self._colname_y = y
         self._colname_size = size
 
+        self.minX = 0
+        self.minY = 0
+        self.maxX = 1
+        self.maxY = self.data[self._colname_y].max() * 1.1
+
     def get_html(self):
 
         # We have 3 colors but sometimes you may have only one or 2.
@@ -726,9 +731,11 @@ class ScatterJS(object):
         jinja['xlabel'] = '"%s"' % self.xlabel
         jinja['ylabel'] = '"%s"' % self.ylabel
 
+        selection = [self._colname_x, self._colname_y]
+
         text = []
         for index in zip(self.data.index):
-            text.append("<pre>%s</pre>" % self.data.ix[index].to_string())
+            text.append("<pre>%s</pre>" % self.data.ix[index][selection].to_string())
         jinja['vars'] = text
 
         #self.data.markersize /= (self.data.markersize.max()/3.)
@@ -740,12 +747,12 @@ class ScatterJS(object):
         except: #for py3.3 on travis
             jinja['data'] = np.around(self.data[selection]).values.tolist()
 
-        jinja['title'] = '"Regression coefficient/ttest/bayes factor for all drugs"' 
+        jinja['title'] = '"Regression coefficient vs Bayes factor for all drugs"' 
 
-        jinja['minX'] = 0
-        jinja['minY'] = 0
-        jinja['maxX'] = 1
-        jinja['maxY'] = self.data[self._colname_y].max() * 1.1
+        jinja['minX'] = self.minX
+        jinja['minY'] = self.minY
+        jinja['maxX'] = self.maxX
+        jinja['maxY'] = self.maxY
 
         self.html = template.render(jinja)
         return self.html

@@ -10,7 +10,7 @@ References
 ANOVA related
 ------------------
 
-The regression and ANOVA analysis
+The ANOVA analysis
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. automodule:: gdsctools.anova
     :members:
@@ -74,16 +74,13 @@ Boxplot and beeswarm
     :members:
     :undoc-members:
 
-Pipelines and reports
+reports
 ----------------------------
-.. automodule:: gdsctools.anova_pipelines
-    :members:
-    :undoc-members:
-
 
 .. automodule:: gdsctools.report
     :members:
     :undoc-members:
+
 
 Data-related
 --------------
@@ -113,7 +110,33 @@ Logistics
 Regression Analysis
 -------------------------
 
-.. automodule:: gdsctools.regression
+Common Regression class
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: gdsctools.regression.Regression
+    :members:
+    :undoc-members:
+
+Lasso
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: gdsctools.regression.GDSCLasso
+    :members:
+    :undoc-members:
+
+ElasticNet
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: gdsctools.regression.GDSCElasticNet
+    :members:
+    :undoc-members:
+
+Ridge
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: gdsctools.regression.GDSCRidge
+    :members:
+    :undoc-members:
+
+Report
+~~~~~~~~~~~~
+.. automodule:: gdsctools.regression_report
     :members:
     :undoc-members:
 

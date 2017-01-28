@@ -3,8 +3,8 @@
 Data Packages
 =================
 
-.. warning:: Only one IC50 files should be provided. It is be cut 
-    according to the GF file.
+.. warning:: Only one IC50 files should be provided. It is filtered out 
+    according to the genomic feature file.
 
 Definition
 --------------
@@ -25,8 +25,7 @@ The main directory contains a file named **index.html**. Many other HTML files
 may be present but the **index** is your entry point to browse the content of
 data package.
 
-
-THe directory **css** and **js** contains resources required by the HTML
+The directory **css** and **js** contains resources required by the HTML
 documents.
 
 The **INPUT** directory contains 3 data files and the settings used during the

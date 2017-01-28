@@ -68,6 +68,7 @@ class ANOVAReport(object):
 
       - The field *ANOVA_FEATURE_FDR* must be < FDR_threshold
       - The field *ANOVA_FEATURE_pval* must be < pvalue_threshold
+
     It is then labelled **sensible** if *FEATURE_delta_MEAN_IC50* is 
     below 0, otherwise it is **resistant**.
 
