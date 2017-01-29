@@ -18,7 +18,9 @@ assert config['method'] in ['lasso', "elastic_net", "ridge"]
 
 DRUGIDS = gd.drugIds
 PREFIX = "gdsctools_regression_"
-
+IMAGE_DIR = "images"
+DATA_PREFIX = "data/" + PREFIX
+IMAGE_PREFIX = "images/" + PREFIX
 
 ################################################  NOTHING TO CHANGE HERE BELOW
 # RUNME as follows:
@@ -35,27 +37,28 @@ rule all:
 
 rule report:
     input:
-        PREFIX + "scatter_plot.png",
-        PREFIX + "weights.csv",
-        PREFIX + "results.csv",
+        IMAGE_PREFIX + "scatter_plot.png",
+        DATA_PREFIX + "weights.csv",
+        DATA_PREFIX + "results.csv",
     output: "index.html"
     run:
         from gdsctools import regression_report
-        report = regression_report.RegressionReport(config['method'], image_dir=".")
+        report = regression_report.RegressionReport(config['method'],
+                image_dir=IMAGE_DIR, config=config)
         report.create_html_main()
         report.create_html_drug()
 
 
 rule all_drug_all_features:
     input:
-        expand(PREFIX+"results_{drugid}.json", drugid=DRUGIDS),
-        expand(PREFIX+"weights_{drugid}.csv", drugid=DRUGIDS),
+        expand(DATA_PREFIX +"results_{drugid}.json", drugid=DRUGIDS),
+        expand(DATA_PREFIX + "weights_{drugid}.csv", drugid=DRUGIDS),
 
 
 rule get_weights:
     message: "gather back all individual weights"
-    input: expand(PREFIX+"weights_{drugid}.csv", drugid=DRUGIDS),
-    output: PREFIX+"weights.csv"
+    input: expand(DATA_PREFIX + "weights_{drugid}.csv", drugid=DRUGIDS),
+    output: DATA_PREFIX + "weights.csv"
     run:
         df = pd.concat(
             [pd.read_csv(this).set_index("features") for this in input],
@@ -65,8 +68,8 @@ rule get_weights:
 
 
 rule scatter_plot:
-    input: PREFIX+"results.csv"
-    output: PREFIX+"scatter_plot.png"
+    input: DATA_PREFIX + "results.csv"
+    output: IMAGE_PREFIX + "scatter_plot.png"
     run:
         df = pd.read_csv(input[0]).set_index("drugid")
         pylab.clf()
@@ -81,8 +84,8 @@ rule scatter_plot:
 
 
 rule get_results:
-    input: expand(PREFIX+"results_{drugid}.json", drugid=DRUGIDS),
-    output: PREFIX+"results.csv"
+    input: expand(DATA_PREFIX + "results_{drugid}.json", drugid=DRUGIDS),
+    output: DATA_PREFIX + "results.csv"
     run:
         data = []
         for this in input:
@@ -95,13 +98,11 @@ rule get_results:
 
 rule one_drug_all_features:
     output:
-        PREFIX+"weights_{drugid}.csv",
-        PREFIX+"results_{drugid}.json",
-    params:
-        prefix=PREFIX
+        DATA_PREFIX + "weights_{drugid}.csv",
+        DATA_PREFIX + "results_{drugid}.json",
     run:
         def _pngname(tag):
-            return "%s_%s_%s.png" % (params.prefix, tag, wildcards.drugid)
+            return IMAGE_PREFIX + "_%s_%s.png" % (tag, wildcards.drugid)
         drugid = int(wildcards.drugid)
 
         # Get best model
@@ -126,7 +127,7 @@ rule one_drug_all_features:
             pylab.close()
 
         # Boxplots
-        boxres = gd.boxplot(drugid, model=bestmodel, n=10, bx_vert=False)
+        boxres = gd.boxplot(drugid, model=bestmodel, n=config['boxplot_n'], bx_vert=False)
         if len(boxres['data']):
             pylab.savefig(_pngname("boxplot"))
             pylab.close()

@@ -40,7 +40,7 @@ class RegressionReport(object):
 
     """
     def __init__(self, method, directory=".", verbose=True, image_dir="images",
-            config={"boxplot_n": "?"}):
+            data_dir="data", config={"boxplot_n": "?"}):
         """.. rubric:: Constructor
 
         :param gdsc: the instance with which you created the results to report
@@ -56,7 +56,8 @@ class RegressionReport(object):
         self.output_dir = "."
         self.verbose = verbose
         self.prefix = "gdsctools_regression_"
-        self.prefix_images = image_dir + os.sep +"gdsctools_regression__"
+        self.prefix_images = image_dir + os.sep +"gdsctools_regression_"
+        self.prefix_data = data_dir + os.sep +"gdsctools_regression_"
         self.filenames = glob.glob(self.prefix_images + "boxplot_*png")
         self.drugids =  [this.rstrip(".png").lstrip(self.prefix_images).lstrip("boxplot_") 
                         for this in self.filenames]
@@ -94,7 +95,7 @@ class HTMLOneDrug(ReportMain):
         self.title = 'Single Drug analysis (%s)' % self.drug
         self.params = {"drugid": self.drug}
 
-        filename_template = self.caller.prefix + "%(name)s_" + "%s." % self.drug 
+        filename_template = self.caller.prefix_data + "%(name)s_" + "%s." % self.drug 
         results_filename = filename_template % {"name":"results"} + "json"
 
         with open(results_filename, "r") as fh:
@@ -180,7 +181,10 @@ class HTMLPageMain(ReportMain):
 
 
         # The main CSV tables with bayes factor and links to each drug ID
-        filename = self.caller.prefix + "results.csv"
+        filename = self.caller.prefix_data + "results.csv"
+        print(self.caller.prefix_data)
+        print(filename)
+
         df = pd.read_csv(filename)
         df['ttest (-log10)'] = -pylab.log10(df['ttest'])
         # prevents inf to fail in the HTMLTable
@@ -229,7 +233,7 @@ class HTMLPageMain(ReportMain):
         self.jinja["sections"].append(html)
 
     def _set_scatter(self):
-        filename = self.caller.prefix + "results.csv"
+        filename = self.caller.prefix_data + "results.csv"
         df = pd.read_csv(filename)
         df["markersize"] = 20
         js = ScatterJS(df, x="Rp", y="bayes", color="bayes", size="markersize")

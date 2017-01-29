@@ -48,12 +48,14 @@ from distutils.core import setup, Extension
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # on rtd, pandas is 1.3.1 cannot use something better for now (march 2016)
+
+# jinja <= 2.9.4
 if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc"]
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
         'pandas>=0.19', 'easydev>=0.9.31', 'scipy', "colormap>=0.9.9",
-        'jinja2', 'statsmodels', "scikit-learn", "reports>=0.3.0", 
+        'jinja2<=2.9.4', 'statsmodels', "scikit-learn", "reports>=0.3.0", 
         "sphinx-gallery", "numpydoc", "biokit>=0.3.4", "colorlog"],
 
 
