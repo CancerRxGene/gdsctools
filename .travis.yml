@@ -30,6 +30,8 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose pandas coverage statsmodels scikit-learn biokit
   - pip install nose easydev --upgrade
   - pip install coveralls
+  - pip install biokit>=0.3.4
+
 # # command to run tests, e.g. python setup.py test
 script:
   - python setup.py nosetests --with-coverage --cover-package gdsctools
