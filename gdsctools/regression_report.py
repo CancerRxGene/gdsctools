@@ -14,7 +14,7 @@
 #  website: http://github.com/CancerRxGene/gdsctools
 #
 ##############################################################################
-"""Code related to the ANOVA analysis to find associations between drug IC50s
+"""Code related to the Regression analysis to find associations between drug IC50s
 and genomic features"""
 import os
 import glob
@@ -43,9 +43,9 @@ class RegressionReport(object):
             data_dir="data", config={"boxplot_n": "?"}):
         """.. rubric:: Constructor
 
-        :param gdsc: the instance with which you created the results to report
-        :param results: the results returned by :meth:`ANOVA.anova_all`. If
-            not provided, the ANOVA is run on the fly.
+        :param method: Method used in the regression analysis (lasso,
+            elasticnet, ridge)
+        :param results: 
 
         """
         self.image_dir = image_dir
@@ -102,9 +102,9 @@ class HTMLOneDrug(ReportMain):
             data = json.loads(fh.read())
         try:data["bayes"] = easydev.precision(data['bayes'], 3)
         except:pass
-        try:data["alpha"] = easydev.precision(data['alpha'], 3)
+        try:data["alpha"] = easydev.precision(data['alpha'], 5)
         except:pass
-        try:data["Rp"] = easydev.precision(data['Rp'], 3)
+        try:data["Rp"] = easydev.precision(data['Rp'], 4)
         except:pass
         self.params.update(data)
         self.params['method'] = self.caller.method
@@ -132,8 +132,7 @@ class HTMLOneDrug(ReportMain):
 
         text['randomness'] = ("Here we run the regression analysis %s times and "
             "plot the regression value (x-axis) for the real data (blue) "
-            "and randomising the variable to explain (red). The bayes factor is"
-            "provided () " )
+            "and randomising the variable to explain (red). " )
         text['randomness'] %= self.caller.config['randomness']
 
         text['weights'] = ("Feature with non-null weights. If empty, it"

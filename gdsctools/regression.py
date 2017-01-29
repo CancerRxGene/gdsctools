@@ -70,8 +70,7 @@ class RegressionCVResults(object):
     - :attr:`kfold`: number of folds used
     - :attr:`Rp`
     - :attr:`alpha`: best alpha parameter
-    - :attr:`ln_alpha`  best alpĥa parameter (log scale)
-
+    - :attr:`ln_alpha`  best alpha parameter (log scale)
     """
     def __init__(self, model, Rp, kfold=None):
         self.model = model
