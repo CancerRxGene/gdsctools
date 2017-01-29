@@ -5,19 +5,19 @@ ChangeLog
 
 Version 0.17
 ------------
+:summary: Fixing bunch of deprecated warnings, working regression 
+    pipeline based on snakemake
 
-* CHANGES and BUG Fixes in regression (snakemake pipeline)
+* CHANGES and BUG Fixes:
+
+     - regression (snakemake pipeline)
+     - add missing init and regression modules
+     - starting to use colorlog
 
 * NEWS:
 
     - add regression script to create the snakefile workflow easily
 
-
-
-Version 0.16.5
----------------
-
-* BUG fix: typo in the setup
 
 Version 0.16.4
 -----------------

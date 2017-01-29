@@ -12,7 +12,7 @@ dependencies:
 - statsmodels
 - pip:
   - matplotlib
-  - easydev>=0.9.21
+  - easydev>=0.9.31
   - bioservices
   - reports
   - docutils<0.13.1 # https://github.com/sphinx-doc/sphinx/issues/3212

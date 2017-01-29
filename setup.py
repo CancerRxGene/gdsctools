@@ -7,8 +7,8 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 16
-_MICRO               = 5
+_MINOR               = 17
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -56,7 +56,7 @@ if on_rtd is True:  # only import and set the theme if we're building docs
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
         'pandas>=0.19', 'easydev>=0.9.31', 'scipy', "colormap>=0.9.9",
-        'jinja2<=2.9.4', 'statsmodels', "scikit-learn", "reports>=0.3.0", 
+        'jinja2<=2.9.4', 'statsmodels', "scikit-learn", "reports>=0.3.0",
         "sphinx-gallery", "numpydoc", "biokit>=0.3.4", "colorlog"],
 
 
