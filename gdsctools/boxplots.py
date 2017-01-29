@@ -27,6 +27,8 @@ import jinja2
 from jinja2 import Environment, PackageLoader
 from easydev import get_package_location
 
+import colorlog as logger
+
 __all__ = ['BoxPlots', 'BoxPlotsJS']
 
 
@@ -105,7 +107,7 @@ class BoxPlots(object):
 
         results = self._get_boxplot_data(mode)
         if results is None:
-            print("WARNING: No tissue with at least 2 pos and 2 neg found (no image created).")
+            logger.warning("No tissue with at least 2 pos and 2 neg found (no image created).")
             return
 
         fig = pylab.figure(fignum)
@@ -169,7 +171,6 @@ class BoxPlots(object):
                 lw=self.lw, fontsize=self.fontsize)
 
 
-        print(self.odof.drug_name)
         if self.odof.drug_name:
             drug_name = "%s (%s)" % (self.drug, self.odof.drug_name)
         else:

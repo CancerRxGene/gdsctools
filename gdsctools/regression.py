@@ -35,9 +35,6 @@ from sklearn import preprocessing
 from sklearn import model_selection
 from sklearn import linear_model # must use the module rather than classes to
 
-from sklearn.exceptions import ConvergenceWarning
-warnings.simplefilter('ignore', ConvergenceWarning)
-
 
 __all__ = ["Regression", 'GDSCRidge', "GDSCLasso", "GDSCElasticNet", 
            "RegressionCVResults"]
@@ -457,7 +454,8 @@ class Regression(BaseModels):
         Rp = self._get_rpearson(prediction, Y)
 
         res = RegressionCVResults(model, Rp, kfolds)
-        if verbose: print(res)
+        if verbose:
+            print(res)
         return res
 
     def tune_alpha(self, drug_name, alphas=None, N=80, l1_ratio=0.5,
@@ -522,11 +520,16 @@ class Regression(BaseModels):
         #return alphas, all_scores, maximum, alpha_best
 
     def check_randomness(self, drug_name, kfolds=10, N=10,
-            progress=False, nbins=40, **kargs):
+            progress=False, nbins=40, show=True, **kargs):
         """Compute Bayes factor between NULL model and best model fitted N times
 
 
+        :param drug_name:
+        :param kfolds:
         :param int N: optimise NULL models and real model N times
+        :param progress:
+        :param nbins:
+        :param show:
 
         Bayes factor::
 
@@ -594,14 +597,15 @@ class Regression(BaseModels):
 
         M = max(max(scores), max(random_scores)) * 1.2
         m = min(min(scores), min(random_scores)) * 1.2
-        bins = pylab.linspace(m, M, nbins)
-        pylab.clf()
-        pylab.hist(scores, bins=bins, color="b", alpha=0.5)
-        pylab.hist(random_scores, color="r", alpha=0.5, bins=bins)
-        pylab.title("Bayes factor=%(bayes_factor).2f" % results)
-        pylab.grid(True)
-        pylab.xlabel("Coefficient of correlation Rp")
-        pylab.xlabel("#")
+        if show:
+            bins = pylab.linspace(m, M, nbins)
+            pylab.clf()
+            pylab.hist(scores, bins=bins, color="b", alpha=0.5)
+            pylab.hist(random_scores, color="r", alpha=0.5, bins=bins)
+            pylab.title("Bayes factor=%(bayes_factor).2f" % results)
+            pylab.grid(True)
+            pylab.xlabel("Coefficient of correlation Rp")
+            pylab.xlabel("#")
 
         return results
 
@@ -609,6 +613,10 @@ class Regression(BaseModels):
         """
 
         shows the coefficient of each optimised model for each drug
+
+        This works for demonstration and small data sets.
+
+        
         """
         drugids = self.drugIds
         from easydev import Progress
@@ -934,13 +942,14 @@ class GDSCElasticNet(Regression):
 
         return results
 
-    def _plot_enet(self, data, numfig=1, fontsize=10):
+    def _plot_enet(self, data, numfig=1, labels_to_show=5, fontsize=10):
         """Plot the enetpath data
 
         :param coeffs: a dataframe. The rows are the features. The columns are
             the alpha. The matrix contains the coefficients
         :param coeffs: the alphas. Must match the columns of the coeffs
             dataframe
+        :param labels_to_show: number of labels to add on the figure
 
         """
         pylab.figure(numfig)
@@ -953,8 +962,18 @@ class GDSCElasticNet(Regression):
         pylab.grid(True)
         # The data is sorted with last rows having largest coeff and last
         # columns the smallest
-        for text,v in data['coeffs'].iloc[-5:,-1].items():
-            pylab.text(pylab.log(min(data["alphas"])),v,text, fontsize=fontsize)
+
+        if len(data) < labels_to_show:
+            labels_to_show = len(data)
+
+        try:
+            # recent python3/pandas version
+            for text,v in data['coeffs'].iloc[-labels_to_show:,-1].items():
+                pylab.text(pylab.log(min(data["alphas"])),v,text, fontsize=fontsize)
+        except:
+            # old python2/pandas
+            for text,v in data['coeffs'].iloc[-labels_to_show:,-1].iteritems():
+                pylab.text(pylab.log(min(data["alphas"])),v,text, fontsize=fontsize)
 
 
 def barplot(df, colname, color="sign",colors=("b", "r"),

@@ -15,12 +15,9 @@ Please See documentation on gdsctools.readthedocs.org
 """
 import pkg_resources
 import os
-import easydev
 
 import warnings
 warnings.simplefilter('ignore', DeprecationWarning)
-
-#import colorlog as logger
 
 try:
     version = pkg_resources.require("gdsctools")[0].version
@@ -39,6 +36,7 @@ except:
 # To be defined before importing any modules
 def gdsctools_data(filename, where=None):
     """Simple utilities to retrieve data sets from gdsctools/share directory"""
+    import easydev
     gdsctools_path = easydev.get_package_location('gdsctools')
     share = os.sep.join([gdsctools_path, "gdsctools", 'data'])
     # in the code one may use / or \
@@ -49,7 +47,6 @@ def gdsctools_data(filename, where=None):
     if os.path.exists(filename) is False:
         raise Exception('unknown file %s' % filename)
     return filename
-
 
 from gdsctools.readers import IC50, GenomicFeatures, DrugDecode, Reader
 from gdsctools.anova import ANOVA
@@ -67,6 +64,7 @@ from gdsctools.omnibem import OmniBEMBuilder
 
 
 def gdsctools_help(name=None):
+    import easydev
     if name is None:
         easydev.onweb('http://gdsctools.readthedocs.org')
     else:

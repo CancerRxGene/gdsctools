@@ -16,7 +16,7 @@ drugid = 1047
 
 #####################################################
 # Find best model and corresponding alpha
-res = gd.runCV(drugid, n_folds=10)
+res = gd.runCV(drugid, kfolds=10)
 best_alpha = res.alpha
 
 #####################################################

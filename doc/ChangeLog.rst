@@ -7,7 +7,12 @@ Version 0.17
 ------------
 
 * CHANGES and BUG Fixes in regression (snakemake pipeline)
-* More documentation
+
+* NEWS:
+
+    - add regression script to create the snakefile workflow easily
+
+
 
 Version 0.16.5
 ---------------

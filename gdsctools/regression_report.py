@@ -24,6 +24,8 @@ from gdsctools.report import HTMLTable, ReportMain
 from gdsctools.readers import DrugDecode
 from gdsctools.volcano import ScatterJS
 
+import colorlog as logger
+
 import pandas as pd
 import pylab
 
@@ -65,7 +67,7 @@ class RegressionReport(object):
     def create_html_drug(self):
         """report for each individual drug"""
         for drugid in self.drugids:
-            print('Creating HTML report for drug %s' % drugid)
+            logger.info('Creating HTML report for drug %s' % drugid)
             report = HTMLOneDrug(drugid, caller=self)
             report.create_report(onweb=False)
 
@@ -73,7 +75,7 @@ class RegressionReport(object):
         """Create HTML main document (summary)"""
 
         if self.verbose:
-            print("Creating main HTML page in directory %s" %
+            logger.info("Creating main HTML page in directory %s" %
                 (self.directory))
         ReportMain(directory=self.directory, verbose=self.verbose, mode="summary")
 
@@ -152,7 +154,7 @@ class HTMLOneDrug(ReportMain):
                 """ % self.params
                 self.jinja['sections'].append(section)
             else:
-                print("%s not found. Skipped" % filename)
+                logger.warning("%s not found. Skipped" % filename)
 
 
 class HTMLPageMain(ReportMain):
@@ -181,8 +183,6 @@ class HTMLPageMain(ReportMain):
 
         # The main CSV tables with bayes factor and links to each drug ID
         filename = self.caller.prefix_data + "results.csv"
-        print(self.caller.prefix_data)
-        print(filename)
 
         df = pd.read_csv(filename)
         df['ttest (-log10)'] = -pylab.log10(df['ttest'])

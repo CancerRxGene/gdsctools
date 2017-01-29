@@ -33,6 +33,7 @@ import pylab
 import numpy as np
 import easydev
 
+import colorlog
 
 __all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecode']
 
@@ -423,12 +424,12 @@ class IC50(Reader, CosmicRows):
 
         _cols = [str(x) for x in self.df.columns]
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
-            warnings.warn("'COSMIC ID' column name is deprecated since " +
+            colorlog.warning("'COSMIC ID' column name is deprecated since " +
             "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
             self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID")
                     for x in self.df.columns]
         if "CL" in _cols and "COSMID_ID" not in self.df.columns:
-            warnings.warn("'CL column name is deprecated since " +
+            colorlog.warning("'CL column name is deprecated since " +
             "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
             self.df.columns = [x.replace("CL", "COSMIC_ID")
                     for x in self.df.columns]
@@ -649,7 +650,7 @@ class GenomicFeatures(Reader, CosmicRows):
                     'MS-instability Factor Value': 'MSI_FACTOR',
                     'COSMIC ID': 'COSMIC_ID'}.items():
             if old in self.df.columns:
-                warnings.warn("'%s' column name is deprecated " % old +
+                colorlog.warning("'%s' column name is deprecated " % old +
                     " since 0.9.10. Please replace with '%s'" %  new,
                     DeprecationWarning)
                 self.df.columns = [x.replace(old, new)
@@ -664,7 +665,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # If tissue factor is not provided, we create and fill it with dummies.
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
-            warnings.warn("column named '%s' not found"
+            colorlog.warning("column named '%s' not found"
                     % self.colnames.tissue, UserWarning)
             self.df[self.colnames.tissue] = ['UNDEFINED'] * len(self.df)
             self._special_names.append(self.colnames.tissue)
@@ -673,14 +674,14 @@ class GenomicFeatures(Reader, CosmicRows):
 
         self.found_msi = self.colnames.msi in self.df.columns
         if self.found_msi is False:
-            warnings.warn("column named '%s' not found" % self.colnames.msi)
+            colorlog.warning("column named '%s' not found" % self.colnames.msi)
         else:
             self._special_names.append(self.colnames.msi)
 
         self.found_media = self.colnames.media in self.df.columns
         if self.found_media is False:
             pass
-            #warnings.warn("column named '%s' not found" % self.colnames.media)
+            #colorlog.warning("column named '%s' not found" % self.colnames.media)
         else:
             self._special_names.append(self.colnames.media)
 
@@ -700,7 +701,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # to errors in ANOVA or Regression so we replace them with "UNDEFINED"
         N = self.df.TISSUE_FACTOR.isnull().sum()
         if N > 0:
-            print("WARNING: Some tissues were empty strings and renamed as UNDEFINED!")
+            logger.warning("Some tissues were empty strings and renamed as UNDEFINED!")
         self.df.TISSUE_FACTOR.fillna('UNDEFINED', inplace=True)
 
     def _get_shift(self):
@@ -1089,7 +1090,7 @@ class DrugDecode(Reader):
         for this in self.header:
             msg = " The column %s was not found and may be an issue later on."
             if this not in self.df.columns and this != self.df.index.name:
-                warnings.warn('WARNING:' + msg % this )
+                logger.warning(msg % this )
 
         # Finally, set the drug ids as the index.
         try:

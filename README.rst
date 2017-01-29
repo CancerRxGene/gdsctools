@@ -20,16 +20,14 @@ GDSCTools
 
 |License|
 
-:Note: developed and tested for Python 2.7, 3.4, 3.5
+:Note: Developed and tested for Python 2.7, 3.4, 3.5
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
-
-:Online documentation: `On ReadTheDocs <http://gdsctools.readthedocs.io/en/master>`_
-
-:Issues and bug reports: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
+:Documentation: `On ReadTheDocs <http://gdsctools.readthedocs.io/en/master>`_
+:GitHub: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
 
 Overview
 -----------
-Genomics of Drug Sensitivity in Cancer (GDSC) tools including pipelines related  to http://www.cancerrxgene.org/ 
+Genomics of Drug Sensitivity in Cancer (GDSC) tools including pipelines related  to http://www.cancerrxgene.org/
 
 Installation
 ---------------
@@ -37,7 +35,7 @@ Installation
 ::
 
   pip install gdsctools
-  
+
 For beginners, please visit the main documentation `Installation
 <http://gdsctools.readthedocs.io/en/master/installation.html>`_ section.
 
@@ -60,9 +58,9 @@ or as a script::
   an = ANOVA(ic50_test, features_filename)  # second arg is optional
   an.anova_all()
   
-More examples are provided in the `documentation on ReadThedoc <http://gdsctools.readthedocs.io/en/master/index.html>`_. You can for example select a specific drug, or a set of drugs instead of the entire screening, or perform a sub selection on features. 
+More examples are provided in the `documentation on ReadThedoc <http://gdsctools.readthedocs.io/en/master/index.html>`_. 
 
-.. note:: Version 1 (linear regression and ANOVA) was created based on https://github.com/francescojm/FI.GDSC.ANOVA repository.
+Note that first versions (ANOVA analysis) were based on https://github.com/francescojm/FI.GDSC.ANOVA repository. New tools have been added (regression based on Ridge, Lasso, OmniBEM tool, ...).
 
 
 .. |License| image:: https://img.shields.io/badge/license-BSD-blue.svg

@@ -394,16 +394,3 @@ class LogisticMatchedFiltering(object):
             options={'xtol': 1e-8, 'disp': False})
 
         return res
-
-
-
-
-
-
-
-
-
-
-
-
-

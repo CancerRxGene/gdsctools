@@ -2,6 +2,12 @@
 import pylab
 from gdsctools import *
 import pandas as pd
+import colorlog
+
+# Change INFO to WARNING or ERROR to get less messages
+colorlog.getLogger().setLevel("ERROR")
+
+
 
 configfile: "config.yaml"
 

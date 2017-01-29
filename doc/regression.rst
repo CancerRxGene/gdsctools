@@ -158,6 +158,15 @@ The snakemake pipeline
 We provide a pipeline in a form of a snakemake file. The pipeline is called **regression.rules** 
 and a config file named **regression.yaml** is also provided. 
 
+The workflow looks like:
+
+.. image:: _static/regression.png
+
+Imagine the case where you have 4 drugs, then results and weights are
+computed for each drug. This is parallelised on a distributed-computer.
+Once the computation is performed, a report is created.
+
+
 The path of those files can be obtained using ::
 
     from gdsctools import gdsctools_data

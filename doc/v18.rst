@@ -1,7 +1,7 @@
 Notes about v18 onwards
 =========================
 
-In V18 onwards (May 2016), the IC50 may have duplicated columns for a given drug. So some drugs are clustered together. The algorithm was implemented in GDSCTools in IC50Cluster class. It should be used as follow::
+In V18 onwards (May 2016), the IC50 may have duplicated columns for a given drug. So some drugs are clustered together. The algorithm was implemented in GDSCTools in IC50Cluster class. It should be used as follow.
 
 IC50 must be read with the IC50Cluster class as follows::
 
