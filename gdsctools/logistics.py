@@ -391,6 +391,6 @@ class LogisticMatchedFiltering(object):
             return -M
 
         res = minimize(func, guess, method='nelder-mead',
-            options={'xtol': 1e-8, 'disp': False})
+            options={'xatol': 1e-8, 'disp': False})
 
         return res
