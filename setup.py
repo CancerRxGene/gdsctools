@@ -51,7 +51,8 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # jinja <= 2.9.4
 if on_rtd is True:  # only import and set the theme if we're building docs
-    install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc"]
+    install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc",
+                        "colorlog"]
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
         'pandas>=0.19', 'easydev>=0.9.31', 'scipy', "colormap>=0.9.9",
