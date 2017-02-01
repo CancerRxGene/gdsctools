@@ -3,6 +3,14 @@ ChangeLog
 
 .. contents::
 
+Version 0.17.1
+---------------
+
+BUGS: 
+
+    - Fix GDSC links to fetch drug/genomic feature data sets
+    - Fix bug in regression.rules pipeline (create missing directory) 
+
 Version 0.17
 ------------
 :summary: Fixing bunch of deprecated warnings, working regression 
