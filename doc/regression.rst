@@ -178,13 +178,13 @@ Those two files must be copied in a local directory.
 Then, edit the config file that looks like::
 
     regression:
-        - method: lasso
-        - kfold: 10
-        - randomness: 50
+        method: lasso
+        kfold: 10
+        randomness: 50
 
     input:
-        - ic50:
-        - genomic_features:
+        ic50:
+        genomic_features:
 
 so as to set the input IC50 and genomic_features files. Once done, you can run
 the analysis. Just type::
