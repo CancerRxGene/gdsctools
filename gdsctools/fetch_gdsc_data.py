@@ -1,4 +1,4 @@
-""" This file is a dump for code that is designed to fetch the GDSC1000 data sets and to convert them into the appropriate format. 
+""" This file is a dump for code that is designed to fetch the GDSC1000 data sets and to convert them into the appropriate format.
 E.D.Chen 2016-06-01
 """
 
@@ -8,23 +8,22 @@ import os
 
 class FetchGDSCData(object):
     """
-    
-    These commands will download the CNA, Methylation, Variant and CellLines 
+
+    These commands will download the CNA, Methylation, Variant and CellLines
     data from GDSC website::
-    
+
         fd = FetchGDSCData()
         fd.download()
-    
+
     """
     def __init__(self):
-        self.url_base = "http://www.cancerrxgene.org/gdsc1000//Data/suppData/"
+        self.url_base ="http://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources/Data/suppData/"
         self.data_folder_name = "./data/gdsc_1000_data/"
-        
+
         self.methylation_path = self.data_folder_name + "methylation.xlsx"
         self.cna_path = self.data_folder_name + "cna.xlsx"
         self.variant_path = self.data_folder_name + "variant.xlsx"
         self.cell_dict_path = self.data_folder_name + "cell_line_dict.xlsx"
-        
 
     def download(self):
         self._download_data()
@@ -33,21 +32,20 @@ class FetchGDSCData(object):
         self._read_methylation_data()
         self._read_variant_data()
 
-    
-    # This block downloads the data locally. 
+    # This block downloads the data locally.
     def _download_data(self):
         print("Downloading data...")
-        
+
         methylation_url = self.url_base +  "TableS2J.xlsx"
         cna_url = self.url_base + "TableS2G.xlsx"
         variant_url = self.url_base + "TableS2C.xlsx"
         cell_line_url = self.url_base + "TableS1E.xlsx"
-        
+
         if os.path.exists(self.data_folder_name):
             pass
-        else: 
+        else:
             os.mkdir(self.data_folder_name)
-        
+
         urllib.request.urlretrieve(methylation_url, self.methylation_path)
         urllib.request.urlretrieve(cna_url, self.cna_path)
         urllib.request.urlretrieve(variant_url, self.variant_path)
@@ -92,4 +90,4 @@ class FetchGDSCData(object):
         df = df.drop(0)
         df = df[ [ 'CELL_LINE', 'COSMIC_ID', 'TISSUE_FACTOR', 'MSI_FACTOR', 'MEDIA_FACTOR', 'GROWTH_FACTOR' ] ]
         df.to_csv( self.data_folder_name + 'cell_line_dict.csv', index = False )
-      
+

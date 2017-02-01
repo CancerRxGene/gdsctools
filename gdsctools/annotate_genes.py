@@ -1,6 +1,6 @@
 """
 
-This module concatantes previously fetched GDSC1000 files into a
+This module concatanes previously fetched GDSC1000 files into a
 single data frame that can be converted into a BEM and fed into the
 ANOVA analysis step of gdsctools.
 If requested, this script has the option to convert CNA and
@@ -25,7 +25,7 @@ class MergeGDSCData(object):
     """
 
     def __init__(self):
-        self.url_base = "http://www.cancerrxgene.org/gdsc1000//Data/suppData/"
+        self.url_base = "http://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources/Data/suppData/"
         self.data_folder_name = "./data/gdsc_1000_data/"
         self.annotate = False
 

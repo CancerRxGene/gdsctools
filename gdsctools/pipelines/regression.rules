@@ -28,6 +28,10 @@ IMAGE_DIR = "images"
 DATA_PREFIX = "data/" + PREFIX
 IMAGE_PREFIX = "images/" + PREFIX
 
+import os
+try: os.mkdir(IMAGE_DIR)
+except: pass
+
 ################################################  NOTHING TO CHANGE HERE BELOW
 # RUNME as follows:
 # snakemake -s regression.rules -j 40 --cluster "sbatch --qos normal"
