@@ -15,7 +15,9 @@ import csv
 class GDSC1000(object ):
     """Main GDSC class for data retrival
 
-    1. Load data:
+    1. Load data::
+
+        from gdsctools import GDSC1000
         GDSC1000.download_data()
             Downloads data from cancerrxgene.org for methylation, cna, variant and cell lines.
             Extracts relevant columns, re-names column names and saves as csv files.
@@ -49,38 +51,40 @@ class GDSC1000(object ):
         :param bool annotate:
         :param str data_folder_name:
 
-
         """
         self.annotate = annotate
         self.recurrence = 3
         self.data_folder_name = data_folder_name
-        self.url_base = "http://www.cancerrxgene.org/gdsc1000/Data/suppData/"
-        print("Welcome to GDSCTools 1000.\n",
-               "To download the GDSC 1000 data, import" )
+        self.url_base = "http://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources/Data/suppData/"
 
-        self._methylation_path = self.data_folder_name + "methylation.xlsx"
-        self._cna_path = self.data_folder_name + "cna.xlsx"
-        self._variant_path = self.data_folder_name + "variant.xlsx"
-        self._cell_dict_path = self.data_folder_name + "cell_line_dict.xlsx"
-        self._ic50_path = self.data_folder_name + "ic50.xlsx"
+        self._mapper = {"methylation": ["TableS2J.xlsx", "methylation.xlsx"],
+                        "cna": ["TableS2G.xlsx", "cna.xlsx"],
+                        "variant": ["TableS2C.xlsx", "variant.xlsx"],
+                        "cell_line": ["TableS1E.xlsx", "cell_line_dict.xlsx"],
+                        "methylation_annotation": ["TableS2H.xlsx", "methylation_annotation.xlsx"],
+                        "cna_annotation": ["TableS2D.xlsx", "cna_annotation.xlsx"],
+                        "ic50": ["TableS4A.xlsx", "ic50.xlsx"]}
 
         self.genomic_matrix_path = self.data_folder_name + "genomic_features_matrix.csv"
         self.ic50_path = self.data_folder_name + "ic50_full_matrix.csv"
         self.ic50_matrix_path = self.data_folder_name + "ic50_matrix.csv"
         self.drug_decoder_original_path = self.data_folder_name + "drug_decoder.csv"
 
+    def _get_path(self, key):
+        return self.data_folder_name + self._mapper[key][1]
+
     def download_data(self, save_csv=False ):
         self._download_raw()
-        self.convert_raw_gdsc1000_data(save_csv=save_csv )
+        self.convert_raw_gdsc1000_data(save_csv=save_csv)
 
-    def convert_raw_gdsc1000_data(self, save_csv=True ):
-        self._read_cell_line_data(save_csv = save_csv)
-        self._read_cna_data(save_csv = save_csv)
-        self._read_methylation_data(save_csv = save_csv)
-        self._read_variant_data(save_csv = save_csv)
-        self._read_ic50_data(save_csv = save_csv )
-        self._combine_genomic_annotation(save_csv = save_csv )
-        self._read_annotation(save_csv = save_csv )
+    def convert_raw_gdsc1000_data(self, save_csv=True):
+        self._read_cell_line_data(save_csv=save_csv)
+        self._read_cna_data(save_csv=save_csv)
+        self._read_methylation_data(save_csv=save_csv)
+        self._read_variant_data(save_csv=save_csv)
+        self._read_ic50_data(save_csv=save_csv)
+        self._combine_genomic_annotation(save_csv=save_csv)
+        self._read_annotation(save_csv=save_csv)
 
     def _read_csv(self, filename):
         return pd.read_csv(self.data_folder_name + filename)
@@ -99,40 +103,39 @@ class GDSC1000(object ):
         self.backup_ic50_df = self.ic50_df
         self.backup_drug_decoder_df = self.drug_decoder_df
 
+    def _urlretrieve(self, filename, target):
+        urllib.request.urlretrieve(
+            self.url_base + filename,
+            self.data_folder_name + target)
+
     def _download_raw(self):
         print("Downloading data...")
-
-        methylation_url = self.url_base +  "TableS2J.xlsx"
-        cna_url = self.url_base + "TableS2G.xlsx"
-        variant_url = self.url_base + "TableS2C.xlsx"
-        cell_line_url = self.url_base + "TableS1E.xlsx"
-        ic50_url = self.url_base + "TableS4A.xlsx"
-        methylation_annotation_url = self.url_base + "TableS2H.xlsx"
-        cna_annotation_url = self.url_base + "TableS2D.xlsx"
 
         if os.path.exists(self.data_folder_name):
             pass
         else:
             os.makedirs(self.data_folder_name)
 
-        urllib.request.urlretrieve(methylation_url, self._methylation_path)
-        urllib.request.urlretrieve(cna_url, self._cna_path)
-        urllib.request.urlretrieve(variant_url, self._variant_path)
-        urllib.request.urlretrieve(cell_line_url, self._cell_dict_path)
-        urllib.request.urlretrieve(ic50_url, self.data_folder_name + self._ic50_path )
-        urlrequest.urlretrieve(methylation_annotation_url,
-                               self.data_folder_name + "methylation_annotation.xlsx")
-        urlrequest.urlretrieve(cna_annotation_url,
-                               self.data_folder_name + "cna_annotation.xlsx")
+        # download all data sets
+        for key, value in self._mapper.items():
+            print('Downloading %s ' % key)
+            self._urlretrieve(*value)
 
     def _read_cna_data(self, save_csv):
         print("Processing CNA data.")
         # This block reads in and formats CNA data
-        xls = pd.ExcelFile(self._cna_path )
+        xls = pd.ExcelFile(self._get_path('cna'))
         df = xls.parse(header=2)
+
+        # in version from feb 2017, there are 4 extra blank columns to be
+        # drop
+        dummies = ["dum1", "dum2", "dum3", "dum4"]
         df.columns = ["BLANK", "CELL_LINE", "TISSUE_ID1", "TISSUE_ID2",
-                      "TISSUE_FACTOR", "ALTERATION_TYPE", "IDENTIFIER" ]
-        df = df.drop(['BLANK', 'TISSUE_ID1', 'TISSUE_ID2'], axis = 1)
+                      "TISSUE_FACTOR", "ALTERATION_TYPE", "IDENTIFIER" ] + dummies
+
+
+
+        df = df.drop(['BLANK', 'TISSUE_ID1', 'TISSUE_ID2'] + dummies, axis = 1)
         df.IDENTIFIER = df.IDENTIFIER.str.split(' ').str[0]
         df.ALTERATION_TYPE = df.ALTERATION_TYPE.str.upper()
         if save_csv:
@@ -142,7 +145,7 @@ class GDSC1000(object ):
     def _read_methylation_data(self, save_csv):
         print("Processing methylation data.")
         # This block deals with the methylation data
-        xls = pd.ExcelFile(self._methylation_path )
+        xls = pd.ExcelFile(self._get_path('methylation'))
         df = xls.parse(header=2)
         df.columns = ["BLANK", "CELL_LINE", "TISSUE_ID1", "TISSUE_ID2",
                       "TISSUE_FACTOR", "IDENTIFIER"]
@@ -155,8 +158,7 @@ class GDSC1000(object ):
     def _read_variant_data(self, save_csv):
         print("Processing variant data.")
         # This block deals with variant data
-        print("Reading variant data.")
-        xls = pd.ExcelFile(self._variant_path )
+        xls = pd.ExcelFile(self._get_path('variant'))
         df = xls.parse(skiprows=20 )
         df = df[ ['SAMPLE', 'COSMIC_ID', 'Cancer Type', 'Gene', 'Recurrence Filter' ] ]
         df = df.loc[df['Recurrence Filter'] == 'Yes' ]
@@ -172,7 +174,7 @@ class GDSC1000(object ):
     def _read_cell_line_data(self, save_csv):
         print("Processing cell line dictionary.")
         # This block imports the cell line dictionary
-        xls = pd.ExcelFile(self._cell_dict_path )
+        xls = pd.ExcelFile(self._get_path("cell_line"))
         df = xls.parse(header = 2 )
         df.columns = ["CELL_LINE", "COSMIC_ID", "WES", "CNA", "GEX",
                       "METH", "DRUGDATA", "T_ID1", "T_ID2", "TISSUE_FACTOR",
@@ -187,7 +189,7 @@ class GDSC1000(object ):
 
     def _read_ic50_data(self, save_csv ):
         print("Processing IC50 data." )
-        xls = pd.ExcelFile(self._ic50_path )
+        xls = pd.ExcelFile(self._get_path('ic50') )
         df = xls.parse(header = 4 )
         df.columns.values[ 0 ] = 'COSMIC_ID'
         df = df.drop(0)
@@ -225,7 +227,6 @@ class GDSC1000(object ):
         self.ic50_df = self.backup_ic50_df
         self.drug_decoder_df = self.backup_drug_decoder_df
 
-
     def annotate_all(self ):
         # Annotate after read_annotation
         print("Merging" )
@@ -234,7 +235,6 @@ class GDSC1000(object ):
         print("Splitting strings" )
         self.genomic_df = self._string_split(self.genomic_df, 'GENE', ',' )
         self.annotate = True
-
 
     def _string_split(self, to_be_split, col_name, separator):
         """This function splits multiple genes contained within the 
@@ -255,22 +255,28 @@ class GDSC1000(object ):
 
     def _read_annotation(self, save_csv = True ):
         # Read and merge annotations
-        xls = pd.ExcelFile(self.data_folder_name + "methylation_annotation.xlsx")
+        xls = pd.ExcelFile(self._get_path("methylation_annotation"))
+
         methylation_annotation = xls.parse(header = 16)
         methylation_annotation = methylation_annotation[ ['Genomic Coordinates', 'GN' ] ]
         methylation_annotation.columns = [ 'IDENTIFIER', 'GENE' ]
-        methylation_annotation.GENE = methylation_annotation.GENE.replace(to_replace = "; ", value = ",", regex = True )
-        methylation_annotation = methylation_annotation[ methylation_annotation.IDENTIFIER.duplicated() == False ]
+        methylation_annotation.GENE = methylation_annotation.GENE.replace(to_replace = "; ", 
+            value=",", regex=True)
+        methylation_annotation = methylation_annotation[
+            methylation_annotation.IDENTIFIER.duplicated() == False ]
 
-        xls = pd.ExcelFile(self.data_folder_name + "cna_annotation.xlsx")
+        xls = pd.ExcelFile(self._get_path("cna_annotation"))
         cna_annotation = xls.parse(header = 19)
         cna_annotation = cna_annotation[ [ 'Identifier', 'Contained genes' ] ]
         cna_annotation.columns = ['IDENTIFIER', 'GENE']
 
-        variant_annotation = pd.DataFrame({ 'IDENTIFIER': self.variant_df.IDENTIFIER.unique(), 'GENE': self.variant_df.IDENTIFIER.unique() } )
+        variant_annotation = pd.DataFrame({
+            'IDENTIFIER': self.variant_df.IDENTIFIER.unique(),
+            'GENE': self.variant_df.IDENTIFIER.unique()})
         # CHECK FOR UNIQUENESS
 
-        self.annotation_df = pd.concat([ methylation_annotation, cna_annotation, variant_annotation ], axis = 0, join = "inner" )
+        self.annotation_df = pd.concat([ methylation_annotation, 
+            cna_annotation, variant_annotation ], axis = 0, join = "inner" )
 
         if save_csv:
             self.annotation_df.to_csv(self.data_folder_name + "annotation.csv", index = False )
@@ -361,7 +367,10 @@ class GDSC1000(object ):
         else:
             feature = "IDENTIFIER"
 
-        genomic_matrix = pd.crosstab(self.genomic_df[ feature ], columns=[ self.genomic_df["COSMIC_ID"], self.genomic_df['TISSUE_FACTOR'], self.genomic_df["CELL_LINE"], self.genomic_df[ "MSI_FACTOR" ], self.genomic_df[ "MEDIA_FACTOR"] ] )
+        genomic_matrix = pd.crosstab(self.genomic_df[ feature ], 
+            columns=[ self.genomic_df["COSMIC_ID"], self.genomic_df['TISSUE_FACTOR'], 
+                      self.genomic_df["CELL_LINE"], self.genomic_df[ "MSI_FACTOR" ],
+                      self.genomic_df[ "MEDIA_FACTOR"] ] )
         genomic_matrix[ genomic_matrix > 1 ] = 1
         self.genomic_matrix = genomic_matrix.T.reset_index()
         self.genomic_matrix.MSI_FACTOR = self.genomic_matrix.MSI_FACTOR.map(msi_dictionary )
