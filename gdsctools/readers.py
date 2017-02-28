@@ -779,10 +779,6 @@ class GenomicFeatures(Reader, CosmicRows):
             return
         data = pd.get_dummies(self.df[self.colnames.tissue]).sum()
         data.index = [x.replace("_", " ") for x in data.index]
-        try:
-            data = data.sort_values(ascending=True)
-        except:
-            data = data.sort(ascending=True)
         pylab.figure(1)
         pylab.clf()
         labels = list(data.index)
@@ -793,6 +789,13 @@ class GenomicFeatures(Reader, CosmicRows):
         else:
             pylab.pie(data, labels=labels, shadow=shadow)
 
+        # For the pie chart, we do not sort so that small slices are not all
+        # together and this gives a better final pie chart but for the
+        # histogram, we can sort it.
+        try:
+            data = data.sort_values(ascending=True)
+        except:
+            data = data.sort(ascending=True)
         # The bar plot
         pylab.figure(2)
         data.plot(kind='barh', width=0.8)
