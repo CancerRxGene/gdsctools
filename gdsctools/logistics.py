@@ -19,6 +19,7 @@ import numpy as np
 import pylab
 import math
 
+
 __all__ = ['Logistic', 'LogisticMatchedFiltering']
 
 
@@ -96,6 +97,7 @@ class Logistic(object):
 
         """
         self.xmid = xmid
+        self._scale = None
         self.scale = scale
         self.Asym = Asym
         self._N = N
@@ -103,6 +105,14 @@ class Logistic(object):
         self._xmin = None
         self._xmax = None
         self._update_x()
+
+    def _get_scale(self):
+        return self._scale
+    def _set_scale(self, scale):
+        if abs(scale)<1e-6:
+            scale = pylab.sign(scale) * 1e-6
+        self._scale = scale
+    scale = property(_get_scale, _set_scale)
 
     def _update_x(self):
         """Return a sensible linear space of X values """
