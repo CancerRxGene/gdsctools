@@ -762,7 +762,7 @@ class GenomicFeatures(Reader, CosmicRows):
         return list(self.df[self.colnames.tissue].unique())
     unique_tissues = property(_get_unique_tissues, doc='return set of tissues')
 
-    def plot(self):
+    def plot(self, shadow=True, explode=True, fontsize=12):
         """Histogram of the tissues found
 
         .. plot::
@@ -779,19 +779,25 @@ class GenomicFeatures(Reader, CosmicRows):
             return
         data = pd.get_dummies(self.df[self.colnames.tissue]).sum()
         data.index = [x.replace("_", " ") for x in data.index]
-        # deprecated but works for python 3.3
         try:
-            data.sort_values(ascending=False)
+            data = data.sort_values(ascending=True)
         except:
-            data.sort(ascending=False)
+            data = data.sort(ascending=True)
         pylab.figure(1)
         pylab.clf()
         labels = list(data.index)
-        pylab.pie(data, labels=labels)
+
+        labels = ["%s (%s)" % (l, count) for l, count in zip(labels, data)]
+        if explode:
+            pylab.pie(data, labels=labels, shadow=shadow, explode=[0.2]*len(labels))
+        else:
+            pylab.pie(data, labels=labels, shadow=shadow)
+
+        # The bar plot
         pylab.figure(2)
-        data.plot(kind='barh')
-        pylab.grid()
-        pylab.xlabel('Occurences')
+        data.plot(kind='barh', width=0.8)
+        pylab.grid(True)
+        pylab.xlabel('Occurences', fontsize=fontsize)
 
         # keep the try to prevent MacOS issue
         try:pylab.tight_layout()
