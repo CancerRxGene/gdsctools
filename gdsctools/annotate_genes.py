@@ -1,9 +1,10 @@
-"""
+"""Gene annotations (gene_annotate module)
 
-This module concatanes previously fetched GDSC1000 files into a
+This module concatenates previously fetched GDSC1000 files into a
 single data frame that can be converted into a BEM and fed into the
-ANOVA analysis step of gdsctools.
-If requested, this script has the option to convert CNA and
+ANOVA analysis step of gdsctools. 
+
+If needed, this script has the option to convert CNA and
 methylation data from their ID values to their gene annotations.
 
 E.D.Chen 2016-06-02
@@ -11,6 +12,8 @@ E.D.Chen 2016-06-02
 """
 import urllib.request as urlrequest
 import pandas as pd
+
+__all__ = ["MergeGDSCData"]
 
 class MergeGDSCData(object):
     """

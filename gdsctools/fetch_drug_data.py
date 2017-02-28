@@ -1,10 +1,10 @@
-"""
+"""Download GDSC drug data sets (IC50s 
 
 Module for downloading IC50 data from the gdsc1000 paper.
 Using one line, the script also formats the data so that it can be directly imported into the ANOVA script and also creates a drug decoder.
 E.D.Chen 2016-06-06
 
-Note: Should be working!
+
 
 """
 import urllib.request
@@ -12,11 +12,12 @@ import pandas as pd
 import os
 
 
-class DownloadDrugIC50s( object ):
+class DownloadDrugIC50s(object):
     """Download IC50 data from GDSC website
 
     ::
 
+        from gdsctools.gdsc1000 import DownloadDrug
         fdd = fetch_drug_data.DownloadDrugIC50s()
         fdd.download_data()
 
@@ -30,21 +31,24 @@ class DownloadDrugIC50s( object ):
 
     """
 
-    def __init__( self ):
+    def __init__(self):
         self.url_base = "http://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources/Data/suppData/"
         self.data_folder_name = "./data/gdsc_1000_data/"
 
-    def fetch_ic50s( self ):
+    def fetch_ic50s(self):
 
         if os.path.exists(self.data_folder_name):
             pass
         else:
-            os.mkdir(self.data_folder_name)
+            from easydev import mkdirs
+            mkdirs(self.data_folder_name)
 
-        urllib.request.urlretrieve( self.url_base + "TableS4A.xlsx", self.data_folder_name + "ic50s.xlsx" )
+        urllib.request.urlretrieve(self.url_base + "TableS4A.xlsx", 
+            self.data_folder_name + "ic50s.xlsx" )
+
         self._format_data()
 
-    def _format_data( self ):
+    def _format_data(self):
         xls = pd.ExcelFile( self.data_folder_name + "ic50s.xlsx" )
         df = xls.parse( header = 4 )
         df.columns.values[ 0 ] = 'COSMIC_ID'
@@ -53,15 +57,14 @@ class DownloadDrugIC50s( object ):
         self.drug_matrix = df
         df.to_csv( self.data_folder_name + 'ic50.csv', index = False )
 
-        drug_dict = xls.parse( header = 4 )[ 0:1 ]
-        drug_dict.drop( drug_dict.columns[[ 0, 1]], axis = 1, inplace = True )
+        drug_dict = xls.parse(header=4)[0:1]
+        drug_dict.drop( drug_dict.columns[[0, 1]], axis = 1, inplace = True )
         drug_dict = drug_dict.T.reset_index()
         drug_dict.columns = [ 'DRUG_ID', 'DRUG_NAME' ]
         drug_dict[ 'DRUG_TARGET' ] = 'Unknown'
         drug_dict.to_csv( self.data_folder_name + 'drug_decoder.csv', index = False )
 
-
-    def filter_drugs( self, drug_list ):
+    def filter_drugs(self, drug_list):
         drug_list = [ x for x in drug_list if x in self.drug_matrix.columns.values ]
 
         self.filter_df = self.drug_matrix[ [ 'COSMIC_ID' ] + drug_list ]
