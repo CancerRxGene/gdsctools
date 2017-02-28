@@ -8,8 +8,9 @@ Quick Start
 ANOVA analysis
 -----------------
 
-You know what you are doing with **GDSCTools** already, so if you already have a well
-formatted :term:`IC50` matrix and a genomic features binary matrix, then you can run the entire ANOVA analysis as follows::
+If you already know what you can do with **GDSCTools**, we assume you have a well
+formatted :term:`IC50` matrix and a genomic features binary matrix. Then, 
+you can run the entire ANOVA analysis as follows::
 
 
     from gdsctools import ANOVA
@@ -38,7 +39,7 @@ be found in the next section (:ref:`data`).
 Regression analysis
 ----------------------
 
-For the regression analysis, one can write a script as above::
+Similarly, for the regression analysis, one can write a script as above::
 
     from gdsctools import GDSCLasso
     gdsc = GDSCLasso(IC50_filename, genomic_feature_filename)
@@ -59,7 +60,7 @@ Edit the config.yaml file to change any parameters. Then, execute the pipeline::
 
     snakemake -s regression.rules
 
-See :ref:`regression` section for details.
+See :ref:`multivariate_regression` section for details.
 
 
 

@@ -14,7 +14,7 @@ GDSCTools documentation
     :target: https://coveralls.io/github/CancerRxGene/gdsctools?branch=master
 
 .. image:: https://readthedocs.org/projects/gdsctools/badge/?version=master
-    :target: http://gdsctools.readthedocs.io/en/latest/?badge=master
+    :target: http://gdsctools.readthedocs.io/en/master/?badge=master
     :alt: Documentation Status
 
 

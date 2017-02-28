@@ -1,3 +1,6 @@
+
+.. _multivariate_regression:
+
 Regression analysis
 ========================
 

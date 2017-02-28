@@ -49,9 +49,25 @@ IC50, Genomic Features, Drug Decode
     :members:
     :undoc-members:
 
-OmniBEM
+OmniBEM related
 ~~~~~~~~~~~~~~~~
 .. automodule:: gdsctools.omnibem
+    :members:
+    :undoc-members:
+
+.. automodule:: gdsctools.annotate_genes
+    :members:
+    :undoc-members:
+.. automodule:: gdsctools.fetch_drug_data
+    :members:
+    :undoc-members:
+.. automodule:: gdsctools.fetch_gdsc_data
+    :members:
+    :undoc-members:
+.. automodule:: gdsctools.filter
+    :members:
+    :undoc-members:
+.. automodule:: gdsctools.gdsc1000
     :members:
     :undoc-members:
 

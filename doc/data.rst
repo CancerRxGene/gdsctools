@@ -152,6 +152,28 @@ Note that you may create instance of GenomicFeatures without input but a default
     - CNA (gain): 0
     - CNA (loss): 0
 
+Combine IC50 and Genomic Features
+====================================
+Here is an example on how to plot histograms of IC50s grouped by tissues
+
+.. plot::
+    :include-source:
+    :width: 80%
+
+    from gdsctools import *
+    ic50 = IC50(ic50_v17)
+    gf = GenomicFeatures(gf_v17)
+    # select tissue column in same order as those stored in IC50 dataframe
+    tissues = gf.df.ix[ic50.df.index]['TISSUE_FACTOR']
+    ic50.df['tissue'] = tissues
+    # Group by tissues
+    tt = ic50.df.groupby("tissue").aggregate(mean).transpose()
+    #plot histogram of IC50 group by tissues
+    tt.hist(bins=30, sharex=True)
+
+
+
+
 .. _drug_decode:
 
 Drug Decode
