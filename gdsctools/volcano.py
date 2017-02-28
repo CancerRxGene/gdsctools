@@ -394,7 +394,10 @@ class VolcanoANOVA(object):
         fig = pylab.figure(num=1)
         fig.clf()
         ax = fig.add_subplot(111)
-        ax.set_axis_bgcolor('#EEEEEE')
+        try:
+            ax.set_facecolor('#EEEEEE') #matplotlib 2.0
+        except:
+            ax.set_axis_bgcolor('#EEEEEE')
         ax.cla()
 
         # TODO signed effects may be inf why ?
