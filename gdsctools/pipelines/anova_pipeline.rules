@@ -1,0 +1,42 @@
+"""Snakemake pipeline to perform the ANOVA analysis
+
+snakemake -s -j 48
+
+"""
+from gdsctools import *
+
+configfile: "config.yaml"
+
+anova = ANOVA(config['input']['ic50'], config['input']['genomic_features'])
+output_directory = config['anova']['report_directory']
+
+def get_drugid(filename):
+    return int(filename.split("_")[0].replace("%s/" % output_directory, ""))
+
+rule all:
+    input: "%s/index.html" % output_directory
+
+
+rule onedrug:
+    output: "%s/{drug}_anova.csv" % output_directory
+    run:
+        drugid = get_drugid(output[0])
+        results = anova.anova_one_drug(drugid)
+        results.to_csv("%s/%s_anova.csv" % (output_directory, drugid))
+
+rule alldrugs:
+    input: expand("%s/{drug}_anova.csv" % output_directory, drug=anova.drugIds)
+    output: touch("dataready")
+    run:
+        for this in input:
+            drugid = get_drugid(this)
+            anova.individual_anova[drugid] = ANOVAResults(this).df
+
+rule report:
+    input: "dataready"
+    output: "%s/index.html" % output_directory
+    run:
+        from gdsctools import ANOVAReport
+        report = ANOVAReport(anova)
+        report.settings.directory = output_directory
+        report.create_html_pages()

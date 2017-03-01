@@ -19,4 +19,10 @@ regression:
 input:
   ic50:
   genomic_features:
+  drug_decode: 
+
+
+# ANOVA
+anova:
+    report_directory: "analysis"
 
