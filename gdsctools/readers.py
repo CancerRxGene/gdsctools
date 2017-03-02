@@ -665,7 +665,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # If tissue factor is not provided, we create and fill it with dummies.
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
-            colorlog.warning("column named '%s' not found"
+            colorlog.info("column named '%s' not found"
                     % self.colnames.tissue, UserWarning)
             self.df[self.colnames.tissue] = ['UNDEFINED'] * len(self.df)
             self._special_names.append(self.colnames.tissue)
@@ -674,7 +674,7 @@ class GenomicFeatures(Reader, CosmicRows):
 
         self.found_msi = self.colnames.msi in self.df.columns
         if self.found_msi is False:
-            colorlog.warning("column named '%s' not found" % self.colnames.msi)
+            colorlog.info("column named '%s' not found" % self.colnames.msi)
         else:
             self._special_names.append(self.colnames.msi)
 
