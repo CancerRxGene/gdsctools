@@ -6,5 +6,5 @@ class DefaultDictionaries:
         self.tissue_dict = { 'Complete' : ['BLCA', 'CESC', 'COAD/READ', 'ESCA', 'HNSC', 'LUAD', 'MESO', 'OV', 'UCEC', 'ALL', 'LCML', 'PRAD', 'THCA', 'LAML', 'LIHC', 'SKCM', 'STAD', 'LUSC', 'NB', 'SCLC', 'BRCA', 'DLBC', 'KIRC', 'PAAD', 'GBM', 'MM', 'LGG', 'MB', 'ACC', 'CLL'], 'Common' : [ 'BRCA', 'COAD/READ', 'SCLC', 'SKCM' ] }
 
         self.cosmic_dict = { 'Dummy' : [ 687459, 906824, 909698, 1659823, 908442, 906817, 1240162, 906863, 1240145, 1240141, 909257, 1240174, 1330935, 908146, 910554, 907291, 909746, 907790 ] }
-        
+
         self.cell_line_dict = { 'Dummy' : [ "Ca-Ski", "RKO", "SNU-1040", "NCI-H508", "COLO-680N", "JHU-022", "FADU", "HCC-44", "H513", "OC-314", "MFE-319", "L-1236", "MOLT-13", "CW-2", "GP5d", "SW1116", "LoVo", "COLO-680N", "KYSE-510", "KON", "CML-T1", "EKVX", "NCI-H2023", "SK-LU-1", "EN", "ES-2", "HDLM-2", "HCT-15", "CW-2" ] }
