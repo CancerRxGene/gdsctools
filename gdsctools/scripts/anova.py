@@ -94,10 +94,6 @@ def main(args=None):
         print('Save a default parameter set in %s' % options.save_settings)
         return
 
-    if options.license is True:
-        print(gdsctools.license)
-        return
-
     if options.summary is True:
         from gdsctools import anova
         an = anova.ANOVA(options.input_ic50, options.input_features)
@@ -236,7 +232,7 @@ def anova_one_drug_one_feature(anova, options):
 
     if options.tissue is not None:
         anova.set_cancer_type(options.tissue)
-    
+
 
     # just to create the directory
     ReportMain(directory=options.directory)
@@ -408,12 +404,6 @@ http://github.com/CancerRxGene/gdsctools/issues """
                            help="""Use a small IC50 data set and run the
                            one-drug-one-feature analyse with a couple of unit
                            tests."""
-                           )
-
-
-        group.add_argument('--license', dest='license',
-                           action="store_true",
-                           help="Print the current license"
                            )
 
         group.add_argument('--no-html', dest='no_html',
