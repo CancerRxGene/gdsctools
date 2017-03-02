@@ -3,10 +3,15 @@ ChangeLog
 
 .. contents::
 
+
 Version 0.17.1
 ---------------
 
-BUGS: 
+* NEWS:
+
+    - add test for module gdsc1000, which has been refactored and cleanup
+
+* BUGS: 
 
     - Fix GDSC links to fetch drug/genomic feature data sets
     - Fix bug in regression.rules pipeline (create missing directory) 
