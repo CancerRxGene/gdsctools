@@ -3,6 +3,8 @@
 To filter complete_df that is outputted from annotate_genes.py
 E.D.Chen 2016-06-05
 
+
+See gdsctools.gdsc1000 instead
 """
 
 import pandas as pd
