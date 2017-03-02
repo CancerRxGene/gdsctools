@@ -15,9 +15,11 @@ Please See documentation on gdsctools.readthedocs.org
 """
 import pkg_resources
 import os
-
+#import colorlog as logger
 import warnings
 warnings.simplefilter('ignore', DeprecationWarning)
+#logger.getLogger().setLevel("INFO")
+
 
 try:
     version = pkg_resources.require("gdsctools")[0].version
