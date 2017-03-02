@@ -28,6 +28,7 @@ from gdsctools.settings import ANOVASettings
 from gdsctools.anova_results import ANOVAResults
 from gdsctools.errors import GDSCToolsDuplicatedDrugError
 
+import colorlog as logger
 
 __all__ = ['BaseModels']
 
@@ -301,9 +302,9 @@ class BaseModels(object):
         if self.verbose and self._init_called is False:
             for this in ['tissue', 'media', 'msi', 'feature']:
                 if this in self._get_analysis_mode():
-                    print(this.upper() + " FACTOR : included")
+                    logger.debug(this.upper() + " FACTOR : included")
                 else:
-                    print(this.upper() + " FACTOR : NOT included")
+                    logger.debug(this.upper() + " FACTOR : NOT included")
         self._init_called = True
 
     def _get_cosmics(self):
