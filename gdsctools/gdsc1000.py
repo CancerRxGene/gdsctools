@@ -10,7 +10,12 @@ Please see gdsctools.gdsc1000 module for other data sets
 
 """
 import os
-import urllib.request
+
+try:     #python 3
+    from urllib.request import urlretrieve
+except:
+    from urllib import urlretrieve 
+
 import csv
 
 import pandas as pd
@@ -127,7 +132,7 @@ class GDSC1000(object ):
         self.backup_drug_decoder_df = self.drug_decoder_df
 
     def _urlretrieve(self, filename, target):
-        urllib.request.urlretrieve(
+        urlretrieve(
             self._url_base + filename,
             self._data_folder_name + target)
 
