@@ -29,7 +29,7 @@ or informative:
 
 or used in analysis:
 
-- :attr:`genomic_features`
+- :attr:`genomic_features_test`
 - :attr:`ic50_v17`: IC50s for 1001 cell lines
 - :attr:`gf_v17`: dataset with genomic features for 1001 cell lines and 680
   features (mutation, CNA)
@@ -40,8 +40,8 @@ or used in analysis:
 import easydev
 
 
-__all__ = ['Data', 'ic50_test', 'genomic_features', 'cosmic_info',
-           "cosmic_builder_test", "cancer_cell_lines"]
+__all__ = ['Data', 'ic50_test', "genomic_features_test", 
+            'cosmic_info',  "cosmic_builder_test", "cancer_cell_lines"]
 
 def _gsf(filename):
     from gdsctools import gdsctools_data
@@ -91,7 +91,7 @@ ic50_test = Data(
         description = 'IC50s for 10 public drugs across cell lines')
 
 # Dataset with genomic features for 1001 cell lines and 680 features
-genomic_features = Data(
+genomic_features_test = Data(
         filename = _gsf('genomic_features.tsv.gz'),
         description = 'Set of genomic features / tissue / msi')
 

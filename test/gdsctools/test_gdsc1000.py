@@ -7,11 +7,9 @@ except:
     class TemporaryDirectory(object):
         def __init__(self):
             self.name = mkdtemp()
-        def cleanup():
+        def cleanup(self):
             import shutil
             shutil.rmdir(self.name)
-            
-    
 
 def test_download():
     fh = TemporaryDirectory()
