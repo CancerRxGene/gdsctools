@@ -629,8 +629,8 @@ class GenomicFeatures(Reader, CosmicRows):
         """
         # first reset the filename to the shared data (if not provided)
         if filename is None:
-            from gdsctools.datasets import genomic_features
-            filename = genomic_features
+            from gdsctools.datasets import genomic_features_test
+            filename = genomic_features_test
         # used in the header so should be ser before call to super()
 
         super(GenomicFeatures, self).__init__(filename)
