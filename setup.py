@@ -55,7 +55,7 @@ if on_rtd is True:  # only import and set the theme if we're building docs
                         "colorlog"]
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
-        'pandas>=0.19', 'easydev>=0.9.31', 'scipy', "colormap>=1.0",
+        'pandas>=0.19', 'easydev>=0.9.34', 'scipy', "colormap>=1.0",
         'jinja2<2.9.4', 'statsmodels', "scikit-learn", "reports>=0.3.0",
         "biokit>=0.4", "colorlog"],
 

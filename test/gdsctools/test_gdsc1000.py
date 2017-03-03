@@ -1,7 +1,17 @@
 from gdsctools.gdsc1000 import GDSC1000
 
-from tempfile import TemporaryDirectory
-
+try:
+    from tempfile import TemporaryDirectory
+except:
+    from tempfile import mkdtemp
+    class TemporaryDirectory(object):
+        def __init__(self):
+            self.name = mkdtemp()
+        def cleanup():
+            import shutil
+            shutil.rmdir(self.name)
+            
+    
 
 def test_download():
     fh = TemporaryDirectory()
