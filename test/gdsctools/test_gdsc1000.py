@@ -9,7 +9,7 @@ except:
             self.name = mkdtemp()
         def cleanup(self):
             import shutil
-            shutil.rmdir(self.name)
+            shutil.rmtree(self.name)
 
 def test_download():
     fh = TemporaryDirectory()
