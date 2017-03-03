@@ -11,6 +11,6 @@ def test_data():
 
     # here we just try to access to the data, we do not use them
     datasets.ic50_test
-    datasets.genomic_features
+    datasets.genomic_features_test
     datasets.cancer_cell_lines 
     datasets.cosmic_builder_test
