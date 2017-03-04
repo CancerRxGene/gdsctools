@@ -15,19 +15,19 @@ Please See documentation on gdsctools.readthedocs.org
 """
 import pkg_resources
 import os
-#import colorlog as logger
 import warnings
 warnings.simplefilter('ignore', DeprecationWarning)
-#logger.getLogger().setLevel("INFO")
+
+def set_logger_level(level="INFO"):
+    import colorlog as logger
+    logger.getLogger().setLevel(level)
 
 
 try:
     version = pkg_resources.require("gdsctools")[0].version
     __version__ = version
 except:
-    # update this manually is possible when the version in the
-    # setup changes
-    version = "0.16"
+    version = "0.17"
 
 try:
     license = open('../LICENSE', 'r').read()
@@ -63,6 +63,7 @@ from gdsctools.gdsc import GDSC, IC50Cluster
 from gdsctools.stats import signed_effects
 from gdsctools.regression import GDSCElasticNet, GDSCLasso, GDSCRidge
 from gdsctools.omnibem import OmniBEMBuilder
+from gdsctools.gdsc1000 import GDSC1000
 
 
 def gdsctools_help(name=None):
