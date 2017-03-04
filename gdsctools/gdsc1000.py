@@ -1,28 +1,23 @@
-"""
-
-This module of gdsctools provides an easy interface for anybody to 
-download and play with the GDSC1000 data, as published by Iorio et al (2016).
+"""This module provides an  interface to download and filter GDSC1000 data, 
+as published by Iorio et al (2016).
 
 Author: Elisabeth D. Chen
 Date: 2016-06-17
 
-Please see gdsctools.gdsc1000 module for other data sets
-
 """
 import os
+import csv
 
 try:     #python 3
     from urllib.request import urlretrieve
 except:
-    from urllib import urlretrieve 
-
-import csv
-
-import pandas as pd
+    from urllib import urlretrieve
 
 from gdsctools.default_sets import DefaultDictionaries
 
 import colorlog as logger
+import pandas as pd
+
 
 class GDSC1000(object ):
     """Help data retrieval from GDSC website (version v17)
@@ -32,6 +27,23 @@ class GDSC1000(object ):
         from gdsctools import GDSC1000
         data = GDSC1000()
         data.download_data()
+
+    Next time, starting GDSCTools in the same directory, just type::
+
+        data = GDSCTools()
+        data.load_data()
+
+    CNA (e.g., :attr:`cna_df`), Methylation and gene variants are downloaded. 
+    IC50 as well and a set of annotations. There are combined in
+    :attr:`genomic_df`.
+
+    The :attr:`genomic_df` contains the :attr:`cna_df`, :attr:`methylation_df`
+    and :attr:`variant_df` data. The three latter contains in common the
+    CELL_LINE, ALTERATION_TYPE, IDENTIFIER  and TISSUE_FACTOR. 
+
+    ALTERATION_TYPE can be GENETIC_VARIATION, METHYLATION, DELETION / AMPLIFICATION 
+    variant_df also has the COSMIC_ID. The :attr:`annotation_df` gives mapping
+    between identifiers and gene names.
 
     .. autosummary::
 
@@ -64,6 +76,13 @@ class GDSC1000(object ):
 
     Finally, you can create the genomic matrix using :meth:`make_matrix`. 
 
+    You can also look at the unique regions for a    given data set. For
+    instance, methylation dataframe has about 2,000 regions but only 338 are
+    unique::
+
+        len(data.methylation_df.groupby('IDENTIFIER').groups)
+
+
     """
     def __init__(self, annotate=False, data_folder_name="./data/gdsc_1000_data/" ):
         """.. rubric:: constructor
@@ -88,6 +107,19 @@ class GDSC1000(object ):
                         }
 
         self.defaults = DefaultDictionaries()
+        self.core_genes = self.defaults.gene_dict['Core Genes']
+
+    def __str__(self):
+        try:
+            txt = "Cell lines: {}\n".format(len(self.cell_line_df))
+        except:
+            return "You must call download_data() or load_data()"
+        txt += "CNA features: {}\n".format(len(self.cna_df))
+        txt += "Methylation features: {}\n".format(len(self.methylation_df))
+        txt += "Variant: {}\n".format(len(self.variant_df))
+        total = len(self.cna_df) + len(self.methylation_df) + len(self.variant_df)
+        txt += "Total: {}".format(total)
+        return txt
 
     def _get_path(self, key):
         return self._data_folder_name + self._mapper[key][1]
@@ -120,7 +152,7 @@ class GDSC1000(object ):
         self.variant_df = self._read_csv("variant.csv")
         self.methylation_df = self._read_csv("methylation.csv")
         self.cna_df = self._read_csv("cna.csv")
-        self.cell_line_dict = self._read_csv("cell_line_dict.csv")
+        self.cell_line_df = self._read_csv("cell_line_dict.csv")
         self.ic50_df = self._read_csv("ic50_full_matrix.csv")
 
         self.drug_decoder_df = self._read_csv("drug_decoder.csv")
@@ -204,9 +236,9 @@ class GDSC1000(object ):
         df.index = range(len(df.index ) )
         df = df.drop(0)
         df = df[['CELL_LINE', 'COSMIC_ID', 'TISSUE_FACTOR', 'MSI_FACTOR',
-                 'MEDIA_FACTOR', 'GROWTH_FACTOR' ] ]
+                 'MEDIA_FACTOR', 'GROWTH_FACTOR']]
         self._to_csv(df, 'cell_line_dict.csv')
-        self.cell_line_dict = df
+        self.cell_line_df = df
 
     def _read_ic50_data(self):
         logger.info("Processing IC50 data." )
@@ -235,7 +267,7 @@ class GDSC1000(object ):
         self.genomic_df = pd.concat([self.variant_df, self.cna_df,
                                      self.methylation_df] ,
                                      axis=0, join='inner')
-        self.genomic_df = self.genomic_df.merge(self.cell_line_dict,
+        self.genomic_df = self.genomic_df.merge(self.cell_line_df,
                                     how='left', on=['CELL_LINE', 'TISSUE_FACTOR'])
         self._to_csv(self.genomic_df, 'genomic.csv')
         self.backup_genomic_df = self.genomic_df
@@ -314,12 +346,16 @@ class GDSC1000(object ):
 
     def filter_by_gene(self, gene_list=None):
         if gene_list is None:
-            print("Please enter a valid gene list or set to 'Core Genes' to use default GDSC1000 core genes" )
+            print("Please enter a valid gene list or set to 'Core Genes' " + 
+                  "to use default GDSC1000 core genes" )
             return
         elif isinstance(gene_list, str ):
             gene_list = self.defaults.gene_dict[gene_list]
-        gene_list = [ x.upper() for x in gene_list ]
-        self.genomic_df = self.genomic_df.query("IDENTIFIER in @gene_list" )
+        #gene_list = [x.upper() for x in gene_list]
+        if self.annotate == True:
+            self.genomic_df = self.genomic_df.query("GENE in @gene_list" )
+        else:
+            self.genomic_df = self.genomic_df.query("IDENTIFIER in @gene_list" )
 
     def filter_by_tissue_type(self, tissue_list=None):
         if tissue_list == None:
@@ -393,3 +429,81 @@ class GDSC1000(object ):
 
         ic50_filtered_matrix = self.ic50_df.query("COSMIC_ID in @self.genomic_matrix.COSMIC_ID.tolist()" )
         self._to_csv(ic50_filtered_matrix, "ic50_make_matrix.csv")
+
+
+    def get_methylation_info(self):
+        """Return dataframe with number of genes per unique methylation identifier"""
+        # Get the unique methylated regions
+        ident = self.methylation_df.IDENTIFIER.unique()
+
+        # From the annotation, extract the corresponding data
+        annotations = self.annotation_df.ix[self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
+
+        # Now, from the subset of annotations, get the GENE column and count
+        # number of genes that may not be unique but separated by commas
+        
+        if self.annotate == True:
+            feature = "GENE"
+            summary = annotations.GENE.apply(lambda x: x.split(","))
+        else:
+            feature = "IDENTIFIER"
+            summary = annotations.IDENTIFIER.apply(lambda x: x.split(","))
+        summary = summary.to_frame()
+        summary['COUNT'] = summary[feature].apply(lambda x: len(x))
+        unique = len(set([y for x in summary[feature].values for y in x]))
+        describe = summary.describe()
+        describe.ix['unique genes'] = unique
+        return describe
+
+    def get_cna_info(self):
+        """Return dataframe with number of genes per unique CNA identifier"""
+        # Get the unique methylated regions
+        ident = self.cna_df.IDENTIFIER.unique()
+
+        # From the annotation, extract the corresponding data
+        annotations = self.annotation_df.ix[self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
+
+        # Now, from the subset of annotations, get the GENE column and count
+        # number of genes that may not be unique but separated by commas
+        if self.annotate == True:
+            feature = "GENE"
+            summary = annotations.GENE.apply(lambda x: x.split(","))
+        else:
+            feature = "IDENTIFIER"
+            summary = annotations.IDENTIFIER.apply(lambda x: x.split(","))
+        summary = summary.to_frame()
+        summary['COUNT'] = summary[feature].apply(lambda x: len(x))
+        unique = len(set([y for x in summary[feature].values for y in x]))
+        describe = summary.describe()
+        describe.ix['unique genes'] = unique
+        return describe
+
+    def get_genomic_info(self):
+        """Return information about the genomic dataframe
+
+        The returned dataframes contains two columns: the number of unique 
+        cosmic identifiers and features for each type of alterations.
+        """
+        cosmic = []
+        features = []
+        alterations =  ['METHYLATION', 'DELETION', 'GENETIC_VARIATION',
+                     'AMPLIFICATION']
+        for alteration in alterations:
+            this = self.genomic_df.ix[self.genomic_df.ALTERATION_TYPE == alteration]
+            N = len(this.COSMIC_ID.unique())
+            cosmic.append(N)
+
+            this = self.genomic_df.ix[self.genomic_df.ALTERATION_TYPE == alteration]
+            features.append(len(this))
+
+        df = pd.DataFrame({"features": features, "cosmic": cosmic})
+        df.index = alterations
+        try:
+            print("Number of unique genes: {}".format(
+                len(self.genomic_df.GENE.unique())))
+        except:
+            print("Number of unique genes: {}".format(
+                len(self.genomic_df.IDENTIFIER.unique())))
+        print("Number of unique COSMIC ID: {}".format(
+            len(self.genomic_df.COSMIC_ID.unique())))
+        return df
