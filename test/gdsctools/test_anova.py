@@ -2,12 +2,15 @@ from gdsctools.anova import ANOVA
 from gdsctools import gdsctools_data
 import pandas as pd
 from easydev import assert_list_almost_equal
-from nose.tools import assert_almost_equal
 from gdsctools import ic50_test
 
 import warnings
 warnings.filterwarnings(action="ignore")
 
+
+def assert_almost_equal(x, delta=1e-6):
+    import pytest
+    pytest.approx(x,abs=delta)
 
 def test_anova_one_drug_one_feature():
 
@@ -91,13 +94,12 @@ def test_anova_all():
     results.volcano()
     results.barplot_effect_size()
 
-    assert_almost_equal( results.df['ANOVA_FEATURE_FDR'].sum(), 
-            10312.23061065521, delta=1e-6)
+    assert_almost_equal(results.df['ANOVA_FEATURE_FDR'].sum()- 
+            10312.23061065521)
 
     an2 = ANOVA(ic50_test, features, set_media_factor=True)
     results = an2.anova_all()
-    assert_almost_equal( results.df['ANOVA_FEATURE_FDR'].sum(), 
-            10238.529313503008, delta=1e-6)
+    assert_almost_equal( results.df['ANOVA_FEATURE_FDR'].sum() - 10238.529313503008)
 
 
 def test_odof_with_without_media():
@@ -107,22 +109,22 @@ def test_odof_with_without_media():
     odof = gdsc._get_one_drug_one_feature_data(1047, 'TP53_mut')
     dd1 = gdsc._get_anova_summary(gdsc.data_lm, output='dict', odof=odof)
 
-    assert_almost_equal(dd1['feature'], 1.5750735472022118e-58, delta=1e-64)
-    assert_almost_equal(dd1['msi'],  0.025902887791637515, delta=1e-10)
+    assert_almost_equal(dd1['feature']- 1.5750735472022118e-58, delta=1e-64)
+    assert_almost_equal(dd1['msi']-  0.025902887791637515, delta=1e-10)
 
     # Change in Nov 2016
     #assert_almost_equal(dd1['tissue'], 5.541879283763767e-44, delta=1e-50)
-    assert_almost_equal(dd1['tissue'], 1.0258702741509e-44, delta=1e-50)
+    assert_almost_equal(dd1['tissue']- 1.0258702741509e-44, delta=1e-50)
 
     gdsc = ANOVA(ic50_test, set_media_factor=True)
     _res = gdsc.anova_one_drug_one_feature(1047, 'TP53_mut')
     odof = gdsc._get_one_drug_one_feature_data(1047, 'TP53_mut')
     dd2 = gdsc._get_anova_summary(gdsc.data_lm, output='dict', odof=odof)
 
-    assert_almost_equal(dd2['feature'], 2.9236500715529455e-58, delta=1e-64)
-    assert_almost_equal(dd2['media'], 0.7762487502315283, delta=1e-10)
-    assert_almost_equal(dd2['msi'], 0.023777744527686766, delta=1e-10)
-    assert_almost_equal(dd2['tissue'], 1.5729157319290974e-44, delta=1e-50)
+    assert_almost_equal(dd2['feature']- 2.9236500715529455e-58, delta=1e-64)
+    assert_almost_equal(dd2['media']- 0.7762487502315283, delta=1e-10)
+    assert_almost_equal(dd2['msi']- 0.023777744527686766, delta=1e-10)
+    assert_almost_equal(dd2['tissue']- 1.5729157319290974e-44, delta=1e-50)
 
 
 def test_anova_summary():
