@@ -16,6 +16,7 @@ before_install:
     - export PATH=$HOME/miniconda3/bin:$PATH
     - hash -r
     - conda update --yes conda
+    - conda config --add channels conda-forge
     - conda config --add channels r
     - conda config --add channels bioconda
     # are not specific to using mini
@@ -27,14 +28,16 @@ before_install:
 
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose pandas coverage statsmodels scikit-learn 
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose pandas coverage statsmodels scikit-learn
   - pip install nose easydev --upgrade
   - pip install coveralls colorlog
   - pip install biokit>=0.3.4
+  - pip install pytest pytest-cov pytest-qt pytest-xdist pytest-mock pytest-timeout
+
 
 # # command to run tests, e.g. python setup.py test
 script:
-  - python setup.py nosetests --with-coverage --cover-package gdsctools
+  - pytest -v --durations=10  test/ --cov=gdsctools --cov-report term-missing --timeout 300 -n 4
 
 after_success:
   coveralls

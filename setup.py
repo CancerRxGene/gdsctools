@@ -31,6 +31,7 @@ metainfo = {
           'License :: OSI Approved :: BSD License',
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3.5',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Scientific/Engineering :: Bio-Informatics',
           'Topic :: Scientific/Engineering :: Information Analysis',
@@ -49,7 +50,7 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 # on rtd, pandas is 1.3.1 cannot use something better for now (march 2016)
 
-# jinja <= 2.9.4
+# jinja <= 2.9.1 because there is a py36 dependencies otherwise
 if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc",
                         "colorlog"]

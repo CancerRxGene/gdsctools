@@ -3,6 +3,14 @@ ChangeLog
 
 .. contents::
 
+Version 0.18.0
+----------------
+
+* CHANGES:
+
+  - move from nosetests to pytest and fix tests accordingly
+  - Fix gdsc1000  module wit new methods and documentation
+
 
 Version 0.17.1
 ---------------
