@@ -15,10 +15,11 @@
 #
 ##############################################################################
 """Sets of miscellaneous tools"""
+import math
+import warnings
+
 import numpy as np
 import pylab
-import math
-
 
 __all__ = ['Logistic', 'LogisticMatchedFiltering']
 
@@ -109,8 +110,6 @@ class Logistic(object):
     def _get_scale(self):
         return self._scale
     def _set_scale(self, scale):
-        if abs(scale)<1e-6:
-            scale = pylab.sign(scale) * 1e-6
         self._scale = scale
     scale = property(_get_scale, _set_scale)
 
@@ -171,10 +170,12 @@ class Logistic(object):
             doc="get/set of the x-values")
 
     def _get_y(self):
-        if self.increase is True:
-            Y = self.Asym / (1. + np.exp((self.xmid - self.X)/self.scale))
-        else:
-            Y = 1. - self.Asym / (1. + np.exp((self.xmid - self.X)/self.scale))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            if self.increase is True:
+                Y = self.Asym / (1. + np.exp((self.xmid - self.X)/self.scale))
+            else:
+                Y = 1. - self.Asym / (1. + np.exp((self.xmid - self.X)/self.scale))
         return Y
     Y = property(_get_y, doc='Getter for Y-values')
 
