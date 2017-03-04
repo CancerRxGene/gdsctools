@@ -32,6 +32,8 @@ class OmniBEMBuilder(object):
     structure compatible with the :class:`GenomicFeature`, which can then be
     used as input to the :class:`~gdsctools.anova.ANOVA` class.
 
+    See the constructor for the header format.
+
     .. plot::
         :include-source:
 
@@ -79,9 +81,9 @@ class OmniBEMBuilder(object):
             COSMIC_ID: an integer
             TISSUE_TYPE: e.g. Methylation,
             SAMPLE: this should correspond to the COSMID_ID
-            TYPE: Methylatyion, 
+            TYPE: Methylation,
             GENE: gene name
-            IDENTIFIER: required for now but may be removed (rows can be 
+            IDENTIFIER: required for now but may be removed (rows can be
                 used as identifier indeed
 
         .. warning:: If GENE is set to NA, we drop it. In the resources shown in
