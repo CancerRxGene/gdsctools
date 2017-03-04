@@ -106,9 +106,10 @@ def main(args=None):
 
         tissues = an.tissue_factor
         try:
-            tissues = tissues.sort_values('Tissue Factor').unique()
-        except:
-            tissues = tissues.sort(inplace=False).unique()
+            tissues = tissues.sort_values().unique()
+        except Exception as err:
+            print(err)
+            tissues = tissues.sort().unique()
         for name in tissues:
             print(name)
         return
