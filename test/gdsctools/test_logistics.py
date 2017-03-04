@@ -9,7 +9,7 @@ def test_logistic():
     tl.scale = 4
     tl.plot(hold=True)
     pylab.legend(['scale=1', 'scale=4'])
-    
+
     # settter
     tl.xmin= -4
     tl.xmax = 4
@@ -20,4 +20,5 @@ def test_logistic():
 def test_logistic_mf():
     mf = LogisticMatchedFiltering(1,2)
     mf.scan(pylab.linspace(-3,3, 10), pylab.linspace(0,5,10))
+
 

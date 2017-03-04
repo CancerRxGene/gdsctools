@@ -1,23 +1,14 @@
-from gdsctools.gdsc1000 import GDSC1000
+from gdsctools import GDSC1000
 
-try:
-    from tempfile import TemporaryDirectory
-except:
-    from tempfile import mkdtemp
-    class TemporaryDirectory(object):
-        def __init__(self):
-            self.name = mkdtemp()
-        def cleanup(self):
-            import shutil
-            shutil.rmtree(self.name)
 
-def test_download():
-    fh = TemporaryDirectory()
-    gg = GDSC1000(data_folder_name=fh.name)
+def test_download(tmpdir):
+    p = tmpdir.mkdir("download")
+    name = "download/"
+
+    gg = GDSC1000(data_folder_name=name)
     gg.download_data()
-    gg.annotate_all()
 
-    gg = GDSC1000(data_folder_name=fh.name)
+    gg = GDSC1000(data_folder_name=name)
     gg.load_data()
 
     # now some filtering. Let us start with alteration_type
@@ -33,8 +24,18 @@ def test_download():
     gg.reset_genomic_data()
 
     # by core genes
+    # numbers labelled (for sure) were found in Liz document
+
+    gg = GDSC1000(data_folder_name=name)
+    gg.load_data()
+    gg.annotate_all()
+
     gg.filter_by_gene("Core Genes")
+    assert len(gg.genomic_df['GENE'].unique()) == 310  # For sure
     assert len(gg.genomic_df)
+    assert gg.get_genomic_info()["cosmic"].METHYLATION == 108 # for sure
+    assert gg.get_methylation_info().ix[0,0] == 338 # for sure
+    gg.get_cna_info()
     gg.reset_genomic_data()
 
     #  by tissues
@@ -59,6 +60,5 @@ def test_download():
 
     gg.make_matrix()
 
-    fh.cleanup()
 
 

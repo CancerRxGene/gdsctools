@@ -58,8 +58,6 @@ class TestPipeline(object):
         pipelines.main([self.prog, '--input-ic50', self.filename,
             '--no-html'])
 
-    def test_license(self):
-        pipelines.main([self.prog, '--license'])
     def test_summary(self):
         pipelines.main([self.prog, '--summary'])
     def test_summary(self):
