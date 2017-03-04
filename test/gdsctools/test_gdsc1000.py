@@ -60,5 +60,3 @@ def test_download(tmpdir):
 
     gg.make_matrix()
 
-
-
