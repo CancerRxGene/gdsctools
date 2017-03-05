@@ -61,10 +61,10 @@ class GDSC1000(object ):
     and saves as csv files in the :attr:`data_folder_name` directory.
 
     If you have already downloaded the data, you may just load it using
-    :meth:`load_data`.
+    :meth:`load_data`. This function also annotates the data with gene
+    information.
 
-    Then, you can annotate or filter the genomic data using :meth:`annotate_all` 
-    or one of the filter methods. ::
+    Then, you filter the data with one of the filter methods::
 
         filter_by_cell_line([ "AsPC-1", "U-2-OS", "MDA-MB-231"... ] )
         filter_by_cosmic_id([ 948121, 2839818, ...] )
@@ -76,7 +76,7 @@ class GDSC1000(object ):
 
     Finally, you can create the genomic matrix using :meth:`make_matrix`. 
 
-    You can also look at the unique regions for a    given data set. For
+    You can also look at the unique regions for agiven data set. For
     instance, methylation dataframe has about 2,000 regions but only 338 are
     unique::
 
@@ -110,15 +110,19 @@ class GDSC1000(object ):
         self.core_genes = self.defaults.gene_dict['Core Genes']
 
     def __str__(self):
+        txt = "Input:"
         try:
-            txt = "Cell lines: {}\n".format(len(self.cell_line_df))
+            txt = "  Cell lines: {}\n".format(len(self.cell_line_df))
         except:
             return "You must call download_data() or load_data()"
-        txt += "CNA features: {}\n".format(len(self.cna_df))
-        txt += "Methylation features: {}\n".format(len(self.methylation_df))
-        txt += "Variant: {}\n".format(len(self.variant_df))
+        txt += "  CNA features: {}\n".format(len(self.cna_df))
+        txt += "  Methylation features: {}\n".format(len(self.methylation_df))
+        txt += "  Variant: {}\n".format(len(self.variant_df))
         total = len(self.cna_df) + len(self.methylation_df) + len(self.variant_df)
-        txt += "Total: {}".format(total)
+        txt += "  Total: {}\n\n".format(total)
+        txt += "Genomic Features :"
+        import collections
+        txt += str(collections.Counter(self.genomic_df.ALTERATION_TYPE))
         return txt
 
     def _get_path(self, key):
@@ -147,7 +151,7 @@ class GDSC1000(object ):
     def _read_csv(self, filename):
         return pd.read_csv(self._data_folder_name + filename)
 
-    def load_data(self):
+    def load_data(self, annotation=True):
         """If CSV files are already downloaded, just load them"""
         self.variant_df = self._read_csv("variant.csv")
         self.methylation_df = self._read_csv("methylation.csv")
@@ -162,6 +166,9 @@ class GDSC1000(object ):
         self.backup_genomic_df = self.genomic_df
         self.backup_ic50_df = self.ic50_df
         self.backup_drug_decoder_df = self.drug_decoder_df
+
+        if annotation:
+            self.annotate_all()
 
     def _urlretrieve(self, filename, target):
         urlretrieve(
@@ -418,8 +425,8 @@ class GDSC1000(object ):
 
         genomic_matrix = pd.crosstab(self.genomic_df[ feature ], 
             columns=[ self.genomic_df["COSMIC_ID"], self.genomic_df['TISSUE_FACTOR'], 
-                      self.genomic_df["CELL_LINE"], self.genomic_df[ "MSI_FACTOR" ],
-                      self.genomic_df[ "MEDIA_FACTOR"] ] )
+                      self.genomic_df["CELL_LINE"], self.genomic_df["MSI_FACTOR"],
+                      self.genomic_df["MEDIA_FACTOR"]])
         genomic_matrix[ genomic_matrix > 1 ] = 1
         self.genomic_matrix = genomic_matrix.T.reset_index()
         self.genomic_matrix.MSI_FACTOR = self.genomic_matrix.MSI_FACTOR.map(msi_dictionary)
@@ -431,17 +438,7 @@ class GDSC1000(object ):
         self._to_csv(ic50_filtered_matrix, "ic50_make_matrix.csv")
 
 
-    def get_methylation_info(self):
-        """Return dataframe with number of genes per unique methylation identifier"""
-        # Get the unique methylated regions
-        ident = self.methylation_df.IDENTIFIER.unique()
-
-        # From the annotation, extract the corresponding data
-        annotations = self.annotation_df.ix[self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
-
-        # Now, from the subset of annotations, get the GENE column and count
-        # number of genes that may not be unique but separated by commas
-        
+    def _get_info(self, annotations):
         if self.annotate == True:
             feature = "GENE"
             summary = annotations.GENE.apply(lambda x: x.split(","))
@@ -454,6 +451,18 @@ class GDSC1000(object ):
         describe = summary.describe()
         describe.ix['unique genes'] = unique
         return describe
+
+    def get_methylation_info(self):
+        """Return dataframe with number of genes per unique methylation identifier"""
+        # Get the unique methylated regions
+        ident = self.methylation_df.IDENTIFIER.unique()
+
+        # From the annotation, extract the corresponding data
+        annotations = self.annotation_df.ix[self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
+
+        # Now, from the subset of annotations, get the GENE column and count
+        # number of genes that may not be unique but separated by commas
+        return self._get_info(annotations)
 
     def get_cna_info(self):
         """Return dataframe with number of genes per unique CNA identifier"""
@@ -465,18 +474,7 @@ class GDSC1000(object ):
 
         # Now, from the subset of annotations, get the GENE column and count
         # number of genes that may not be unique but separated by commas
-        if self.annotate == True:
-            feature = "GENE"
-            summary = annotations.GENE.apply(lambda x: x.split(","))
-        else:
-            feature = "IDENTIFIER"
-            summary = annotations.IDENTIFIER.apply(lambda x: x.split(","))
-        summary = summary.to_frame()
-        summary['COUNT'] = summary[feature].apply(lambda x: len(x))
-        unique = len(set([y for x in summary[feature].values for y in x]))
-        describe = summary.describe()
-        describe.ix['unique genes'] = unique
-        return describe
+        return self._get_info(annotations)
 
     def get_genomic_info(self):
         """Return information about the genomic dataframe

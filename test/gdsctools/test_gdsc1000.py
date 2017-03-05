@@ -9,7 +9,7 @@ def test_download(tmpdir):
     gg.download_data()
 
     gg = GDSC1000(data_folder_name=name)
-    gg.load_data()
+    gg.load_data(annotation=False)
 
     # now some filtering. Let us start with alteration_type
     assert gg.genomic_df.shape == (42231, 8)
@@ -27,8 +27,7 @@ def test_download(tmpdir):
     # numbers labelled (for sure) were found in Liz document
 
     gg = GDSC1000(data_folder_name=name)
-    gg.load_data()
-    gg.annotate_all()
+    gg.load_data() # Here, we include the annotations
 
     gg.filter_by_gene("Core Genes")
     assert len(gg.genomic_df['GENE'].unique()) == 310  # For sure
