@@ -6,6 +6,11 @@ ChangeLog
 Version 0.18.0
 ----------------
 
+* BUG:
+
+   - FDR not taken into account in the volcano as shown in
+     https://github.com/CancerRxGene/gdsctools/issues/168
+
 * CHANGES:
 
   - move from nosetests to pytest and fix tests accordingly

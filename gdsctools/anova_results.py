@@ -152,7 +152,7 @@ class ANOVAResults(object):
     """
     _colname_drug_id = 'DRUG_ID'
 
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, settings=None):
         """.. rubric:: Constructor
 
         :param str filename: Another ANOVAResults instance or a 
@@ -242,6 +242,8 @@ class ANOVAResults(object):
             'ANOVA_FEATURE_FDR']
 
         self._df.reset_index(drop=True)
+        self.settings = settings
+
 
     def astype(self, df):
         try:
@@ -294,6 +296,8 @@ class ANOVAResults(object):
         See the online documentation for details on gdsctools.readthedocs.io.
 
         """
+        if settings is None:
+            settings = self.settings
         if len(self.df) == 0:
             print("No data to plot")
             return

@@ -425,6 +425,7 @@ class VolcanoANOVA(object):
         if fdr < self.df[self._colname_qvalue].min():
             fdr = self.df[self._colname_qvalue].min()
 
+
         fdrs = sorted(self.settings.volcano_additional_FDR_lines)
         fdrs = fdrs[::-1] # reverse sorting
 
@@ -437,6 +438,7 @@ class VolcanoANOVA(object):
         pvalue = get_pvalue_from_fdr(fdr)
         ax.axhline(-np.log10(pvalue), linestyle='--', lw=2,
             color='red', alpha=1, label="FDR %s " %  fdr + " %")
+
 
         for i, this in enumerate(fdrs):
             if this < self.df[self._colname_qvalue].min() or\

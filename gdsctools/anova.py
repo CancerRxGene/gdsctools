@@ -769,7 +769,7 @@ Y ~ C(tissue) + C(media) + feature
             return df
         else:
             df = self.add_pvalues_correction(df)
-            res = ANOVAResults(df)
+            res = ANOVAResults(df, self.settings)
             res.settings = ANOVASettings(**self.settings)
             return res
 
@@ -859,10 +859,7 @@ Y ~ C(tissue) + C(media) + feature
         df = df[self.column_names]
         df.reset_index(inplace=True, drop=True)
 
-        results = ANOVAResults()
-        results.df = df
-        results.settings = ANOVASettings(**self.settings)
-        return results
+        return ANOVAResults(df, self.settings)
 
     def add_pvalues_correction(self, df, colname='ANOVA_FEATURE_pval'):
         """Compute and add corrected pvalues in column ANOVA_FEATURE_FDR
