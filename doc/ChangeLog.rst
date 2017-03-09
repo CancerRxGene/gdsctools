@@ -14,7 +14,7 @@ Version 0.18.0
 * CHANGES:
 
   - move from nosetests to pytest and fix tests accordingly
-  - Fix gdsc1000  module wit new methods and documentation
+  - Fix gdsc1000  module with new methods and documentation
 
 
 Version 0.17.1
@@ -153,12 +153,12 @@ Version 0.14 (20th June 2016)
 
 * CHANGES:
 
-    - ElasticNet plot_weights is now split into plot_weights 
+    - ElasticNet plot_weights is now split into plot_weights
       and plot_importance.
-   
-* BUGS: 
 
-    - Fixes missing files in the pypi distributino (MANIFEST changed) 
+* BUGS:
+
+    - Fixes missing files in the pypi distributino (MANIFEST changed)
 
 
 Version 0.13 (27th May 2016)
@@ -175,11 +175,11 @@ Version 0.13 (27th May 2016)
       identifier into integers. This is done internally for the IC50 file,
       however, was not done inside the DrugDecoder file. This is now effective.
     - HTML reports when using the GDSC class:
-      - Company names now appear systematically in the top of the company data
-        packages.
-      - Drug Names were missing and do now appear in top of the relevant HTML
-        pages.
-    - Boxplots: If a DrugDecode file is provided Boxplots show the DRUG ID 
+        - Company names now appear systematically in the top of the company data
+          packages.
+        - Drug Names were missing and do now appear in top of the relevant HTML
+          pages.
+    - Boxplots: If a DrugDecode file is provided Boxplots show the DRUG ID
       and the real drug name in the matplotlib and JS boxplots
 
 

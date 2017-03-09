@@ -1,3 +1,5 @@
+.. _v17a:
+
 Notes to reproduce v17a results (GDSC1000 Cell paper)
 =========================================================
 
