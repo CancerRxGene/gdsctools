@@ -131,8 +131,6 @@ def test_drugs():
     # r1.get_info() this example fails because all webrelease are NAN
     assert len(r1) == 11
 
-    
-
     dd = DrugDecode(gdsctools_data("test_drug_decode_comp.csv"))
     assert dd.companies == ["ME"]
     assert dd.is_public(5) == 'Y'
@@ -144,6 +142,11 @@ def test_drugs():
     # test __add__
     assert dd + dd == dd
     assert len(dd.get_public_and_one_company("ME")) == 10
+
+
+    dd = DrugDecode(testing.drug_test_csv)
+    dd.get_name("Drug_1047_IC50") == "Nutlin-3a"
+
 
 def test_readers_tabs():
     # If the files ends in csv but its content is tsv, this may be an issue
