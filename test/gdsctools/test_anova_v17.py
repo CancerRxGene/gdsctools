@@ -18,21 +18,21 @@ def test_skcm():
 
     diag = diag.set_index('text')
 
-    assert diag.ix["Total number of ANOVA tests performed"].values == 5194
-    assert diag.ix["Percentage of tests performed"].values == 81.66
-    assert diag.ix["Total number of tested drugs"].values ==  265
-    assert diag.ix["Total number of genomic features used"].values == 24
-    assert diag.ix["Total number of screened cell lines"].values == 55
-    assert diag.ix["MicroSatellite instability included as factor"].values == False
-    assert diag.ix["Total number of significant associations"].values == 13
-    assert diag.ix[" - sensitive"].values == 8
-    assert diag.ix[" - resistant"].values == 5
-    assert diag.ix["p-value significance threshold"].values == 0.001
-    assert diag.ix["FDR significance threshold"].values == 25
-    assert diag.ix["Range of significant p-values"].values[0] == "[9.87e-08, 0.0006358]"
-    assert diag.ix["Range of significant % FDRs"].values[0] == "[0.04777 23.67]"
+    assert diag.loc["Total number of ANOVA tests performed"].values == 5194
+    assert diag.loc["Percentage of tests performed"].values == 81.66
+    assert diag.loc["Total number of tested drugs"].values ==  265
+    assert diag.loc["Total number of genomic features used"].values == 24
+    assert diag.loc["Total number of screened cell lines"].values == 55
+    assert diag.loc["MicroSatellite instability included as factor"].values == False
+    assert diag.loc["Total number of significant associations"].values == 13
+    assert diag.loc[" - sensitive"].values == 8
+    assert diag.loc[" - resistant"].values == 5
+    assert diag.loc["p-value significance threshold"].values == 0.001
+    assert diag.loc["FDR significance threshold"].values == 25
+    assert diag.loc["Range of significant p-values"].values[0] == "[9.87e-08, 0.0006358]"
+    assert diag.loc["Range of significant % FDRs"].values[0] == "[0.04777 23.67]"
 
-    assert_list_almost_equal(report.df.ix[0].values,
+    assert_list_almost_equal(report.df.iloc[0].values,
         np.array([1, 'BRAF_mut', 1373, None, None, 10, 35,
             -2.1750318847152079, 2.9802302648104275, -5.155262149525635,
                2.291545942648078, 3.2964327113036669, 2.1492596576572947,
@@ -41,7 +41,7 @@ def test_skcm():
             dtype=object))
 
     assert_list_almost_equal(
-        [report.df.ix[12]['ANOVA_FEATURE_FDR']], [23.671582956786185])
+        [report.df.iloc[12]['ANOVA_FEATURE_FDR']], [23.671582956786185])
 
     report.create_html_pages(onweb=False)
 

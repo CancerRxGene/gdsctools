@@ -23,7 +23,7 @@ def test_omnibem():
     ob.filter_by_cosmic_list([910916])
     mobem = ob.get_mobem()
     assert mobem.shape == (1,105)
-    assert mobem.ix[0,3:].sum() == 102
+    assert mobem.iloc[0,3:].sum() == 102
 
     ob = OmniBEMBuilder(omnibem_data)
     ob.filter_by_type_list(["Methylation"])
