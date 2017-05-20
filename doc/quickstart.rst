@@ -20,7 +20,7 @@ you can run the entire ANOVA analysis as follows::
     gdsc = ANOVA(IC50_filename, genomic_feature_filename)
     results = gdsc.anova_all()
 
-And create an HTML report as follows:::
+And create an HTML report as follows::
 
     from gdsctools import ANOVAReport
     report = ANOVAReport(gdsc, results) 
@@ -42,8 +42,8 @@ Regression analysis
 Similarly, for the regression analysis, one can write a script as above::
 
     from gdsctools import GDSCLasso
-    gdsc = GDSCLasso(IC50_filename, genomic_feature_filename)
-    for drugID in lasso.drugIds:
+    lasso = GDSCLasso(IC50_filename, genomic_feature_filename)
+    for drugid in lasso.drugIds:
         res = lasso.runCV(drugid, kfolds=8)
         best_model = lasso.get_model(alpha=res.alpha)
         weights = lasso.plot_weight(drugid, best_model)
