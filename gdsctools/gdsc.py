@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+#
+#  This file is part of GDSCTools software
+#
+#  Copyright (c) 201 - GDSCTools Development Team
+#
+#  File author(s): Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
+#
+#  Distributed under the terms of the 3-clause BSD license.
+#  The full license is in the LICENSE file, distributed with this software.
+#
+#  documentation: http://gdsctools.readthedocs.io
+#
+##############################################################################
 import glob
 import os
 
@@ -253,7 +267,7 @@ class GDSC(GDSCBase):
     if provided. This will also create a data package for each tissue.
     The data packages are stored in ./tissue_packages directory.
 
-    Since all private and public drugs are stored together, the next step is 
+    Since all private and public drugs are stored together, the next step is
     to create data packages for each company::
 
         gg.create_data_packages_for_companies()
@@ -413,7 +427,7 @@ class GDSC(GDSCBase):
                 mask = [True if x in drug_decode_company.df.index else False
                         for x in results.df.DRUG_ID]
 
-                results.df = results.df.ix[mask]
+                results.df = results.df.loc[mask]
 
                 # We read the IC50 again
                 try:
@@ -463,7 +477,7 @@ class GDSC(GDSCBase):
         packages have been created (:meth:`create_data_packages_for_companies`),
         you can run this method that will creade a summary HTML page
         (index.html) for the tissue, and a similar summary HTML page for the
-        tissues of each company. Finally, an HTML summary page for the 
+        tissues of each company. Finally, an HTML summary page for the
         companies is also created.
 
         The final tree direcorty looks like::
@@ -558,7 +572,7 @@ class GDSC(GDSCBase):
             drug_decode = DrugDecode(path + 'DRUG_DECODE.csv')
             info = drug_decode.get_info()
 
-            webrelease = drug_decode.df.ix[drug_involved].WEBRELEASE
+            webrelease = drug_decode.df.loc[drug_involved].WEBRELEASE
             drug_inv_public = sum(webrelease == 'Y')
             drug_inv_prop = sum(webrelease != 'Y')
 

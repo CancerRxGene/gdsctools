@@ -449,7 +449,7 @@ class GDSC1000(object ):
         summary['COUNT'] = summary[feature].apply(lambda x: len(x))
         unique = len(set([y for x in summary[feature].values for y in x]))
         describe = summary.describe()
-        describe.ix['unique genes'] = unique
+        describe.loc['unique genes'] = unique
         return describe
 
     def get_methylation_info(self):
@@ -458,7 +458,8 @@ class GDSC1000(object ):
         ident = self.methylation_df.IDENTIFIER.unique()
 
         # From the annotation, extract the corresponding data
-        annotations = self.annotation_df.ix[self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
+        annotations = self.annotation_df.loc[
+            self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
 
         # Now, from the subset of annotations, get the GENE column and count
         # number of genes that may not be unique but separated by commas
@@ -470,7 +471,8 @@ class GDSC1000(object ):
         ident = self.cna_df.IDENTIFIER.unique()
 
         # From the annotation, extract the corresponding data
-        annotations = self.annotation_df.ix[self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
+        annotations = self.annotation_df.loc[
+            self.annotation_df.IDENTIFIER.apply(lambda x: x in ident)]
 
         # Now, from the subset of annotations, get the GENE column and count
         # number of genes that may not be unique but separated by commas
@@ -487,11 +489,11 @@ class GDSC1000(object ):
         alterations =  ['METHYLATION', 'DELETION', 'GENETIC_VARIATION',
                      'AMPLIFICATION']
         for alteration in alterations:
-            this = self.genomic_df.ix[self.genomic_df.ALTERATION_TYPE == alteration]
+            this = self.genomic_df.loc[self.genomic_df.ALTERATION_TYPE == alteration]
             N = len(this.COSMIC_ID.unique())
             cosmic.append(N)
 
-            this = self.genomic_df.ix[self.genomic_df.ALTERATION_TYPE == alteration]
+            this = self.genomic_df.loc[self.genomic_df.ALTERATION_TYPE == alteration]
             features.append(len(this))
 
         df = pd.DataFrame({"features": features, "cosmic": cosmic})

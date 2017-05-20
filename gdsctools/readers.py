@@ -314,7 +314,7 @@ class CosmicRows(object):
         for cosmic in cosmics:
             if cosmic not in self.cosmicIds:
                 raise ValueError('Unknown cosmic identifier')
-        self.df = self.df.ix[cosmics]
+        self.df = self.df.loc[cosmics]
     cosmicIds = property(_get_cosmic, _set_cosmic,
             doc="return list of cosmic ids (could have duplicates)")
 
@@ -425,12 +425,12 @@ class IC50(Reader, CosmicRows):
         _cols = [str(x) for x in self.df.columns]
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
             colorlog.warning("'COSMIC ID' column name is deprecated since " +
-            "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
+            "0.9.10. Please replace with 'COSMIC_ID'")
             self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID")
                     for x in self.df.columns]
         if "CL" in _cols and "COSMID_ID" not in self.df.columns:
             colorlog.warning("'CL column name is deprecated since " +
-            "0.9.10. Please replace with 'COSMIC_ID'", DeprecationWarning)
+            "0.9.10. Please replace with 'COSMIC_ID'")
             self.df.columns = [x.replace("CL", "COSMIC_ID")
                     for x in self.df.columns]
 
@@ -651,8 +651,7 @@ class GenomicFeatures(Reader, CosmicRows):
                     'COSMIC ID': 'COSMIC_ID'}.items():
             if old in self.df.columns:
                 colorlog.warning("'%s' column name is deprecated " % old +
-                    " since 0.9.10. Please replace with '%s'" %  new,
-                    DeprecationWarning)
+                    " since 0.9.10. Please replace with '%s'"%  new)
                 self.df.columns = [x.replace(old, new)
                         for x in self.df.columns]
         if "CL" in self.df.columns and "COSMID_ID" not in self.df.columns:
@@ -665,8 +664,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # If tissue factor is not provided, we create and fill it with dummies.
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
-            colorlog.info("column named '%s' not found"
-                    % self.colnames.tissue, UserWarning)
+            colorlog.info("column named '%s' not found" % self.colnames.tissue)
             self.df[self.colnames.tissue] = ['UNDEFINED'] * len(self.df)
             self._special_names.append(self.colnames.tissue)
         else:
@@ -681,7 +679,6 @@ class GenomicFeatures(Reader, CosmicRows):
         self.found_media = self.colnames.media in self.df.columns
         if self.found_media is False:
             pass
-            #colorlog.warning("column named '%s' not found" % self.colnames.media)
         else:
             self._special_names.append(self.colnames.media)
 
@@ -928,7 +925,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # Let us now add the corrsponding duplicats
         for feature in tokeep:
             # Find all row identical to this feature
-            matches = (duplicated.ix[feature] == duplicated).all(axis=1)
+            matches = (duplicated.loc[feature] == duplicated).all(axis=1)
             groups[feature] = "__".join(duplicated.index[matches])
 
         # This drops all duplicated columns (the first is kept, others are
@@ -944,7 +941,7 @@ class GenomicFeatures(Reader, CosmicRows):
     def get_TCGA(self):
         from gdsctools.cosmictools import COSMICInfo
         c = COSMICInfo()
-        tcga = c.df.ix[self.df.index].TCGA
+        tcga = c.df.loc[self.df.index].TCGA
         return tcga
 
 
@@ -1060,7 +1057,7 @@ class DrugDecode(Reader):
     DRUG_ID column::
 
         data = DrugDecode('DRUG_DECODE.csv')
-        data.df.ix[999]
+        data.df.iloc[999]
 
 
     .. note:: the DRUG_ID column must be made of integer
@@ -1116,7 +1113,7 @@ class DrugDecode(Reader):
         try:
             self.df.sort_index(inplace=True)
         except:
-            self.df = self.df.ix[sorted(self.df.index)]
+            self.df = self.df.iloc[sorted(self.df.index)]
         self._check_uniqueness(self.df.index)
 
     def _get_names(self):
@@ -1134,7 +1131,7 @@ class DrugDecode(Reader):
 
     def _get_row(self, drug_id, colname):
         if drug_id in self.df.index:
-            return self.df.ix[drug_id][colname]
+            return self.df.loc[drug_id][colname]
         elif str(drug_id).startswith("Drug_"):
             try:
                 drug_id = int(drug_id.split("_")[1])
@@ -1142,7 +1139,7 @@ class DrugDecode(Reader):
                 print("DRUG ID %s not recognised" % drug_id)
                 return
             if drug_id in self.df.index:
-                return self.df[colname].ix[drug_id]
+                return self.df[colname].loc[drug_id]
         elif "_" in str(drug_id):
             try:
                 drug_id = int(drug_id.split("_")[0])
@@ -1150,7 +1147,7 @@ class DrugDecode(Reader):
                 print("DRUG ID %s not recognised" % drug_id)
                 return
             if drug_id in self.df.index:
-                return self.df[colname].ix[drug_id]
+                return self.df[colname].loc[drug_id]
         else:
             return
 
@@ -1239,7 +1236,7 @@ class DrugDecode(Reader):
 
         # add missing entires
         missing = [x for x in other.df.index if x not in self.df.index]
-        dd.df = dd.df.append(other.df.ix[missing])
+        dd.df = dd.df.append(other.df.iloc[missing])
 
         # merge existing ones
         for index, ts in other.df.iterrows():
@@ -1250,7 +1247,7 @@ class DrugDecode(Reader):
                 # could have been done with pandas.merge but we wish
                 # to check for incompatible data
                 for column in columns:
-                    a = dd.df.ix[index][column]
+                    a = dd.df.loc[index][column]
                     b = ts[column]
                     if pd.isnull(b) is True:
                         # nothing to do if b is NULL

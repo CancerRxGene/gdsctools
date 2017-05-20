@@ -148,7 +148,7 @@ class ANOVAReport(object):
 
     def _df_append(self, df, data):
         count = len(df)
-        df.ix[count] = data
+        df.loc[count] = data
         return df
 
     def diagnostics(self):
@@ -236,7 +236,7 @@ class ANOVAReport(object):
         if N == 0:
             return 0., 0.
         name = self.varname_pval
-        data = self.df[name].ix[0:N-1]
+        data = self.df[name].iloc[0:N-1]
         m, M = data.min(), data.max()
         return m, M
 
@@ -456,13 +456,13 @@ class ANOVAReport(object):
             significant_meaningful.append(indices.sum())
 
             # meaningful strong hits
-            mask1 = self.df.ix[indices]['FEATURE_pos_Glass_delta'] >= 1
-            mask2 = self.df.ix[indices]['FEATURE_neg_Glass_delta'] >= 1
+            mask1 = self.df.loc[indices]['FEATURE_pos_Glass_delta'] >= 1
+            mask2 = self.df.loc[indices]['FEATURE_neg_Glass_delta'] >= 1
             strong_hits.append(np.logical_or(mask1, mask2).sum())
 
             # meaningful full strong hits
-            mask1 = self.df.ix[indices]['FEATURE_pos_Glass_delta'] >= 1
-            mask2 = self.df.ix[indices]['FEATURE_neg_Glass_delta'] >= 1
+            mask1 = self.df.loc[indices]['FEATURE_pos_Glass_delta'] >= 1
+            mask2 = self.df.loc[indices]['FEATURE_neg_Glass_delta'] >= 1
             full_strong_hits.append(np.logical_and(mask1, mask2).sum())
 
         data = {'significants': significants,

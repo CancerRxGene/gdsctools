@@ -259,7 +259,7 @@ class BoxPlots(object):
         means = groups.mean().unstack(mode)
 
         if len(means):  # need 2 values
-            delta = means.ix[0] - means.ix[1]
+            delta = means.iloc[0] - means.iloc[1]
             try:
                 # new pandas v0.17
                 delta.sort_values(inplace=True)
@@ -271,7 +271,7 @@ class BoxPlots(object):
             significance = {}
             data = []
             names = []
-            for category in delta.ix['ic50'].index:
+            for category in delta.loc['ic50'].index:
                 prefix_query = mode+"==@category"
                 neg = df.query(prefix_query+' and feature==0',
                         engine='python')['ic50']
@@ -426,7 +426,3 @@ class BoxPlotsJS(BoxPlots):
 
         html = template.render(jinja)
         return html
-
-    
-
-

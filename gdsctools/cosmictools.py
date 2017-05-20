@@ -45,7 +45,7 @@ class COSMICFetcher(object):
 
         >>> from gdsctools.cosmictools import COSMICFetcher
         >>> cf = COSMICFetcher() # this may take a while to download the file
-        >>> cf.df.ix[0]
+        >>> cf.df.loc[0]
         ID                                       OS-A
         AC                                  CVCL_0C23
         CA                           Cancer cell line
@@ -216,7 +216,7 @@ class COSMICInfo(object):
         if identifier not in self.df.index:
             ts = pd.Series([None]*12, index=self.df.columns, name=identifier)
         else:
-            ts = self.df.ix[identifier]
+            ts = self.df.loc[identifier]
 
         if colname is None:
             return ts.copy() # to be safe since user may change it 

@@ -207,7 +207,7 @@ class BaseModels(object):
         # keep only features that correspond to the tissue
         self.features.keep_tissue_in(ctype)
 
-        self.ic50.df = self.ic50.df.ix[self.features.df.index]
+        self.ic50.df = self.ic50.df.loc[self.features.df.index]
         self.init()
 
     def read_settings(self, settings):
@@ -226,8 +226,8 @@ class BaseModels(object):
         # Y for the data and indices for the cosmicID where
         # there is an IC50 measured.
         self.ic50_dict = dict([
-            (d, {'indices': ic50_parse.ix[d].index,
-             'Y': ic50_parse.ix[d].values}) for d in self.ic50.drugIds])
+            (d, {'indices': ic50_parse.loc[d].index,
+             'Y': ic50_parse.loc[d].values}) for d in self.ic50.drugIds])
         cosmicIds = list(self.ic50.df.index)
         for key in self.ic50_dict.keys():
             indices = [cosmicIds.index(this) for this in
@@ -249,17 +249,18 @@ class BaseModels(object):
         self.media_dict = {}
         # fill the dictionaries for each drug once for all
         for drug_name in self.ic50.drugIds:
+            # NOTE: indices are actually cosmid ids (not indices from 0 to N)
             indices = self.ic50_dict[drug_name]['indices']
 
             # MSI, media and tissue are not large data files and can be stored
             # enterily
             if self.features.found_msi:
-                self.msi_dict[drug_name] = self.msi_factor.ix[indices]
+                self.msi_dict[drug_name] = self.msi_factor.loc[indices]
 
             if self.settings.include_media_factor:
-                self.media_dict[drug_name] = self.media_factor.ix[indices]
+                self.media_dict[drug_name] = self.media_factor.loc[indices]
 
-            self.tissue_dict[drug_name] = self.tissue_factor.ix[indices]
+            self.tissue_dict[drug_name] = self.tissue_factor.loc[indices]
 
         # some preprocessing for the OLS computation.
         # We create the dummies for the tissue factor once for all

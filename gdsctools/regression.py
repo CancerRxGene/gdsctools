@@ -138,7 +138,7 @@ class Regression(BaseModels):
         """
         Y = self.ic50.df[name]
         Y.dropna(inplace=True)
-        X = self.features.df.ix[Y.index].copy()
+        X = self.features.df.loc[Y.index].copy()
         try:X = X.drop('TISSUE_FACTOR', axis=1)
         except:pass
         try: X = X.drop('MSI_FACTOR', axis=1)
@@ -730,11 +730,11 @@ class Regression(BaseModels):
         _X, Y = self._get_one_drug_data(drug_name)
 
         names = list(indices.keys())
-        means = [Y.ix[indices[name]].dropna().mean() for name in names]
+        means = [Y.loc[indices[name]].dropna().mean() for name in names]
         df = pd.DataFrame({"names":names, "mean": means})
         sorted_names_by_mean = df.sort_values(by="mean")['names']
 
-        data = [Y.ix[indices[name]].dropna() for name in sorted_names_by_mean]
+        data = [Y.loc[indices[name]].dropna() for name in sorted_names_by_mean]
 
         # the dropna means some subdata/names are now empty
         sorted_names_by_mean = [name for this,name in zip(data, sorted_names_by_mean) if len(this)]

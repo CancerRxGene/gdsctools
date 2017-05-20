@@ -83,8 +83,8 @@ class ChemSpiderSearch(object):
         """
         N = len(self.drug_ids)
         pb = Progress(N)
-        for i,this in enumerate(self.drug_ids):
-            entry = self.dd.df.ix[this]
+        for i, this in enumerate(self.drug_ids):
+            entry = self.dd.df.loc[this]
             # if no information is provided, we will need to get it 
             # from chemspider
 
@@ -92,22 +92,22 @@ class ChemSpiderSearch(object):
             # same for chemspider and pubchem and CAS
             select = entry[['CHEMSPIDER', 'CHEMBL', 'PUBCHEM']]
             if select.count() == 0:
-                name = self.dd.df.ix[this].DRUG_NAME
+                name = self.dd.df.loc[this].DRUG_NAME
                 results = self._cs_find(name)
                 if len(results) == 0:
                     # nothing found
                     pass
                 elif len(results) == 1:
-                    self.dd_filled.df.ix[this].loc['CHEMSPIDER'] = results[0]
+                    self.dd_filled.df.loc[this].loc['CHEMSPIDER'] = results[0]
                 else:
                     # non unique
                     #chemspider = ",".join([str(x) for x in results])
-                    self.dd_filled.df.ix[this].loc['CHEMSPIDER'] = results
+                    self.dd_filled.df.loc[this].loc['CHEMSPIDER'] = results
             pb.animate(i+1)
 
         # Search in chemspider systematically
         for i, this in enumerate(self.drug_ids):
-            entry = self.dd.df.ix[this]
+            entry = self.dd.df.loc[this]
             if select.count() == 1:
                 res = self._cs_find(drug)
 
@@ -180,7 +180,7 @@ class ChemSpiderSearch(object):
         results = []
         for i, index in enumerate(self.dd.df.index):
             drug = self.dd.df.index[i]
-            drug_name = self.dd.df.ix[drug].DRUG_NAME
+            drug_name = self.dd.df.loc[drug].DRUG_NAME
             try:
                 res = self._cs_find(drug_name)
             except:

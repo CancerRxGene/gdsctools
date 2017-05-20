@@ -3,6 +3,16 @@ ChangeLog
 
 .. contents::
 
+Version 0.19.0
+--------------------
+
+- CHANGES:
+
+    - Update GDSCTools to use latest Pandas version (0.20); in particular
+      the .ix getter is deprecated and should be replaced by loc/ilc
+    - pin version of pandas to 0.20 and colormap to 1.0.1 in the setup 
+
+
 Version 0.18.0
 ----------------
 
@@ -215,15 +225,15 @@ Version 0.12 (9th May 2016)
 * CHANGES:
 
     - SPEEDUP:
-      - tissue specific analysis computational time decreased by 50%
-        by dropping the creation of dataframe and using a simple numpy array
-        inside ANOVA.anova_one_drug_one_feature
-      - Creation of volcano plots uses pure javascript for the data packages
-        and the creation of the volcano plots was dramatically sped up by a
-        factor between 10 and 100e. One can still create volcano plot manually
-        in pure matplotlib.
-      - Similarly, boxplots for tissue, MSI and all associations are now
-        created using JS.
+        - tissue specific analysis computational time decreased by 50%
+          by dropping the creation of dataframe and using a simple numpy array
+          inside ANOVA.anova_one_drug_one_feature
+        - Creation of volcano plots uses pure javascript for the data packages
+          and the creation of the volcano plots was dramatically sped up by a
+          factor between 10 and 100e. One can still create volcano plot manually
+          in pure matplotlib.
+        - Similarly, boxplots for tissue, MSI and all associations are now
+          created using JS.
     - Data packages have been refactored. The major difference concerns
       the HTML layout (most HTML files are now in the sub-directory
       called associations) so that is it cleaner at the top level. The volcano

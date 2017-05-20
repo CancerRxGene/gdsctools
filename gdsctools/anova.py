@@ -280,7 +280,7 @@ class ANOVA(BaseModels): #Logging):
     def anova_one_drug_one_feature(self, drug_id,
             feature_name, show=False,
             production=False, directory='.'):
-        """
+        """Compute ABOVA one drug and one feature level
 
         :param drug_id: a valid drug identifier
         :param feature_name: a valid feature name
@@ -297,7 +297,6 @@ class ANOVA(BaseModels): #Logging):
         .. note:: **for developer** Data used in this function comes from
             _get_one_drug_one_feature_data method, which should also be kept
             as fast as possible.
-        data = data.replace(np.inf, 0)
         """
         if drug_id not in self.drugIds:
             raise ValueError('Unknown drug name %s. Use e.g., %s'
@@ -369,7 +368,7 @@ class ANOVA(BaseModels): #Logging):
             # instead we create the full matrix in init() method.
             # One issue is that some columns end up with sum == 0
             # and needs to be dropped.
-            df = self._tissue_dummies.ix[odof.masked_tissue.index]
+            df = self._tissue_dummies.loc[odof.masked_tissue.index]
             todrop = df.columns[df.values.sum(axis=0) == 0]
 
             if len(todrop) > 0: # use if since drop() is slow
@@ -453,7 +452,7 @@ class ANOVA(BaseModels): #Logging):
             ff.distributions = [dist]
             ff.fit()
             self.pvalues_features[key] = {
-                'error': ff.df_errors.ix[dist].values[0],
+                'error': ff.df_errors.loc[dist].values[0],
                 'params': ff.fitted_param[dist],
                 'feature': feature_name,
                 'N':len(Y)}

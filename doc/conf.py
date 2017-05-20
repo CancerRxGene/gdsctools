@@ -144,6 +144,7 @@ modindex_common_prefix = ["gdsctools."]
 plot_gallery = True
 sphinx_gallery_conf = {
     "doc_module": "gdsctools",
+    "backreferences_dir": False
 #    "examples_dirs": "examples",
 #    "gallery_dirs": "auto_examples",
 }

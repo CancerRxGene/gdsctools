@@ -160,7 +160,7 @@ class VolcanoANOVA(object):
             indices = range(0, Nbest)
         # indices in the index may not be order
         indices = [df.index[xx] for xx in indices]
-        df = df.ix[indices]
+        df = df.iloc[indices]
         if inplace is True:
             self.df = df
         else:
@@ -265,10 +265,10 @@ class VolcanoANOVA(object):
 
         # groups created in the constructor once for all
         if mode == self._colname_drugid:
-            subdf = self.df.ix[self.groups_by_drugs[target]]
+            subdf = self.df.loc[self.groups_by_drugs[target]]
             texts = subdf[self._colname_feature]
         elif mode == 'FEATURE':
-            subdf = self.df.ix[self.groups_by_features[target]]
+            subdf = self.df.loc[self.groups_by_features[target]]
             texts = subdf[self._colname_drugid]
         elif mode == 'ALL':
             # nothing to do, get all data
@@ -476,12 +476,12 @@ class VolcanoANOVA(object):
         def onpick(event):
             ind = event.ind[0]
             try:
-                title = str(str(data.ix[ind]['Drug'])) + " / " + str(data.ix[ind].Feature)
-                title += "\nFDR=" + "%.4e" % data.ix[ind]['FDR']
+                title = str(str(data.iloc[ind]['Drug'])) + " / " + str(data.iloc[ind].Feature)
+                title += "\nFDR=" + "%.4e" % data.iloc[ind]['FDR']
                 title_handler.set_text(title.replace("_","  "))
             except:
                 print('Failed to create new title on click')
-            print(data.ix[ind].T)
+            print(data.iloc[ind].T)
             fig.canvas.draw()
 
         # keep track on the id for further memory release
@@ -740,7 +740,7 @@ class ScatterJS(object):
 
         text = []
         for index in zip(self.data.index):
-            text.append("<pre>%s</pre>" % self.data.ix[index][selection].to_string())
+            text.append("<pre>%s</pre>" % self.data.iloc[index][selection].to_string())
         jinja['vars'] = text
 
         #self.data.markersize /= (self.data.markersize.max()/3.)

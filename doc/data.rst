@@ -69,7 +69,7 @@ If you save that example in a file, you can read it with the
 .. doctest::
 
     >>> from gdsctools import IC50
-    >>> r = IC50('source/ic50_tiny.csv')
+    >>> r = IC50('_static/ic50_tiny.csv')
     >>> r.drugIds
     [1, 20, 40]
 
@@ -128,7 +128,7 @@ It can be saved and read as follows with the :class:`GenomicFeatures`
 .. doctest::
 
     >>> from gdsctools import GenomicFeatures
-    >>> gf = GenomicFeatures('source/gf_tiny.csv')
+    >>> gf = GenomicFeatures('_static/gf_tiny.csv')
     >>> gf
     GenomicFeatures <Nc=2, Nf=2, Nt=2>
 
@@ -154,18 +154,26 @@ Note that you may create instance of GenomicFeatures without input but a default
 
 Combine IC50 and Genomic Features
 ====================================
-Here is an example on how to plot histograms of IC50s grouped by tissues
+Here is an example on how to plot histograms of IC50s grouped by tissues.
+For convenience, we keep only 9 tissues.
+
 
 .. plot::
     :include-source:
     :width: 80%
 
     from gdsctools import *
+    from numpy import mean
     ic50 = IC50(ic50_v17)
     gf = GenomicFeatures(gf_v17)
     # select tissue column in same order as those stored in IC50 dataframe
-    tissues = gf.df.ix[ic50.df.index]['TISSUE_FACTOR']
+    tissues = gf.df.loc[ic50.df.index]['TISSUE_FACTOR']
     ic50.df['tissue'] = tissues
+
+    # keep only 9 tissues
+    tokeep = list(set(tissues))[0:9]
+    ic50.df = ic50.df.query("tissue in @tokeep")
+
     # Group by tissues
     tt = ic50.df.groupby("tissue").aggregate(mean).transpose()
     #plot histogram of IC50 group by tissues
@@ -222,7 +230,7 @@ An example can be read as follows:
     >>> dd = DrugDecode(drug_filename)
     >>> dd.get_name(1047)
     'Nutlin-3a'
-    >>> dd.df.ix[999]
+    >>> dd.df.loc[999]
     CHEMBL_ID              NaN
     CHEMSPIDER_ID          NaN
     DRUG_NAME        Erlotinib
