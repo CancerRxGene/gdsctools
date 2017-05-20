@@ -236,7 +236,7 @@ class ANOVAReport(object):
         if N == 0:
             return 0., 0.
         name = self.varname_pval
-        data = self.df[name].iloc[0:N-1]
+        data = self.df[name].iloc[0:N]
         m, M = data.min(), data.max()
         return m, M
 
