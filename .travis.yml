@@ -29,10 +29,11 @@ before_install:
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 # reports on conda-forge is not compiled for py3.4 so we install it with pip
 install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose pandas coverage statsmodels scikit-learn 
-  - pip install nose easydev --upgrade
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
+  - conda install --yes matplotlib nose pandas==0.20.0 coverage statsmodels scikit-learn
+  - conda install --yes matplotlib biokit==0.4.1
+  - pip install nose --upgrade
   - pip install coveralls colorlog
-  - pip install biokit>=0.3.4
   - pip install jinja2 reports
   - pip install pytest pytest-cov pytest-qt pytest-xdist pytest-mock 
   - pip install .
