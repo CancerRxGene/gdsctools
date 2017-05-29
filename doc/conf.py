@@ -144,6 +144,7 @@ plot_gallery = True
 if on_rtd:
     sphinx_gallery_conf = {
         "doc_module": "gdsctools",
+        "backreferences_dir": True,
     }
 else:
     sphinx_gallery_conf = {
@@ -177,9 +178,6 @@ def touch_example_backreferences(app, what, name, obj, options, lines):
 def setup(app):
     app.add_javascript('copybutton.js')
     app.connect('autodoc-process-docstring', touch_example_backreferences)
-
-
-
 
 
 # -- Options for HTML output ---------------------------------------------------
