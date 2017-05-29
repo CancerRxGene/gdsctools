@@ -141,18 +141,11 @@ modindex_common_prefix = ["gdsctools."]
 
 # -- sphinx gallery ------------------------------------------------------------
 plot_gallery = True
-if on_rtd:
-    sphinx_gallery_conf = {
-        "doc_module": "gdsctools",
-        "backreferences_dir": True,
-    }
-else:
-    sphinx_gallery_conf = {
-        "doc_module": "gdsctools",
-        "backreferences_dir": False,
-        #    "examples_dirs": "examples",
-        "gallery_dirs": "auto_examples",
-    }
+sphinx_gallery_conf = {
+    "doc_module": "sequana",
+#    "examples_dirs": "examples",
+#    "gallery_dirs": "auto_examples",
+}
 
 # Get rid of spurious warnings due to some interaction between
 # autosummary and numpydoc. See
