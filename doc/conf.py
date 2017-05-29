@@ -48,6 +48,7 @@ from easydev import get_path_sphinx_themes
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
+on_rtd = os.environ.get("READTHEDOCS", None) == True
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -140,12 +141,17 @@ modindex_common_prefix = ["gdsctools."]
 
 # -- sphinx gallery ------------------------------------------------------------
 plot_gallery = True
-sphinx_gallery_conf = {
-    "doc_module": "gdsctools",
-    "backreferences_dir": False,
-#    "examples_dirs": "examples",
-    "gallery_dirs": "auto_examples",
-}
+if on_rtd:
+    sphinx_gallery_conf = {
+        "doc_module": "gdsctools",
+    }
+else:
+    sphinx_gallery_conf = {
+        "doc_module": "gdsctools",
+        "backreferences_dir": False,
+        #    "examples_dirs": "examples",
+        "gallery_dirs": "auto_examples",
+    }
 
 # Get rid of spurious warnings due to some interaction between
 # autosummary and numpydoc. See
@@ -181,7 +187,6 @@ def setup(app):
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
 html_theme = 'standard'
-on_rtd = os.environ.get("READTHEDOCS", None) == True
 if not on_rtd:
     import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'
