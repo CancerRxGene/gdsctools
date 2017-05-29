@@ -34,14 +34,12 @@ version = pkg_resources.require(pkg_name)[0].version
 release = version
 author = "Thomas Cokelaer"
 title = "GDSCtools"
-copyright = author + ", 2015-2016"
+copyright = author + ", 2015-2017"
 project = 'GDSCTools'
 
 import easydev
 from easydev import get_path_sphinx_themes
 
-
-# common sphinx extensions
 
 # -- General configuration -----------------------------------------------------
 
@@ -144,7 +142,7 @@ modindex_common_prefix = ["gdsctools."]
 plot_gallery = True
 sphinx_gallery_conf = {
     "doc_module": "gdsctools",
-    "backreferences_dir": False
+#    "backreferences_dir": False
 #    "examples_dirs": "examples",
 #    "gallery_dirs": "auto_examples",
 }
@@ -191,13 +189,11 @@ if not on_rtd:
 else:
     html_theme = "default"
 
-
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 # the user theme contains the otpions 'homepage', which is populated here
 #html_theme_options = {'homepage': init_sphinx.url}
-
 # Add any paths that contain custom themes here, relative to this directory.
 #html_theme_path = [get_path_sphinx_themes()]
 

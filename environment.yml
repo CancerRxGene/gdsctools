@@ -2,17 +2,21 @@ name: gdsctools_env
 
 channels:
 - bioconda
+- defaults
+- r
+- conda-forge
 
 dependencies:
+- python=3.5.0
 - numpy
 - pandas
 - matplotlib
 - scipy
 - scikit-learn
 - statsmodels
+- easydev>=0.9.34
+- reports
+- bioservices
 - pip:
-  - matplotlib
-  - easydev>=0.9.31
-  - bioservices
-  - reports
+  - ipython
   - docutils<0.13.1 # https://github.com/sphinx-doc/sphinx/issues/3212
