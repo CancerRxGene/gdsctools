@@ -37,35 +37,35 @@ we hope that GDSCTools serves as basis for other scientists to develop further
 methods.
 
 
-
-
 .. Here we are building the carrousel
 
-.. |association| image::
-   _images/sphx_glr_plot_association_001.png
-   :target: auto_examples/plot_association.html
+.. raw:: html
 
-.. |volcano| image::
-   _images/sphx_glr_plot_volcano_001.png
-   :target: auto_examples/plot_volcano.html
+    .. |association| image::
+        _images/sphx_glr_plot_association_001.png
+        :target: auto_examples/plot_association.html
 
-.. |histo| image::
-   _images/sphx_glr_plot_ic50_hist_001.png
-   :target: auto_examples/plot_ic50_hist.html
+    .. |volcano| image::
+       _images/sphx_glr_plot_volcano_001.png
+       :target: auto_examples/plot_volcano.html
 
-.. |elastic| image::
-   _images/sphx_glr_plot_elastic_tuning_001.png
-   :target: auto_examples/plot_elastic_tuning.html
+    .. |histo| image::
+       _images/sphx_glr_plot_ic50_hist_001.png
+       :target: auto_examples/plot_ic50_hist.html
 
-.. |elastic_weights| image::
-   _images/sphx_glr_plot_elastic_weights_001.png
-   :target: auto_examples/plot_elastic_weights.html
+    .. |elastic| image::
+       _images/sphx_glr_plot_elastic_tuning_001.png
+       :target: auto_examples/plot_elastic_tuning.html
+
+    .. |elastic_weights| image::
+       _images/sphx_glr_plot_elastic_weights_001.png
+       :target: auto_examples/plot_elastic_weights.html
 
 
 .. raw:: html
 
     <div class="body">
-   <div id="index-grid" class="section group">
+    <div id="index-grid" class="section group">
     <div class="col span_1_of_3">
         <h3><a href="quickstart.html">First Steps</a></h3>
         <p>Get started with GDSCTools</p>
