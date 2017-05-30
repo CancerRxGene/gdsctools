@@ -14,9 +14,10 @@ dependencies:
 - scipy
 - scikit-learn
 - statsmodels
-- easydev>=0.9.34
 - reports
 - bioservices
+- pip
+- easydev>=0.9.34
 - pip:
   - ipython
-#- docutils<0.13.1 # https://github.com/sphinx-doc/sphinx/issues/3212
+  - jupyter
