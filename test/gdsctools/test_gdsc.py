@@ -1,6 +1,6 @@
-from gdsctools import gdsctools_data, ANOVA
+from gdsctools import gdsctools_data, ANOVA, GDSC
 from gdsctools.gdsc import IC50Cluster
-
+import os
 
 def test_IC50Cluster():
     dataset = gdsctools_data("test_v18_clustering.tsv")
@@ -21,7 +21,18 @@ def test_IC50Cluster():
     an.diagnostics()['feasible_tests'] == 65026
 
 
+def test_gdsc(tmpdir):
+    p = tmpdir.mkdir(":")
 
+    pathtoGF = os.path.split(gdsctools_data("GF_BRCA_v17.csv.gz"))[0]
+    ic50 = gdsctools_data('IC50_v17.csv.gz')
+    DD = gdsctools_data("test_drug_decode2.csv")
+
+    gg = GDSC(ic50, DD, pathtoGF+'/GF_*_v17.csv.gz')
+    gg.analyse()
+    assert gg.companies == ['COMPANY_A', 'COMPANY_B']
+    gg.create_data_packages_for_companies()
+    gg.create_summary_pages()
 
 
 

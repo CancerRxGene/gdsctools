@@ -143,7 +143,6 @@ def test_drugs():
     assert dd + dd == dd
     assert len(dd.get_public_and_one_company("ME")) == 10
 
-
     dd = DrugDecode(testing.drug_test_csv)
     dd.get_name("Drug_1047_IC50") == "Nutlin-3a"
 
@@ -155,7 +154,6 @@ def test_readers_tabs():
         assert False
     except:
         assert True
-
 
 
 def test_reader_long_strings():
