@@ -845,7 +845,7 @@ Y ~ C(tissue) + C(media) + feature
 
         # all ANOVA have been computed individually for each drug and each
         # feature. Now, we need to compute the multiple testing corrections
-        if self.settings.pvalue_correction_level == 'global':
+        if self.settings.pvalue_correction_level is True:
             df = self.add_pvalues_correction(df)
         else:
             pass
