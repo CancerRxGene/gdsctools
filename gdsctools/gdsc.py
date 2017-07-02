@@ -560,6 +560,8 @@ class GDSC(GDSCBase):
 
             drug_involved = hits['Unnamed: 0'].unique()
 
+            drug_involved = [int(str(x).split("-")[0]) for x in drug_involved]
+
             results = ANOVAResults(path + 'results.csv')
             if len(results) > 0:
                 drug_ids = results.df.DRUG_ID.unique()
