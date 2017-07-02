@@ -79,11 +79,9 @@ class ANOVASettings(AttrDict):
                                                by
                                                :class:`~gdsctools.stats.MultipleTesting`
 
-    pvalue_correction_level   global           Apply pvalue correction 
-                                               globally. Can also be set to 
-                                               'drug_level' to apply 
-                                               corrections at drug level
-                                               only.
+    pvalue_correction_level   True             Apply pvalue correction
+                                               globally. If False, applied to
+                                               'drug_level' only.
     equal_var_ttest           True             Assume equal variance in the
                                                t-test
     minimum_nonna_ic50        6                Minimum number of IC50 required
@@ -143,7 +141,7 @@ class ANOVASettings(AttrDict):
 
         self.analysis_type = 'PANCAN'
         self.pvalue_correction_method = 'fdr'   # or qvalue
-        self.pvalue_correction_level = 'global'   # or qvalue
+        self.pvalue_correction_level = True   # or qvalue
         self.equal_var_ttest = True
         self.minimum_nonna_ic50 = 6
 
@@ -215,7 +213,7 @@ class ANOVASettings(AttrDict):
         valid_reg_meth = ['OLS', 'ElasticNet', 'Lasso', 'Ridge']
         inlist(self.regression_method, valid_reg_meth)
 
-        inlist(self.pvalue_correction_level, ['global', 'drug_level'])
+        inlist(self.pvalue_correction_level, [True, False])
 
     def to_html(self):
         """Convert the sets of parameters into a nice HTML table"""
