@@ -234,16 +234,16 @@ def anova_one_drug_one_feature(anova, options):
     if options.tissue is not None:
         anova.set_cancer_type(options.tissue)
 
-
     # just to create the directory
     ReportMain(directory=options.directory)
 
     odof = anova_report.Association(anova,
             drug=int(options.drug),
             feature=options.feature)
+    odof.add_href = False
     df = odof.run()
 
-    if df.ix[1]['FEATURE_IC50_effect_size'] is None:
+    if df.loc[1]['FEATURE_IC50_effect_size'] is None:
         msg = "association %s vs %s not valid for testing (not enough" +\
               " MSI or positives for that features ? Try with "+\
               " --exclude-msi (you must then set a tissue with "+\

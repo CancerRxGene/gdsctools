@@ -671,6 +671,9 @@ class Association(ReportMain):
         self.factory.settings.savefig = True
         self.assoc_id = assoc_id
 
+        # This can be used by gdsctools_anova to remove the href
+        self.add_href = True
+
         self.drug = drug
         self.feature = feature
         self.fdr = fdr
@@ -704,7 +707,7 @@ class Association(ReportMain):
         sign = ANOVAResults(df)
 
         html_table = sign.get_html_table(escape=False, header=True,
-                index=False)
+                index=False, add_href=self.add_href)
 
         self.jinja['association_table'] = html_table
 
@@ -721,6 +724,7 @@ class Association(ReportMain):
             self.jinja["boxplot_tissue_jsdata"] = bx.get_html_tissue()
 
         self.jinja['boxplots'] = section
+
 
 class HTMLOneFeature(ReportMain):
     def __init__(self, report, data, subdata, feature):
@@ -910,7 +914,6 @@ class HTMLPageMain(ReportMain):
         self.jinja['manova'] = str(N)
 
     def add_features(self):
-        
         # feature summary
         df_features = self.report.feature_summary("feature_summary.png")
         filename = 'OUTPUT' + os.sep + 'features_summary.csv'

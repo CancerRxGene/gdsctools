@@ -317,8 +317,13 @@ class ANOVAResults(object):
         return ANOVAResults(self.df.copy())
 
     def get_html_table(self, collapse_table=False, clip_threshold=2,
-            index=False, header=True, escape=False):
-        """Return an HTML table for the reports"""
+            index=False, header=True, escape=False, add_href=True):
+        """Return an HTML table for the reports
+
+
+        :param add_href: add href to the FEATURE, DRUG ID and ASSOC ID
+
+        """
         cmap_clip = cmap_builder('#ffffff', '#0070FF')
         cmap_absmax = cmap_builder('green', 'white', 'red')
 
@@ -335,9 +340,10 @@ class ANOVAResults(object):
 
         html = HTMLTable(df, 'notused')
         # Those columns should be links
-        html.add_href("FEATURE")
-        html.add_href("ASSOC_ID", url="a", suffix=".html") # here url works like a prefix
-        html.add_href("DRUG_ID", url="drug_", suffix=".html") # here url works like a prefix
+        if add_href:
+            html.add_href("FEATURE")
+            html.add_href("ASSOC_ID", url="a", suffix=".html") # here url works like a prefix
+            html.add_href("DRUG_ID", url="drug_", suffix=".html") # here url works like a prefix
 
         for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
                 'FEATURE_pos_Glass_delta']:
