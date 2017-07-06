@@ -3,6 +3,16 @@ ChangeLog
 
 .. contents::
 
+Version 0.20.0
+-------------------
+
+- NEWS: 
+
+    - update the Snakemake pipeline for the regression and anova analysis.
+    - fix doc
+    - More tests
+
+
 Version 0.19.0
 --------------------
 
