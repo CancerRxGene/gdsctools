@@ -279,7 +279,7 @@ class ANOVA(BaseModels): #Logging):
 
     def anova_one_drug_one_feature(self, drug_id,
             feature_name, show=False,
-            production=False, directory='.'):
+            production=False, directory='.', fontsize=18):
         """Compute ABOVA one drug and one feature level
 
         :param drug_id: a valid drug identifier
@@ -459,7 +459,7 @@ class ANOVA(BaseModels): #Logging):
 
         if show is True:
             boxplot = BoxPlots(odof, savefig=self.settings.savefig,
-                    directory=directory)
+                    directory=directory, fontsize=fontsize)
             boxplot.boxplot_association(fignum=1)
 
             # a boxplot to show cell lines effects. This requires
@@ -527,13 +527,12 @@ class ANOVA(BaseModels): #Logging):
             anova_pvalues that is a dictionary with pvalues for
             feature, media, msi and tissue
 
-        Formula must be set in the settings attribute as 
-        settings.regression_formula::
+        Formula must be set in the settings attribute as follows::
 
             an = ANOVA(...)
-            an.settings.formula = "Y ~  C(tissue) + feature"
+            an.settings['regression_formula'] = "Y ~  C(tissue) + feature"
 
-        .. note:: This function is convenient but 3 times slower than
+        .. note:: This function is convenient but 3-4 times slower than
             :meth:`anova_one_drug_one_feature`. So if your formula are one of::
 
                 "Y ~  C(tissue) + C(media) + C(msi) + feature"
@@ -541,9 +540,10 @@ class ANOVA(BaseModels): #Logging):
                 "Y ~  C(msi) + feature"
                 "Y ~  feature"
 
-            you should use :meth:`anova_one_drug_one_feature` instead.
+            you should rather use :meth:`anova_one_drug_one_feature` instead
+            (keeping regression_formula set to 'auto').
 
-        By default, in categories, the first treatment (e.g tissue) is used a
+        By default, in categories, the first treatment (e.g tissue) is used as a
         reference and is not shown in the results. You may set the reference as
         follows::
 
