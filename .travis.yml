@@ -29,7 +29,7 @@ before_install:
 # reports on conda-forge is not compiled for py3.4 so we install it with pip
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy
-  - conda install --yes matplotlib>=1.4.3 nose pandas==0.20.0 statsmodels scikit-learn
+  - conda install --yes matplotlib>=1.4.3 nose pandas==0.20.0 statsmodels==0.8.0 scikit-learn==0.18.1
   - conda install --yes colormap==1.0.1 biokit==0.4.1 coverage
   - pip install nose --upgrade
   - pip install coveralls colorlog

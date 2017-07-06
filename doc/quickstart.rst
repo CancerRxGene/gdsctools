@@ -80,6 +80,11 @@ file named **config.yaml** and once done, execute the pipeline::
 
     snakemake -s regression.rules
 
+
+.. warning:: you must install Snakemake, in which case you must use Python>=3.5
+    (conda install snakemake)
+
+
 See :ref:`multivariate_regression` section for details.
 
 

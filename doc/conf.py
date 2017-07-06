@@ -52,28 +52,23 @@ on_rtd = os.environ.get("READTHEDOCS", None) == True
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.graphviz',
+    ('sphinx.ext.imgmath'  # only available for sphinx >= 1.4
+                  if sphinx.version_info[:2] >= (1, 4)
+                  else 'sphinx.ext.pngmath'),
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
-    'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     "numpydoc.numpydoc",
-    'easydev.copybutton',
     'matplotlib.sphinxext.plot_directive',
-    'matplotlib.sphinxext.only_directives',
-    ('sphinx.ext.imgmath'  # only available for sphinx >= 1.4
-                  if sphinx.version_info[:2] >= (1, 4)
-                  else 'sphinx.ext.pngmath'),
-    'sphinx_gallery.gen_gallery'
+    'sphinx.ext.autosummary',
+    'sphinx_gallery.gen_gallery',
     ]
 # note that the numpy directives is buggy. Example: class and init are not recognised as two entities for the autoclass_content=both here below
 
 
 todo_include_todos=True
-jscopybutton_path = "copybutton.js"
 autoclass_content = 'both'
 
 # Add any paths that contain templates here, relative to this directory.
@@ -143,7 +138,7 @@ modindex_common_prefix = ["gdsctools."]
 plot_gallery = True
 sphinx_gallery_conf = {
     "doc_module": "sequana",
-    "backreferences_dir": "examples"
+#    "backreferences_dir": "examples"
 #    "examples_dirs": "examples",
 #    "gallery_dirs": "auto_examples",
 }
@@ -178,7 +173,7 @@ def setup(app):
 
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'standard'
+on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 if not on_rtd:
     import sphinx_rtd_theme
     html_theme = 'sphinx_rtd_theme'

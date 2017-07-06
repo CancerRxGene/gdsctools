@@ -25,9 +25,9 @@ def test_IC50Cluster():
 def test_gdsc():
 
     import tempfile
-    tempdir = tempfile.NamedTemporaryDirectory()
-    compdir = tempdir.name + os.sep + "company_packages"
-    tissuedir = tempdir.name + os.sep + "tissue_packages"
+    tempdir = tempfile.mkdtemp()
+    compdir = tempdir + os.sep + "company_packages"
+    tissuedir = tempdir + os.sep + "tissue_packages"
 
     pathtoGF = os.path.split(gdsctools_data("GF_BRCA_v17.csv.gz"))[0]
     ic50 = gdsctools_data('IC50_v17.csv.gz')

@@ -23,6 +23,9 @@ computation in a reasonable amount of time. We therefore develop a pipeline that
 wraps up the analysis. The pipeline uses the Snakemake framework (see below).
 
 
+.. warning:: you must install Snakemake, in which case you must use Python >=3.5
+
+
 Doing the analysis using GDSCTools library
 -----------------------------------------------
 

@@ -51,7 +51,8 @@ class Savefig(object):
         """Save a matplotlib figure
 
         :param str filename: where to save the figure.
-        :param **kargs: accepts all parameters known by pylab.savefig
+        :param kargs: accepts all parameters known by pylab.savefig
+
         """
         # if not provided, don't do anything.
         if name is None:
