@@ -63,8 +63,10 @@ are transformed into integer keeping only the middle part::
     222222,    1,           2,            10,           20
 
 
-If you save that example in a file, you can read it with the
+If you save that example in a file (or download it :download:`_static/ic50_tiny.csv`), you can read it with the
 :class:`~gdsctools.readers.IC50` class as follows:
+
+
 
 .. doctest::
 
@@ -125,6 +127,8 @@ Here is a simple example::
 
 It can be saved and read as follows with the :class:`GenomicFeatures`
 
+
+
 .. doctest::
 
     >>> from gdsctools import GenomicFeatures
@@ -153,7 +157,7 @@ Note that you may create instance of GenomicFeatures without input but a default
     - CNA (loss): 0
 
 Combine IC50 and Genomic Features
-====================================
+------------------------------------------
 Here is an example on how to plot histograms of IC50s grouped by tissues.
 For convenience, we keep only 9 tissues.
 

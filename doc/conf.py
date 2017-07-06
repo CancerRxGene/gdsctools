@@ -143,6 +143,7 @@ modindex_common_prefix = ["gdsctools."]
 plot_gallery = True
 sphinx_gallery_conf = {
     "doc_module": "sequana",
+    "backreferences_dir": "examples"
 #    "examples_dirs": "examples",
 #    "gallery_dirs": "auto_examples",
 }

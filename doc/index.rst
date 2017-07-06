@@ -29,10 +29,10 @@ responses in the context of the `GDSC (Genomics of Drug Sensitivity in Cancer) <
 joint effort of the groups of `Mathew Garnett (Sanger Institute) <http://www.sanger.ac.uk/people/directory/garnett-mathew>`_ and `Julio Saez-Rodriguez (RWTH Aachen & EMBL-EBI) <http://www.combine.rwth-aachen.de/index.php/people/julio-saez-rodriguez.html>`_.
 
 It contains utilities to find significant associations between drugs and genomic
-features (e.g., gene mutation) based on an ANOVA analysis. Other methods, such
-as multi-factorial linear models based on Elastic Net are also available.
+features (e.g., gene mutation) based on an :ref:`ANOVA <anova_partone>` analysis. Other methods, such
+as multi-factorial linear models based on :ref:`Elastic Net <multivariate_regression>` are also available.
 Besides, the library should also be useful for manipulating dedicated data sets
-such as IC50 (drug response) or MoBEM (genomic features) data structures. Hence,
+such as :ref:`IC50 <data>` (drug response) or :ref:`MoBEM <omnibem>` (genomic features) data structures. Hence,
 we hope that GDSCTools serves as basis for other scientists to develop further
 methods.
 
@@ -95,18 +95,19 @@ methods.
    <div style="clear: left"></div>
 
 
-
-
 .. index:: installation
 
 **GDSCTools** is written in Python. If you are a developer and/or knows
-already about the Python ecosystem and the **pip** command, just type the following command in a :term:`Terminal` to install **GDSCTools**::
+already about the Python ecosystem and the **pip** command, just type 
+the following command in a :term:`Terminal` to install **GDSCTools**::
 
     pip install gdsctools
 
 add the option ``--upgrade`` to get the latest release. Conversely, if you are not
 familiar with Python or the command above, please see the :ref:`Installation` section
-for further details. Note also that we strongly recommend to use Anaconda to install dependencies (e.g., numpy, matplotlib).
+for further details. Note also that we strongly recommend to use Anaconda to install dependencies (e.g., numpy, matplotlib); **GDSCTools** is available on bioconda channel::
+
+    conda install gdsctools.
 
 In the following example, we provide a short Python snippet that uses the **GDSCTools** library. You can either copy and paste the code in a file, and execute it or type the commands in an :term:`IPython` shell. With this example we investigate the associations between the :term:`IC50` of a given drug (across 52 breast cancer cell lines) and a genomic feature (here, TP53 mutation). Drugs are refer to by a unique identifier (here 1047):
 
@@ -153,14 +154,12 @@ which can be used within a standard :term:`Terminal` (same
 output as in the previous example)::
 
     gdsctools_anova --input-ic50 <ic50 filename> --drug 1047
-        --feature TP53_mut --onweb
+        --feature TP53_mut
 
-
-If you want to have a go, please download this 
+If you want to have a go, please download this
 :download:`IC50 example <../gdsctools/data/test_IC50.csv>`, which is required as an input.
-
-
-Another data set is required for this analysis, which is a genomic feature file (see :ref:`data`) but it can be replaced by yours. The default data set contains only a small set of genomic features and can be downloaded:
+Note that by default, **GDSCTools** loads a set of 50 genomic features and 1001 cell
+lines but in general, you should provide your own genomic feature file (see :ref:`data`). The default data set contains only a small set of genomic features and can be downloaded:
 :download:`GenomicFeature example <../gdsctools/data/genomic_features.tsv.gz>`, and adapted to your needs.
 
 

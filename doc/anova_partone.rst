@@ -166,7 +166,7 @@ Let us start with the first case (:term:`ODOF`). User needs to provide a drug an
 
     from gdsctools import ANOVA, ic50_test
     gdsc = ANOVA(ic50_test)
-    gdsc.anova_one_drug_one_feature(1047, 'TP53_mut', show=True)
+    gdsc.anova_one_drug_one_feature(1047, 'TP53_mut', show=True, fontsize=16)
 
 Setting the :attr:`show` parameter to True, we created a set of 3 boxplots that is one for each explanatory feature considered: tissue, :term:`MSI` and genomic feature.
 
@@ -226,7 +226,7 @@ negative sets (based on the genomic feature). The two sets are denoted :math:`IC
 
 .. math::
 
-    \eta = \rm{sgn} ( \Delta) * Es(IC50_{pos}, IC50_{neg})
+    \eta = \rm{sgn} ( \Delta) \times Es(IC50_{pos}, IC50_{neg})
 
 where
 

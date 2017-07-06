@@ -75,13 +75,12 @@ Since analysis may be time-consuming, we have hard-coded the
 regression formula. Note, however, that in version 0.16, we have
 added the :meth:`~gdsctools.anova.ANOVA.anova_one_drug_one_feature_custom`
 method, which can be use for any type of regression based on a user formula.
-This is slower than the 4 hardcoded versions mentionned above but is
+This is slower than the hard-coded version mentionned above but is
 more flexible. One can for instance set the formula to specify the treatement
-to be used as a reference:
+to be used as a reference::
 
-.. versionchanged:: 0.16 
-    The regression method is the :term:`OLS` method. Other methods will 
-    be used in an independent module (:mod:`gdsctools.regression`)
+
+    an.settings['regression_formula'] = "Y ~ C(tissue, Treatment(reference='breast'))"
 
 
 The ANOVA analysis itself uses a **type I** error. The summary can be obtained

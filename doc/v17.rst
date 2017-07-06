@@ -6,7 +6,7 @@ Notes to reproduce v17a results (GDSC1000 Cell paper)
 :Reference: Iorio et al 2016
 
 We refer to the data used in the reference above as the **v17a** data sets. It can be found on the 
-`CancerRxGene <http://www.cancerrxgene.org/gdsc1000/Pharmacogenomic_interactions.html>`_ page. We will use this data to reproduce the results published in the same web page. 
+`CancerRxGene <http://www.cancerrxgene.org/gdsc1000/GDSC1000_WebResources/Home.html>`_ page. We will use this data to reproduce the results published in the same web page. 
 
 First, we need to download the data. For example, let us retrieve the BRCA
 tissue specific data set using **wget** command::
@@ -24,7 +24,7 @@ tissue specific data set using **wget** command::
 
 Once downloaded, create an ANOVA instance as follows::
 
-    from gdsctools import ANOVA
+    from gdsctools import ANOVA, ANOVAReport
     an = ANOVA("ANOVA_input.txt", "ANOVA_input.txt")
 
 Here, we provide the filename twice; this is not a mistake, please see the warning box above. Internally, the first argument extracts the IC50s and the second one extracts the genomic features.
@@ -32,7 +32,7 @@ Here, we provide the filename twice; this is not a mistake, please see the warni
 In v17a, there are two parameters that are not the current default values that
 must be set to reproduce the results::
 
-    an.setttings.pvalue_correction_method = "qvalue"
+    an.settings.pvalue_correction_method = "qvalue"
     an.settings.equal_var_ttest = False 
 
 The later parameter is used in some plots for annotation but is not essential.

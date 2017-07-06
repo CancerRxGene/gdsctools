@@ -107,7 +107,7 @@ The GDSC class will then loop over the TCGA cases and create data packages.
 
     from gdsctools import GDSC
     gg = GDSC("IC50.csv", "DrugDecode.csv", "GF_*.csv")
-    gg.anaalyse()
+    gg.analyse()
 
 
 This may take hours to finalise: the ANOVA and creation of all images will be
@@ -150,7 +150,7 @@ For now, it is important to run this in the same directory where previous
 pacakges were created.
 
 
-Again thiis may be parallelised::
+Again this may be parallelised::
 
     for each company in gg.companies:
         single = GDSC("IC50.csv", "DrugDecode.csv", "GF_*.csv")
