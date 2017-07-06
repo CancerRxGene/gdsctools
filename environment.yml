@@ -9,11 +9,11 @@ channels:
 dependencies:
 - python=3.5.0
 - numpy
-- pandas
+- pandas==0.20.1
 - matplotlib
-- scipy
-- scikit-learn
-- statsmodels
+- scipy==0.19.0
+- scikit-learn==0.18.1
+- statsmodels==0.8.0
 - reports
 - bioservices
 - pip
