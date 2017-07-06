@@ -572,6 +572,7 @@ class GDSC(GDSCBase):
             # have been copied
             path = directory + os.sep + 'INPUT' + os.sep
             drug_decode = DrugDecode(path + 'DRUG_DECODE.csv')
+            drug_decode.df.set_index("DRUG_ID", inplace=True)
             info = drug_decode.get_info()
 
             webrelease = drug_decode.df.loc[drug_involved].WEBRELEASE
