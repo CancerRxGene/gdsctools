@@ -5,23 +5,35 @@
 #############################################################
 
 
-# Analysis
+#############################################################
+#
+# Regression analysis
+#
+# - method_choice: blable
+# - kfold: number of K-fold to automatically estimate
+#     best alpha parameter
+# - randomness:  number of model fitting for significance
+# - boxplot_n: number of most important features to use in boxplot
+#
+# method_choice__= ["lasso", "elasticnet", "ridge"]
 regression:
-  method: lasso    # lasso, elasticnet or ridge
-  kfold: 10        # Used to automatically estimate best alpha parameter
-  randomness: 50   # number of model fitting for significance (most of the time is here)
-  boxplot_n: 5     # most important features to use in boxplot
+  method_choice: lasso
+  kfold: 10
+  randomness: 50
+  boxplot_n: 5
 
+#####################################################################
 # The input data files in the form of an IC50 and genomic features files
 #
 # See http://gdsctools.readthedocs.io/en/master/data.html for data formats
 #
 input:
-  ic50:
-  genomic_features:
-  drug_decode: 
+  ic50_file:
+  genomic_features_file:
+  drug_decode_file:
 
 
+###########################################################
 # ANOVA
 anova:
     report_directory: "analysis"

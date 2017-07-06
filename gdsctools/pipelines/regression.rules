@@ -13,17 +13,25 @@ configfile: "config.yaml"
 
 
 print("//Loading main data set")
-ic50 = IC50(config['input']['ic50'])
-gf = GenomicFeatures(config['input']['genomic_features'])
-gd = regression.GDSCLasso(ic50, gf)
+ic50 = IC50(config['input']['ic50_file'])
+gf = GenomicFeatures(config['input']['genomic_features_file'])
 
 ## Overwrite config :
 config = config['regression']
-assert config['method'] in ['lasso', "elastic_net", "ridge"]
+assert config['method_choice'] in ['lasso', "elastic_net", "ridge"]
+
+if config['method_choice'] == "lasso":
+    gd = regression.GDSCLasso(ic50, gf)
+elif config['method_choice'] == "ridge":
+    gd = regression.GDSCRidge(ic50, gf)
+elif config['method_choice'] == "elastic_net":
+    gd = regression.GDSCElasticNet(ic50, gf)
+
+
 
 
 DRUGIDS = gd.drugIds
-PREFIX = "gdsctools_regression_"
+PREFIX = "gdsctools_regression"
 IMAGE_DIR = "images"
 DATA_PREFIX = "data/" + PREFIX
 IMAGE_PREFIX = "images/" + PREFIX
@@ -40,10 +48,8 @@ except: pass
 
 localrules: all, get_weights, get_results, report
 
-
 rule all:
     input: "index.html"
-
 
 rule report:
     input:
@@ -53,7 +59,7 @@ rule report:
     output: "index.html"
     run:
         from gdsctools import regression_report
-        report = regression_report.RegressionReport(config['method'],
+        report = regression_report.RegressionReport(config['method_choice'],
                 image_dir=IMAGE_DIR, config=config)
         report.create_html_main()
         report.create_html_drug()
