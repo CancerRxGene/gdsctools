@@ -413,7 +413,7 @@ class ANOVAReport(object):
                     fontsize=self.settings.fontsize/1.2)
         pylab.xlabel(r'Number of significant associations (FDR %s %s %s) '
                      % ("$>$", self.settings.FDR_threshold, "$\%$"),
-                     fontsize=18)
+                     fontsize=16)
 
         M = max(data1+data2)
         #ax.set_xticks()
