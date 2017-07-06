@@ -25,7 +25,7 @@ def test_IC50Cluster():
 def test_gdsc():
 
     import tempfile
-    tempdir = tempfile.TemporaryDirectory()
+    tempdir = tempfile.NamedTemporaryDirectory()
     compdir = tempdir.name + os.sep + "company_packages"
     tissuedir = tempdir.name + os.sep + "tissue_packages"
 
