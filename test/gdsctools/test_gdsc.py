@@ -22,14 +22,20 @@ def test_IC50Cluster():
     an.diagnostics()['feasible_tests'] == 65026
 
 
-def test_gdsc(tmpdir):
-    p = tmpdir.mkdir(":")
+def test_gdsc():
+
+    import tempfile
+    tempdir = tempfile.TemporaryDirectory()
+    compdir = tempdir.name + os.sep + "company_packages"
+    tissuedir = tempdir.name + os.sep + "tissue_packages"
 
     pathtoGF = os.path.split(gdsctools_data("GF_BRCA_v17.csv.gz"))[0]
     ic50 = gdsctools_data('IC50_v17.csv.gz')
     DD = gdsctools_data("test_drug_decode2.csv")
 
     gg = GDSC(ic50, DD, pathtoGF+'/GF_*_v17.csv.gz')
+    gg.company_directory = compdir
+    gg.tissue_directory = tissuedir
     gg.analyse()
     assert gg.companies == ['COMPANY_A', 'COMPANY_B']
     gg.create_data_packages_for_companies()
