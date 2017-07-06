@@ -11,6 +11,7 @@ Version 0.20.0
     - update the Snakemake pipeline for the regression and anova analysis.
     - fix doc
     - More tests
+    - Fix versions on some dependencies (e.g. sklearn to 0.18.1)
 
 
 Version 0.19.0

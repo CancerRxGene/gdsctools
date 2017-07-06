@@ -7,7 +7,7 @@ import glob
 
 
 _MAJOR               = 0
-_MINOR               = 19
+_MINOR               = 20
 _MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
@@ -56,8 +56,8 @@ if on_rtd is True:  # only import and set the theme if we're building docs
                         "colorlog"]
 else:
     install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
-        'pandas==0.20.1', 'easydev>=0.9.34', 'scipy', "colormap==1.0.1",
-        'jinja2', 'statsmodels', "scikit-learn", "reports==0.3.1",
+        'pandas==0.20.1', 'easydev>=0.9.34', 'scipy==0.19.0', "colormap==1.0.1",
+        'jinja2', 'statsmodels==0.8.0', "scikit-learn==0.18.1", "reports==0.3.1",
         "biokit==0.4.1", "colorlog", "xlrd"],
 
 
