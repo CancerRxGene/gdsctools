@@ -2,8 +2,18 @@ from gdsctools import *
 import pandas as pd
 import pylab
 import json
+import tempfile
+import os
+
 
 def test_regression_report():
+
+    directory = tempfile.mkdtemp()
+    os.chdir(directory)
+    os.mkdir("data")
+    os.mkdir("images")
+
+
     IC = gdsctools_data("IC50_v5.csv.gz")
     GF = gdsctools_data("genomic_features_v5.csv.gz")
 
