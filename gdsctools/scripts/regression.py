@@ -104,15 +104,15 @@ def main(args=None):
     config_template = """
 # Analysis
 regression:
-  method: %(method)s       # lasso, elasticnet or ridge
+  method_choice: %(method)s       # lasso, elasticnet or ridge
   kfold: %(kfold)s        # Used to automatically estimate best alpha parameter
   randomness: 50
   boxplot_n: 5
 
 # Input data sets
 input:
-  ic50: %(ic50)s
-  genomic_features: %(features)s
+  ic50_file: %(ic50)s
+  genomic_features_file: %(features)s
     """
 
     with open(options.output_directory + os.sep + "config.yaml", "w") as fh:
