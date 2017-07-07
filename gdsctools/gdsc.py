@@ -39,8 +39,8 @@ class IC50Cluster(IC50):
     From GDSC v18 data sets onwards, DRUG identifiers may be duplicated
     to account for different drug concentration. This is not recommended
     since we'd rather use unique identifier for different experiments but to
-    account for this feature, the IC50Cluster will rename them columns and
-    transforming the data as follows.
+    account for this feature, the IC50Cluster will rename the columns and
+    transform the data as follows.
 
     Consider the case of the DRUG 1211. It appears 3 times in the original
     data::
