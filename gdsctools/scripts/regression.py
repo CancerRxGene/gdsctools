@@ -59,6 +59,8 @@ def main(args=None):
         args = sys.argv[:]
     elif len(args) == 1:
         args += ['--help']
+    if len(args) == 1:
+        args += ['--help']
 
     user_options = RegressionOptions(prog="gdsctools_regression")
     try:

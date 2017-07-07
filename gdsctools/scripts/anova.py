@@ -56,12 +56,18 @@ def main(args=None):
 
     # Keep the argument args as None by default to
     # allow testing e.g., in nosetests
+    print(args)
+    print(sys.argv)
     if args is None:
         args = sys.argv[:]
     elif len(args) == 1:
         args += ['--help']
+    if len(args) == 1:
+        args += ['--help']
 
     user_options = ANOVAOptions(prog="gdsctools_anova")
+
+    print(args)
     try:
         options = user_options.parse_args(args[1:])
     except SystemExit:
