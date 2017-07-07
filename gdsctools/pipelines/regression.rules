@@ -31,10 +31,11 @@ elif config['method_choice'] == "elastic_net":
 
 
 DRUGIDS = gd.drugIds
-PREFIX = "gdsctools_regression"
-IMAGE_DIR = "images"
-DATA_PREFIX = "data/" + PREFIX
-IMAGE_PREFIX = "images/" + PREFIX
+PREFIX = "gdsctools_regression_"
+IMAGE_DIR = "images/"
+DATA_DIR = "data/"
+DATA_PREFIX = DATA_DIR  + PREFIX
+IMAGE_PREFIX = IMAGE_DIR + PREFIX
 
 import os
 try: os.mkdir(IMAGE_DIR)
@@ -61,6 +62,7 @@ rule report:
         from gdsctools import regression_report
         report = regression_report.RegressionReport(config['method_choice'],
                 image_dir=IMAGE_DIR, config=config)
+        report.prefix = PREFIX
         report.create_html_main()
         report.create_html_drug()
 
@@ -118,7 +120,7 @@ rule one_drug_all_features:
         DATA_PREFIX + "results_{drugid}.json",
     run:
         def _pngname(tag):
-            return IMAGE_PREFIX + "_%s_%s.png" % (tag, wildcards.drugid)
+            return IMAGE_PREFIX + "%s_%s.png" % (tag, wildcards.drugid)
         drugid = int(wildcards.drugid)
 
         # Get best model
