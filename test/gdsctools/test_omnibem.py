@@ -10,7 +10,8 @@ def test_omnibem():
     assert len(ob) ==  56943
     ob.filter_by_gene_list(omnibem_genes)
     mobem = ob.get_mobem()
-    assert mobem[mobem.columns[3:]].sum().sum() == 54061
+    #assert mobem[mobem.columns[3:]].sum().sum() == 54061
+    assert mobem[mobem.columns[3:]].sum().sum() == 4943
 
     #
     ob.plot_number_alteration_by_tissue()

@@ -3,6 +3,13 @@ ChangeLog
 
 .. contents::
 
+Version 0.20.1
+-------------------
+
+- BUGS:
+
+   - fix https://github.com/CancerRxGene/gdsctools/issues/169
+
 Version 0.20.0
 -------------------
 

@@ -186,7 +186,7 @@ class OmniBEMBuilder(object):
 
         # keep only gene in the selection
         self.unified = self.unified.query("GENE in @self.selection.index")
-        #self._update_unified()
+        self._update_unified()
 
     def filter_by_tissue_list(self, tissue_list):
         """Filter the data by tissue
