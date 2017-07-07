@@ -81,12 +81,9 @@ class Savefig(object):
         fig.canvas.draw()
 
 
+# deprecated:: 0.12 Used in IC50Cluster (version 18) for now but should be removed
+"""
 def extract_drug_identifiers(drug_lists):
-    """
-
-    .. deprecated:: 0.12 Used in IC50Cluster (version 18) for now but should be
-        removed
-    """
     if isinstance(drug_lists, str):
         drug_lists = [drug_lists]
         string = True
@@ -106,5 +103,5 @@ def extract_drug_identifiers(drug_lists):
         return drug_ids[0]
     else:
         return drug_ids
-
 get_drug_id = extract_drug_identifiers
+"""
