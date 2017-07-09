@@ -40,9 +40,9 @@ where **ipython** is the package you wish to install. Note that by default,
 many channels available. We will use the **bioconda** channel. To use it, type
 these commands (once for all)::
 
-    conda config --add channels conda-forge
-    conda config --add channels defaults
     conda config --add channels r
+    conda config --add channels defaults
+    conda config --add channels conda-forge
     conda config --add channels bioconda
 
 .. warning:: **it is important to add them in this order**, as mentionned on
