@@ -17,9 +17,10 @@ GDSCTools
 
 |License|
 
-:Note: Developed and tested for Python 2.7, 3.4, 3.5
-:Note: The GDSCTools libary works for Python 2.7 and 3.5 but the standalone
-       pipeline to be ran on cluster works on Python 3.5 only.
+:Note: Developed and tested for Python 2.7, 3.5, 3.6
+:Note: The GDSCTools libary works for Python 2.7 and 3.X but the standalone
+       pipeline to be ran on cluster works on Python 3.X only (requires
+       Snakemake).
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
 :Documentation: `On ReadTheDocs <http://gdsctools.readthedocs.io/en/master>`_
 :GitHub: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
