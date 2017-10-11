@@ -5,6 +5,10 @@
 Installation
 ================
 
+.. note:: For those insterested, as from Oct 11 2017, we provide a Signularity container. 
+
+
+
 You know **bioconda**, then you can install **GDSCTools** as follows::
 
 
@@ -143,3 +147,37 @@ Under Windows, an error was raised due to scipy. This was fixed by typing::
     conda install scipy scikit-learn -y
 
 https://github.com/scikit-learn/scikit-learn/issues/4830
+
+
+Testing or Production with a Singularity container
+----------------------------------------------------------
+
+
+We provide a Singularity image on https://singularity-hub.org/collections/480/ .
+This container contains GDSCTools software and all its dependencies.
+The plotting may not work in an interactive way for Mac or Windows users. 
+The main reason being that under Mac and windows a virtualbox is used by Singularity
+preventing a X connection. This should be solved in the near future.
+
+First, install singularity (http://singularity.lbl.gov/). 
+Second, download a Sequana image. For instance, for the latest master version::
+
+    singularity pull shub://CancerRxGene/gdsctools:release_1_0_0
+
+
+Do not interrupt the download (2.5Go). Once downloaded,
+you can use, for instance, the gdsctools_anova executable::
+
+    singularity exec gdsctools-release_1_0_0.img gdsctools_anova --help
+
+
+Would you miss a dependency, just enter into the singularity container and
+install the missing dependencies. You will need writable permission::
+
+    sudo singularity shell -w gdsctools-release_1_0_0.img
+
+Then, inside the container, install or fix the problem and type exit to save the
+container.
+
+
+
