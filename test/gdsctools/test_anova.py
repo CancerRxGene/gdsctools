@@ -1,8 +1,8 @@
 from gdsctools.anova import ANOVA
 from gdsctools import gdsctools_data
 import pandas as pd
-from easydev import assert_list_almost_equal
 from gdsctools import ic50_test
+import pytest
 
 import warnings
 warnings.filterwarnings(action="ignore")
@@ -125,6 +125,11 @@ def test_odof_with_without_media():
     assert_almost_equal(dd2['media']- 0.7762487502315283, delta=1e-10)
     assert_almost_equal(dd2['msi']- 0.023777744527686766, delta=1e-10)
     assert_almost_equal(dd2['tissue']- 1.5729157319290974e-44, delta=1e-50)
+
+
+def assert_list_almost_equal(x, y, deltas=1e-10):
+    for a,b in zip(x,y):
+        assert pytest.approx(a-b, deltas) 
 
 
 def test_anova_summary():
