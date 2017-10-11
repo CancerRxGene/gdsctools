@@ -1,7 +1,7 @@
 from gdsctools.regression import *
 from gdsctools import IC50, GenomicFeatures, gdsctools_data
-from nose.tools import assert_almost_equal
 from math import log
+import pytest
 
 
 def test_regression_elastic_net():

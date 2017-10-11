@@ -30,7 +30,7 @@ before_install:
 install:
    - echo $TRAVIS_PYTHON_VERSION
    - conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements.txt
-   - conda install --yes pytest pytest-cov pytest-xdist pytest-mock pytest-timeout pytest-runner coveralls coverage
+   - conda install --yes pytest pytest-cov pytest-xdist pytest-mock pytest-timeout pytest-runner coveralls coverage mock
    - pip install jinja2 reports
    - pip install .
 
