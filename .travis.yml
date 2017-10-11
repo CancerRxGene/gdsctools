@@ -31,8 +31,8 @@ install:
    - echo $TRAVIS_PYTHON_VERSION
    - conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements.txt
    - conda install --yes pytest pytest-cov pytest-xdist pytest-mock pytest-timeout pytest-runner coveralls coverage
-  - pip install jinja2 reports
-  - pip install .
+   - pip install jinja2 reports
+   - pip install .
 
 # # command to run tests, e.g. python setup.py test
 script:
