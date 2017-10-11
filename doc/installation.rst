@@ -8,7 +8,6 @@ Installation
 .. note:: For those insterested, as from Oct 11 2017, we provide a Signularity container. 
 
 
-
 You know **bioconda**, then you can install **GDSCTools** as follows::
 
 
@@ -27,8 +26,7 @@ Install conda executable
 
 In practice, we do use `Anaconda <https://conda.readthedocs.io/>`_ . We
 recommend to
-install **conda** executable via the manual installer (`download
-<https//continuum.io/downloads>_`). 
+install **conda** executable via the manual installer (`download <https//continuum.io/downloads>_`). 
 You may have the choice
 between Python 2 and 3. We recommend to choose a Python version 3.
 
@@ -178,6 +176,5 @@ install the missing dependencies. You will need writable permission::
 
 Then, inside the container, install or fix the problem and type exit to save the
 container.
-
 
 

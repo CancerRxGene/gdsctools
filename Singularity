@@ -12,22 +12,6 @@ OSVersion: xenial
     apt-get install -y wget
     apt-get install -y bzip2
     apt-get install -y vim
-    #apt-get install -y libgl1-mesa-glx  # will be required by pyqt
-    #apt-get install -y fontconfig # for sequanix/qt fonts otherwise no text in menus
-
-    # for fastqc
-    #apt-get install -y libxrender1
-    #apt-get install -y libxtst6
-    #apt-get install -y libxi6
-
-    # for sequanix (Qt plugin) otherwise libxcb missing
-    #apt-get install -y libsm-dev
-    #apt-get install -y libxcomposite-dev
-
-    # This is a large data set again. When using the container a sroot, sequanix
-    # looks good but in normal mode, the menu is blank...and this seems to solve
-    # the issue
-    apt-get install -y libgnomeui-0
 
     # install anaconda
     if [ ! -d /usr/local/anaconda ]; then
@@ -45,7 +29,6 @@ OSVersion: xenial
     export PATH=$PATH:/usr/local/anaconda/bin
     conda update conda
 
-
     conda config --add channels r
     conda config --add channels defaults
     conda config --add channels conda-forge
@@ -53,11 +36,6 @@ OSVersion: xenial
 
     # The main packages for sequana:
     conda install --file https://raw.githubusercontent.com/CancerRxGene/gdsctools/master/requirements.txt
-
-    # external tools
-
-    # Let us save some space
-    conda clean --packages -y
 
     # Let us save some space
     conda clean --packages -y
