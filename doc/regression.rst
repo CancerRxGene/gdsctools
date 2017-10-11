@@ -51,9 +51,9 @@ drug, we tune the **alpha** parameter using a cross validation (a K-fold CV).
 
 
 .. note:: the regression implementation is based on scikit-learn. The **alpha**
-   parameter is called **lambda** in the R glmnnet package. In the ElasticNet
+   parameter is called **lambda** in the R glmnet package. In the ElasticNet
    case, and additional parameter is called **l1_ratio** (0.5 by default)
-   and correspond to the  glmnet parameter **alpha**.
+   and corresponds to the  glmnet parameter **alpha**.
 
 Before, doing the tuning, let us choose one drug. Let us pick up an interesting
 one::

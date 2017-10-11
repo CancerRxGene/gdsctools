@@ -37,10 +37,13 @@ Quote characters are also removed.
 IC50
 ------
 
-The specific format **IC50** is CSV file where the header must 
+The specific format for the **IC50** data is CSV file where the header must 
 contain a column named **COSMIC_ID**. Other
 column should correspond to a given drug identifier (an integer).  The order
 of the columns does not matter. So, each row contains the IC50s for a given COSMIC identifier.
+
+.. warning:: the data read in the CSV file is not transformed. So, IC50 data should be 
+   logged data.
 
 
 .. note:: The IC50 matrix can be populated with other data (e.g., AUCs).
