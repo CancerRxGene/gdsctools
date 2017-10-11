@@ -3,6 +3,14 @@ ChangeLog
 
 .. contents::
 
+Version 1.0.0
+-------------------
+
+- Fix tests to use pytest
+- Fix travis accordingly
+- Add a Singularity recipe
+
+
 Version 0.20.1
 -------------------
 
