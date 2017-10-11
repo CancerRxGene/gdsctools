@@ -6,6 +6,7 @@ OSVersion: xenial
 %labels
 
     AUTHOR Thomas Cokelaer
+    # For version 1.0.0, the container needs 2Go
 
 %post
 
