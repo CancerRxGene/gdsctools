@@ -6,9 +6,9 @@ from setuptools import setup, find_packages
 import glob
 
 
-_MAJOR               = 0
-_MINOR               = 20
-_MICRO               = 1
+_MAJOR               = 1
+_MINOR               = 0
+_MICRO               = 0
 version              = '%d.%d.%d' % (_MAJOR, _MINOR, _MICRO)
 release              = '%d.%d' % (_MAJOR, _MINOR)
 
@@ -32,6 +32,7 @@ metainfo = {
           'Operating System :: OS Independent',
           'Programming Language :: Python :: 2.7',
           'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Topic :: Software Development :: Libraries :: Python Modules',
           'Topic :: Scientific/Engineering :: Bio-Informatics',
           'Topic :: Scientific/Engineering :: Information Analysis',
@@ -55,10 +56,7 @@ if on_rtd is True:  # only import and set the theme if we're building docs
     install_requires = ['colormap', 'easydev', "sphinx-gallery", "numpydoc",
                         "colorlog"]
 else:
-    install_requires = ['numpy', "numexpr", 'matplotlib>=1.4.3',
-        'pandas==0.20.1', 'easydev>=0.9.34', 'scipy==0.19.1', "colormap==1.0.1",
-        'jinja2', 'statsmodels==0.8.0', "scikit-learn==0.18.2", "reports==0.3.1",
-        "biokit==0.4.1", "colorlog", "xlrd"],
+    install_requires = open("requirements.txt").read()
 
 
 packages = find_packages()
