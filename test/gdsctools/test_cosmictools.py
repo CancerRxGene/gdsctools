@@ -1,6 +1,7 @@
 from gdsctools.cosmictools import COSMICFetcher, COSMICInfo
 from gdsctools.datasets import cosmic_builder_test
-from nose.plugins.attrib import attr
+import pytest
+
 
 def test_cosmic_info():
     c = COSMICInfo()

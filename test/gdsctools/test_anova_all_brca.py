@@ -1,7 +1,7 @@
 from gdsctools import ANOVA, gdsctools_data, IC50
 from gdsctools import ANOVAReport
-from nose.tools import assert_almost_equal
 import numpy as np
+import pytest
 
 
 def test_anova_brca():
@@ -38,7 +38,7 @@ def test_anova_brca():
     for k, v in totest.items():
         if k in ['ANOVA_MEDIA_pval']:
             continue
-        assert_almost_equal(v, exact[k])
+        assert pytest.approx(v, exact[k])
 
     # test part of the report (summary section)
     r = ANOVAReport(an, dfori)
