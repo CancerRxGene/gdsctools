@@ -28,16 +28,10 @@ before_install:
 # command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 # reports on conda-forge is not compiled for py3.4 so we install it with pip
 install:
-  - echo $TRAVIS_PYTHON_VERSION
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements.txt
-  - conda install pytest pytest-cov pytest-xdist pytest-mock pytest-timeout pytest-runner coveralls coverage
-
-
-coverage
-  - pip install nose --upgrade
-  - pip install coveralls colorlog
+   - echo $TRAVIS_PYTHON_VERSION
+   - conda install --yes python=$TRAVIS_PYTHON_VERSION --file requirements.txt
+   - conda install --yes pytest pytest-cov pytest-xdist pytest-mock pytest-timeout pytest-runner coveralls coverage
   - pip install jinja2 reports
-  - pip install pytest pytest-cov pytest-qt pytest-xdist pytest-mock 
   - pip install .
 
 # # command to run tests, e.g. python setup.py test
