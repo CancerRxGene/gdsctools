@@ -3,6 +3,11 @@ ChangeLog
 
 .. contents::
 
+Version 1.0.1
+----------------
+
+- fix the MANIFEST to include requirements.txt
+
 Version 1.0.0
 -------------------
 
