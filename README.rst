@@ -17,7 +17,7 @@ GDSCTools
 
 |License|
 
-:Citation: :Citation: Cokelaer et al. GDSCTools for mining pharmacogenomic interactions in 
+:Citation: Cokelaer et al. GDSCTools for mining pharmacogenomic interactions in 
     cancer.  Bioinformatics, 2017, https://doi.org/10.1093/bioinformatics/btx744
 
 :Note: Developed and tested for Python 2.7, 3.5, 3.6
