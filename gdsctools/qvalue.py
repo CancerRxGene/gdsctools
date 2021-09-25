@@ -79,7 +79,7 @@ class QValue(object):
 
         if lambdas is None:
             epsilon = 1e-8
-            lambdas = scipy.arange(0,0.9+1e-8,0.05)
+            lambdas = np.arange(0,0.9+1e-8,0.05)
 
         if len(lambdas)>1 and len(lambdas)<4:
             raise ValueError("""if length of lambda greater than 1, you need at least 4 values""")
@@ -159,7 +159,7 @@ class QValue(object):
     def qvalue(self):
         """Return the qvalues using pvalues stored in :attr:`pv` attribute"""
         pv = self.pv.ravel()
-        p_ordered = scipy.argsort(pv)
+        p_ordered = np.argsort(pv)
         pv = pv[p_ordered]
         qv = self.pi0 * self.m/len(pv) * pv
         qv[-1] = min(qv[-1],1.0)
@@ -168,7 +168,7 @@ class QValue(object):
             qv[i] = min(self.pi0*self.m*pv[i]/(i+1.0), qv[i+1])
         # reorder qvalues
         qv_temp = qv.copy()
-        qv = scipy.zeros_like(qv)
+        qv = np.zeros_like(qv)
         qv[p_ordered] = qv_temp
 
         # reshape qvalues

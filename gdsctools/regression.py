@@ -609,7 +609,7 @@ class Regression(BaseModels):
 
         return results
 
-    def dendogram_coefficients(self, stacked=False, show=True, cmap="terrain"):
+    def dendogram_coefficients(self, stacked=False, show=False, cmap="terrain"):
         """
 
         shows the coefficient of each optimised model for each drug
@@ -622,6 +622,7 @@ class Regression(BaseModels):
         from easydev import Progress
         pb = Progress(len(drugids))
         d = {}
+        show = False
 
         for i, drug_name in enumerate(drugids):
             X, Y = self._get_one_drug_data(drug_name, randomize_Y=False)
@@ -635,10 +636,10 @@ class Regression(BaseModels):
         dfall = pd.concat([d[i] for i in drugids], axis=1)
         dfall.columns = drugids
 
-        if show:
-            from biokit import heatmap
-            h = heatmap.Heatmap(dfall, cmap=cmap)
-            h.plot(num=1,colorbar_position="top left")
+        # if show:
+        #     from biokit import heatmap
+        #     h = heatmap.Heatmap(dfall, cmap=cmap)
+        #     h.plot(num=1,colorbar_position="top left")
 
         if stacked is True:
             dfall = dfall.stack().reset_index()
@@ -998,7 +999,7 @@ def barplot(df, colname, color="sign",colors=("b", "r"),
     df.loc[df['sign'] == True, 'sign'] = 'r'
     df.loc[df['sign'] == False, 'sign'] = 'b'
 
-    colors = "".join(df['sign'])
+    colors = list(df['sign'])
 
     if len(df) < Nmax:
         df.plot(y=colname, kind=kind, color=colors, width=1, lw=1,

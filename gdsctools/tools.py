@@ -69,6 +69,9 @@ class Savefig(object):
 
         if size_inches is not None:
             fig.set_size_inches(size_inches)
+        elif 'set_inches' in kargs:
+            newsize = kargs.pop('set_inches')
+            fig.set_size_inches(*newsize)
         else:
             fig.set_size_inches(10, 10)
         if self.verbose:

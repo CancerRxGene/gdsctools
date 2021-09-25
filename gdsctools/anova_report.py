@@ -30,6 +30,7 @@ from gdsctools.readers import DrugDecode
 import pandas as pd
 import pylab
 import numpy as np
+import matplotlib.ticker as mticker
 
 from easydev import Progress
 import easydev
@@ -403,6 +404,7 @@ class ANOVAReport(object):
         ax.set_yticklabels(labels, fontsize=12)
 
         xticks = ax.get_xticks()
+        ax.xaxis.set_major_locator(mticker.FixedLocator(xticks))
         ax.set_xticklabels(
                 [int(x) if divmod(x,1)[1] == 0 else "" for x in xticks])
 
