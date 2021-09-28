@@ -369,7 +369,7 @@ class LogisticMatchedFiltering(object):
         pylab.clf()
         pylab.contourf(results.transpose(), 20,
                 extent=[xmid_range[0], xmid_range[-1],
-                scale_range[0], scale_range[-1]], aspect='auto')
+                scale_range[0], scale_range[-1]])
         pylab.plot(coords[0], coords[1], 'ko')
         pylab.colorbar()
 

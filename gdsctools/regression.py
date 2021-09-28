@@ -998,7 +998,7 @@ def barplot(df, colname, color="sign",colors=("b", "r"),
     df.loc[df['sign'] == True, 'sign'] = 'r'
     df.loc[df['sign'] == False, 'sign'] = 'b'
 
-    colors = "".join(df['sign'])
+    colors = list(df['sign'])
 
     if len(df) < Nmax:
         df.plot(y=colname, kind=kind, color=colors, width=1, lw=1,
