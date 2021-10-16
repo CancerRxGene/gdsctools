@@ -1,4 +1,4 @@
-numpy
+numpy==1.16
 numexpr
 matplotlib>=1.4.3
 pandas==0.20.1
@@ -7,8 +7,9 @@ scipy==0.19.1
 colormap==1.0.1
 jinja2
 statsmodels==0.8.0
-scikit-learn==0.18.2
+scikit-learn
 reports==0.3.1
 biokit==0.4.1
 colorlog
+openpyxl
 xlrd

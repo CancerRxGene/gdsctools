@@ -32,13 +32,11 @@ jobs:
         conda install -c conda-forge --quiet mamba  python=${{ matrix.python }}
     - name: Install gdstools with pip
       run: |
-        which pip
-        which python
         pip install -r requirements.txt
-        pip install -r requirements_dev.txt
         pip install .
     - name: Test with pytest
       run: |
+        pip install pytest  pytest-cov pytest-xdist pytest-mock pytest-timeout  pytest-runner
         pytest --cov-report term --cov=gdsctools
     - name: coveralls
       run: |
