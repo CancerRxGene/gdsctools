@@ -1,5 +1,3 @@
-# -*- python -*-
-# -*- coding utf-8 -*-
 #  This file is part of GDSCTools software
 #
 #  Copyright (c) 2015 - Wellcome Trust Sanger Institute

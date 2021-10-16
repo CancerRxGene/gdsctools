@@ -1,5 +1,3 @@
-# -*- python -*-
-# -*- coding utf-8 -*-
 #
 #  This file is part of GDSCTools software
 #
@@ -38,26 +36,6 @@ from sklearn import linear_model # must use the module rather than classes to
 
 __all__ = ["Regression", 'GDSCRidge', "GDSCLasso", "GDSCElasticNet", 
            "RegressionCVResults"]
-
-
-"""book keeping
-
-from statsmodels.formula.api import OLS
-
-if self.settings.regression_method == 'ElasticNet':
-    self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                       alpha=self.settings.regression_alpha,
-                       L1_wt=self.settings.regression_L1_wt)
-elif self.settings.regression_method == 'OLS':
-    self.data_lm = OLS(odof.Y, df.values).fit()
-elif self.settings.regression_method == 'Ridge':
-    self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                       alpha=self.settings.regression_alpha, L1_wt=0)
-elif self.settings.regression_method == 'Lasso':
-    self.data_lm = OLS(odof.Y, df.values).fit_regularized(
-                       alpha=self.settings.regression_alpha, L1_wt=1)
-
-"""
 
 
 class RegressionCVResults(object):
@@ -730,14 +708,17 @@ class Regression(BaseModels):
         _X, Y = self._get_one_drug_data(drug_name)
 
         names = list(indices.keys())
-        means = [Y.loc[indices[name]].dropna().mean() for name in names]
+
+        # some indices may be missing. To keep same behaviour as older pandas version
+        # we should use reindex
+        means = [Y.reindex(indices[name]).dropna().mean() for name in names]
         df = pd.DataFrame({"names":names, "mean": means})
         sorted_names_by_mean = df.sort_values(by="mean")['names']
 
-        data = [Y.loc[indices[name]].dropna() for name in sorted_names_by_mean]
+        data = [Y.reindex(indices[name]).dropna() for name in sorted_names_by_mean]
 
         # the dropna means some subdata/names are now empty
-        sorted_names_by_mean = [name for this,name in zip(data, sorted_names_by_mean) if len(this)]
+        sorted_names_by_mean = [name for this, name in zip(data, sorted_names_by_mean) if len(this)]
         data = [this for this in data if len(this)]
 
         for subdata in data:
@@ -759,7 +740,7 @@ class GDSCRidge(Regression):
         super(GDSCRidge, self).__init__(ic50, genomic_features,
                                         verbose=verbose)
 
-    def get_model(self,alpha=1, l1_ratio=None, **kargs):
+    def get_model(self, alpha=1, l1_ratio=None, **kargs):
         return linear_model.Ridge(alpha)
 
     def _get_cv_model(self, alphas=None, kfold=None, l1_ratio=None, **kargs):

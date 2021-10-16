@@ -1,12 +1,12 @@
-numpy==1.16
+numpy
 numexpr
 matplotlib>=1.4.3
-pandas==0.20.1
+pandas
 easydev>=0.9.34
-scipy==0.19.1
+scipy
 colormap==1.0.1
 jinja2
-statsmodels==0.8.0
+statsmodels
 scikit-learn
 reports==0.3.1
 biokit==0.4.1

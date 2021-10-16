@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of GDSCTools software
 #
-#  Copyright (c) 201 - GDSCTools Development Team
+#  Copyright (c) 2016-2021 - GDSCTools Development Team
 #
 #  File author(s): Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #

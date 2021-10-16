@@ -1,9 +1,7 @@
-# -*- python -*-
-# -*- coding utf-8 -*-
 #
 #  This file is part of GDSCTools software
 #
-#  Copyright (c) 2015 - Wellcome Trust Sanger Institute
+#  Copyright (c) 2015-2021 - Wellcome Trust Sanger Institute
 #  All rights reserved
 #
 #  File author(s): Thomas Cokelaer <cokelaer@gmail.comWE HERE>

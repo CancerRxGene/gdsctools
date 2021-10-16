@@ -21,7 +21,9 @@ import scipy
 import pylab
 import numpy as np
 
-from statsmodels.formula.api import OLS
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+
 
 from easydev import Progress, AttrDict, do_profile
 
@@ -391,7 +393,8 @@ class ANOVA(BaseModels): #Logging):
             df['feature'] = odof.masked_features
 
             # The regression itself
-            self.data_lm = OLS(odof.Y, df.values).fit()
+            
+            self.data_lm = sm.OLS(odof.Y, df.values).fit()
             # The ANOVA
             self.anova_pvalues = self._get_anova_summary(self.data_lm, odof=odof)
             results = self._set_odof_results(self.anova_pvalues, odof)
@@ -402,7 +405,7 @@ class ANOVA(BaseModels): #Logging):
             df.values[2] = odof.masked_features
             df.values = df.values.T
             # The regression itself
-            self.data_lm = OLS(odof.Y, df.values).fit()
+            self.data_lm = sm.OLS(odof.Y, df.values).fit()
             # The ANOVA itself
             self.anova_pvalues = self._get_anova_summary(self.data_lm, odof=odof)
             results = self._set_odof_results(self.anova_pvalues, odof)
@@ -412,7 +415,7 @@ class ANOVA(BaseModels): #Logging):
             df.values[1] = odof.masked_features
             df.values = df.values.T
             # The regression itself
-            self.data_lm = OLS(odof.Y, df.values).fit()
+            self.data_lm = sm.OLS(odof.Y, df.values).fit()
             # The ANOVA itself
             self.anova_pvalues = self._get_anova_summary(self.data_lm, odof=odof)
             results = self._set_odof_results(self.anova_pvalues, odof)
@@ -437,7 +440,7 @@ class ANOVA(BaseModels): #Logging):
                 noise = 0.0
                 pylab.shuffle(Y)
                 #data_lm = OLS(Y, df.values).fit()
-                data_lm = OLS(Y+noise*pylab.randn(len(Y)), df.values).fit()
+                data_lm = sm.OLS(Y+noise*pylab.randn(len(Y)), df.values).fit()
                 anova_pvalues = self._get_anova_summary(data_lm,
                     output='dict', odof=odof)
                 try:self.samples1.append(anova_pvalues['msi'])
@@ -554,7 +557,6 @@ class ANOVA(BaseModels): #Logging):
         .. versionadded:: 0.15.0
 
         """
-        import statsmodels.formula.api as smf
         from statsmodels.stats.api import anova_lm
 
         if odof is None:
