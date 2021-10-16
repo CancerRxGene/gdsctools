@@ -69,8 +69,6 @@ class RegressionCVResults(object):
 class Regression(BaseModels):
     """Base class for all Regression analysis
 
-
-
     In the :class:`gdsctools.anova.ANOVA` case, the regression is based on the 
     OLS method and is computed for a given drug and a given feature (:term:`ODOF`). 
     Then, the analysis is repeated across all features for a
@@ -614,7 +612,7 @@ class Regression(BaseModels):
         dfall.columns = drugids
 
         if show:
-            from biokit import heatmap
+            from gdsctools.viz import heatmap
             h = heatmap.Heatmap(dfall, cmap=cmap)
             h.plot(num=1,colorbar_position="top left")
 

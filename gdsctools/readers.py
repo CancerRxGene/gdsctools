@@ -964,12 +964,17 @@ class PANCAN(Reader):
         self.df = self._read_matrix_from_r('MoBEM')
         """
 
-class Extra(Reader):
+class Extra(Reader): #pragma: no cover
     def __init__(self, filename="djvIC50v17v002-nowWithRMSE.rdata"):
         super(Extra, self).__init__(filename)
+        try:
+            from biokit.rtools import RSession
+        except ImportError:
+            print("Please install biokit (pip install biokit) to use this funtion")
+            sys.exit(1)
+
         print("Deprecated since v0.12")
         # Remove R dependencies
-        from biokit.rtools import RSession
         self.session = RSession()
         self.session.run('load("%s")' %self._filename)
 
@@ -996,7 +1001,11 @@ class Extra(Reader):
         pylab.ylabel(r'\#')
 
     def scatter(self):
-        from biokit.viz import scatter
+        try:
+            from biokit.viz import scatter
+        except ImportError:
+            print("Please install biokit (pip install biokit) to use this funtion")
+            sys.exit(1)
         s = scatter.ScatterHist(self.dfCL)
         s.plot(kargs_histx={'color':'red', 'bins':20},
                 kargs_scatter={'alpha':0.9, 's':100, 'c':'b'},

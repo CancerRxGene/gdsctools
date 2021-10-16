@@ -9,7 +9,6 @@ jinja2
 statsmodels
 scikit-learn
 reports==0.3.1
-biokit==0.4.1
 colorlog
 openpyxl
 xlrd
