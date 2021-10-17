@@ -1,5 +1,3 @@
-# -*- python -*-
-# -*- coding utf-8 -*-
 #  This file is part of GDSCTools software
 #
 #  Copyright (c) 2015 - Wellcome Trust Sanger Institute
@@ -28,117 +26,157 @@ class TCGA(AttrDict):
 
 
     """
+
     def __init__(self):
         super(TCGA, self).__init__()
         # TCGA notations
         _data = {
-            'ACC': 'Adrenocortical Carcinoma',
-            'ALL': 'Acute Lymphoblastic Leukemia',
-            'BLCA': 'Bladder Urothelial Carcinoma',
-            'BRCA': 'Breast invasive Carcinoma',
-            'CESC': 'Cervical Squamous Cell Carcinoma and Endocervical Adenocarcinoma',
-            'CLL': 'Chronic Lymphocytic Leukemia',
-            'COAD': 'Colon Adenocarcinoma',
-            'COREAD': 'Colon Adenocarcinoma and Rectum Adenocarcinoma',
-            'DLBC': 'Lymphoid Neoplasm Diffuse Large B-cell Lymphoma',
-            'ESCA': 'Esophageal Carcinoma',
-            'GBM': 'Glioblastoma multiforme',
-            'HNSC': 'Head and Neck Squamous Cell Carcinoma',
-            'KICH': 'Kidney Chromophobe',
-            'KIRC': 'Kidney Renal Clear Cell Carcinoma',
-            'KIRP': 'Kidney Renal Papillary Cell Carcinoma',
-            'LAML': 'Acute Myeloid Leukemia',
-            'LCML': 'Chronic Myelogenous Leukemia',
-            'LCLL': 'Chronic Lymphocytic Leukemia',
-        #    'LCMM': 'TOCHECK lymphoid_neoplasm_other',
-            'LGG': 'Brain Lower Grade Glioma',
-            'LIHC': 'Liver Hepatocellular Carcinoma',
-            'LUAD': 'Lung Adenocarcinoma',
-            'LUSC': 'Lung Squamous Cell Carcinoma',
-            'MB':  'Medulloblastoma',
-            'MESO': 'Mesothelioma',
-            'MM': 'Multiple Myeloma',
-            'NB': 'Neuroblastoma',
-            'OV': 'Ovarian Serous Cystadenocarcinoma',
-            'PAAD': 'Pancreatic Adenocarcinoma',
-            'PCPG': 'Pheochromocytoma and Paraganglioma',
-            'PRAD': 'Prostate Adenocarcinoma',
-            'READ': 'Rectuem Adenocarcinoma',
-            'SCLC': 'Small Cell Lung Cancer',
-            'SKCM': 'Skin Cutaneous Melanoma',
-            'STAD': 'Stomach Adenocarcinoma',
-            'THCA': 'Thyroid Carcinoma',
-            'UCS': 'Uterine Carcinosarcoma',
-            'UCEC': 'Uterine Corpus Endometriod Carcinoma',
-            }
+            "ACC": "Adrenocortical Carcinoma",
+            "ALL": "Acute Lymphoblastic Leukemia",
+            "BLCA": "Bladder Urothelial Carcinoma",
+            "BRCA": "Breast invasive Carcinoma",
+            "CESC": "Cervical Squamous Cell Carcinoma and Endocervical Adenocarcinoma",
+            "CLL": "Chronic Lymphocytic Leukemia",
+            "COAD": "Colon Adenocarcinoma",
+            "COREAD": "Colon Adenocarcinoma and Rectum Adenocarcinoma",
+            "DLBC": "Lymphoid Neoplasm Diffuse Large B-cell Lymphoma",
+            "ESCA": "Esophageal Carcinoma",
+            "GBM": "Glioblastoma multiforme",
+            "HNSC": "Head and Neck Squamous Cell Carcinoma",
+            "KICH": "Kidney Chromophobe",
+            "KIRC": "Kidney Renal Clear Cell Carcinoma",
+            "KIRP": "Kidney Renal Papillary Cell Carcinoma",
+            "LAML": "Acute Myeloid Leukemia",
+            "LCML": "Chronic Myelogenous Leukemia",
+            "LCLL": "Chronic Lymphocytic Leukemia",
+            #    'LCMM': 'TOCHECK lymphoid_neoplasm_other',
+            "LGG": "Brain Lower Grade Glioma",
+            "LIHC": "Liver Hepatocellular Carcinoma",
+            "LUAD": "Lung Adenocarcinoma",
+            "LUSC": "Lung Squamous Cell Carcinoma",
+            "MB": "Medulloblastoma",
+            "MESO": "Mesothelioma",
+            "MM": "Multiple Myeloma",
+            "NB": "Neuroblastoma",
+            "OV": "Ovarian Serous Cystadenocarcinoma",
+            "PAAD": "Pancreatic Adenocarcinoma",
+            "PCPG": "Pheochromocytoma and Paraganglioma",
+            "PRAD": "Prostate Adenocarcinoma",
+            "READ": "Rectuem Adenocarcinoma",
+            "SCLC": "Small Cell Lung Cancer",
+            "SKCM": "Skin Cutaneous Melanoma",
+            "STAD": "Stomach Adenocarcinoma",
+            "THCA": "Thyroid Carcinoma",
+            "UCS": "Uterine Carcinosarcoma",
+            "UCEC": "Uterine Corpus Endometriod Carcinoma",
+        }
         for k, v in _data.items():
             self[k] = v
 
 
 # GDSC to TCGA is ambiguous. E.g, lung_NSCLC contains LUAD and LUSC labels.
 # TCGA to GDSC is also ambiguous since it may be a GDSC1 label (e.g. bone but
-# several GDSC2 labels), OR a GDSC2 label.  
+# several GDSC2 labels), OR a GDSC2 label.
 
 
 #: TCGA keys used in GDSC1000
-TCGA_GDSC1000 = ['BLCA', 'BRCA', 'COREAD', 'DLBC', 'ESCA', 'GBM',
-    'HNSC', 'KIRC', 'LAML', 'LGG', 'LIHC', 'LUAD', 'LUSC',
-    'OV', 'PAAD',  'SKCM', 'STAD', 'THCA']
+TCGA_GDSC1000 = [
+    "BLCA",
+    "BRCA",
+    "COREAD",
+    "DLBC",
+    "ESCA",
+    "GBM",
+    "HNSC",
+    "KIRC",
+    "LAML",
+    "LGG",
+    "LIHC",
+    "LUAD",
+    "LUSC",
+    "OV",
+    "PAAD",
+    "SKCM",
+    "STAD",
+    "THCA",
+]
 
-# Here are some TCGA used in GDSC1000 genomic features 
+# Here are some TCGA used in GDSC1000 genomic features
 # and the corresponding Tissue label used in the input file.
 TCGA_2_GDSC = {
-        'ACC': 'kidney',
-        'ALL': 'leukemia',
-        #'ALL': 'lymphona', there are ALL with lymphona and leukemia so not a one-one mapping !
-        # THere were 15 leukemia and 1 lymphona so we choose here leukemia.
-        'BLCA': 'Bladder',
-        'BRCA':'breast',
-        'CESC': 'cervix',
-        'CLL': 'lymphona',
-        'COREAD': 'large_instetine',
-        'DLBC': 'lymphona',
-        'ESCA': 'aero_dig_tract',
-        'GBM': 'nervous_system',
-        'HNSC': 'aero_dig_tract',
-        'KIRC': 'kidney',
-        'LAML': 'leukemia',
-        'LGG': 'nervous_system',
-        'LIHC': 'liver',
-        'LUAD': 'lung_NSCLC',
-        'LUSC': 'lung_NSCLC',
-        'LCML': 'leukemia',
-        'MB': 'nervous_system',
-        'MESO': 'lung',
-        'MM': 'myeloma',
-        'NB': 'neuroblastoma',
-        'OV': 'ovary',
-        'PAAD': 'pancreas',
-        'PRAD': 'prostate',
-        'SCLC': 'lung_SCLC',
-        'SKCM': 'skin',
-        'STAD': 'stomach',
-        'THCA': 'thyroid',
-        'UCEC': 'endometrium',
-        }
+    "ACC": "kidney",
+    "ALL": "leukemia",
+    #'ALL': 'lymphona', there are ALL with lymphona and leukemia so not a one-one mapping !
+    # THere were 15 leukemia and 1 lymphona so we choose here leukemia.
+    "BLCA": "Bladder",
+    "BRCA": "breast",
+    "CESC": "cervix",
+    "CLL": "lymphona",
+    "COREAD": "large_instetine",
+    "DLBC": "lymphona",
+    "ESCA": "aero_dig_tract",
+    "GBM": "nervous_system",
+    "HNSC": "aero_dig_tract",
+    "KIRC": "kidney",
+    "LAML": "leukemia",
+    "LGG": "nervous_system",
+    "LIHC": "liver",
+    "LUAD": "lung_NSCLC",
+    "LUSC": "lung_NSCLC",
+    "LCML": "leukemia",
+    "MB": "nervous_system",
+    "MESO": "lung",
+    "MM": "myeloma",
+    "NB": "neuroblastoma",
+    "OV": "ovary",
+    "PAAD": "pancreas",
+    "PRAD": "prostate",
+    "SCLC": "lung_SCLC",
+    "SKCM": "skin",
+    "STAD": "stomach",
+    "THCA": "thyroid",
+    "UCEC": "endometrium",
+}
 
 
 class Tissues(object):
     """List of tissues included in various analysis
-    
+
     Contains tissues included e.g in v17,v18
     """
+
     def __init__(self):
 
-        self.v17 = ['myeloma', 'nervous_system', 
-            'soft_tissue', 'bone', 'lung_NSCLC',  'skin', 
-            'Bladder', 'cervix', 'lung_SCLC', 'lung', 'neuroblastoma',  
-            'pancreas', 'aero_dig_tract', 'breast', 'kidney', 'leukemia',
-            'ovary', 'prostate', 'large_intestine', 'lymphoma',
-            'thyroid', 'stomach', 'biliary_tract', 'endometrium',
-            'liver',  'urogenital_system_other', 'testis']
+        self.v17 = [
+            "myeloma",
+            "nervous_system",
+            "soft_tissue",
+            "bone",
+            "lung_NSCLC",
+            "skin",
+            "Bladder",
+            "cervix",
+            "lung_SCLC",
+            "lung",
+            "neuroblastoma",
+            "pancreas",
+            "aero_dig_tract",
+            "breast",
+            "kidney",
+            "leukemia",
+            "ovary",
+            "prostate",
+            "large_intestine",
+            "lymphoma",
+            "thyroid",
+            "stomach",
+            "biliary_tract",
+            "endometrium",
+            "liver",
+            "urogenital_system_other",
+            "testis",
+        ]
         self.v18 = self.v17
-
 
 
 """
@@ -181,6 +219,3 @@ urogenital_system_other      4        4                        NAN          NO
 testis                       3        3                        NAN          NO
 
 """
-
-
-

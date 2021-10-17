@@ -1,5 +1,3 @@
-# coding=utf-8
-# -*- python -*-
 #
 #  This file is part of GDSCTools software
 #
@@ -23,7 +21,8 @@ import easydev
 from gdsctools import version
 
 
-__all__ = ['ANOVASettings']
+__all__ = ["ANOVASettings"]
+
 
 class ANOVASettings(AttrDict):
     """All settings used in :class:`gdsctools.anova.ANOVA` analysis
@@ -127,6 +126,7 @@ class ANOVASettings(AttrDict):
 
     .. _link_formula: http://gdsctools.readthedocs.io/en/master/anova_parttwo.html#regression-analysis
     """
+
     def __init__(self, **kargs):
         super(ANOVASettings, self).__init__(**kargs)
 
@@ -139,9 +139,9 @@ class ANOVASettings(AttrDict):
         self.MSI_factor_threshold = 2
         self.include_media_factor = False
 
-        self.analysis_type = 'PANCAN'
-        self.pvalue_correction_method = 'fdr'   # or qvalue
-        self.pvalue_correction_level = True   # or qvalue
+        self.analysis_type = "PANCAN"
+        self.pvalue_correction_method = "fdr"  # or qvalue
+        self.pvalue_correction_level = True  # or qvalue
         self.equal_var_ttest = True
         self.minimum_nonna_ic50 = 6
 
@@ -149,14 +149,14 @@ class ANOVASettings(AttrDict):
         self.fontsize = 25
         self.FDR_threshold = 25
         self.pvalue_threshold = 0.001
-        self.directory = 'html_gdsc_anova'
+        self.directory = "html_gdsc_anova"
         self.savefig = False
-        self.effect_threshold = 0 # use in volcano
+        self.effect_threshold = 0  # use in volcano
         self.volcano_additional_FDR_lines = [0.01, 0.1, 10]
         self.volcano_FDR_interpolation = True
 
         # ----------------------- regression related
-        self.regression_method = 'OLS' # can be ElasticNet, LAsso, Ridge
+        self.regression_method = "OLS"  # can be ElasticNet, LAsso, Ridge
         self.regression_alpha = 0.01
         self.regression_L1_wt = 0.5
 
@@ -188,16 +188,27 @@ class ANOVASettings(AttrDict):
         inrange = easydev.check_range
         inlist = easydev.check_param_in_list
         # check validity of the settings
-        inlist(self.include_MSI_factor, [False, True], 'MSI')
+        inlist(self.include_MSI_factor, [False, True], "MSI")
         inrange(self.feature_factor_threshold, 0, np.inf)
         inrange(self.MSI_factor_threshold, 0, np.inf)
 
         # all those methods are from statsmodels.stats.multitest.multipletests
-        inlist(self.pvalue_correction_method, ['bonferroni', 'sidak',
-            'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh',
-            'fdr_tsbj', 'fdr_tskby', 'fdr'],
-            'pvalue correction method')
-        inlist(self.equal_var_ttest, [True, False], 'equal_var_ttest')
+        inlist(
+            self.pvalue_correction_method,
+            [
+                "bonferroni",
+                "sidak",
+                "holm-sidak",
+                "simes-hochberg",
+                "hommel",
+                "fdr_bh",
+                "fdr_tsbj",
+                "fdr_tskby",
+                "fdr",
+            ],
+            "pvalue correction method",
+        )
+        inlist(self.equal_var_ttest, [True, False], "equal_var_ttest")
         inrange(self.minimum_nonna_ic50, 0, np.inf)
         inrange(self.FDR_threshold, 0, 100)
         inrange(self.pvalue_threshold, 0, np.inf)
@@ -206,11 +217,12 @@ class ANOVASettings(AttrDict):
         # for now, if MSI is False, this cannot be a PANCAN analysis
         # but a cancer specific analysis
         if self.include_MSI_factor is False:
-            assert self.analysis_type != 'PANCAN', \
-                'If MSI factor is not included, the analysis must be cancer'+\
-                ' specific (i.e., a tissue must be set.'
+            assert self.analysis_type != "PANCAN", (
+                "If MSI factor is not included, the analysis must be cancer"
+                + " specific (i.e., a tissue must be set."
+            )
 
-        valid_reg_meth = ['OLS', 'ElasticNet', 'Lasso', 'Ridge']
+        valid_reg_meth = ["OLS", "ElasticNet", "Lasso", "Ridge"]
         inlist(self.regression_method, valid_reg_meth)
 
         inlist(self.pvalue_correction_level, [True, False])
@@ -218,19 +230,18 @@ class ANOVASettings(AttrDict):
     def to_html(self):
         """Convert the sets of parameters into a nice HTML table"""
         data = self.copy()
-        data['volcano_additional_FDR_lines'] = \
-                str(data['volcano_additional_FDR_lines'])
+        data["volcano_additional_FDR_lines"] = str(data["volcano_additional_FDR_lines"])
 
         settings = pd.DataFrame(data, index=[0]).transpose()
 
         settings.reset_index(inplace=True)
-        settings.columns = ['name', 'value']
+        settings.columns = ["name", "value"]
 
         html = settings.to_html(header=True, index=False)
         return html
 
     def __str__(self):
-        txt = ''
+        txt = ""
         for k in sorted(self.keys()):
-            txt += '- %s: %s\n' % (k, self[k])
+            txt += "- %s: %s\n" % (k, self[k])
         return txt

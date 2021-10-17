@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 #
 #  This file is part of GDSCTools software
 #
-#  Copyright (c) 201 - GDSCTools Development Team
+#  Copyright (c) 2016-2021 - GDSCTools Development Team
 #
 #  File author(s): Thomas Cokelaer <thomas.cokelaer@pasteur.fr>
 #
@@ -89,6 +88,7 @@ class IC50Cluster(IC50):
 
     .. seealso:: :meth:`cleanup` method.
     """
+
     def __init__(self, ic50, ratio_threshold=10, verbose=True, cluster=True):
         """.. rubric:: constructor
 
@@ -118,10 +118,12 @@ class IC50Cluster(IC50):
             return list(to_cluster)
         else:
             return []
+
     to_cluster = property(_get_to_cluster)
 
     def _get_mapping(self):
         from collections import defaultdict
+
         mapping = defaultdict(list)
 
         drug_ids = [self.drug_name_to_int(x) for x in self.df.columns]
@@ -133,6 +135,7 @@ class IC50Cluster(IC50):
         mapping = self._get_mapping()
         duplicated = [key for key in mapping.keys() if len(mapping[key]) > 1]
         return duplicated
+
     duplicated = property(_get_duplicated)
 
     def _info(self):
@@ -154,18 +157,22 @@ class IC50Cluster(IC50):
             individuals += [None] * (max_ids - len(individuals))
 
             common = sum(df.count(axis=1) >= 2)
-            result = [drug_id] + individuals + [total, common,
-                    100 * common/float(total)]
+            result = (
+                [drug_id] + individuals + [total, common, 100 * common / float(total)]
+            )
             results.append(result)
 
         df = pd.DataFrame(results)
         if len(df):
-            df.columns = ['DRUG_ID'] + [str(x) for x in range(1, max_ids+1)] +\
-                ['total', 'common', 'ratio']
+            df.columns = (
+                ["DRUG_ID"]
+                + [str(x) for x in range(1, max_ids + 1)]
+                + ["total", "common", "ratio"]
+            )
             try:
-                df.sort_values(by='ratio', ascending=False, inplace=True)
+                df.sort_values(by="ratio", ascending=False, inplace=True)
             except:
-                df.sort('ratio', ascending=False, inplace=True)
+                df.sort("ratio", ascending=False, inplace=True)
         return df
 
     def cluster(self):
@@ -177,9 +184,8 @@ class IC50Cluster(IC50):
         self.mapped = {}
 
         if self.verbose:
-            print('Found  %s non unique drug identifiers ' %
-                    len(self.duplicated))
-            print('Clustering %s of them.\n' % len(self.to_cluster))
+            print("Found  %s non unique drug identifiers " % len(self.duplicated))
+            print("Clustering %s of them.\n" % len(self.to_cluster))
         if len(self.to_cluster) == 0:
             return
 
@@ -212,7 +218,7 @@ class IC50Cluster(IC50):
         for col in self.df.columns:
             identifier = self.drug_name_to_int(col)
             while identifier in new_columns:
-                identifier += offset # not robust but would do for now
+                identifier += offset  # not robust but would do for now
                 # We use a while since ids may occur 3 times
             self.extra_mapping[identifier] = col
             new_columns.append(identifier)
@@ -224,8 +230,10 @@ class GDSCBase(object):
         self.verbose = True
         self.gf_filenames = glob.glob(genomic_feature_pattern)
         if len(self.gf_filenames) == 0:
-            msg = "NO Genomic feature input files found. We expect files " +\
-                    "with this pattern: GF_<TCGA>.csv e.g., (GF_COREAD.csv)"
+            msg = (
+                "NO Genomic feature input files found. We expect files "
+                + "with this pattern: GF_<TCGA>.csv e.g., (GF_COREAD.csv)"
+            )
             raise ValueError(msg)
         pass
 
@@ -282,9 +290,15 @@ class GDSC(GDSCBase):
 
     You entry point is an HTML file called **index.html**
     """
-    def __init__(self, ic50, drug_decode,
-            genomic_feature_pattern="GF_*csv",
-            main_directory="tissue_packages", verbose=True):
+
+    def __init__(
+        self,
+        ic50,
+        drug_decode,
+        genomic_feature_pattern="GF_*csv",
+        main_directory="tissue_packages",
+        verbose=True,
+    ):
         """.. rubric:: Constructor
 
         :param ic50: an :class:`~gdsctools.readers.IC50` file.
@@ -330,8 +344,8 @@ class GDSC(GDSCBase):
 
     def _analyse_all(self, multicore=None):
         for gf_filename in sorted(self.gf_filenames):
-            tcga = gf_filename.split("_")[1].split('.')[0]
-            print(purple('======================== Analysing %s data' % tcga))
+            tcga = gf_filename.split("_")[1].split(".")[0]
+            print(purple("======================== Analysing %s data" % tcga))
 
             self.mkdir(self.main_directory + os.sep + tcga)
             # Computes the ANOVA
@@ -340,8 +354,7 @@ class GDSC(GDSCBase):
             except:
                 print("Clustering IC50 (v18 released data ?)")
                 self.ic50 = IC50Cluster(self.ic50_filename, verbose=False)
-            an = ANOVA(self.ic50, gf_filename, self.drug_decode,
-                verbose=False)
+            an = ANOVA(self.ic50, gf_filename, self.drug_decode, verbose=False)
 
             if self.test is True:
                 an.features.df = an.features.df[an.features.df.columns[0:15]]
@@ -349,22 +362,21 @@ class GDSC(GDSCBase):
             self.an = an
             an.settings = ANOVASettings(**self.settings)
             an.settings.analysis_type = tcga
-            an.init() # This reset the directory
+            an.init()  # This reset the directory
 
             results = an.anova_all(multicore=multicore)
             an.settings.directory = self.main_directory + os.sep + tcga
             # Store the results
             self.results[tcga] = results
 
-            print('Analysing %s data and creating images' % tcga)
+            print("Analysing %s data and creating images" % tcga)
             self.report = ANOVAReport(an)
             self.report.settings.savefig = True
 
             self.report.create_html_pages(onweb=False)
 
     def create_data_packages_for_companies(self, companies=None):
-        """Creates a data package for each company found in the DrugDecode file
-        """
+        """Creates a data package for each company found in the DrugDecode file"""
         ##########################################################
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
         #                                                        #
@@ -393,29 +405,36 @@ class GDSC(GDSCBase):
         # for that company only (and public drugs)
         Ncomp = len(companies)
         for ii, company in enumerate(companies):
-            print(purple("\n=========== Analysing company %s out of %s (%s)" %
-                    (ii+1, Ncomp, company)))
+            print(
+                purple(
+                    "\n=========== Analysing company %s out of %s (%s)"
+                    % (ii + 1, Ncomp, company)
+                )
+            )
             self.mkdir(self.company_directory + os.sep + company)
 
             # Handle each TCGA case separately
             for gf_filename in sorted(self.gf_filenames):
-                tcga = gf_filename.split("_")[1].split('.')[0]
+                tcga = gf_filename.split("_")[1].split(".")[0]
                 print(brown("  ------- building TCGA %s sub directory" % tcga))
 
                 # Read the results previously computed either
                 try:
                     results_df = self.results[tcga].df.copy()
                 except:
-                    results_path = "%s/%s/OUTPUT/results.csv" % (self.main_directory, tcga)
+                    results_path = "%s/%s/OUTPUT/results.csv" % (
+                        self.main_directory,
+                        tcga,
+                    )
                     results_df = ANOVAResults(results_path)
-
 
                 # MAke sure the results are formatted correctly
                 results = ANOVAResults(results_df)
 
                 # Get the DrugDecode information for that company only
                 drug_decode_company = self.drug_decode.df.query(
-                        "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company)
+                    "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company
+                )
 
                 # Transform into a proper DrugDecode class for safety
                 drug_decode_company = DrugDecode(drug_decode_company)
@@ -424,8 +443,10 @@ class GDSC(GDSCBase):
                 # company. Make sure this is integers
                 results.df["DRUG_ID"] = results.df["DRUG_ID"].astype(int)
 
-                mask = [True if x in drug_decode_company.df.index else False
-                        for x in results.df.DRUG_ID]
+                mask = [
+                    True if x in drug_decode_company.df.index else False
+                    for x in results.df.DRUG_ID
+                ]
 
                 results.df = results.df.loc[mask]
 
@@ -437,23 +458,26 @@ class GDSC(GDSCBase):
 
                 # And create an ANOVA instance. This is not to do the analyse
                 # again but to hold various information
-                an = ANOVA(self.ic50, gf_filename, drug_decode_company,
-                    verbose=False)
+                an = ANOVA(self.ic50, gf_filename, drug_decode_company, verbose=False)
 
                 def drug_to_keep(drug):
                     to_keep = drug in drug_decode_company.df.index
                     return to_keep
-                an.ic50.df = an.ic50.df.select(drug_to_keep, axis=1)
+
+                an.ic50.df = an.ic50.df[drug_decode_company.df.index]
 
                 an.settings = ANOVASettings(**self.settings)
+
                 an.init()
-                an.settings.directory = self.company_directory + os.sep + company + os.sep + tcga
+                an.settings.directory = (
+                    self.company_directory + os.sep + company + os.sep + tcga
+                )
                 an.settings.analysis_type = tcga
 
                 # Now we create the report
-                self.report = ANOVAReport(an, results,
-                        drug_decode=drug_decode_company,
-                        verbose=self.verbose)
+                self.report = ANOVAReport(
+                    an, results, drug_decode=drug_decode_company, verbose=self.verbose
+                )
                 self.report.company = company
                 self.report.settings.analysis_type = tcga
                 self.report.create_html_main(False)
@@ -464,10 +488,12 @@ class GDSC(GDSCBase):
 
     def _get_tcga(self):
         return [x.split("_")[1].split(".")[0] for x in self.gf_filenames]
+
     tcga = property(_get_tcga)
 
     def _get_companies(self):
-        return [x for x in self.drug_decode.companies if x != 'Commercial']
+        return [x for x in self.drug_decode.companies if x != "Commercial"]
+
     companies = property(_get_companies)
 
     def create_summary_pages(self):
@@ -510,12 +536,15 @@ class GDSC(GDSCBase):
         pb = Progress(len(self.companies))
         for i, company in enumerate(self.companies):
             try:
-                self._create_summary_pages(self.company_directory + os.sep +
-                    company, verbose=False, company=company)
+                self._create_summary_pages(
+                    self.company_directory + os.sep + company,
+                    verbose=False,
+                    company=company,
+                )
             except Exception as err:
                 print(red("Issue with %s. Continue with other companies" % company))
                 print(err)
-            pb.animate(i+1)
+            pb.animate(i + 1)
 
         # Finally, an index towards each company
         self._create_main_index()
@@ -524,23 +553,25 @@ class GDSC(GDSCBase):
         # We could also add a column with number of association ?
         companies = self.companies[:]
         df = pd.DataFrame({"Company": companies})
-        html_page = ReportMain(directory=".",
-                filename='index.html',
-                template_filename='main_summary.html',
-                mode="summary")
+        html_page = ReportMain(
+            directory=".",
+            filename="index.html",
+            template_filename="main_summary.html",
+            mode="summary",
+        )
         html_table = HTMLTable(df)
-        html_table.add_href('Company', newtab=True, url="company_packages/",
-                suffix="/index.html")
-        html_page.jinja['data_table'] =  html_table.to_html(collapse_table=False)
-        html_page.jinja['analysis_domain'] =  "All companies / All "
-        html_page.jinja['tissue_directory'] = self.main_directory
+        html_table.add_href(
+            "Company", newtab=True, url="company_packages/", suffix="/index.html"
+        )
+        html_page.jinja["data_table"] = html_table.to_html(collapse_table=False)
+        html_page.jinja["analysis_domain"] = "All companies / All "
+        html_page.jinja["tissue_directory"] = self.main_directory
         html_page.write()
 
-    def _create_summary_pages(self, main_directory, verbose=True,
-            company=None):
+    def _create_summary_pages(self, main_directory, verbose=True, company=None):
         # Read all directories in tissue_packages
 
-        directories = glob.glob(main_directory + os.sep + '*')
+        directories = glob.glob(main_directory + os.sep + "*")
 
         summary = []
         for directory in sorted(directories):
@@ -550,19 +581,19 @@ class GDSC(GDSCBase):
             if verbose:
                 print(directory, tcga)
             # number of hits
-            path = directory + os.sep + 'OUTPUT' + os.sep
+            path = directory + os.sep + "OUTPUT" + os.sep
             try:
-                hits = pd.read_csv(path + 'drugs_summary.csv', sep=',')
+                hits = pd.read_csv(path + "drugs_summary.csv", sep=",")
             except:
                 summary.append([tcga] + [None] * 5)
                 continue
             total_hits = hits.total.sum()
 
-            drug_involved = hits['Unnamed: 0'].unique()
+            drug_involved = hits["Unnamed: 0"].unique()
 
             drug_involved = [int(str(x).split("-")[0]) for x in drug_involved]
 
-            results = ANOVAResults(path + 'results.csv')
+            results = ANOVAResults(path + "results.csv")
             if len(results) > 0:
                 drug_ids = results.df.DRUG_ID.unique()
             else:
@@ -570,44 +601,60 @@ class GDSC(GDSCBase):
 
             # where to find the DRUG DECODE file. Should
             # have been copied
-            path = directory + os.sep + 'INPUT' + os.sep
-            drug_decode = DrugDecode(path + 'DRUG_DECODE.csv')
-            #drug_decode.df.set_index("DRUG_ID", inplace=True)
+            path = directory + os.sep + "INPUT" + os.sep
+            drug_decode = DrugDecode(path + "DRUG_DECODE.csv")
+            # drug_decode.df.set_index("DRUG_ID", inplace=True)
             info = drug_decode.get_info()
 
             webrelease = drug_decode.df.loc[drug_involved].WEBRELEASE
-            drug_inv_public = sum(webrelease == 'Y')
-            drug_inv_prop = sum(webrelease != 'Y')
+            drug_inv_public = sum(webrelease == "Y")
+            drug_inv_prop = sum(webrelease != "Y")
 
-            summary.append([tcga, total_hits,
-                drug_inv_prop, info['N_prop'],
-                drug_inv_public, info['N_public']])
+            summary.append(
+                [
+                    tcga,
+                    total_hits,
+                    drug_inv_prop,
+                    info["N_prop"],
+                    drug_inv_public,
+                    info["N_public"],
+                ]
+            )
         df = pd.DataFrame(summary)
 
-        df.columns = ['Analysis name', 'Number of hits',
-            'Number of involved proprietary compounds', 'out of',
-            'Number of involved public', 'out of']
+        df.columns = [
+            "Analysis name",
+            "Number of hits",
+            "Number of involved proprietary compounds",
+            "out of",
+            "Number of involved public",
+            "out of",
+        ]
 
         try:
             df.sort_values(by="Number of hits", ascending=False, inplace=True)
         except:
             df.sort("Number of hits", ascending=False, inplace=True)
 
-        output_dir = main_directory + os.sep + '..' + os.sep
-        output_file = output_dir + os.sep + 'index.html'
-        self.html_page = ReportMain(directory=main_directory,
-                filename='index.html',
-                template_filename='datapack_summary.html',
-                mode="summary")
+        output_dir = main_directory + os.sep + ".." + os.sep
+        output_file = output_dir + os.sep + "index.html"
+        self.html_page = ReportMain(
+            directory=main_directory,
+            filename="index.html",
+            template_filename="datapack_summary.html",
+            mode="summary",
+        )
 
         # Let us use our HTMLTable to add the HTML references
         self.html_table = HTMLTable(df)
-        self.html_table.add_href('Analysis name', newtab=True, url=None,
-                suffix='/index.html')
-        self.html_table.add_bgcolor('Number of hits')
+        self.html_table.add_href(
+            "Analysis name", newtab=True, url=None, suffix="/index.html"
+        )
+        self.html_table.add_bgcolor("Number of hits")
 
-        self.html_page.jinja['data_table'] =  self.html_table.to_html(
-                collapse_table=False)
+        self.html_page.jinja["data_table"] = self.html_table.to_html(
+            collapse_table=False
+        )
         if company:
             self.html_page.jinja["collaborator"] = company
 

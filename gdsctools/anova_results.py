@@ -1,5 +1,3 @@
-# -*- python -*-
-# -*- coding utf-8 -*-
 #
 #  This file is part of GDSCTools software
 #
@@ -27,7 +25,7 @@ from gdsctools import readers
 from gdsctools.volcano import VolcanoANOVA
 from gdsctools.report import HTMLTable
 
-__all__ = ['ANOVAResults']
+__all__ = ["ANOVAResults"]
 
 
 class ANOVAResults(object):
@@ -36,7 +34,7 @@ class ANOVAResults(object):
     The :class:`ANOVA` class and in particular its method
     :meth:`~gdsctools.anova.ANOVA.anova_all` returns the results of
     the ANOVA analysis for each drug and genomic feature. The results
-    are stored in a data structure defined in this class, which is 
+    are stored in a data structure defined in this class, which is
     just a dataframe stored in :attr:`df` attribute with the following
     header:
 
@@ -150,14 +148,15 @@ class ANOVAResults(object):
 
 
     """
-    _colname_drug_id = 'DRUG_ID'
+
+    _colname_drug_id = "DRUG_ID"
 
     def __init__(self, filename=None, settings=None):
         """.. rubric:: Constructor
 
-        :param str filename: Another ANOVAResults instance or a 
+        :param str filename: Another ANOVAResults instance or a
             compatible CSV file with the correct header.
-            The filename may also be set to None (default) and 
+            The filename may also be set to None (default) and
             populated later.
 
         """
@@ -170,86 +169,96 @@ class ANOVAResults(object):
                 self._df = filename.df.copy()
             except:
                 self._df = filename.copy()
-            assert isinstance(self._df, pd.core.frame.DataFrame), \
-                "excepts a dataframe or filename"
+            assert isinstance(
+                self._df, pd.core.frame.DataFrame
+            ), "excepts a dataframe or filename"
 
         #: dictionary with the relevant column names and their expected types
         self.mapping = OrderedDict()
-        self.mapping['ASSOC_ID'] = np.dtype('int64')
-        self.mapping['FEATURE'] = np.dtype('O')
-        self.mapping['DRUG_ID'] = np.dtype('int64')
-        self.mapping['DRUG_NAME'] = np.dtype('O')
-        self.mapping['DRUG_TARGET'] = np.dtype('O')
-        self.mapping['N_FEATURE_neg'] = np.dtype('int64')
-        self.mapping['N_FEATURE_pos'] = np.dtype('int64')
-        self.mapping['FEATURE_pos_logIC50_MEAN'] = np.dtype('float64')
-        self.mapping['FEATURE_neg_logIC50_MEAN'] = np.dtype('float64')
-        self.mapping['FEATURE_delta_MEAN_IC50'] = np.dtype('float64')
-        self.mapping['FEATURE_IC50_effect_size'] = np.dtype('float64')
-        self.mapping['FEATURE_neg_Glass_delta'] = np.dtype('float64')
-        self.mapping['FEATURE_pos_Glass_delta'] = np.dtype('float64')
-        self.mapping['FEATURE_neg_IC50_sd'] = np.dtype('float64')
-        self.mapping['FEATURE_pos_IC50_sd'] = np.dtype('float64')
-        self.mapping['FEATURE_IC50_T_pval'] = np.dtype('float64')
-        self.mapping['ANOVA_FEATURE_pval'] = np.dtype('float64')
-        self.mapping['ANOVA_TISSUE_pval'] = np.dtype('float64')
-        self.mapping['ANOVA_MSI_pval'] = np.dtype('float64')
-        self.mapping['ANOVA_MEDIA_pval'] = np.dtype('float64')
-        self.mapping['ANOVA_FEATURE_FDR'] = np.dtype('float64')
+        self.mapping["ASSOC_ID"] = np.dtype("int64")
+        self.mapping["FEATURE"] = np.dtype("O")
+        self.mapping["DRUG_ID"] = np.dtype("int64")
+        self.mapping["DRUG_NAME"] = np.dtype("O")
+        self.mapping["DRUG_TARGET"] = np.dtype("O")
+        self.mapping["N_FEATURE_neg"] = np.dtype("int64")
+        self.mapping["N_FEATURE_pos"] = np.dtype("int64")
+        self.mapping["FEATURE_pos_logIC50_MEAN"] = np.dtype("float64")
+        self.mapping["FEATURE_neg_logIC50_MEAN"] = np.dtype("float64")
+        self.mapping["FEATURE_delta_MEAN_IC50"] = np.dtype("float64")
+        self.mapping["FEATURE_IC50_effect_size"] = np.dtype("float64")
+        self.mapping["FEATURE_neg_Glass_delta"] = np.dtype("float64")
+        self.mapping["FEATURE_pos_Glass_delta"] = np.dtype("float64")
+        self.mapping["FEATURE_neg_IC50_sd"] = np.dtype("float64")
+        self.mapping["FEATURE_pos_IC50_sd"] = np.dtype("float64")
+        self.mapping["FEATURE_IC50_T_pval"] = np.dtype("float64")
+        self.mapping["ANOVA_FEATURE_pval"] = np.dtype("float64")
+        self.mapping["ANOVA_TISSUE_pval"] = np.dtype("float64")
+        self.mapping["ANOVA_MSI_pval"] = np.dtype("float64")
+        self.mapping["ANOVA_MEDIA_pval"] = np.dtype("float64")
+        self.mapping["ANOVA_FEATURE_FDR"] = np.dtype("float64")
 
-
-        # If the dataframe is empty, we still fill the columns so that reports 
+        # If the dataframe is empty, we still fill the columns so that reports
         # and other code will find the column names.
         if len(self.df) == 0:
             self.df = pd.DataFrame(columns=self.mapping.keys())
             self.df = self.astype(self.df)
 
-
         # before gdsctools, columns names were a bit different.
         # We need to rename some column names
-        self.df.rename(columns={
-            'assoc_id': 'ASSOC_ID',
-            'Drug id': 'DRUG_ID',
-            'Owned_by': 'OWNED_BY',
-            'FEATUREpos_IC50_sd': 'FEATURE_pos_IC50_sd',
-            'FEATUREneg_IC50_sd': 'FEATURE_neg_IC50_sd',
-            'FEATUREpos_Glass_delta': 'FEATURE_pos_Glass_delta',
-            'FEATUREneg_Glass_delta': 'FEATURE_neg_Glass_delta',
-            'FEATUREpos_logIC50_MEAN': 'FEATURE_pos_logIC50_MEAN',
-            'FEATUREneg_logIC50_MEAN': 'FEATURE_neg_logIC50_MEAN',
-            'Drug Target': 'DRUG_TARGET',
-            'FEATURE_deltaMEAN_IC50': 'FEATURE_delta_MEAN_IC50',
-            'FEATURE_ANOVA_pval': 'ANOVA_FEATURE_pval',
-            'ANOVA FEATURE FDR %': 'ANOVA_FEATURE_FDR',
-            'MSI_ANOVA_pval': 'ANOVA_MSI_pval',
-            'Tissue_ANOVA_pval': 'ANOVA_TISSUE_pval',
-            'MEDIA_ANOVA_pval': 'ANOVA_MEDIA_pval',
-            'TISSUE_ANOVA_pval': 'ANOVA_TISSUE_pval',
-            'Drug name': 'DRUG_NAME', 'A': 'B'}, inplace=True)
+        self.df.rename(
+            columns={
+                "assoc_id": "ASSOC_ID",
+                "Drug id": "DRUG_ID",
+                "Owned_by": "OWNED_BY",
+                "FEATUREpos_IC50_sd": "FEATURE_pos_IC50_sd",
+                "FEATUREneg_IC50_sd": "FEATURE_neg_IC50_sd",
+                "FEATUREpos_Glass_delta": "FEATURE_pos_Glass_delta",
+                "FEATUREneg_Glass_delta": "FEATURE_neg_Glass_delta",
+                "FEATUREpos_logIC50_MEAN": "FEATURE_pos_logIC50_MEAN",
+                "FEATUREneg_logIC50_MEAN": "FEATURE_neg_logIC50_MEAN",
+                "Drug Target": "DRUG_TARGET",
+                "FEATURE_deltaMEAN_IC50": "FEATURE_delta_MEAN_IC50",
+                "FEATURE_ANOVA_pval": "ANOVA_FEATURE_pval",
+                "ANOVA FEATURE FDR %": "ANOVA_FEATURE_FDR",
+                "MSI_ANOVA_pval": "ANOVA_MSI_pval",
+                "Tissue_ANOVA_pval": "ANOVA_TISSUE_pval",
+                "MEDIA_ANOVA_pval": "ANOVA_MEDIA_pval",
+                "TISSUE_ANOVA_pval": "ANOVA_TISSUE_pval",
+                "Drug name": "DRUG_NAME",
+                "A": "B",
+            },
+            inplace=True,
+        )
 
         self.colnames_subset = [
-            'ASSOC_ID', 'FEATURE',
-            'DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET',
-            'N_FEATURE_neg', 'N_FEATURE_pos',
-            'FEATURE_pos_logIC50_MEAN', 'FEATURE_neg_logIC50_MEAN',
-            'FEATURE_delta_MEAN_IC50',
-            'FEATURE_IC50_effect_size',
-            'FEATURE_neg_Glass_delta', 'FEATURE_pos_Glass_delta',
-            'ANOVA_FEATURE_pval',
-            'ANOVA_TISSUE_pval',
-            'ANOVA_MSI_pval',
-            'ANOVA_MEDIA_pval',
-            'ANOVA_FEATURE_FDR']
+            "ASSOC_ID",
+            "FEATURE",
+            "DRUG_ID",
+            "DRUG_NAME",
+            "DRUG_TARGET",
+            "N_FEATURE_neg",
+            "N_FEATURE_pos",
+            "FEATURE_pos_logIC50_MEAN",
+            "FEATURE_neg_logIC50_MEAN",
+            "FEATURE_delta_MEAN_IC50",
+            "FEATURE_IC50_effect_size",
+            "FEATURE_neg_Glass_delta",
+            "FEATURE_pos_Glass_delta",
+            "ANOVA_FEATURE_pval",
+            "ANOVA_TISSUE_pval",
+            "ANOVA_MSI_pval",
+            "ANOVA_MEDIA_pval",
+            "ANOVA_FEATURE_FDR",
+        ]
 
         self._df.reset_index(drop=True)
         self.settings = settings
-
 
     def astype(self, df):
         try:
             # does not work in python3.3 on travis but should work
             # we newer pandas version.
-            df = df.apply(lambda x: pd.to_numeric(x, errors='ignore'))
+            df = df.apply(lambda x: pd.to_numeric(x, errors="ignore"))
         except:
             for col in df.columns:
                 if col in self.mapping.keys():
@@ -258,15 +267,17 @@ class ANOVAResults(object):
 
     def _get_df(self):
         return self._df
+
     def _set_df(self, df):
         # TODO check that all columns are found and with correct type.
         self._df = df
+
     df = property(_get_df, _set_df, doc="dataframe with all results")
 
     def to_csv(self, filename):
         """Save the ANOVAResults dataframe into a CSV file"""
-        assert filename.endswith('.csv'), "filename should end in .csv"
-        self.df.to_csv(filename, sep=',', index=False)
+        assert filename.endswith(".csv"), "filename should end in .csv"
+        self.df.to_csv(filename, sep=",", index=False)
 
     def read_csv(self, filename):
         """Read an ANOVAResults file from a CSV file
@@ -284,8 +295,8 @@ class ANOVAResults(object):
             return []
         else:
             return self.df[self._colname_drug_id].unique()
-    drugIds = property(_get_drugIds,
-            doc="Returns the list of drug identifiers")
+
+    drugIds = property(_get_drugIds, doc="Returns the list of drug identifiers")
 
     def volcano(self, settings=None):
         """Calls :class:`VolcanoANOVA` on the results
@@ -305,79 +316,96 @@ class ANOVAResults(object):
         self.handle_volcano.volcano_plot_all()
 
     def __str__(self):
-        txt = 'Total number of ANOVA tests performed: %s ' % len(self.df)
+        txt = "Total number of ANOVA tests performed: %s " % len(self.df)
         return txt
 
     def __repr__(self):
-        txt = 'ANOVAResults (%s tests): ' % len(self.df)
+        txt = "ANOVAResults (%s tests): " % len(self.df)
         return txt
 
     def copy(self):
         """Returns a copy """
         return ANOVAResults(self.df.copy())
 
-    def get_html_table(self, collapse_table=False, clip_threshold=2,
-            index=False, header=True, escape=False, add_href=True):
+    def get_html_table(
+        self,
+        collapse_table=False,
+        clip_threshold=2,
+        index=False,
+        header=True,
+        escape=False,
+        add_href=True,
+    ):
         """Return an HTML table for the reports
 
 
         :param add_href: add href to the FEATURE, DRUG ID and ASSOC ID
 
         """
-        cmap_clip = cmap_builder('#ffffff', '#0070FF')
-        cmap_absmax = cmap_builder('green', 'white', 'red')
+        cmap_clip = cmap_builder("#ffffff", "#0070FF")
+        cmap_absmax = cmap_builder("green", "white", "red")
 
         # The copy is used because we'll change it afterwards
         df = self.df[self.colnames_subset].copy()
 
-        colname = 'ANOVA_FEATURE_FDR'
+        colname = "ANOVA_FEATURE_FDR"
 
-        df.loc[df[colname] < 0.01, colname] = '<0.01'
+        df.loc[df[colname] < 0.01, colname] = "<0.01"
         # In the assoc column, we remove the first "a" letter so that
         # the column is properly sorted by Id but the link should be with the
         # "a" as prefix
         df.ASSOC_ID = df.ASSOC_ID.apply(lambda x: int(str(x).replace("a", "")))
 
-        html = HTMLTable(df, 'notused')
+        html = HTMLTable(df, "notused")
         # Those columns should be links
         if add_href:
             html.add_href("FEATURE")
-            html.add_href("ASSOC_ID", url="a", suffix=".html") # here url works like a prefix
-            html.add_href("DRUG_ID", url="drug_", suffix=".html") # here url works like a prefix
+            html.add_href(
+                "ASSOC_ID", url="a", suffix=".html"
+            )  # here url works like a prefix
+            html.add_href(
+                "DRUG_ID", url="drug_", suffix=".html"
+            )  # here url works like a prefix
 
-        for this in ['FEATURE_IC50_effect_size', 'FEATURE_neg_Glass_delta',
-                'FEATURE_pos_Glass_delta']:
-            html.add_bgcolor(this, cmap_clip, mode='clip',
-                    threshold=clip_threshold)
+        for this in [
+            "FEATURE_IC50_effect_size",
+            "FEATURE_neg_Glass_delta",
+            "FEATURE_pos_Glass_delta",
+        ]:
+            html.add_bgcolor(this, cmap_clip, mode="clip", threshold=clip_threshold)
 
         # normalise data and annotate with color
-        html.add_bgcolor('FEATURE_delta_MEAN_IC50', cmap_absmax,
-            mode='absmax')
+        html.add_bgcolor("FEATURE_delta_MEAN_IC50", cmap_absmax, mode="absmax")
 
         html.df.columns = [x.replace("_", " ") for x in html.df.columns]
-        return html.to_html(escape=escape, header=header, index=index,
-                collapse_table=collapse_table, justify='center')
+        return html.to_html(
+            escape=escape,
+            header=header,
+            index=index,
+            collapse_table=collapse_table,
+            justify="center",
+        )
 
     def barplot_effect_size(self):
         """Dev not for production"""
         # barplot of the IC50 effect size
         if len(self.df) == 0:
             print("No data to plot")
-        data = np.sign(self.df.FEATURE_delta_MEAN_IC50) * self.df.FEATURE_IC50_effect_size
+        data = (
+            np.sign(self.df.FEATURE_delta_MEAN_IC50) * self.df.FEATURE_IC50_effect_size
+        )
         try:
             data = data.sort_values()
         except:
             data.sort(inplace=True)
 
-        n_green = len(data[data<0])
-        n_red = len(data[data>=0])
+        n_green = len(data[data < 0])
+        n_red = len(data[data >= 0])
 
         print(n_green, n_red)
-        data.plot(kind='barh', width=1, alpha=0.5,
-            color=['green']*n_green + ['red'] * n_red)
+        data.plot(
+            kind="barh", width=1, alpha=0.5, color=["green"] * n_green + ["red"] * n_red
+        )
 
         pylab.xlabel("Effect size")
         pylab.ylabel("Drug name")
-
-
-

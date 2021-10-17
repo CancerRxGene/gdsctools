@@ -1,17 +1,16 @@
-
 # fixing compatiblity python 2 and 3 related to merging or urllib and urllib2 i
 # n python 3
-try:     #python 3
+try:  # python 3
     from urllib.request import urlopen
 except:
-    from urllib2  import urlopen
+    from urllib2 import urlopen
 
 
 import pandas as pd
 import easydev
 
 
-__all__ = ['COSMICFetcher', 'COSMICInfo']
+__all__ = ["COSMICFetcher", "COSMICInfo"]
 
 
 class COSMICFetcher(object):
@@ -54,6 +53,7 @@ class COSMICFetcher(object):
         Name: 0, dtype: object
 
     """
+
     def __init__(self, filename=None):
         """.. rubric:: Constructor
 
@@ -64,33 +64,32 @@ class COSMICFetcher(object):
 
         """
         if filename is not None:
-            fh = open(filename, 'r')
+            fh = open(filename, "r")
             self._data = fh.read()
             fh.close()
             self._scandata()
         else:
-            url = 'ftp://ftp.expasy.org/databases/cellosaurus/cellosaurus.txt'
+            url = "ftp://ftp.expasy.org/databases/cellosaurus/cellosaurus.txt"
             self.url = url
-            print('Downloading data. This may take a while')
-            print('Consider saving the *data* attribute in a file ' +
-                'for next time')
+            print("Downloading data. This may take a while")
+            print("Consider saving the *data* attribute in a file " + "for next time")
             self._data = urlopen(self.url).read()
             self._scandata()
 
     def _scandata(self):
-        print('Parsing the data')
-        self._data = self._data.split("\nID   ")[1:] # skip header
+        print("Parsing the data")
+        self._data = self._data.split("\nID   ")[1:]  # skip header
         print(len(self._data))
-        self._data = [this for this in self._data if 'Cosmic' in this]
-        print('Dropping records with no COSMIC cross references:')
-        print('Kept %s records' % len(self._data))
+        self._data = [this for this in self._data if "Cosmic" in this]
+        print("Dropping records with no COSMIC cross references:")
+        print("Kept %s records" % len(self._data))
         self._data2records()
 
     def _data2records(self):
         print("Creating records")
         self._records = {}
         for this in self._data:
-            record = this.split("\n",1)
+            record = this.split("\n", 1)
             identifier = record[0].strip()
             content = record[1].strip()
             self._records[identifier] = content
@@ -102,13 +101,13 @@ class COSMICFetcher(object):
         records = []
         pb = easydev.Progress(len(self._records))
         count = 0
-        for ID,this in self._records.items():
+        for ID, this in self._records.items():
             count += 1
             pb.animate(count)
             # those are to be found only once
-            AC = self._scan_record_for(this, 'AC')[0] # should have only one
-            OX = self._scan_record_for(this, 'OX')[0] # should have only one
-            CA = self._scan_record_for(this, 'CA')[0]
+            AC = self._scan_record_for(this, "AC")[0]  # should have only one
+            OX = self._scan_record_for(this, "OX")[0]  # should have only one
+            CA = self._scan_record_for(this, "CA")[0]
 
             try:
                 OX = OX.split("!")[1].strip()
@@ -119,25 +118,26 @@ class COSMICFetcher(object):
 
                 # get DI. Most of the time there is only one but could have 2
                 # sometimes
-                DI = "__".join(self._scan_record_for(this, 'DI'))
+                DI = "__".join(self._scan_record_for(this, "DI"))
                 DI = DI.replace("NCIt;", "")
                 DI = DI.strip()
 
-                if line.startswith('DR'):
+                if line.startswith("DR"):
                     dummy, content = line.split(" ", 1)
-                    if 'Cosmic' in content:
-                        content = content.replace('Cosmic;', '').strip()
-                        content = content.replace('Cosmic-CLP;', '').strip()
-                        content = content.replace('CC;', '').strip()
+                    if "Cosmic" in content:
+                        content = content.replace("Cosmic;", "").strip()
+                        content = content.replace("Cosmic-CLP;", "").strip()
+                        content = content.replace("CC;", "").strip()
                         records.append([ID, AC, OX, CA, int(content), DI])
 
         self._records_list = records
-        self.df = pd.DataFrame(records, columns=['ID', 'AC', 'OX', 'CA',
-                'COSMIC_ID', 'Disease'])
+        self.df = pd.DataFrame(
+            records, columns=["ID", "AC", "OX", "CA", "COSMIC_ID", "Disease"]
+        )
 
         # keep only homo sapiens (drop mus musculus)
-        self.df = self.df[self.df.OX == 'Homo sapiens']
-        del self.df['OX']
+        self.df = self.df[self.df.OX == "Homo sapiens"]
+        del self.df["OX"]
         self.df.drop_duplicates(inplace=True)
         self.df.reset_index(drop=True, inplace=True)
 
@@ -153,7 +153,7 @@ class COSMICInfo(object):
     This file reads a GDSCTools dataset :attr:`gdsctools.datasets.cosmic_info`.
     Its content is stored in :attr:`df`.
 
-    In corresponds to Table S1E (List cell line samples with data 
+    In corresponds to Table S1E (List cell line samples with data
     availability and annotations across the different omics
 
     The method :meth:`get` retrieves information
@@ -192,21 +192,23 @@ class COSMICInfo(object):
 
     .. seealso:: http://www.cancerrxgene.org/translation/CellLine
     """
+
     def __init__(self):
         """.. rubric:: constructor"""
         from gdsctools.datasets import cosmic_info
+
         #: dataframe with all information
-        self.df = pd.read_csv(cosmic_info.filename, sep=',')
-        self.df.set_index('COSMIC_ID', inplace=True)
+        self.df = pd.read_csv(cosmic_info.filename, sep=",")
+        self.df.set_index("COSMIC_ID", inplace=True)
 
     def get(self, identifier, colname=None):
         """
 
-        :param int identifier: a cosmic identifiers. Possible values are 
+        :param int identifier: a cosmic identifiers. Possible values are
             stored in :attr:`df.index` attribute
-        :param colname: specific field. 
+        :param colname: specific field.
 
-        :return: if colname is not provided, returns a time series for the 
+        :return: if colname is not provided, returns a time series for the
             **identifier** with all available fields. Otherwise, returns a
             specific field.
         """
@@ -214,22 +216,23 @@ class COSMICInfo(object):
             identifier = int(identifier)
 
         if identifier not in self.df.index:
-            ts = pd.Series([None]*12, index=self.df.columns, name=identifier)
+            ts = pd.Series([None] * 12, index=self.df.columns, name=identifier)
         else:
             ts = self.df.loc[identifier]
 
         if colname is None:
-            return ts.copy() # to be safe since user may change it 
+            return ts.copy()  # to be safe since user may change it
         else:
             return ts[colname]
 
     def _get_url(self, cosmic_id):
-        url = 'http://cancer.sanger.ac.uk/cell_lines/sample/overview'
+        url = "http://cancer.sanger.ac.uk/cell_lines/sample/overview"
         url = url + "?id={0}#overview".format(cosmic_id)
         return url
 
     def on_web(self, identifier):
         """Open a tab related to the COSMIC identifier (in your browser)"""
         from easydev import onweb
+
         url = self._get_url(identifier)
         onweb(url)

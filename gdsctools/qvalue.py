@@ -1,6 +1,3 @@
-# -*- python -*-
-# -*- coding utf-8 -*-
-
 #  This file is part of GDSCTools software
 #
 #  Copyright (c) 2015 - Wellcome Trust Sanger Institute
@@ -26,18 +23,22 @@ import scipy.interpolate
 
 
 class QValue(object):
-    """Compute Q-value for a given set of P-values
+    """Compute Q-value for a given set of P-values"""
 
-
-
-    """
-    def __init__(self, pv, lambdas=None,
-        pi0=None, df=3, method='smoother', 
-        smooth_log_pi0=False, verbose=True):
+    def __init__(
+        self,
+        pv,
+        lambdas=None,
+        pi0=None,
+        df=3,
+        method="smoother",
+        smooth_log_pi0=False,
+        verbose=True,
+    ):
         """.. rubric:: Constructor
 
-        The q-value of a test measures the proportion of false 
-        positives incurred (called the false discovery rate or FDR) 
+        The q-value of a test measures the proportion of false
+        positives incurred (called the false discovery rate or FDR)
         when that particular test is called significant.
 
         :param pv: A vector of p-values (only necessary input)
@@ -47,10 +48,10 @@ class QValue(object):
             0.05 (inluding 0 and 0.9)
         :param method: Either "smoother" or "bootstrap"; the method for
             automatically choosing tuning parameter in the estimation of
-            pi_0, the proportion of true null hypotheses. Only smoother 
+            pi_0, the proportion of true null hypotheses. Only smoother
             implemented for now.
         :param df: Number of degrees-of-freedom to use when
-            estimating pi_0 with a smoother (default to 3 i.e., cubic 
+            estimating pi_0 with a smoother (default to 3 i.e., cubic
             interpolation.)
         :param float pi0: if None, it's estimated as suggested in Storey and
             Tibshirani, 2003. May be provided, which is convenient for testing.
@@ -74,21 +75,24 @@ class QValue(object):
             self.pv = np.array(pv)
         except:
             self.pv = pv.copy()
-        assert(self.pv.min() >= 0 and self.pv.max() <= 1), \
-            "p-values should be between 0 and 1"
+        assert (
+            self.pv.min() >= 0 and self.pv.max() <= 1
+        ), "p-values should be between 0 and 1"
 
         if lambdas is None:
             epsilon = 1e-8
-            lambdas = np.arange(0,0.9+1e-8,0.05)
+            lambdas = np.arange(0, 0.9 + 1e-8, 0.05)
 
-        if len(lambdas)>1 and len(lambdas)<4:
-            raise ValueError("""if length of lambda greater than 1, you need at least 4 values""")
+        if len(lambdas) > 1 and len(lambdas) < 4:
+            raise ValueError(
+                """if length of lambda greater than 1, you need at least 4 values"""
+            )
 
-        if len(lambdas) >= 1 and (min(lambdas)<0 or max(lambdas)>=1):
+        if len(lambdas) >= 1 and (min(lambdas) < 0 or max(lambdas) >= 1):
             raise ValueError("lambdas must be in the range[0, 1[")
         self.m = float(len(self.pv))
 
-        self.df = df 
+        self.df = df
         self.lambdas = lambdas
         self.method = method
         self.verbose = verbose
@@ -97,16 +101,16 @@ class QValue(object):
 
     def estimate_pi0(self, pi0):
         """Estimate pi0 based on the pvalues"""
-        pv = self.pv.ravel() # flatten array
+        pv = self.pv.ravel()  # flatten array
 
         if pi0 is not None:
             pass
         elif len(self.lambdas) == 1:
-            pi0 = np.mean(pv >= self.lambdas[0])/(1-self.lambdas[0])
+            pi0 = np.mean(pv >= self.lambdas[0]) / (1 - self.lambdas[0])
             pi0 = min(pi0, 1)
         else:
             # evaluate pi0 for different lambdas
-            pi0 = [np.mean(pv>=this)/(1-this) for this in self.lambdas]
+            pi0 = [np.mean(pv >= this) / (1 - this) for this in self.lambdas]
             # in R
             # lambda = seq(0,0.09, 0.1)
             # pi0 = c(1.0000000, 0.9759067, 0.9674164, 0.9622673, 0.9573241,
@@ -118,8 +122,8 @@ class QValue(object):
             # In this function, using pi0 and lambdas, we get 0.9457946
             # this is not too bad, the difference on the v17 data set
             # is about 0.3 %
-            if self.method == 'smoother':
-                if (self.smooth_log_pi0):
+            if self.method == "smoother":
+                if self.smooth_log_pi0:
                     pi0 = np.log(pi0)
                 # In R, the interpolation is done with smooth.spline
                 # within qvalue. However this is done with default
@@ -128,13 +132,12 @@ class QValue(object):
                 # called spar. If set to 0, then we would get the same
                 # as in scipy. It looks like scipy has no equivalent of
                 # the smooth.spline function in R if spar is not 0
-                tck = scipy.interpolate.splrep(self.lambdas, pi0, 
-                        k = self.df)
+                tck = scipy.interpolate.splrep(self.lambdas, pi0, k=self.df)
                 pi0 = scipy.interpolate.splev(self.lambdas[-1], tck)
-                if (self.smooth_log_pi0):
+                if self.smooth_log_pi0:
                     pi0 = np.exp(pi0)
-                pi0 = min(pi0, 1.)
-            elif self.method == 'bootstrap':
+                pi0 = min(pi0, 1.0)
+            elif self.method == "bootstrap":
                 raise NotImplementedError
                 """minpi0 = min(pi0)
                 mse = rep(0, len(lambdas))
@@ -150,10 +153,13 @@ class QValue(object):
 
             if pi0 > 1:
                 if self.verbose:
-                    print("got pi0 > 1 (%.3f) while estimating qvalues, setting it to 1" % pi0)
+                    print(
+                        "got pi0 > 1 (%.3f) while estimating qvalues, setting it to 1"
+                        % pi0
+                    )
 
                 pi0 = 1.0
-        assert(pi0 >= 0 and pi0 <= 1), "pi0 is not between 0 and 1: %f" % pi0
+        assert pi0 >= 0 and pi0 <= 1, "pi0 is not between 0 and 1: %f" % pi0
         return pi0
 
     def qvalue(self):
@@ -161,11 +167,11 @@ class QValue(object):
         pv = self.pv.ravel()
         p_ordered = np.argsort(pv)
         pv = pv[p_ordered]
-        qv = self.pi0 * self.m/len(pv) * pv
-        qv[-1] = min(qv[-1],1.0)
+        qv = self.pi0 * self.m / len(pv) * pv
+        qv[-1] = min(qv[-1], 1.0)
 
-        for i in range(len(pv)-2, -1, -1):
-            qv[i] = min(self.pi0*self.m*pv[i]/(i+1.0), qv[i+1])
+        for i in range(len(pv) - 2, -1, -1):
+            qv[i] = min(self.pi0 * self.m * pv[i] / (i + 1.0), qv[i + 1])
         # reorder qvalues
         qv_temp = qv.copy()
         qv = np.zeros_like(qv)
@@ -175,4 +181,3 @@ class QValue(object):
         original_shape = self.pv.shape
         qv = qv.reshape(original_shape)
         return qv
-
