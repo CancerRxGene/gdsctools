@@ -224,7 +224,8 @@ class GDSC1000(object):
         logger.info("Processing methylation data.")
         # This block deals with the methylation data
         xls = pd.ExcelFile(self._get_path("methylation"))
-        df = xls.parse(header=2)
+        # changed 2021 to header=3 (instead of 2)
+        df = xls.parse(header=3)
         df.columns = [
             "BLANK",
             "CELL_LINE",
