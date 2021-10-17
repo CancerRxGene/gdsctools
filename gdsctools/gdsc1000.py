@@ -101,13 +101,13 @@ class GDSC1000(object):
         )
 
         self._mapper = {
-            "methylation": ["TableS2J.xlsx", "methylation.xlsx"],
-            "cna": ["TableS2G.xlsx", "cna.xlsx"],
-            "variant": ["TableS2C.xlsx", "variant.xlsx"],
-            "cell_line": ["TableS1E.xlsx", "cell_line_dict.xlsx"],
-            "methylation_annotation": ["TableS2H.xlsx", "methylation_annotation.xlsx"],
-            "cna_annotation": ["TableS2D.xlsx", "cna_annotation.xlsx"],
-            "ic50": ["TableS4A.xlsx", "ic50.xlsx"],
+            "methylation": ["TableS2J.xlsx", "methylation.xls"],
+            "cna": ["TableS2G.xlsx", "cna.xls"],
+            "variant": ["TableS2C.xlsx", "variant.xls"],
+            "cell_line": ["TableS1E.xlsx", "cell_line_dict.xls"],
+            "methylation_annotation": ["TableS2H.xlsx", "methylation_annotation.xls"],
+            "cna_annotation": ["TableS2D.xlsx", "cna_annotation.xls"],
+            "ic50": ["TableS4A.xlsx", "ic50.xls"],
         }
 
         self.defaults = DefaultDictionaries()
@@ -176,7 +176,7 @@ class GDSC1000(object):
             self.annotate_all()
 
     def _urlretrieve(self, filename, target):
-        urlretrieve(self._url_base + filename, self._data_folder_name + target)
+        urlretrieve(f"{self._url_base}/{filename}", f"{self._data_folder_name}/{target}")
 
     def _download_raw(self):
 
@@ -194,11 +194,15 @@ class GDSC1000(object):
         logger.info("Processing CNA data.")
         # This block reads in and formats CNA data
         xls = pd.ExcelFile(self._get_path("cna"))
-        df = xls.parse(header=2)
+        df = xls.parse(header=3)
 
         # in version from feb 2017, there are 4 extra blank columns to be
-        # drop
-        dummies = ["dum1", "dum2", "dum3", "dum4"]
+        # dropped. In 2021, there are not there anymore
+        if len(df.columns) == 11:
+            dummies = ["dum1", "dum2", "dum3", "dum4"]
+        else:
+            dummies = []
+
         df.columns = [
             "BLANK",
             "CELL_LINE",
@@ -259,6 +263,7 @@ class GDSC1000(object):
         xls = pd.ExcelFile(self._get_path("cell_line"))
         df = xls.parse(header=2)
         df.columns = [
+            "BLANK",
             "CELL_LINE",
             "COSMIC_ID",
             "WES",
@@ -285,6 +290,8 @@ class GDSC1000(object):
                 "GROWTH_FACTOR",
             ]
         ]
+        df.query("CELL_LINE not in ['TOTAL:']")
+
         self._to_csv(df, "cell_line_dict.csv")
         self.cell_line_df = df
 
