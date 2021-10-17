@@ -20,10 +20,7 @@ GDSCTools
 :Citation: Cokelaer et al. GDSCTools for mining pharmacogenomic interactions in 
     cancer.  Bioinformatics, 2017, https://doi.org/10.1093/bioinformatics/btx744
 
-:Note: Developed and tested for Python 2.7, 3.5, 3.6
-:Note: The GDSCTools libary works for Python 2.7 and 3.X but the standalone
-       pipeline to be ran on cluster works on Python 3.X only (requires
-       Snakemake).
+:Note: Developed and tested for Python 3.7, 3.8, 3.9
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
 :Documentation: `On ReadTheDocs <http://gdsctools.readthedocs.io/en/master>`_
 :GitHub: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
@@ -69,3 +66,19 @@ Note that first versions (ANOVA analysis) were based on https://github.com/franc
 .. |License| image:: https://img.shields.io/badge/license-BSD-blue.svg
    :alt: BSD License
    :target: https://github.com/CancerRxGene/gdsctools/blob/master/LICENSE
+
+
+Changelog
+~~~~~~~~~
+
+Prior to v0.20, please see the online documentation (link above)
+
+========= ====================================================================
+Version   Description
+========= ====================================================================
+1.1.0     * fix regression bug introduced in snakemake 6.9.0
+1.0.1     * fix the MANIFEST to include requirements.txt
+1.0.0     * First release of GDSCTools with test coverage, singularity, CI
+0.20.0    * Fixing dependencies. added Snakemake example
+========= ====================================================================
+
