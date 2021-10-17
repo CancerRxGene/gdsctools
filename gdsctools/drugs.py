@@ -43,6 +43,7 @@ class ChemSpiderSearch(object):
     SMILES are not unique
 
     """
+
     def __init__(self, drug_decode):
         print("ChemSpiderSearch is still in progress, please do not use")
         self.dd = DrugDecode(drug_decode)
@@ -53,24 +54,25 @@ class ChemSpiderSearch(object):
         from bioservices import UniChem
 
         try:
-            print('Loading PubChem')
+            print("Loading PubChem")
             from bioservices.pubchem import PubChem
+
             self.puchem = PubChem()
         except:
             # Pubchem was introduced only in dec 2015
             pass
 
-        print('Loading ChEMBL service')
+        print("Loading ChEMBL service")
         self.chembl = ChEMBL(cache=True)
 
-        print('Loading ChemSpider service')
+        print("Loading ChemSpider service")
         self.chemspider = ChemSpider(cache=True)
 
-        print('Loading UniChem service')
+        print("Loading UniChem service")
         # in unichem db number is 22 and chembl is 1
         self.unichem = UniChem()
 
-        print('Settings some data aliases')
+        print("Settings some data aliases")
         self._cs_find = self.chemspider.find
         self._cs_get = self.chemspider.GetExtendedCompoundInfo
 
@@ -78,19 +80,17 @@ class ChemSpiderSearch(object):
         self.drug_names = sorted(list(self.dd.df.DRUG_NAME.values))
 
     def filling_chembl_pubchem_using_unichem(self):
-        """
-
-        """
+        """"""
         N = len(self.drug_ids)
         pb = Progress(N)
         for i, this in enumerate(self.drug_ids):
             entry = self.dd.df.loc[this]
-            # if no information is provided, we will need to get it 
+            # if no information is provided, we will need to get it
             # from chemspider
 
             # From the database, when chembl is provided, it is unique
             # same for chemspider and pubchem and CAS
-            select = entry[['CHEMSPIDER', 'CHEMBL', 'PUBCHEM']]
+            select = entry[["CHEMSPIDER", "CHEMBL", "PUBCHEM"]]
             if select.count() == 0:
                 name = self.dd.df.loc[this].DRUG_NAME
                 results = self._cs_find(name)
@@ -98,12 +98,12 @@ class ChemSpiderSearch(object):
                     # nothing found
                     pass
                 elif len(results) == 1:
-                    self.dd_filled.df.loc[this].loc['CHEMSPIDER'] = results[0]
+                    self.dd_filled.df.loc[this].loc["CHEMSPIDER"] = results[0]
                 else:
                     # non unique
-                    #chemspider = ",".join([str(x) for x in results])
-                    self.dd_filled.df.loc[this].loc['CHEMSPIDER'] = results
-            pb.animate(i+1)
+                    # chemspider = ",".join([str(x) for x in results])
+                    self.dd_filled.df.loc[this].loc["CHEMSPIDER"] = results
+            pb.animate(i + 1)
 
         # Search in chemspider systematically
         for i, this in enumerate(self.drug_ids):
@@ -111,20 +111,17 @@ class ChemSpiderSearch(object):
             if select.count() == 1:
                 res = self._cs_find(drug)
 
-            pb.animate(i+1)
+            pb.animate(i + 1)
 
     def find_chembl_ids(self):
-        """
-
-
-        """
+        """"""
         # don't know how to search for a chembl id given the drug name...
         # so we use chemspider
-        #self.search_in_chemspider()
+        # self.search_in_chemspider()
 
         # but chemspider returns molecular information (not chembl id)
         # so given the smile string, we look back in chembl for valid entries
-        #self.search_from_smile_inchembl()
+        # self.search_from_smile_inchembl()
 
         # finally, get the chembl identifiers
         drugs = []
@@ -137,30 +134,37 @@ class ChemSpiderSearch(object):
             try:
                 entry = self.results_chembl[drug]
 
-                ids = ",".join([x['chemblId'] for x in entry])
+                ids = ",".join([x["chemblId"] for x in entry])
                 drugs.append(drug)
                 chembl_ids.append(ids)
                 ids = ",".join([str(x) for x in self.results[drug]])
             except:
-                print('skipping' + drug)
-                ids = ",".join([drug, '', '', '', '', ''])
+                print("skipping" + drug)
+                ids = ",".join([drug, "", "", "", "", ""])
             chemspider_ids.append(ids)
 
         for drug in self.drug_ids:
             try:
-                smiles_c.append(",".join([x['smiles'] for x in
-                    self.results_chembl[drug]]))
+                smiles_c.append(
+                    ",".join([x["smiles"] for x in self.results_chembl[drug]])
+                )
             except:
-                smiles_c.append('')
+                smiles_c.append("")
             try:
-                smiles_cs.append(self.results_chemspider[drug]['smiles'])
+                smiles_cs.append(self.results_chemspider[drug]["smiles"])
             except:
-                smiles_cs.append('')
+                smiles_cs.append("")
 
-        df = pd.DataFrame([drugs, chembl_ids, chemspider_ids, smiles_c,
-            smiles_cs],
-                index=['DRUG_NAME','CHEMBL_ID','CHEMSPIDER_ID', 'SMILE_CHEMBL',
-                    'SMILE_CHEMSPIDER'])
+        df = pd.DataFrame(
+            [drugs, chembl_ids, chemspider_ids, smiles_c, smiles_cs],
+            index=[
+                "DRUG_NAME",
+                "CHEMBL_ID",
+                "CHEMSPIDER_ID",
+                "SMILE_CHEMBL",
+                "SMILE_CHEMSPIDER",
+            ],
+        )
         df = df.T
         return df
 
@@ -184,13 +188,15 @@ class ChemSpiderSearch(object):
             try:
                 res = self._cs_find(drug_name)
             except:
-                print("This drug index (%s) / drug name (%s) was not found" %
-                        (index, drug_name))
+                print(
+                    "This drug index (%s) / drug name (%s) was not found"
+                    % (index, drug_name)
+                )
                 res = []
             self.results[drug] = res
-            pb.animate(i+1)
+            pb.animate(i + 1)
             results.append(res)
-        self.dd_filled.df['CHEMSPIDER_SEARCHED'] = results
+        self.dd_filled.df["CHEMSPIDER_SEARCHED"] = results
 
     def search_from_smile_inchembl(self):
 
@@ -208,13 +214,13 @@ class ChemSpiderSearch(object):
                 for chemspider_id in self.results[drug]:
                     chemspider_entry = self._cs_get(chemspider_id)
                     self.results_chemspider[drug] = chemspider_entry
-                    smile = chemspider_entry['smiles']
+                    smile = chemspider_entry["smiles"]
                     # now search in chembl
                     res_chembl = self.chembl.get_compounds_by_SMILES(smile)
                     try:
-                        res_chembl['compounds']
-                        self.results_chembl[drug].extend(res_chembl['compounds'])
+                        res_chembl["compounds"]
+                        self.results_chembl[drug].extend(res_chembl["compounds"])
                     except:
                         pass
 
-            pb.animate(i+1)
+            pb.animate(i + 1)

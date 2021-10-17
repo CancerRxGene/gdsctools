@@ -68,6 +68,7 @@ class OmniBEMBuilder(object):
     .. note:: The underlying data is stored in the attribute :attr:`df`.
 
     """
+
     def __init__(self, genomic_alteration):
         """.. rubric:: Constructor
 
@@ -95,8 +96,10 @@ class OmniBEMBuilder(object):
         self.df.dropna(inplace=True)
 
         # Some column names are changed for convenience
-        self.df.rename(columns={"COSMIC.ID": "COSMIC_ID",
-            "TISSUE.TYPE": "TISSUE_TYPE"}, inplace=True)
+        self.df.rename(
+            columns={"COSMIC.ID": "COSMIC_ID", "TISSUE.TYPE": "TISSUE_TYPE"},
+            inplace=True,
+        )
         self._update_unified()
 
     def __len__(self):
@@ -111,17 +114,20 @@ class OmniBEMBuilder(object):
         """
         # In R this is an aggregate function. In Pandas a groupby + aggregate
         # http://pandas.pydata.org/pandas-docs/stable/comparison_with_r.html
-        groups = self.df.groupby(by=["COSMIC_ID", "GENE", "SAMPLE",
-            "TISSUE_TYPE"], as_index=False)
-        self.unified = groups[['IDENTIFIER']].aggregate(len)
+        groups = self.df.groupby(
+            by=["COSMIC_ID", "GENE", "SAMPLE", "TISSUE_TYPE"], as_index=False
+        )
+        self.unified = groups[["IDENTIFIER"]].aggregate(len)
 
         # Building a summary on cell lines
-        unique = self.unified[self.unified['COSMIC_ID'].duplicated() == False]
+        unique = self.unified[self.unified["COSMIC_ID"].duplicated() == False]
         self.frequency = unique.groupby("TISSUE_TYPE")["TISSUE_TYPE"].count()
         self.total = self.unified.groupby("TISSUE_TYPE")["TISSUE_TYPE"].count()
 
-        df = pd.concat([self.total, self.frequency, self.total/self.frequency], axis=1)
-        df.columns = ['total', 'grouped', 'fraction']
+        df = pd.concat(
+            [self.total, self.frequency, self.total / self.frequency], axis=1
+        )
+        df.columns = ["total", "grouped", "fraction"]
         self.summary = df
 
     def get_mobem(self):
@@ -132,19 +138,20 @@ class OmniBEMBuilder(object):
 
         """
         # Select gene that appear at least a minimum number of times
-        #agg = self.unified.groupby("GENE")["GENE"].count()
-        #self.selection = agg[agg>=minimum_gene]
+        # agg = self.unified.groupby("GENE")["GENE"].count()
+        # self.selection = agg[agg>=minimum_gene]
 
         # keep only gene in the selection
-        #df = self.unified.query("GENE in @self.selection.index")
+        # df = self.unified.query("GENE in @self.selection.index")
         df = self.unified
-        this = pd.crosstab(df['GENE'], columns=[
-            df["COSMIC_ID"], df['TISSUE_TYPE'], df["SAMPLE"]])
+        this = pd.crosstab(
+            df["GENE"], columns=[df["COSMIC_ID"], df["TISSUE_TYPE"], df["SAMPLE"]]
+        )
         this = this.T
         this = this.reset_index()
 
         if "TISSUE_TYPE" in this.columns:
-            this.rename(columns={"TISSUE_TYPE":"TISSUE_FACTOR"}, inplace=True)
+            this.rename(columns={"TISSUE_TYPE": "TISSUE_FACTOR"}, inplace=True)
         else:
             print("Expected TISSUE_TYPE column. Not found.")
 
@@ -180,7 +187,7 @@ class OmniBEMBuilder(object):
         self.df = self.df.query("GENE in @genes")
         # Update unified matrix
         agg = self.unified.groupby("GENE")["GENE"].count()
-        self.selection = agg[agg>=minimum_gene]
+        self.selection = agg[agg >= minimum_gene]
 
         # keep only gene in the selection
         self.unified = self.unified.query("GENE in @self.selection.index")
@@ -241,7 +248,7 @@ class OmniBEMBuilder(object):
             bem.plot_number_alteration_by_tissue()
 
         """
-        count = self.unified.groupby(['TISSUE_TYPE'])['GENE'].count()
+        count = self.unified.groupby(["TISSUE_TYPE"])["GENE"].count()
         try:
             count.sort_values(inplace=True, ascending=False)
         except:
@@ -249,10 +256,11 @@ class OmniBEMBuilder(object):
         count.plot(kind="bar", width=width)
         pylab.grid()
         pylab.xlabel("Tissue Type", fontsize=fontsize)
-        pylab.ylabel("Total number of alterations in cell lines",
-                     fontsize=fontsize)
-        try:pylab.tight_layout()
-        except:pass
+        pylab.ylabel("Total number of alterations in cell lines", fontsize=fontsize)
+        try:
+            pylab.tight_layout()
+        except:
+            pass
 
     def plot_alterations_per_cellline(self, fontsize=10, width=0.9):
         """Plot number of alterations
@@ -271,15 +279,15 @@ class OmniBEMBuilder(object):
             df = self.summary.sort_values("fraction", ascending=False)
         except:
             df = self.summary.sort("fraction", ascending=False)
-        df.plot(y="fraction", legend=False, kind='bar', fontsize=fontsize, 
-            width=width)
-        pylab.ylabel("Alterations per cell line",
-                     fontsize=fontsize)
+        df.plot(y="fraction", legend=False, kind="bar", fontsize=fontsize, width=width)
+        pylab.ylabel("Alterations per cell line", fontsize=fontsize)
         pylab.grid()
-        try:pylab.tight_layout()
-        except:pass
+        try:
+            pylab.tight_layout()
+        except:
+            pass
 
     def get_genomic_features(self):
         mobem = self.get_mobem()
-        gf = GenomicFeatures(mobem[[x for x in mobem.columns if x!="SAMPLE"]])
+        gf = GenomicFeatures(mobem[[x for x in mobem.columns if x != "SAMPLE"]])
         return gf

@@ -16,10 +16,13 @@ Please See documentation on gdsctools.readthedocs.org
 import pkg_resources
 import os
 import warnings
-warnings.simplefilter('ignore', DeprecationWarning)
+
+warnings.simplefilter("ignore", DeprecationWarning)
+
 
 def set_logger_level(level="INFO"):
     import colorlog as logger
+
     logger.getLogger().setLevel(level)
 
 
@@ -30,7 +33,7 @@ except:
     version = "0.17"
 
 try:
-    license = open('../LICENSE', 'r').read()
+    license = open("../LICENSE", "r").read()
 except:
     license = '3-clause ("Simplified" or "New") BSD'
 
@@ -39,16 +42,18 @@ except:
 def gdsctools_data(filename, where=None):
     """Simple utilities to retrieve data sets from gdsctools/share directory"""
     import easydev
-    gdsctools_path = easydev.get_package_location('gdsctools')
-    share = os.sep.join([gdsctools_path, "gdsctools", 'data'])
+
+    gdsctools_path = easydev.get_package_location("gdsctools")
+    share = os.sep.join([gdsctools_path, "gdsctools", "data"])
     # in the code one may use / or \
     if where:
         filename = os.sep.join([share, where, filename])
     else:
         filename = os.sep.join([share, filename])
     if os.path.exists(filename) is False:
-        raise Exception('unknown file %s' % filename)
+        raise Exception("unknown file %s" % filename)
     return filename
+
 
 from gdsctools.readers import IC50, GenomicFeatures, DrugDecode, Reader
 from gdsctools.anova import ANOVA
@@ -68,13 +73,13 @@ from gdsctools.gdsc1000 import GDSC1000
 
 def gdsctools_help(name=None):
     import easydev
+
     if name is None:
-        easydev.onweb('http://gdsctools.readthedocs.org')
+        easydev.onweb("http://gdsctools.readthedocs.org")
     else:
         url = "http://gdsctools.readthedocs.org/en/master/references.html"
         try:
-            url += '#module-' + name.__module__
+            url += "#module-" + name.__module__
         except:
             print("Not a known gdsctools class or function")
         easydev.onweb(url)
-

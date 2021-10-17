@@ -28,17 +28,20 @@ from gdsctools.errors import GDSCToolsDuplicatedDrugError
 
 import colorlog as logger
 
-__all__ = ['BaseModels']
+__all__ = ["BaseModels"]
 
 
-class BaseModels(object): 
-    """A Base class for ANOVA / ElaticNet models
+class BaseModels(object):
+    """A Base class for ANOVA / ElaticNet models"""
 
-
-    """
-    def __init__(self, ic50, genomic_features=None,
-            drug_decode=None, verbose=True, 
-            set_media_factor=False):
+    def __init__(
+        self,
+        ic50,
+        genomic_features=None,
+        drug_decode=None,
+        verbose=True,
+        set_media_factor=False,
+    ):
         """.. rubric:: Constructor
 
         :param DataFrame IC50: a dataframe with the IC50. Rows should be
@@ -61,13 +64,14 @@ class BaseModels(object):
         try:
             # Simple one without duplicated
             self.ic50 = readers.IC50(ic50)
-        except GDSCToolsDuplicatedDrugError:  
+        except GDSCToolsDuplicatedDrugError:
             print("duplicated error")
             try:
                 from gdsctools.gdsc import IC50Cluster
+
                 self.ic50 = IC50Cluster(ic50)
             except Exception as err:
-                raise(err)
+                raise (err)
 
         # Reads features if provided, otherwise use a default data set
         if genomic_features is None:
@@ -76,10 +80,9 @@ class BaseModels(object):
         else:
             self.features = readers.GenomicFeatures(genomic_features)
 
-        if self.features.found_media is False and \
-                set_media_factor is True:
+        if self.features.found_media is False and set_media_factor is True:
             if self.verbose:
-                print('Populating MEDIA Factor in the Genomic Feature matrix')
+                print("Populating MEDIA Factor in the Genomic Feature matrix")
             self.features.fill_media_factor()
 
         #: a CSV with 3 columns used in the report
@@ -94,19 +97,20 @@ class BaseModels(object):
         # automatically. This fails if a cosmic identifier is not
         # found in the features' cosmic ids, so let us catch the error
         # before hand to give a
-        unknowns = set(self.ic50.cosmicIds).difference(
-                set(self.features.cosmicIds))
+        unknowns = set(self.ic50.cosmicIds).difference(set(self.features.cosmicIds))
 
         if len(unknowns) > 0 and self.verbose:
-            print("WARNING: " +
-                "%s cosmic identifiers in your IC50 " % len(unknowns) +
-                "could not be found in the genomic feature matrix. " +
-                "They will be dropped. Consider using a user-defined " +
-                "genomic features matrix")
+            print(
+                "WARNING: "
+                + "%s cosmic identifiers in your IC50 " % len(unknowns)
+                + "could not be found in the genomic feature matrix. "
+                + "They will be dropped. Consider using a user-defined "
+                + "genomic features matrix"
+            )
 
         self.ic50.drop_cosmic(list(unknowns))
         self.features.cosmicIds = self.ic50.cosmicIds
-        #self.cosmicIds = self.ic50.cosmicIds
+        # self.cosmicIds = self.ic50.cosmicIds
 
         #: an instance of :class:`~gdsctools.settings.ANOVASettings`
         self.settings = ANOVASettings()
@@ -116,8 +120,7 @@ class BaseModels(object):
         self.column_names = list(ANOVAResults().mapping.keys())
 
         # skip assoc_id for now
-        self._odof_dict = dict([(name, None)
-            for name in self.column_names])
+        self._odof_dict = dict([(name, None) for name in self.column_names])
 
         # a cache to store ANOVA results for each drug
         self.individual_anova = {}
@@ -145,7 +148,7 @@ class BaseModels(object):
                 self.settings.include_MSI_factor = False
         else:
             self.settings.include_MSI_factor = False
-            self.settings.analysis_type = 'feature_only'
+            self.settings.analysis_type = "feature_only"
 
     def _autoset_tissue_factor(self):
         # select tissue based on the features
@@ -158,15 +161,15 @@ class BaseModels(object):
             self.settings.directory = tissue
         else:
             # this is a PANCAN analysis
-            self.settings.analysis_type = 'PANCAN'
+            self.settings.analysis_type = "PANCAN"
 
     def _autoset_media_factor(self):
 
-        if self.settings.analysis_type != 'PANCAN':
+        if self.settings.analysis_type != "PANCAN":
             self.settings.include_media_factor = False
             if self.features.found_media is True:
-                # Not authorised. See 
-                # http://gdsctools.readthedocs.io/en/master/anova_parttwo.html#regression-analysis 
+                # Not authorised. See
+                # http://gdsctools.readthedocs.io/en/master/anova_parttwo.html#regression-analysis
                 print("WARNING")
                 print("You have only one Tissue %s " % self.features.tissues[0])
                 print("When using MEDIA FACTOR, you must use MSI and a PANCAN analysis")
@@ -192,7 +195,7 @@ class BaseModels(object):
         if ctype is None:
             return
 
-        if ctype == 'PANCAN':
+        if ctype == "PANCAN":
             # Nothing to do, keep everything
             return
 
@@ -223,14 +226,17 @@ class BaseModels(object):
         # removed. Each drug is a dictionary with 2 keys:
         # Y for the data and indices for the cosmicID where
         # there is an IC50 measured.
-        self.ic50_dict = dict([
-            (d, {'indices': ic50_parse.loc[d].index,
-             'Y': ic50_parse.loc[d].values}) for d in self.ic50.drugIds])
+
+        self.ic50_dict = dict(
+            [
+                (d, {"indices": ic50_parse.loc[d].index, "Y": ic50_parse.loc[d].values})
+                for d in self.ic50.drugIds
+            ]
+        )
         cosmicIds = list(self.ic50.df.index)
         for key in self.ic50_dict.keys():
-            indices = [cosmicIds.index(this) for this in
-                self.ic50_dict[key]['indices']]
-            self.ic50_dict[key]['real_indices'] = indices
+            indices = [cosmicIds.index(this) for this in self.ic50_dict[key]["indices"]]
+            self.ic50_dict[key]["real_indices"] = indices
 
         # save the tissues
         self._autoset_tissue_factor()
@@ -248,7 +254,7 @@ class BaseModels(object):
         # fill the dictionaries for each drug once for all
         for drug_name in self.ic50.drugIds:
             # NOTE: indices are actually cosmid ids (not indices from 0 to N)
-            indices = self.ic50_dict[drug_name]['indices']
+            indices = self.ic50_dict[drug_name]["indices"]
 
             # MSI, media and tissue are not large data files and can be stored
             # enterily
@@ -268,26 +274,26 @@ class BaseModels(object):
         self._tissue_dummies = pd.get_dummies(self.tissue_factor)
         columns = self._tissue_dummies.columns
         columns = sorted(columns, key=lambda s: s.lower())
-        columns = ['C(tissue)[T.' + x + ']' for x in columns]
+        columns = ["C(tissue)[T." + x + "]" for x in columns]
         self._tissue_dummies.columns = columns
 
         if self.settings.include_media_factor:
             self._media_dummies = pd.get_dummies(self.media_factor)
             columns = self._media_dummies.columns
-            columns = ['C(media)[T.' + x + ']' for x in columns]
+            columns = ["C(media)[T." + x + "]" for x in columns]
             self._media_dummies.columns = columns
             for col in columns:
                 self._tissue_dummies[col] = self._media_dummies[col]
 
         N = len(self._tissue_dummies)
-        self._tissue_dummies['C(msi)[T.1]'] = [1]*N
-        self._tissue_dummies['feature'] = [1] * N
-        self._tissue_dummies.insert(0, 'Intercept', [1] * N)
+        self._tissue_dummies["C(msi)[T.1]"] = [1] * N
+        self._tissue_dummies["feature"] = [1] * N
+        self._tissue_dummies.insert(0, "Intercept", [1] * N)
 
         # drop first feature in the tissues that seems to be used as a
         # reference in the regression
-        #tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
-        #self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
+        # tissues = [x for x in self._tissue_dummies.columns if 'tissue' in x]
+        # self._tissue_dummies.drop(tissues[0], axis=1, inplace=True)
 
         """if self.settings.include_media_factor:
             # Drop first category in the media factor ?! like for tissues.
@@ -299,7 +305,7 @@ class BaseModels(object):
         self.individual_anova = {}
 
         if self.verbose and self._init_called is False:
-            for this in ['tissue', 'media', 'msi', 'feature']:
+            for this in ["tissue", "media", "msi", "feature"]:
                 if this in self._get_analysis_mode():
                     logger.debug(this.upper() + " FACTOR : included")
                 else:
@@ -308,51 +314,58 @@ class BaseModels(object):
 
     def _get_cosmics(self):
         return self.ic50.cosmicIds
+
     def _set_cosmics(self, cosmics):
         self.ic50.cosmicIds = cosmics
         self.features.cosmicIds = cosmics
         self.init()
         self.individual_anova = {}
-    cosmicIds = property(_get_cosmics, _set_cosmics,
-        doc="get/set the cosmic identifiers in the IC50 and feature matrices")
+
+    cosmicIds = property(
+        _get_cosmics,
+        _set_cosmics,
+        doc="get/set the cosmic identifiers in the IC50 and feature matrices",
+    )
 
     def _get_drug_names(self):
         return self.ic50.drugIds
+
     def _set_drug_names(self, drugs):
         self.ic50.drugIds = drugs
         self.init()
         # not need to init this again ? self.individual_anova = {}
-    drugIds = property(_get_drug_names, _set_drug_names,
-            doc="Get/Set drug identifers")
+
+    drugIds = property(_get_drug_names, _set_drug_names, doc="Get/Set drug identifers")
 
     def _get_feature_names(self):
         shift = self.features.shift
         return self.features.features[shift:]
+
     def _set_features_names(self, features):
         self.features.features = features
         self.init()
         self.individual_anova = {}
-    feature_names = property(_get_feature_names, _set_features_names,
-            doc="Get/Set feature names")
+
+    feature_names = property(
+        _get_feature_names, _set_features_names, doc="Get/Set feature names"
+    )
 
     def _get_analysis_mode(self):
         modes = []
-        if self.settings.analysis_type == 'PANCAN':
-            modes.append('tissue')
+        if self.settings.analysis_type == "PANCAN":
+            modes.append("tissue")
 
         if self.settings.include_MSI_factor is True:
-            modes.append('msi')
+            modes.append("msi")
 
         if self.settings.include_media_factor is True:
-            modes.append('media')
+            modes.append("media")
 
-        modes.append('feature')
+        modes.append("feature")
         return modes
 
     def diagnostics(self, details=False):
-        """Return dataframe with information about the analysis
-
-        """
+        """Return dataframe with information about the analysis"""
         n_drugs = len(self.ic50.drugIds)
         n_features = len(self.features.features) - self.features.shift
         n_combos = n_drugs * n_features
@@ -363,23 +376,25 @@ class BaseModels(object):
         feasibles = collections.defaultdict(int)
 
         for drug in self.ic50.drugIds:
-            for feature in self.features.features[self.features.shift:]:
-                dd = self._get_one_drug_one_feature_data(drug, feature,
-                        diagnostic_only=True)
+            for feature in self.features.features[self.features.shift :]:
+                dd = self._get_one_drug_one_feature_data(
+                    drug, feature, diagnostic_only=True
+                )
                 if dd.status is True:
                     feasible += 1
-                    feasibles[drug] +=1
+                    feasibles[drug] += 1
             counter += 1
             pb.animate(counter)
 
         results = {
-                'n_drug': n_drugs,
-                'n_combos': n_combos,
-                'feasible_tests': feasible,
-                'percentage_feasible_tests': float(feasible)/n_combos*100}
+            "n_drug": n_drugs,
+            "n_combos": n_combos,
+            "feasible_tests": feasible,
+            "percentage_feasible_tests": float(feasible) / n_combos * 100,
+        }
 
         if details is True:
-            results["feasible_tests_per_drug"] =  feasibles
+            results["feasible_tests_per_drug"] = feasibles
 
         return results
 
@@ -399,5 +414,3 @@ class BaseModels(object):
     def __repr__(self):
         txt = self.__str__()
         return txt
-
-

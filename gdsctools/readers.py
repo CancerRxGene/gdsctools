@@ -1,4 +1,3 @@
-
 #  This file is part of GDSCTools software
 #
 #  Copyright (c) 2015 - Wellcome Trust Sanger Institute
@@ -33,7 +32,7 @@ import easydev
 
 import colorlog
 
-__all__ = ['IC50', 'GenomicFeatures', 'Reader', 'DrugDecode']
+__all__ = ["IC50", "GenomicFeatures", "Reader", "DrugDecode"]
 
 
 def drug_name_to_int(name):
@@ -50,9 +49,11 @@ def drug_name_to_int(name):
             return x
         elif isinstance(x, str):
             if len(x) > maxdigits:
-                print("Warnings gdsctools.readers.drug_name_to_int: " +
-                      "%s identifier too long." % x +
-                      "Please use values below 2**64 with less than 19 digits")
+                print(
+                    "Warnings gdsctools.readers.drug_name_to_int: "
+                    + "%s identifier too long." % x
+                    + "Please use values below 2**64 with less than 19 digits"
+                )
                 x = int(x[0:maxdigits])
             else:
                 x = int(x)
@@ -76,9 +77,9 @@ def drug_name_to_int(name):
         return _str_to_int(name)
 
 
-
 class Reader(object):
     """Convenience base class to read CSV or TSV files (using extension)"""
+
     def __init__(self, data=None):
         r""".. rubric:: Constructor
 
@@ -144,11 +145,11 @@ class Reader(object):
             # Read a filename in TSV or CSV format
             self.read_data(data)
             self._filename = data
-        elif hasattr(data, 'filename'):
+        elif hasattr(data, "filename"):
             # could be a data sets from gdsctools.datasets.Data
             self.read_data(data.filename)
             self._filename = data.filename
-        elif hasattr(data, 'df'):
+        elif hasattr(data, "df"):
             # an instance of a Reader (or child such as IC50, GenomicFeatures)
             self.df = data.df.copy()
             self._filename = data._filename
@@ -157,16 +158,17 @@ class Reader(object):
             self.df = data.copy()
             self._filename = None
         else:
-            raise TypeError("Input must be a filename, a IC50 instance, or " +
-                            "a dataframe.")
+            raise TypeError(
+                "Input must be a filename, a IC50 instance, or " + "a dataframe."
+            )
 
         #: if populated, can be used to check validity of a header
         # used by drug_decode only may be removed
         self.header = []
 
         # sanity check on cleaning columns if not alread done
-        #try:self.df.columns = [x.strip() for x in self.df.columns]
-        #except: pass # fails for the IC50 where header is made of integers
+        # try:self.df.columns = [x.strip() for x in self.df.columns]
+        # except: pass # fails for the IC50 where header is made of integers
 
     def read_data(self, filename):
         # remove possible white spaces in the header's names
@@ -176,9 +178,11 @@ class Reader(object):
             separator = "\t"
         elif ".txt" in filename:
             separator = "\t"
-            print("GDSCTools warning: files with .txt extension are "
-                    "accepted (we assume a tab-separated file) but "
-                    "should be renamed with .csv or .tsv extension")
+            print(
+                "GDSCTools warning: files with .txt extension are "
+                "accepted (we assume a tab-separated file) but "
+                "should be renamed with .csv or .tsv extension"
+            )
         else:
             raise NotImplementedError("Only .csv or .tsv files are accepted ")
 
@@ -204,42 +208,52 @@ class Reader(object):
             # be set to True. This also helps since spaces would be
             # interpreted as a string. Using skipinitialspace, the spaces
             # is converetd to NA
-            rawdf = pd.read_csv(filename, sep=separator, comment="#",
-                        na_values=na_values, skipinitialspace=True,
-                        compression=compression, quotechar='"')
-                #if sum([this.count('\t') for this in rawdf.columns])>2:
-                #    print("Your input file does not seem to be comma"
-                #        " separated. If tabulated, please rename with"
-                #        " .tsv or .txt extension")
+            rawdf = pd.read_csv(
+                filename,
+                sep=separator,
+                comment="#",
+                na_values=na_values,
+                skipinitialspace=True,
+                compression=compression,
+                quotechar='"',
+            )
+            # if sum([this.count('\t') for this in rawdf.columns])>2:
+            #    print("Your input file does not seem to be comma"
+            #        " separated. If tabulated, please rename with"
+            #        " .tsv or .txt extension")
             # Sometimes, a user will provide a CSV, which is actually
             # tab-delimited. This is wrong and difficult to catch
         except Exception as err:
-            msg = 'Could not read %s. See gdsctools.readers.Reader'
+            msg = "Could not read %s. See gdsctools.readers.Reader"
             print(msg % filename)
-            raise(err)
+            raise (err)
 
         # Make sure the columns' names are stripped
-        #rawdf.rename(columns=lambda x: x.strip(), inplace=True)
+        # rawdf.rename(columns=lambda x: x.strip(), inplace=True)
 
         # let us drop columns that are unnamed and print information
-        columns = [x for x in rawdf.columns if x.startswith('Unnamed')]
+        columns = [x for x in rawdf.columns if x.startswith("Unnamed")]
         if len(columns) > 0:
-            print('%s  unnamed columns found and removed. ' % len(columns) +
-                'Please fix your input file.')
+            print(
+                "%s  unnamed columns found and removed. " % len(columns)
+                + "Please fix your input file."
+            )
         self.df = rawdf.drop(columns, axis=1)
 
         # Some fields may be empty strings, which must be set as NA
         import warnings
-        warnings.filterwarnings('ignore')
-        self.df = self.df.replace(" ", "").replace("\t", "").replace("",
-                np.nan)
+
+        warnings.filterwarnings("ignore")
+        self.df = self.df.replace(" ", "").replace("\t", "").replace("", np.nan)
         warnings.filterwarnings("default")
 
         # Finally, check that names do not contain the unwanted character
         # / that was used in some old matrices.
-        if len([True for x in self.df.columns if "/" in x])>0:
-            print("Your input data contains unwanted / characters in " +
-                    " the header. Let's remove them.")
+        if len([True for x in self.df.columns if "/" in x]) > 0:
+            print(
+                "Your input data contains unwanted / characters in "
+                + " the header. Let's remove them."
+            )
             self.df.columns = [x.replace("/", "_") for x in self.df.columns]
 
     def _interpret(self):
@@ -275,7 +289,7 @@ class Reader(object):
 
     def to_csv(self, filename, sep=",", index=False, reset_index=True):
         """Save data into a CSV file without indices"""
-        #Reset the index (e.g., COSMIC ID)
+        # Reset the index (e.g., COSMIC ID)
         if reset_index is True:
             df = self.df.reset_index()
         else:
@@ -296,8 +310,9 @@ class Reader(object):
 
     def _check_uniqueness(self, data):
         if len(set(data)) != len(data):
-            raise Exception("Error gdsctools in readers.IC50: data " + 
-                            " identifiers not unique.")
+            raise Exception(
+                "Error gdsctools in readers.IC50: data " + " identifiers not unique."
+            )
 
     def __eq__(self, other):
         return all(self.df.fillna(0) == other.df.fillna(0))
@@ -308,13 +323,18 @@ class CosmicRows(object):
 
     def _get_cosmic(self):
         return list(self.df.index)
+
     def _set_cosmic(self, cosmics):
         for cosmic in cosmics:
             if cosmic not in self.cosmicIds:
-                raise ValueError('Unknown cosmic identifier')
+                raise ValueError("Unknown cosmic identifier")
         self.df = self.df.loc[cosmics]
-    cosmicIds = property(_get_cosmic, _set_cosmic,
-            doc="return list of cosmic ids (could have duplicates)")
+
+    cosmicIds = property(
+        _get_cosmic,
+        _set_cosmic,
+        doc="return list of cosmic ids (could have duplicates)",
+    )
 
     def drop_cosmic(self, cosmics):
         """drop a drug or a list of cosmic ids"""
@@ -389,7 +409,8 @@ class IC50(Reader, CosmicRows):
         Previous name is deprecated but still accepted.
 
     """
-    cosmic_name = 'COSMIC_ID'
+
+    cosmic_name = "COSMIC_ID"
 
     def __init__(self, filename, v18=False):
         """.. rubric:: Constructor
@@ -422,15 +443,19 @@ class IC50(Reader, CosmicRows):
 
         _cols = [str(x) for x in self.df.columns]
         if "COSMIC ID" in _cols and self.cosmic_name not in _cols:
-            colorlog.warning("'COSMIC ID' column name is deprecated since " +
-            "0.9.10. Please replace with 'COSMIC_ID'")
-            self.df.columns = [x.replace("COSMIC ID", "COSMIC_ID")
-                    for x in self.df.columns]
+            colorlog.warning(
+                "'COSMIC ID' column name is deprecated since "
+                + "0.9.10. Please replace with 'COSMIC_ID'"
+            )
+            self.df.columns = [
+                x.replace("COSMIC ID", "COSMIC_ID") for x in self.df.columns
+            ]
         if "CL" in _cols and "COSMID_ID" not in self.df.columns:
-            colorlog.warning("'CL column name is deprecated since " +
-            "0.9.10. Please replace with 'COSMIC_ID'")
-            self.df.columns = [x.replace("CL", "COSMIC_ID")
-                    for x in self.df.columns]
+            colorlog.warning(
+                "'CL column name is deprecated since "
+                + "0.9.10. Please replace with 'COSMIC_ID'"
+            )
+            self.df.columns = [x.replace("CL", "COSMIC_ID") for x in self.df.columns]
 
         # If the data has not been interpreted, COSMIC column should be
         # found in the column and set as the index
@@ -453,8 +478,9 @@ class IC50(Reader, CosmicRows):
                 self.df = self.df[columns]
         # Otherwise, raise an error
         else:
-            raise ValueError("{0} column could not be found in the header".format(
-                self.cosmic_name))
+            raise ValueError(
+                "{0} column could not be found in the header".format(self.cosmic_name)
+            )
 
         # In v18, the drug ids may be duplicated
         if self._v18 is True:
@@ -475,13 +501,16 @@ class IC50(Reader, CosmicRows):
 
     def _get_drugs(self):
         return list(self.df.columns)
+
     def _set_drugs(self, drugs):
         for drug in drugs:
             if drug not in self.drugIds:
-                raise ValueError('Unknown drug name')
+                raise ValueError("Unknown drug name")
         self.df = self.df[drugs]
-    drugIds = property(_get_drugs, _set_drugs,
-                       doc='list the drug identifier name or select sub set')
+
+    drugIds = property(
+        _get_drugs, _set_drugs, doc="list the drug identifier name or select sub set"
+    )
 
     def drop_drugs(self, drugs):
         """drop a drug or a list of drugs"""
@@ -502,15 +531,15 @@ class IC50(Reader, CosmicRows):
         :return: the fraction of valid/measured IC50 per drug
 
         """
-        data = self.df.count()/len(self.df)
+        data = self.df.count() / len(self.df)
         pylab.clf()
         pylab.plot(data.values, **kargs)
         pylab.grid()
-        pylab.xlim([0, len(self.drugIds)+1])
-        pylab.xlabel('Drug index')
-        pylab.ylim([0,1])
-        pylab.ylabel('Percentage of valid IC50')
-        return  data
+        pylab.xlim([0, len(self.drugIds) + 1])
+        pylab.xlabel("Drug index")
+        pylab.ylim([0, 1])
+        pylab.ylabel("Percentage of valid IC50")
+        return data
 
     def hist(self, bins=20, **kargs):
         """Histogram of the measured IC50
@@ -531,7 +560,7 @@ class IC50(Reader, CosmicRows):
         pylab.clf()
         pylab.hist(self.get_ic50(), bins=bins, **kargs)
         pylab.grid()
-        pylab.xlabel('log IC50')
+        pylab.xlabel("log IC50")
 
     def get_ic50(self):
         """Return all ic50 as a list"""
@@ -557,6 +586,7 @@ class IC50(Reader, CosmicRows):
         df = df.drop_duplicates(cols=[self.cosmic_name])
         return df
     """
+
     def copy(self):
         new = IC50(self)
         return new
@@ -609,11 +639,12 @@ class GenomicFeatures(Reader, CosmicRows):
         the same.
 
     """
+
     colnames = easydev.AttrDict()
-    colnames.cosmic = 'COSMIC_ID'
-    colnames.tissue = 'TISSUE_FACTOR'
-    colnames.msi = 'MSI_FACTOR'
-    colnames.media = 'MEDIA_FACTOR'
+    colnames.cosmic = "COSMIC_ID"
+    colnames.tissue = "TISSUE_FACTOR"
+    colnames.msi = "MSI_FACTOR"
+    colnames.media = "MEDIA_FACTOR"
 
     def __init__(self, filename=None, empty_tissue_name="UNDEFINED"):
         """.. rubric:: Constructor
@@ -628,6 +659,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # first reset the filename to the shared data (if not provided)
         if filename is None:
             from gdsctools.datasets import genomic_features_test
+
             filename = genomic_features_test
         # used in the header so should be ser before call to super()
 
@@ -635,26 +667,28 @@ class GenomicFeatures(Reader, CosmicRows):
 
         # FIXME Remove columns related to Drug if any. Can be removed in
         # the future
-        self.df = self.df[[x for x in self.df.columns
-            if x.startswith('Drug_') is False]]
+        self.df = self.df[
+            [x for x in self.df.columns if x.startswith("Drug_") is False]
+        ]
 
-        for this in ['Sample Name', 'SAMPLE_NAME', 'Sample_Name', 'CELL_LINE']:
+        for this in ["Sample Name", "SAMPLE_NAME", "Sample_Name", "CELL_LINE"]:
             if this in self.df.columns:
                 self.df.drop(this, axis=1, inplace=True)
 
         # Let us rename "COSMIC ID" into "COSMIC_ID" if needed
         for old, new in {
-                    'Tissue Factor Value': 'TISSUE_FACTOR',
-                    'MS-instability Factor Value': 'MSI_FACTOR',
-                    'COSMIC ID': 'COSMIC_ID'}.items():
+            "Tissue Factor Value": "TISSUE_FACTOR",
+            "MS-instability Factor Value": "MSI_FACTOR",
+            "COSMIC ID": "COSMIC_ID",
+        }.items():
             if old in self.df.columns:
-                colorlog.warning("'%s' column name is deprecated " % old +
-                    " since 0.9.10. Please replace with '%s'"%  new)
-                self.df.columns = [x.replace(old, new)
-                        for x in self.df.columns]
+                colorlog.warning(
+                    "'%s' column name is deprecated " % old
+                    + " since 0.9.10. Please replace with '%s'" % new
+                )
+                self.df.columns = [x.replace(old, new) for x in self.df.columns]
         if "CL" in self.df.columns and "COSMID_ID" not in self.df.columns:
-            self.df.columns = [x.replace("CL", "COSMIC_ID")
-                    for x in self.df.columns]
+            self.df.columns = [x.replace("CL", "COSMIC_ID") for x in self.df.columns]
 
         # There are 3 special columns to hold the factors
         self._special_names = []
@@ -663,7 +697,7 @@ class GenomicFeatures(Reader, CosmicRows):
         # OTherwise, we need to change a lot in the original code in ANOVA
         if self.colnames.tissue not in self.df.columns:
             colorlog.info("column named '%s' not found" % self.colnames.tissue)
-            self.df[self.colnames.tissue] = ['UNDEFINED'] * len(self.df)
+            self.df[self.colnames.tissue] = ["UNDEFINED"] * len(self.df)
             self._special_names.append(self.colnames.tissue)
         else:
             self._special_names.append(self.colnames.tissue)
@@ -697,10 +731,11 @@ class GenomicFeatures(Reader, CosmicRows):
         N = self.df.TISSUE_FACTOR.isnull().sum()
         if N > 0:
             logger.warning("Some tissues were empty strings and renamed as UNDEFINED!")
-        self.df.TISSUE_FACTOR.fillna('UNDEFINED', inplace=True)
+        self.df.TISSUE_FACTOR.fillna("UNDEFINED", inplace=True)
 
     def _get_shift(self):
         return len(self._special_names)
+
     shift = property(_get_shift)
 
     def _interpret_cosmic(self):
@@ -709,8 +744,10 @@ class GenomicFeatures(Reader, CosmicRows):
         elif self.colnames.cosmic == self.df.index.name:
             pass
         else:
-            error_msg = "the features input file must contains a column " +\
-                " named %s" % self.colnames.cosmic
+            error_msg = (
+                "the features input file must contains a column "
+                + " named %s" % self.colnames.cosmic
+            )
             raise ValueError(error_msg)
         self.df.index = [int(x) for x in self.df.index]
         self.df.index = self.df.index.astype(int)
@@ -724,9 +761,9 @@ class GenomicFeatures(Reader, CosmicRows):
 
         """
         from gdsctools import COSMICInfo
+
         c = COSMICInfo()
-        self.df['MEDIA_FACTOR'] = [c.get(x).SCREEN_MEDIUM
-                for x in self.df.index]
+        self.df["MEDIA_FACTOR"] = [c.get(x).SCREEN_MEDIUM for x in self.df.index]
         self.found_media = True
         if self.colnames.media not in self._special_names:
             self._special_names.append(self.colnames.media)
@@ -738,24 +775,27 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def _get_features(self):
         return list(self.df.columns)
+
     def _set_features(self, features):
         for feature in features:
             if feature not in self.features:
-                raise ValueError('Unknown feature name %s' % feature)
-        features = [x for x in features if x.endswith('FACTOR') is False]
+                raise ValueError("Unknown feature name %s" % feature)
+        features = [x for x in features if x.endswith("FACTOR") is False]
         features = self._special_names + features
         self.df = self.df[features]
         self._order()
-    features = property(_get_features, _set_features,
-                        doc="return list of features")
+
+    features = property(_get_features, _set_features, doc="return list of features")
 
     def _get_tissues(self):
         return list(self.df[self.colnames.tissue])
-    tissues = property(_get_tissues, doc='return list of tissues')
+
+    tissues = property(_get_tissues, doc="return list of tissues")
 
     def _get_unique_tissues(self):
         return list(self.df[self.colnames.tissue].unique())
-    unique_tissues = property(_get_unique_tissues, doc='return set of tissues')
+
+    unique_tissues = property(_get_unique_tissues, doc="return set of tissues")
 
     def plot(self, shadow=True, explode=True, fontsize=12):
         """Histogram of the tissues found
@@ -780,7 +820,7 @@ class GenomicFeatures(Reader, CosmicRows):
 
         labels = ["%s (%s)" % (l, count) for l, count in zip(labels, data)]
         if explode:
-            pylab.pie(data, labels=labels, shadow=shadow, explode=[0.2]*len(labels))
+            pylab.pie(data, labels=labels, shadow=shadow, explode=[0.2] * len(labels))
         else:
             pylab.pie(data, labels=labels, shadow=shadow)
 
@@ -793,31 +833,33 @@ class GenomicFeatures(Reader, CosmicRows):
             data = data.sort(ascending=True)
         # The bar plot
         pylab.figure(2)
-        data.plot(kind='barh', width=0.8)
+        data.plot(kind="barh", width=0.8)
         pylab.grid(True)
-        pylab.xlabel('Occurences', fontsize=fontsize)
+        pylab.xlabel("Occurences", fontsize=fontsize)
 
         # keep the try to prevent MacOS issue
-        try:pylab.tight_layout()
-        except:pass
+        try:
+            pylab.tight_layout()
+        except:
+            pass
         return data
 
     def __str__(self):
-        txt = 'Genomic features distribution\n'
+        txt = "Genomic features distribution\n"
         try:
             tissues = list(self.df[self.colnames.tissue].unique())
             Ntissue = len(tissues)
-            txt += 'Number of unique tissues {0}'.format(Ntissue)
+            txt += "Number of unique tissues {0}".format(Ntissue)
             if Ntissue == 1:
-                 txt += ' ({0})\n'.format(tissues[0])
+                txt += " ({0})\n".format(tissues[0])
             elif Ntissue < 10:
-                txt += '\nHere are the tissues: '
+                txt += "\nHere are the tissues: "
                 txt += ",".join(tissues) + "\n"
             else:
-                txt += '\nHere are the first 10 tissues: '
+                txt += "\nHere are the first 10 tissues: "
                 txt += ", ".join(tissues[0:10]) + "\n"
         except:
-            txt += 'No information about tissues\n'
+            txt += "No information about tissues\n"
 
         if self.found_msi:
             txt += "MSI column: yes\n"
@@ -832,7 +874,9 @@ class GenomicFeatures(Reader, CosmicRows):
         # -3 since we have also the MSI, tissue, media columns
         # TODO should use shift attribute ?
         Nfeatures = len(self.features)
-        txt += '\nThere are {0} unique features distributed as\n'.format(Nfeatures-self.shift)
+        txt += "\nThere are {0} unique features distributed as\n".format(
+            Nfeatures - self.shift
+        )
 
         n_mutations = len([x for x in self.df.columns if x.endswith("_mut")])
         txt += "- Mutation: {}\n".format(n_mutations)
@@ -888,7 +932,7 @@ class GenomicFeatures(Reader, CosmicRows):
         try:
             Nt = len(set(self.tissues))
         except:
-            Nt = '?'
+            Nt = "?"
         return "GenomicFeatures <Nc={0}, Nf={1}, Nt={2}>".format(Nc, Nf, Nt)
 
     def compress_identical_features(self):
@@ -938,6 +982,7 @@ class GenomicFeatures(Reader, CosmicRows):
 
     def get_TCGA(self):
         from gdsctools.cosmictools import COSMICInfo
+
         c = COSMICInfo()
         tcga = c.df.loc[self.df.index].TCGA
         return tcga
@@ -951,8 +996,9 @@ class PANCAN(Reader):
 
     .. deprecated:: since v0.12
     """
+
     def __init__(self, filename=None):
-        print('deprecated')
+        print("deprecated")
         """if filename is None:
             filename = easydev.get_share_file('gdsctools', 'data',
                             'PANCAN_simple_MOBEM.rdata')
@@ -964,7 +1010,8 @@ class PANCAN(Reader):
         self.df = self._read_matrix_from_r('MoBEM')
         """
 
-class Extra(Reader): #pragma: no cover
+
+class Extra(Reader):  # pragma: no cover
     def __init__(self, filename="djvIC50v17v002-nowWithRMSE.rdata"):
         super(Extra, self).__init__(filename)
         try:
@@ -976,17 +1023,17 @@ class Extra(Reader): #pragma: no cover
         print("Deprecated since v0.12")
         # Remove R dependencies
         self.session = RSession()
-        self.session.run('load("%s")' %self._filename)
+        self.session.run('load("%s")' % self._filename)
 
         # 3 identical matrices containing AUC, IC50 and
-        self.dfAUCv17= self._read_matrix_from_r('dfAUCv17')
-        self.dfIC50v17 = self._read_matrix_from_r('dfIC50v17')
+        self.dfAUCv17 = self._read_matrix_from_r("dfAUCv17")
+        self.dfIC50v17 = self._read_matrix_from_r("dfIC50v17")
         # Residual
-        self.dfResv17 = self._read_matrix_from_r('dfResv17')
+        self.dfResv17 = self._read_matrix_from_r("dfResv17")
 
         # This df holds the xmid/scale parameters for each cell line
         # Can be visualised using the tools.Logistic class.
-        self.dfCL= self._read_matrix_from_r('dfCL')
+        self.dfCL = self._read_matrix_from_r("dfCL")
 
         # There is an extra matrix called MoBEM, which is the same as in the
         # file
@@ -997,8 +1044,8 @@ class Extra(Reader): #pragma: no cover
         pylab.clf()
         pylab.hist(data, bins=bins, normed=True)
         pylab.grid(True)
-        pylab.xlabel('Residuals')
-        pylab.ylabel(r'\#')
+        pylab.xlabel("Residuals")
+        pylab.ylabel(r"\#")
 
     def scatter(self):
         try:
@@ -1007,25 +1054,27 @@ class Extra(Reader): #pragma: no cover
             print("Please install biokit (pip install biokit) to use this funtion")
             sys.exit(1)
         s = scatter.ScatterHist(self.dfCL)
-        s.plot(kargs_histx={'color':'red', 'bins':20},
-                kargs_scatter={'alpha':0.9, 's':100, 'c':'b'},
-                kargs_histy={'color':'red', 'bins':20})
+        s.plot(
+            kargs_histx={"color": "red", "bins": 20},
+            kargs_scatter={"alpha": 0.9, "s": 100, "c": "b"},
+            kargs_histy={"color": "red", "bins": 20},
+        )
 
     def hist_ic50(self, bins=100):
         data = [x for x in self.dfIC50v17.fillna(0).values.flatten() if x != 0]
         pylab.clf()
         pylab.hist(data, bins=bins, normed=True)
         pylab.grid(True)
-        pylab.xlabel('IC50')
-        pylab.ylabel(r'\#')
+        pylab.xlabel("IC50")
+        pylab.ylabel(r"\#")
 
     def hist_auc(self, bins=100):
         data = [x for x in self.dfAUCv17.fillna(0).values.flatten() if x != 0]
         pylab.clf()
         pylab.hist(data, bins=bins, normed=True)
         pylab.grid(True)
-        pylab.xlabel('AUC')
-        pylab.ylabel(r'\#')
+        pylab.xlabel("AUC")
+        pylab.ylabel(r"\#")
 
 
 class DrugDecode(Reader):
@@ -1069,11 +1118,11 @@ class DrugDecode(Reader):
 
     .. note:: the DRUG_ID column must be made of integer
     """
+
     def __init__(self, filename=None):
         """.. rubric:: Constructor"""
         super(DrugDecode, self).__init__(filename)
-        self.header = ['DRUG_ID', 'DRUG_NAME', 'DRUG_TARGET', 'OWNED_BY',
-            'WEBRELEASE']
+        self.header = ["DRUG_ID", "DRUG_NAME", "DRUG_TARGET", "OWNED_BY", "WEBRELEASE"]
         self.header_extra = ["PUBCHEM_ID", "CHEMBL_ID", "CHEMSPIDER_ID"]
 
         try:
@@ -1087,27 +1136,30 @@ class DrugDecode(Reader):
 
     def _interpret(self, filename=None):
         N = len(self.df)
-        if N  == 0:
+        if N == 0:
             return
 
-        self.df.rename(columns={
-                    'PUTATIVE_TARGET': 'DRUG_TARGET',
-                    'THERAPEUTIC_TARGET': 'DRUG_TARGET'},
-                inplace=True)
+        self.df.rename(
+            columns={
+                "PUTATIVE_TARGET": "DRUG_TARGET",
+                "THERAPEUTIC_TARGET": "DRUG_TARGET",
+            },
+            inplace=True,
+        )
 
         for column in ["WEBRELEASE", "OWNED_BY"] + self.header_extra:
             if column not in self.df.columns:
                 self.df[column] = [np.nan] * N
 
-        #for this in self.header[1:]:
+        # for this in self.header[1:]:
         for this in self.header:
             msg = " The column %s was not found and may be an issue later on."
             if this not in self.df.columns and this != self.df.index.name:
-                logger.warning(msg % this )
+                logger.warning(msg % this)
 
         # Finally, set the drug ids as the index.
         try:
-            self.df.set_index('DRUG_ID', inplace=True)
+            self.df.set_index("DRUG_ID", inplace=True)
         except:
             # could be done already
             pass
@@ -1125,16 +1177,18 @@ class DrugDecode(Reader):
 
     def _get_names(self):
         return list(self.df.DRUG_NAME.values)
+
     drug_names = property(_get_names)
 
     def _get_target(self):
         return list(self.df.DRUG_TARGET.values)
+
     drug_targets = property(_get_target)
 
     def _get_drug_ids(self):
         return list(self.df.index)
-    drugIds = property(_get_drug_ids,
-            doc="return list of drug identifiers")
+
+    drugIds = property(_get_drug_ids, doc="return list of drug identifiers")
 
     def _get_row(self, drug_id, colname):
         if drug_id in self.df.index:
@@ -1159,13 +1213,13 @@ class DrugDecode(Reader):
             return
 
     def get_name(self, drug_id):
-        return self._get_row(drug_id, 'DRUG_NAME')
+        return self._get_row(drug_id, "DRUG_NAME")
 
     def get_target(self, drug_id):
-        return self._get_row(drug_id, 'DRUG_TARGET')
+        return self._get_row(drug_id, "DRUG_TARGET")
 
     def is_public(self, drug_id):
-        return self._get_row(drug_id, 'WEBRELEASE')
+        return self._get_row(drug_id, "WEBRELEASE")
 
     def check(self):
         for x in self.drugIds:
@@ -1176,15 +1230,17 @@ class DrugDecode(Reader):
                 raise err
         # it may happen that a drug has no target in the database ! so we
         # cannot check that for the moment:
-        #if  self.df.isnull().sum().sum()>0:
+        # if  self.df.isnull().sum().sum()>0:
         #   print(d.df.isnull().sum())
         #    raise ValueError("all values must be non-na. check tabulation")
 
     def get_info(self):
         # Note that there are 4 cases : Y, N, U (unknown?) and NaN
-        dd = {  'N': len(self),
-                'N_public': sum(self.df.WEBRELEASE == 'Y'),
-                'N_prop': sum(self.df.WEBRELEASE != 'Y')}
+        dd = {
+            "N": len(self),
+            "N_public": sum(self.df.WEBRELEASE == "Y"),
+            "N_prop": sum(self.df.WEBRELEASE != "Y"),
+        }
         return dd
 
     def __len__(self):
@@ -1201,11 +1257,12 @@ class DrugDecode(Reader):
         return txt
 
     def _get_companies(self):
-        if 'OWNED_BY' in self.df.columns:
+        if "OWNED_BY" in self.df.columns:
             companies = list(self.df.OWNED_BY.dropna().unique())
         else:
             companies = []
         return sorted(companies)
+
     companies = property(_get_companies)
 
     def drug_annotations(self, df):
@@ -1219,15 +1276,15 @@ class DrugDecode(Reader):
         #      print("Nothing done. DrugDecode is empty.")
 
         # aliases
-        if 'DRUG_ID' not in df.columns:
-            raise ValueError('Expected column named DRUG_ID but not found')
+        if "DRUG_ID" not in df.columns:
+            raise ValueError("Expected column named DRUG_ID but not found")
 
         drug_names = [self.get_name(x) for x in df.DRUG_ID.values]
         drug_target = [self.get_target(x) for x in df.DRUG_ID.values]
 
         # this is not clean. It works but could be simpler surely.
-        df['DRUG_NAME'] = drug_names
-        df['DRUG_TARGET'] = drug_target
+        df["DRUG_NAME"] = drug_names
+        df["DRUG_TARGET"] = drug_target
         return df
 
     def __add__(self, other):
@@ -1260,13 +1317,16 @@ class DrugDecode(Reader):
                         # nothing to do if b is NULL
                         pass
                     elif pd.isnull(a) is True:
-                            # we can merge the content of b into a
-                            # that is the content of other into this instance
-                            dd.df.loc[index,column] = b
+                        # we can merge the content of b into a
+                        # that is the content of other into this instance
+                        dd.df.loc[index, column] = b
                     else:
                         # a and b are not null
                         if a != b:
-                            print('WARNING: different fields in drug %s (%s %s %s)' %  (index, column, a, b))
+                            print(
+                                "WARNING: different fields in drug %s (%s %s %s)"
+                                % (index, column, a, b)
+                            )
         return dd
 
     def __eq__(self, other):
@@ -1278,7 +1338,7 @@ class DrugDecode(Reader):
     def get_public_and_one_company(self, company):
         """Return drugs that belong to a specific company and public drugs"""
         drug_decode_company = self.df.query(
-               "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company)
+            "WEBRELEASE=='Y' or OWNED_BY=='%s'" % company
+        )
         # Transform into a proper DrugDecode class for safety
         return DrugDecode(drug_decode_company)
-

@@ -17,7 +17,7 @@ import os
 import pylab
 
 
-__all__ = ['Savefig', 'get_drug_id']
+__all__ = ["Savefig", "get_drug_id"]
 
 
 class Savefig(object):
@@ -25,14 +25,16 @@ class Savefig(object):
 
     .. note:: For developers only
     """
+
     def __init__(self, verbose=False):
         self.verbose = verbose
         self._directory = None
         #: directory where to save figures
-        self.directory = '.'
+        self.directory = "."
 
     def _get_directory(self):
         return self._directory
+
     def _set_directory(self, directory):
         self._directory = directory
         try:
@@ -43,6 +45,7 @@ class Savefig(object):
         except Exception:
             if self.verbose:
                 print("Could not create the directory")
+
     directory = property(_get_directory, _set_directory, doc="")
 
     def savefig(self, name, size_inches=None, **kargs):
@@ -67,8 +70,8 @@ class Savefig(object):
 
         if size_inches is not None:
             fig.set_size_inches(size_inches)
-        elif 'set_inches' in kargs:
-            newsize = kargs.pop('set_inches')
+        elif "set_inches" in kargs:
+            newsize = kargs.pop("set_inches")
             fig.set_size_inches(*newsize)
         else:
             fig.set_size_inches(10, 10)

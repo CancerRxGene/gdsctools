@@ -20,10 +20,10 @@ import numpy as np
 from gdsctools.qvalue import QValue
 
 
-__all__ = ['MultipleTesting', 'cohens', "signed_effects"]
+__all__ = ["MultipleTesting", "cohens", "signed_effects"]
 
 
-def multiple_correction(pvalues, method='fdr'):
+def multiple_correction(pvalues, method="fdr"):
     mt = MultipleTesting(method=method)
     values = mt.get_corrected_pvalues(pvalues, method=None)
     return values
@@ -61,6 +61,7 @@ class MultipleTesting(object):
     .. seealso:: http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2907892/
 
     """
+
     def __init__(self, method=None):
         """.. rubric:: Constructor
 
@@ -69,11 +70,21 @@ class MultipleTesting(object):
         """
 
         #: set of valid methods
-        self.valid_methods = ['bonferroni', 'sidak', 'fdr_by',
-            'holm-sidak', 'simes-hochberg', 'hommel', 'fdr_bh',
-            'fdr_tsbh', 'fdr_tsbky', 'fdr', 'qvalue']
+        self.valid_methods = [
+            "bonferroni",
+            "sidak",
+            "fdr_by",
+            "holm-sidak",
+            "simes-hochberg",
+            "hommel",
+            "fdr_bh",
+            "fdr_tsbh",
+            "fdr_tsbky",
+            "fdr",
+            "qvalue",
+        ]
 
-        self._method = 'fdr'
+        self._method = "fdr"
         if method is not None:
             self.method = method
         # parameter of the multiple test (e.g. used if method is bonferroni
@@ -81,11 +92,13 @@ class MultipleTesting(object):
 
     def _get_method(self):
         return self._method
+
     def _set_method(self, method):
         easydev.check_param_in_list(method, self.valid_methods)
-        if method == 'fdr':
-            method = 'fdr_bh'
+        if method == "fdr":
+            method = "fdr_bh"
         self._method = method
+
     method = property(_get_method, _set_method, doc="get/set method")
 
     def get_corrected_pvalues(self, pvalues, method=None):
@@ -100,13 +113,14 @@ class MultipleTesting(object):
 
         pvalues = np.array(pvalues)
 
-        if self.method == 'qvalue':
+        if self.method == "qvalue":
             qv = QValue(pvalues)
             corrections = qv.qvalue()
             return corrections
         else:
-            corrections = multitest.multipletests(pvalues,
-               alpha=self.alpha, method=self.method)[1]
+            corrections = multitest.multipletests(
+                pvalues, alpha=self.alpha, method=self.method
+            )[1]
             return corrections
 
     def plot_comparison(self, pvalues, methods=None):
@@ -130,12 +144,13 @@ class MultipleTesting(object):
             methods = self.valid_methods
 
         import pylab
+
         pylab.clf()
         for method in methods:
             pv = self.get_corrected_pvalues(pvalues, method=method)
-            pylab.plot(pvalues, pv, 'o-', label=method.replace("_","\_"))
-        pylab.legend(loc='best')
-        pylab.ylabel('corrected pvalues')
+            pylab.plot(pvalues, pv, "o-", label=method.replace("_", "\_"))
+        pylab.legend(loc="best")
+        pylab.ylabel("corrected pvalues")
         pylab.grid()
         pylab.ylim([0, 1.05])
 
@@ -174,8 +189,8 @@ def cohens(x, y):
     x = np.array(x)
     y = np.array(y)
 
-    Nx = len(x) - 1.  # note the dot to cast to float
-    Ny = len(y) - 1.
+    Nx = len(x) - 1.0  # note the dot to cast to float
+    Ny = len(y) - 1.0
     # mean difference:
     md = np.abs(x.mean() - y.mean())
     # here, we want same as in R that is unbiased variance
@@ -224,8 +239,9 @@ def glass(x, y):
 
 def signed_effects(df):
     import numpy as np
-    _colname_deltas = 'FEATURE_delta_MEAN_IC50'
-    _colname_effect_size = 'FEATURE_IC50_effect_size'
+
+    _colname_deltas = "FEATURE_delta_MEAN_IC50"
+    _colname_effect_size = "FEATURE_IC50_effect_size"
     deltas = df[_colname_deltas]
     effects = df[_colname_effect_size]
     signed_effects = list(np.sign(deltas) * effects)
