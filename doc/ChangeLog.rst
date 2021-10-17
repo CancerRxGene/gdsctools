@@ -26,7 +26,7 @@ Version 0.20.1
 Version 0.20.0
 -------------------
 
-- NEWS: 
+- NEWS:
 
     - update the Snakemake pipeline for the regression and anova analysis.
     - fix doc

@@ -44,9 +44,3 @@ jobs:
         coveralls --service=github
       env:
           GITHUB_TOKEN: ${{ github.token }}
-
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v2
-      with:
-        fail_ci_if_error: true
-        #token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
