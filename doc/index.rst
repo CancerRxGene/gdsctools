@@ -20,9 +20,7 @@ GDSCTools documentation
 
 :Citation: Cokelaer et al. GDSCTools for mining pharmacogenomic interactions in cancer
     Bioinformatics, 2017, https://doi.org/10.1093/bioinformatics/btx744
-:Note: developed and tested for Python 2.7,  3.4, 3.5
-:Note: The GDSCTools libary works for Python 2.7 and 3.5 but the standalone
-       pipeline to be ran on cluster works on Python 3.5 only 
+:Note: developed and tested for Python 3.7, 3.8, 3.9
 :Contributions: Please join https://github.com/CancerRxGene/gdsctools project
 :Documentation: `On ReadTheDocs <http://gdsctools.readthedocs.io/en/master>`_
 :GitHub: `On github <https://github.com/CancerRxGene/gdsctools/issues>`_
