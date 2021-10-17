@@ -33,7 +33,7 @@ def test_download(tmpdir):
     assert len(gg.genomic_df['GENE'].unique()) == 310  # For sure
     assert len(gg.genomic_df)
     assert gg.get_genomic_info()["cosmic"].METHYLATION == 108 # for sure
-    assert gg.get_methylation_info().ix[0,0] == 338 # for sure
+    assert gg.get_methylation_info().iloc[0,0] == 338 # for sure
     gg.get_cna_info()
     gg.reset_genomic_data()
 
