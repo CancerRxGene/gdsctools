@@ -76,7 +76,9 @@ Prior to v0.20, please see the online documentation (link above)
 ========= ====================================================================
 Version   Description
 ========= ====================================================================
-1.1.0     * fix regression bug introduced in snakemake 6.9.0
+1.1.0     * Update GDSCtools to newest Python ecosytem (3.9)
+          * add CI
+          * remove redundant dependencies (biokit)
 1.0.1     * fix the MANIFEST to include requirements.txt
 1.0.0     * First release of GDSCTools with test coverage, singularity, CI
 0.20.0    * Fixing dependencies. added Snakemake example
