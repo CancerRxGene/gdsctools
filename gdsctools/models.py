@@ -112,6 +112,19 @@ class BaseModels(object):
         self.features.cosmicIds = self.ic50.cosmicIds
         # self.cosmicIds = self.ic50.cosmicIds
 
+        # Also drop drugs (columns) where all matrix entries are NA
+        drugs_to_drop = self.ic50.df.isna().all()
+        number_kept = len(drugs_to_drop[~drugs_to_drop].index.tolist())
+        drugs_to_drop = drugs_to_drop[drugs_to_drop].index.tolist()
+        if len(drugs_to_drop) > 0 and self.verbose:
+            print(
+                "INFO: "
+                + "%s drugs in your IC50 matrix" % len(drugs_to_drop)
+                + " have no data. They will be dropped."
+                + " %s drugs now in ANOVA analysis." % number_kept
+            )
+        self.ic50.drop_drugs(drugs_to_drop)
+
         #: an instance of :class:`~gdsctools.settings.ANOVASettings`
         self.settings = ANOVASettings()
 
