@@ -460,11 +460,15 @@ class GDSC(GDSCBase):
                 # again but to hold various information
                 an = ANOVA(self.ic50, gf_filename, drug_decode_company, verbose=False)
 
-                def drug_to_keep(drug):
-                    to_keep = drug in drug_decode_company.df.index
-                    return to_keep
+                # def drug_to_keep(drug):
+                #     to_keep = drug in drug_decode_company.df.index
+                #     return to_keep
 
-                an.ic50.df = an.ic50.df[drug_decode_company.df.index]
+                # an.ic50.df = an.ic50.df[drug_decode_company.df.index]
+
+                to_remove = set(an.ic50.drugIds).difference(set(drug_decode_company.df.index.tolist()))
+                
+                an.ic50.drop_drugs(list(to_remove))
 
                 an.settings = ANOVASettings(**self.settings)
 
